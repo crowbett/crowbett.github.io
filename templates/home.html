@@ -11,7 +11,7 @@
       {{if .LiveCount}}<p class="hero-run">{{range .Projects}}{{if .Live}}<a href="/projects/{{.Slug}}/#demo">Run {{.Title}} <span aria-hidden="true">→</span></a>{{end}}{{end}}</p>{{end}}
     </div>
     {{with .Hero}}<figure class="replay">
-      <figcaption><span class="replay-k">Replay</span> {{.Slug}}'s {{.Algo}} limiter at {{.Rate}} requests/s{{if eq .Pattern "attack"}} under an attack at 10× the limit{{end}}</figcaption>
+      <figcaption><span class="replay-k">Replay</span> {{.Slug}}'s {{.Algo}} limiter at {{.Rate}} requests/s{{if eq .Pattern "attack"}} under a 10× attack{{end}}</figcaption>
       <svg class="replay-chart" viewBox="0 0 {{.W}} {{.H}}" role="img" aria-label="{{num .Allowed}} requests allowed and {{num .Denied}} denied over {{.Seconds}} seconds; allowed traffic stays at the limit through the attack">
       {{if .AttackW}}<rect class="rz" x="{{.AttackX}}" y="0" width="{{.AttackW}}" height="{{.H}}"/>{{end}}
       {{range .Bars}}<rect class="ra" x="{{.X}}" y="{{.AY}}" width="{{$.Hero.BarW}}" height="{{.AH}}"/>{{if .DH}}<rect class="rd" x="{{.X}}" y="{{.DY}}" width="{{$.Hero.BarW}}" height="{{.DH}}"/>{{end}}{{end}}
@@ -23,7 +23,7 @@
       </svg>
       <p class="replay-axis"><span>0 s</span><span>{{.Seconds}} s</span></p>
       <p class="replay-foot"><span class="k-a">{{num .Allowed}} allowed</span> <span class="k-d">{{num .Denied}} denied</span> <span class="k-l">limit</span></p>
-      <p class="replay-src">Recorded from the WebAssembly demo and re-checked against it on every deploy.</p>
+      <p class="replay-src">Recorded from the WebAssembly demo. Every deploy re-runs it and must match bar for bar.</p>
     </figure>{{end}}
   </div>
 </section>
