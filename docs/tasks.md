@@ -62,9 +62,10 @@ Bridge `cmd/webdemo` over the stepper. Build needs the kvlite sibling (`siblings
 Before building: quorum and its kvlite import still use the old `github.com/corbettjouett00-sudo/...` module paths, which would be embedded in the public binary. Rename both to `github.com/crowbett/...` first (own commits, gates green).
 Done when: as D1; demoCheck: crash the leader, step, and a new leader with a higher term appears.
 
-### C1 Role line vs Rust projects · order 14 · deps: none · status: todo
+### C1 Role line vs Rust projects · order 14 · deps: none · status: done 2026-10-24 (this commit)
 Requested by the design session (2026-10-24). The home kicker and every page's description print `Owner.Role` = "Backend engineer (Go)" (`internal/site/build.go`), while keel, codegraph and strata are Rust (strata also Swift). Decide whether the role should name both languages; the design shows it as a small label above the hero, so any short phrase fits.
 Done when: the role line is true for every project the site shows.
+Decision: "Software engineer (Go, Rust)". Five projects are Go and three are Rust, so both languages are named. "Backend" was dropped because strata is an iPad slicer, not a backend. Swift (strata's UI) is left out to keep the label short; it is listed on strata's own page. Only the home share card prints the role, so it alone was regenerated.
 
 ### C2 ratelimitd ui.css uses retired tokens · order 15 · deps: none · status: todo
 Requested by the design session (2026-10-24). `web/demos/ratelimitd/ui.css` (247c22f) reads `--muted` and `--code-bg`, which V2 replaced; both are undefined, so the "denied" legend swatch is invisible, denied bars fall back to black at 35% opacity, and the chart wells have no background. Use `--text-2` (or `--text-3`) for muted text and fills and `--sunken` for wells; docs/demo-contract.md now lists the tokens demos may use.
