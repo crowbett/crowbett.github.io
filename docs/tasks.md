@@ -26,6 +26,10 @@ Done when: README and this site's edgecache page say the same true thing.
 After b931dea the Pages job took 77-91 s: e2e ran 56-57 s on CI against 16-24 s before. Measured on a debug branch: chromedp chose `/usr/bin/chromium`, which cold-starts in 25 s on ubuntu-24.04, against 1.3 s for `google-chrome`; the page subtests themselves took 8.5 s. e2e now names `google-chrome` on CI.
 Done when: the Pages job is back under 60 s.
 
+### F2 CI wall clock has no headroom · order 7 · deps: none · status: todo
+Measured 2026-10-24: after D2 (4a78b9c) the Pages job took 61 s (e2e 30.9 s). Two fixes went in: `-parallel 12` (82ecd2e; e2e on the PR workflow 13.9 / 21.3 / 14.4 s) and opening tabs one at a time (this commit; locally TestSite 10.5-12.5 s against 19.9-31.0 s). On CI the spread stays wide: the same commit ran e2e in 15.6 s and 27.2 s (Pages jobs 40 s and 59 s), and on some runners every browser test starts ~9 s late (TestDemoFrame 11.7 s against 2.8 s), which looks like a cold Chrome start. Skipping screenshots on CI showed no clear gain (e2e 28.3 / 24.8 / 20.7 s). Fixed cost outside e2e is ~22 s (setup-go 8-11 s downloads Go 1.27 each run, deploy 7 s). Ideas: one shared Chrome for all e2e tests, fewer duplicate demo boots, caching the Go toolchain.
+Done when: ten consecutive Pages runs finish under 60 s, timings listed here.
+
 ## Go demos (one bridge each, see docs/demo-contract.md)
 
 ### D1 ratelimitd: algorithm race · order 10 · deps: S1 · status: done 2026-10-24 (ratelimitd b730ede, f5d5c37, 2420562, 6a63fcb; site 05c9267; Pages job 45 s)
