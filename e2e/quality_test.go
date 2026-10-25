@@ -192,6 +192,14 @@ func tabOrder(t *testing.T, ctx context.Context) {
 			for _, typ := range []input.DispatchKeyEventType{input.DispatchKeyEventTypeRawKeyDown, input.DispatchKeyEventTypeKeyUp} {
 				t0 := time.Now()
 				defer func() {
+					if d := time.Since(t0); d > time.Second {
+						t.Logf("SLOWKEY %s stop=%d took=%.2f at=%.2f after %s", typ, len(got)+1, d.Seconds(), t0.Sub(epoch).Seconds(), func() string {
+							if len(got) > 0 {
+								return got[len(got)-1].Tag
+							}
+							return "start"
+						}())
+					}
 					if typ == input.DispatchKeyEventTypeKeyUp {
 						tUp += time.Since(t0)
 					} else {
