@@ -68,6 +68,10 @@ Done when: ratelimitd's ui.css uses only tokens listed in the contract and its s
 Requested by the design session (2026-10-24). V6's axe scan found `.ec-scroll` (web/demos/edgecache/ui.js) scrolls sideways at 390 px with no keyboard access (WCAG 2.1.1). The frame now makes overflowing scroll boxes focusable and names them "Scrollable area" (docs/demo-contract.md §Frame); a real name is better.
 Done when: `.ec-scroll` carries an `aria-label` that names its content (e.g. "Request log").
 
+### C4 strata card has no evidence line · order 17 · deps: none · status: todo
+Requested by the design session (2026-10-24, V3b review). strata is the only card without a `metric`, so its card has an empty slot where every other card states evidence. If strata's repo has a measured, sourced number (slice time for a reference model, layer count, binary size), add it with `metric_source`; otherwise leave it and say so here.
+Done when: strata has a sourced metric, or this task records that none exists yet.
+
 ## Rust demos
 
 ### R0 Rust build path · order 30 · deps: D1 · status: todo
@@ -103,7 +107,7 @@ Per design.md §Feel and §References (Maggie Appleton's sentence hero, samwho's
 Done when: a fresh-eyes reviewer (V8 method) rates it "would remember this site" and the screenshots back it.
 Carry-over from V2 review: the name appears twice at the top (brand and h1); "Demo coming" and "Private source" pills look identical.
 
-### V3b Home page memorable · order 104.5 · deps: V5 · status: todo
+### V3b Home page memorable · order 104.5 · deps: V5 · status: doing
 Split from V3 on 2026-10-24. After three fresh-eyes rounds V3 has no MAJOR findings, but the verdict is "maybe, leaning yes": below the hero it is still a familiar card layout (design.md decisions log). The lever left is motion in the diagrams (samwho's thumbnails are memorable because they move), which is V5's. When V5 lands, re-run the V8 method on home.
 Done when: a fresh-eyes reviewer rates home "would remember this site" (yes, not maybe) and the screenshots back it.
 
@@ -116,7 +120,7 @@ Carry-over from V2 review (design.md decisions log): the metric box and the plan
 Per design.md §Motion: micro-interactions that make it feel crafted: hover/focus states, page-load reveal, card transitions, demo start transition. CSS-first, ≤ 200 ms for UI feedback, all off under `prefers-reduced-motion`. No layout shift.
 Done when: e2e asserts CLS = 0 on every page and no animation runs with reduced motion emulated.
 
-### V6 Quality gates · order 105 · deps: V2 · status: done 2026-10-24 (this commit)
+### V6 Quality gates · order 105 · deps: V2 · status: done 2026-10-24 (3a6f572, d793f4a)
 In e2e: both color schemes (absorbs old P1), WCAG AA contrast on the text/ground pairs in design.md §Colour, an accessibility scan (vendor axe-core into e2e/testdata, test-only, never shipped), keyboard tab order reaches every control with a visible focus ring, LCP and CLS budgets from the Performance API, and no request leaves the origin. CI stays under 60 s.
 Done when: all of those run in `make e2e` and pass, and a deliberately broken case fails each one once.
 

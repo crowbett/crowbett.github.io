@@ -26,6 +26,7 @@
   --danger: #b3261e;
   --danger-tint: #fbe9e7;
   --shadow: 0 1px 2px rgb(0 0 0 / 6%);
+  --dg-soft: #cfc9bd;
 
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -82,6 +83,7 @@
     --danger: #ff8a80;
     --danger-tint: #3a1a18;
     --shadow: none;
+    --dg-soft: #5d574d;
   }
 }
 @media (min-width: 48rem) {
@@ -134,7 +136,7 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 
 /* Home */
 .hero { padding-top: var(--sp-7); }
-.hero h1 { font-size: var(--t-display); line-height: 1.04; letter-spacing: -0.035em; max-width: 18em; margin: var(--sp-4) 0 var(--sp-5); }
+.hero h1 { font-size: var(--t-display); line-height: 1.04; letter-spacing: -0.02em; max-width: 18em; margin: var(--sp-4) 0 var(--sp-5); }
 .hero-name { display: block; }
 .kicker { margin: 0; font-family: var(--mono); font-size: var(--t-label); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
 #work { margin-top: var(--section); }
@@ -154,12 +156,14 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 .card-fig:has(> .dg:empty) { display: none; }
 .card-body { display: flex; flex-direction: column; flex: 1; padding: var(--card-pad); }
 .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-2); }
+.card-head .lang { margin: 0; font-size: var(--t-label); color: var(--text-3); white-space: nowrap; }
 .card h3 { margin: 0; font-size: var(--t-lede); letter-spacing: -0.01em; transition: color var(--d-fast) var(--ease-in); }
 .card-tag { margin: 0 0 var(--sp-4); color: var(--text-2); }
-.card .metric { margin: 0 0 var(--sp-4); color: var(--text); }
+.card .metric { margin: 0 0 var(--sp-4); color: var(--text); text-wrap: balance; }
 .card .meta { margin-top: auto; padding-top: var(--sp-3); border-top: 1px dashed var(--line-strong); }
 .private { font-family: var(--mono); }
-.private::before { content: "·"; margin-right: var(--sp-2); }
+.run { color: var(--live); font-family: var(--mono); font-weight: 600; }
+.run::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: var(--sp-2); border-radius: 50%; background: currentColor; vertical-align: 1px; }
 .feature h3 { font-size: var(--t-h2); }
 .go { margin-left: auto; font-family: var(--mono); font-size: var(--t-small); color: var(--text-2); transition: color var(--d-fast) var(--ease-in), transform var(--d-fast) var(--ease-in); }
 .card a:is(:hover, :focus-visible) .go { transform: translateX(3px); }
@@ -167,7 +171,7 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
   .feature { grid-column: 1 / -1; }
   .feature a { display: grid; grid-template-columns: 5fr 7fr; }
   .feature .card-fig { height: auto; min-height: 13rem; padding: var(--sp-5); border-bottom: 0; border-right: 1px solid var(--line); }
-  .feature .dg { max-height: 12rem; }
+  .feature .dg { max-height: 14rem; }
   .feature .card-body { justify-content: center; padding: var(--sp-6); }
   .feature .meta { margin-top: var(--sp-2); }
   .feature .dg .t { display: inline; }
@@ -178,7 +182,7 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 .dg * { vector-effect: non-scaling-stroke; }
 .dg .n { fill: var(--sunken); }
 .dg .t { display: none; fill: var(--text-3); stroke: none; font: 500 9px var(--mono); text-anchor: middle; }
-.dg .s { stroke: var(--line-strong); }
+.dg .s { stroke: var(--dg-soft); }
 .dg .a { stroke: var(--accent); }
 .dg .af { fill: var(--accent); stroke: var(--accent); }
 .dg .ff { fill: currentColor; stroke: none; }
@@ -195,11 +199,18 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 .feature .dg .my, .facts .dg .my { animation: dg-grow-y 1.6s var(--ease-in) 0.3s; }
 .feature .dg .mx, .facts .dg .mx { animation: dg-grow-x 1.6s var(--ease-in) 0.3s; }
 .feature .dg .mn, .facts .dg .mn { animation: dg-sweep 1.6s ease-in-out 0.3s; }
+.dg .mt, .dg .mt2 { opacity: 0; }
+.feature .dg .ml, .facts .dg .ml { animation: dg-limit 2.4s var(--ease-in) 0.3s; }
+.feature .dg .mt, .facts .dg .mt { animation: dg-hit 2.4s ease-in-out 0.3s; }
+.feature .dg .mt2, .facts .dg .mt2 { animation: dg-miss 2.4s ease-in-out 0.3s; }
 .card a:is(:hover, :focus-visible) .dg .mp { animation: dg-pulse-l 1.6s var(--ease-in) infinite; }
 .card a:is(:hover, :focus-visible) .dg .mm { animation: dg-march-l 1.6s linear infinite; }
 .card a:is(:hover, :focus-visible) .dg .my { animation: dg-grow-y-l 1.6s var(--ease-in) infinite; }
 .card a:is(:hover, :focus-visible) .dg .mx { animation: dg-grow-x-l 1.6s var(--ease-in) infinite; }
 .card a:is(:hover, :focus-visible) .dg .mn { animation: dg-sweep-l 1.6s ease-in-out infinite; }
+.card a:is(:hover, :focus-visible) .dg .ml { animation: dg-limit-l 2.4s var(--ease-in) infinite; }
+.card a:is(:hover, :focus-visible) .dg .mt { animation: dg-hit-l 2.4s ease-in-out infinite; }
+.card a:is(:hover, :focus-visible) .dg .mt2 { animation: dg-miss-l 2.4s ease-in-out infinite; }
 @keyframes dg-pulse { 40% { transform: scale(1.3); opacity: 0.7; } }
 @keyframes dg-pulse-l { 40% { transform: scale(1.3); opacity: 0.7; } }
 @keyframes dg-march { to { stroke-dashoffset: -14; } }
@@ -210,6 +221,12 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 @keyframes dg-grow-x-l { 0% { transform: scaleX(0); } 70% { transform: none; } }
 @keyframes dg-sweep { 50% { transform: translateX(-68px); } }
 @keyframes dg-sweep-l { 50% { transform: translateX(-68px); } }
+@keyframes dg-limit { 30%, 85% { transform: none; } 45%, 70% { transform: translateY(14px); } }
+@keyframes dg-limit-l { 30%, 85% { transform: none; } 45%, 70% { transform: translateY(14px); } }
+@keyframes dg-hit { 0% { opacity: 0; } 5%, 40% { opacity: 1; } 20% { transform: translateX(26px); } 25% { transform: translate(26px, 16px); } 40%, 100% { transform: translate(0, 16px); } 45% { opacity: 0; } }
+@keyframes dg-hit-l { 0% { opacity: 0; } 5%, 40% { opacity: 1; } 20% { transform: translateX(26px); } 25% { transform: translate(26px, 16px); } 40%, 100% { transform: translate(0, 16px); } 45% { opacity: 0; } }
+@keyframes dg-miss { 0%, 50% { opacity: 0; transform: none; } 55%, 85% { opacity: 1; } 70% { transform: translateX(24px); } 85%, 100% { transform: none; } 90% { opacity: 0; } }
+@keyframes dg-miss-l { 0%, 50% { opacity: 0; transform: none; } 55%, 85% { opacity: 1; } 70% { transform: translateX(24px); } 85%, 100% { transform: none; } 90% { opacity: 0; } }
 
 /* Metadata */
 .metric { font-family: var(--mono); font-size: var(--t-small); line-height: 1.55; font-variant-numeric: tabular-nums; }

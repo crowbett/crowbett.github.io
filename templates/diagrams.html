@@ -1,5 +1,5 @@
-{{/* One line drawing per project: the mechanism, not a logo. Styled by .dg in site.css; viewBox 240x120. Motion classes (mp pulse, mm march, my/mx grow, mn sweep) are animated there. */}}
-{{define "diagram"}}<svg class="dg" viewBox="0 0 240 120" focusable="false">{{if eq . "quorum"}}
+{{/* One line drawing per project: the mechanism, not a logo. Styled by .dg in site.css; drawn on a 240x120 grid, framed 8 6 224 108 to trim the empty margin. Motion classes (mp pulse, mm march, my/mx grow, mn sweep, ml limit drop, mt/mt2 requests) are animated there. */}}
+{{define "diagram"}}<svg class="dg" viewBox="8 6 224 108" focusable="false">{{if eq . "quorum"}}
 <path class="d mm" d="M120 28 158 47.6M120 28 143.5 92.4M120 28 96.5 92.4M120 28 82 47.6"/>
 <circle class="s" cx="120" cy="60" r="40"/>
 <circle class="n" cx="158" cy="47.6" r="9"/><circle class="n" cx="143.5" cy="92.4" r="9"/><circle class="n" cx="96.5" cy="92.4" r="9"/><circle class="n x" cx="82" cy="47.6" r="9"/>
@@ -19,7 +19,7 @@
 <path class="s" d="M20 104h200"/>
 <path class="n my" d="M28 104V78h12v26zM48 104V62h12v42zM68 104V50h12v54zM88 104V50h12v54zM108 104V84h12v20zM128 104V72h12v32zM148 104V50h12v54zM168 104V50h12v54zM188 104V80h12v24z"/>
 <path class="s d mm" d="M68 50V24h12v26zM88 50V14h12v36zM148 50V36h12v14zM168 50V20h12v30z"/>
-<path class="a" d="M16 50h208"/>
+<path class="a ml" d="M16 50h208"/>
 {{else if eq . "edgecache"}}
 <rect class="n" x="14" y="42" width="46" height="36" rx="4"/>
 <rect class="a n" x="96" y="26" width="48" height="68" rx="4"/>
@@ -27,6 +27,7 @@
 <rect class="n" x="180" y="42" width="46" height="36" rx="4"/>
 <path d="M62 52h26m-6-5 6 5-6 5M88 68H62m6-5-6 5 6 5"/>
 <path class="s d mm" d="M146 60h26m-6-5 6 5-6 5"/>
+<circle class="ff mt" cx="64" cy="52" r="3"/><circle class="ff mt2" cx="148" cy="60" r="3"/>
 {{else if eq . "kvlite"}}
 <rect class="n" x="20" y="78" width="44" height="22" rx="2"/><rect class="n" x="70" y="78" width="44" height="22" rx="2"/><rect class="n" x="120" y="78" width="44" height="22" rx="2"/>
 <rect class="a n" x="170" y="78" width="50" height="22" rx="2"/><path class="af mx" d="M172 80h22v18h-22z"/>

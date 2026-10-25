@@ -3,7 +3,8 @@
   <p class="kicker">{{.Owner.Role}}</p>
   <h1><span class="hero-name">I'm {{.Owner.Name}}.</span> I build databases, consensus, caches, queues and rate limiters.</h1>
   <p class="lede">I prove them with deterministic simulation, fault injection and measured benchmarks.
-  {{if .LiveCount}}The live demos below are not videos. Each one is the project's real code compiled to WebAssembly, running in your browser.
+  {{if eq .LiveCount 1}}The live demo below is not a video. It is the project's real code compiled to WebAssembly, running in your browser.
+  {{else if .LiveCount}}The live demos below are not videos. Each one is the project's real code compiled to WebAssembly, running in your browser.
   {{else}}Live demos are on the way: each project's real code, compiled to WebAssembly and running in your browser.{{end}}</p>
 </section>
 <section id="work" aria-labelledby="work-h">
