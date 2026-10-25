@@ -9,7 +9,9 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
+	"sync"
 )
 
 // Budgets are hard limits checked on every build. Raising one is a decision
@@ -52,6 +54,8 @@ func Check(out string) error {
 	var problems []string
 	add := func(format string, a ...any) { problems = append(problems, fmt.Sprintf(format, a...)) }
 	css, fonts, demoCSS, heaviest := 0, 0, 0, ""
+	var wasmRel []string
+	var wasm [][]byte
 	err := filepath.WalkDir(out, func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
@@ -117,14 +121,18 @@ func Check(out string) error {
 				add("%s: %d bytes, budget %d", rel, len(b), Budgets.JSPerDemo)
 			}
 		case ".wasm":
-			if n := gzipSize(b); n > Budgets.WASMGzipped {
-				add("%s: %d bytes gzipped, budget %d", rel, n, Budgets.WASMGzipped)
-			}
+			wasmRel, wasm = append(wasmRel, rel), append(wasm, b)
 		}
 		return nil
 	})
 	if err != nil {
 		return err
+	}
+	// gzip -9 of every binary took ~2.5 s in a row on CI (F5 in docs/tasks.md).
+	for i, n := range gzipSizes(wasm) {
+		if n > Budgets.WASMGzipped {
+			add("%s: %d bytes gzipped, budget %d", wasmRel[i], n, Budgets.WASMGzipped)
+		}
 	}
 	if css+demoCSS > Budgets.CSS {
 		add("CSS totals %d bytes on the heaviest page (site CSS + %s), budget %d", css+demoCSS, heaviest, Budgets.CSS)
@@ -136,6 +144,22 @@ func Check(out string) error {
 		return fmt.Errorf("site check failed:\n  %s", strings.Join(problems, "\n  "))
 	}
 	return nil
+}
+
+// gzipSizes gzips each file concurrently and returns the sizes in order.
+func gzipSizes(files [][]byte) []int {
+	sizes := make([]int, len(files))
+	sem := make(chan struct{}, runtime.GOMAXPROCS(0))
+	var wg sync.WaitGroup
+	for i, b := range files {
+		wg.Go(func() {
+			sem <- struct{}{}
+			defer func() { <-sem }()
+			sizes[i] = gzipSize(b)
+		})
+	}
+	wg.Wait()
+	return sizes
 }
 
 func gzipSize(b []byte) int {
