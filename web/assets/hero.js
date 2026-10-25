@@ -10,6 +10,8 @@ async function run(button, status) {
   button.disabled = true;
   button.textContent = "Downloading…";
   delete box.dataset.replayMatch;
+  const shown = [box.querySelector("a"), box.closest(".replay").querySelector(".replay-stamp")];
+  for (const n of shown) n.hidden = true;
   let demo;
   try {
     const { connect } = await import("/assets/demo.js");
@@ -24,6 +26,7 @@ async function run(button, status) {
     if (same(got, JSON.parse(result))) {
       status.textContent = `Your browser ran it in ${ms} ms and got this chart, bar for bar.`;
       box.dataset.replayMatch = "";
+      for (const n of shown) n.hidden = false;
       for (const a of box.closest(".replay").getAnimations({ subtree: true })) { a.cancel(); a.play(); }
     } else {
       status.textContent = "Your browser's run differs from this recording.";
