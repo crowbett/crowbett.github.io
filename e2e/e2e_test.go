@@ -38,6 +38,22 @@ import (
 // at least one check that proves it rendered real output from its binary.
 var demoChecks = map[string][]string{
 	"smoke": {`document.querySelector(".demo-out").textContent.includes("answered: hello from the page")`},
+	"codegraph": {
+		`document.querySelector(".cg-summary").textContent === "main (src/main.rs:11): 0 callers; 11 callees, 6 resolved, 5 unresolved."`,
+		`[...document.querySelectorAll("[aria-labelledby=cg-callees] .cg-edge")].map((li) => li.firstChild.textContent + ":" + li.querySelector(".cg-conf").textContent).filter((t) => /^(parse::parse_line|e\.is_fatal):/.test(t)).join() === "parse::parse_line:likely,e.is_fatal:unresolved"`,
+		`document.querySelector(".cg-foot").textContent.includes("99 edges (imports excluded), 50 resolved to a definition: 44 exact, 6 likely, 0 name_only")`,
+		`(async () => {
+			const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 50)); return f(); };
+			const callers = () => [...document.querySelectorAll("[aria-labelledby=cg-callers] .cg-go")].map((b) => b.textContent).join();
+			[...document.querySelectorAll(".cg-go")].find((b) => b.textContent === "parse::parse_line").click();
+			let ok = await until(() => document.querySelector(".cg-summary").textContent.startsWith("parse::parse_line (src/parse.rs:19)") && callers() === "main");
+			const s = document.querySelector("select[name=symbol]");
+			s.value = "src/store.rs:32"; s.dispatchEvent(new Event("change"));
+			ok = ok && await until(() => callers() === "store::Store::set,store::Store::delete" && document.querySelectorAll(".cg-def").length === 3);
+			s.value = "src/main.rs:11"; s.dispatchEvent(new Event("change"));
+			return ok && await until(() => document.querySelector(".cg-summary").textContent.startsWith("main "));
+		})()`,
+	},
 	"ratelimitd": {
 		`[...document.querySelectorAll(".rl-chart")].map(c => c.dataset.algo).join() === "gcra,token_bucket,sliding_window"`,
 		`[...document.querySelectorAll(".rl-chart")].every(c => c.querySelectorAll("rect.rl-allowed").length > 20 && c.querySelectorAll("rect.rl-denied").length > 0)`,
