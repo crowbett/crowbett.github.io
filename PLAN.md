@@ -2,7 +2,7 @@
 
 Goal: a fast, robust personal site that shows visitors what each project does by running the project's real code in their browser, not a list of GitHub links.
 
-Status (2026-10-24): live at https://crowbett.github.io. Scaffold done. 8 project pages, the demo pipeline proven end to end by the `smoke` demo, gate + headless e2e green. First project demo live: ratelimitd (D1). `docs/tasks.md` is the queue.
+Status (2026-10-24): live at https://crowbett.github.io. Scaffold done. 8 project pages, the demo pipeline proven end to end by the `smoke` demo, gate + headless e2e green. Project demos live: ratelimitd (D1), edgecache (D2). `docs/tasks.md` is the queue.
 
 ## Architecture
 - **Generator.** `cmd/site` (Go, goldmark only) renders `content/projects/*.md` through `templates/` into `dist/`, copies `web/` as-is, writes `404.html`, `sitemap.xml`, `robots.txt`. `internal/site/check.go` then fails the build on broken internal links, missing page metadata or a blown budget.
@@ -26,10 +26,12 @@ Status (2026-10-24): live at https://crowbett.github.io. Scaffold done. 8 projec
 | One HTML page | 60 KiB |
 | All CSS | 40 KiB |
 | One demo's `ui.js` | 60 KiB |
-| One `.wasm`, gzip -9 | 2 MiB |
+| One `.wasm`, gzip -9 | 2.25 MiB |
 | All `.woff2` fonts | 32 KiB |
 
-Measured: the `smoke` binary (encoding/json + runtime) is 4,389,196 bytes, 1,217,580 gzipped (lock entry). The first real bridge, ratelimitd (three algorithms, `encoding/json`, `math/rand/v2`), is 4,460,492 bytes, 1,243,891 gzipped (lock entry). Bridges that import `net/http` or more will be larger (projected), so keep them lean; TinyGo is an option only if a demo cannot fit.
+Measured: the `smoke` binary (encoding/json + runtime) is 4,389,196 bytes, 1,217,580 gzipped (lock entry). The first real bridge, ratelimitd (three algorithms, `encoding/json`, `math/rand/v2`), is 4,460,492 bytes, 1,243,891 gzipped (lock entry). edgecache (engine + memstore + `net/http`) is 7,845,205 bytes, 2,176,744 gzipped (lock entry). Bridges that import `net/http` or more will be larger (projected), so keep them lean; TinyGo is an option only if a demo cannot fit.
+
+WASM budget raised from 2 MiB to 2.25 MiB (decision, 2026-10-24, D2): edgecache's engine is an `http.Handler`, so its bridge cannot avoid `net/http`, which links crypto/tls init code (traced with `-ldflags=-dumpdep`). The bridge driving the real engine and memstore is 7,845,205 bytes, 2,176,744 gzipped (lock entry), 79,592 over 2 MiB. Rejected: disabling inlining (`-gcflags=all=-l`) fit an earlier build at 2,063,987 gzipped (measured) but grew the raw module to 8,495,326 bytes, which the browser must compile; TinyGo lacks the `net/http` server types the engine uses; a bridge over bare `internal/rfc9111` would have to reimplement the engine's unexported orchestration. 2.25 MiB leaves ~182 KB over edgecache for later bridges; the next raise is another recorded decision.
 
 Fonts budget (added 2026-10-24, V2): one self-hosted mono, JetBrains Mono subset to 9,796 bytes (measured); 32 KiB leaves room for one more subset face before it needs a recorded decision. Rationale in `docs/design.md` §Type.
 

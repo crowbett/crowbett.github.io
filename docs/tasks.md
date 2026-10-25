@@ -28,15 +28,16 @@ Done when: the Pages job is back under 60 s.
 
 ## Go demos (one bridge each, see docs/demo-contract.md)
 
-### D1 ratelimitd: algorithm race · order 10 · deps: S1 · status: done 2026-10-24 (ratelimitd b730ede, f5d5c37, 2420562, 6a63fcb; site: the commit that adds this line)
+### D1 ratelimitd: algorithm race · order 10 · deps: S1 · status: done 2026-10-24 (ratelimitd b730ede, f5d5c37, 2420562, 6a63fcb; site 05c9267; Pages job 45 s)
 Bridge in `~/dev/ratelimitd/cmd/webdemo` over the pure `Step` functions in `internal/algo/{gcra,tokenbucket,slidingwindow}` (GCRA: `gcra.Step(state, limit.Params, cost, nowUS)`). One call simulates a traffic pattern (steady, burst, ramp, attack; seeded) through all three algorithms with the same limit and returns per-bucket allowed/denied series. UI: pick pattern + limit + burst, SVG chart of the three side by side, totals per algorithm.
 Done when: ratelimitd gate green with the bridge and its handler test; pinned and built here; project page live with demoChecks proving three series rendered; screenshots reviewed at both widths.
 
-### D2 edgecache: freshness timeline · order 11 · deps: S1 · status: todo
+### D2 edgecache: freshness timeline · order 11 · deps: S1 · status: done 2026-10-24 (edgecache c0e5efd, 373b43d; site: this commit)
 Bridge over `internal/rfc9111` (the real freshness/validation logic). Visitor edits response headers (`Cache-Control`, `Age`, `Expires`, `ETag`, `Vary`) and request headers, then scrubs a clock; each request shows hit / stale / must-revalidate / miss with the RFC 9111 reason. Presets: max-age, s-maxage, stale-while-revalidate, no-cache, Vary.
 Size risk: `rfc9111` takes `http.Header`, so the bridge imports `net/http`; measure the gzipped binary before building the UI and stop if it breaks the 2 MiB budget (options: TinyGo, or a budget decision in PLAN.md).
 Done when: as D1, with a demoCheck that a preset produces the expected outcome sequence.
-Size probe (2026-10-24): a minimal js/wasm main importing `internal/rfc9111` + `net/http` + `encoding/json` built to 6,555,043 bytes, 1,819,664 gzipped (measured), under the 2 MiB budget with ~270 KB to spare. Keep the bridge to rfc9111 only.
+Size probe (2026-10-24): a minimal js/wasm main importing `internal/rfc9111` + `net/http` + `encoding/json` built to 6,555,043 bytes, 1,819,664 gzipped (measured), under the 2 MiB budget with ~270 KB to spare.
+Decision (2026-10-24): drive the real engine (`internal/cache` over `internal/memstore`) instead of bare rfc9111, because the orchestration that turns a policy decision into HIT/STALE/REVALIDATED (`metaFor`, `refreshedMeta`) is unexported and copying it would be reimplementation. Probe of engine + memstore + json: 7,204,662 bytes, 1,992,498 gzipped (measured), ~104 KB under budget. The finished bridge came out at 2,176,744 gzipped (lock entry), over 2 MiB: budget raised to 2.25 MiB, decision and measurements in PLAN.md. The bridge found an engine bug: a miss sent `Age: 0` instead of the origin's corrected age (fixed in edgecache c0e5efd).
 
 ### D3 jobrun: cron and backoff · order 12 · deps: S1 · status: todo
 Bridge over `internal/cronx` (parse + next) and the retry backoff from `job.Policy` (`internal/job`; find the function that computes the next delay, do not reimplement). Visitor types a cron expression and a start time and sees the next 10 runs, or fails a job N times and sees the backoff schedule.

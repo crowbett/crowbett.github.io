@@ -10,7 +10,7 @@ A demo is three things: a bridge in the project repo, a UI in this repo, and a l
 - Results are JSON objects. Errors are `{"error": "..."}`; a successful result must not have a top-level `error` key.
 - Deterministic: anything random takes a seed from params. No wall clock (pass simulated time in params), no network, no filesystem (browser Go has none; `os` file calls fail with ENOSYS).
 - Bounded: one call does at most ~50 ms of work on a laptop. Long runs are many calls (`step`, `run {ticks: n}` with a cap). State between calls is fine and lives in Go.
-- Small: import only what the demo needs. `fmt` and `encoding/json` are fine; `net/http`, gRPC, database drivers are not.
+- Small: import only what the demo needs. `fmt` and `encoding/json` are fine; gRPC and database drivers are not. Avoid `net/http` (a probe of it plus `internal/rfc9111` gzipped to 1,819,664 bytes against 1,217,580 for the json-only smoke binary, measured) unless the project's own API is built on it, as edgecache's engine is; `regexp` added ~130 KB gzipped to edgecache's bridge (measured), so hand-check simple formats.
 
 ## UI (`web/demos/<slug>/ui.js`, this repo)
 - `export async function mount(el, demo)`: render into `el`; resolve only after the first real output is on screen. `demo.call(method, params)` returns a Promise of the result object and rejects with an Error on `{"error"}`, a crash or a 30 s timeout.

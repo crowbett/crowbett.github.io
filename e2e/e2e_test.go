@@ -31,14 +31,29 @@ import (
 )
 
 // demoChecks holds, per demo slug, JavaScript expressions that must all be
-// true once the demo reports ready. Every live demo adds at least one check
-// that proves it rendered real output from its binary.
+// true (or resolve true) once the demo reports ready. Every live demo adds
+// at least one check that proves it rendered real output from its binary.
 var demoChecks = map[string][]string{
 	"smoke": {`document.querySelector(".demo-out").textContent.includes("answered: hello from the page")`},
 	"ratelimitd": {
 		`[...document.querySelectorAll(".rl-chart")].map(c => c.dataset.algo).join() === "gcra,token_bucket,sliding_window"`,
 		`[...document.querySelectorAll(".rl-chart")].every(c => c.querySelectorAll("rect.rl-allowed").length > 20 && c.querySelectorAll("rect.rl-denied").length > 0)`,
 		`/^1,\d{3} requests through 3 algorithms/.test(document.querySelector(".rl-status").textContent)`,
+	},
+	"edgecache": {
+		`[...document.querySelectorAll(".ec-table .ec-badge")].map(b => b.textContent).join() === "MISS,HIT,REVALIDATED,HIT"`,
+		`[...document.querySelectorAll(".ec-table td.ec-origin")].map(c => c.textContent).join("|") === "GET → 200|none|conditional GET → 304|none"`,
+		`document.querySelectorAll(".ec-timeline rect.ec-mark").length === 4`,
+		`(async () => {
+			const s = document.querySelector("select[name=preset]");
+			const col = (sel) => [...document.querySelectorAll(sel)].map((c) => c.textContent).join();
+			const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 50)); return f(); };
+			const pick = (v) => { s.value = v; s.dispatchEvent(new Event("change")); };
+			pick("no-store");
+			const ok = await until(() => col(".ec-table .ec-badge") === "MISS,BYPASS,HIT" && col(".ec-table td.ec-body") === "version 1,version 2,version 1");
+			pick("max-age");
+			return ok && await until(() => col(".ec-table .ec-badge") === "MISS,HIT,REVALIDATED,HIT");
+		})()`,
 	},
 }
 
@@ -426,7 +441,7 @@ func visit(t *testing.T, browser context.Context, url string, w, h int64, scheme
 			t.Errorf("demo %q has no entry in demoChecks", slug)
 		}
 		for _, js := range checks {
-			if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](js)); err != nil || !ok {
+			if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](js, chromedp.EvalAwaitPromise)); err != nil || !ok {
 				t.Errorf("demo check failed: %s (err %v)", js, err)
 			}
 		}

@@ -18,6 +18,15 @@
       "sha256": "7b9d1c425eebdc9f42ce734bab33f7498f801ce6cbbd095745f1c90ea4a2a846",
       "bytes": 4460492,
       "gzip_bytes": 1243891
+    },
+    {
+      "slug": "edgecache",
+      "repo": "edgecache",
+      "ref": "373b43daab7b70410705a76218188ac315d6899b",
+      "pkg": "./cmd/webdemo",
+      "sha256": "ccdd5120e64c526822bccb342d957127f5f91d20837ec909b227dd8534913747",
+      "bytes": 7845205,
+      "gzip_bytes": 2176744
     }
   ]
 }
