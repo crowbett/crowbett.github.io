@@ -108,6 +108,7 @@ function timeline(steps) {
 
 function table(steps) {
   const wrap = el("div", "ec-scroll");
+  wrap.setAttribute("aria-label", "Request log");
   const t = el("table", "ec-table");
   const head = el("tr");
   for (const h of ["t (s)", "X-Cache", "Age", "Body", "Origin traffic"]) head.append(el("th", null, h));

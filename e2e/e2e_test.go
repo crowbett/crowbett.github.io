@@ -90,6 +90,7 @@ var demoChecks = map[string][]string{
 		`[...document.querySelectorAll(".ec-table .ec-badge")].map(b => b.textContent).join() === "MISS,HIT,REVALIDATED,HIT"`,
 		`[...document.querySelectorAll(".ec-table td.ec-origin")].map(c => c.textContent).join("|") === "GET → 200|none|conditional GET → 304|none"`,
 		`document.querySelectorAll(".ec-timeline rect.ec-mark").length === 4`,
+		`(() => { const b = document.querySelector(".ec-scroll"); return b.getAttribute("aria-label") === "Request log" && (b.tabIndex < 0 || b.getAttribute("role") === "region"); })()`,
 		`(async () => {
 			const s = document.querySelector("select[name=preset]");
 			const col = (sel) => [...document.querySelectorAll(sel)].map((c) => c.textContent).join();
