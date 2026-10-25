@@ -363,11 +363,22 @@ func allocOpts() []chromedp.ExecAllocatorOption {
 	return opts
 }
 
+// tabMu serializes opening tabs: Chrome opened 8 concurrent tabs in 4.6 s
+// each against 0.2-0.7 s one at a time, and the whole run took 10-13 s with
+// it against 20-31 s without (measured locally, 2026-10-24).
+var tabMu sync.Mutex
+
 func visit(t *testing.T, browser context.Context, url string, w, h int64, scheme, shot string) {
 	ctx, cancel := chromedp.NewContext(browser)
 	defer cancel()
 	ctx, cancelT := context.WithTimeout(ctx, 90*time.Second)
 	defer cancelT()
+	tabMu.Lock()
+	err := chromedp.Do(ctx)
+	tabMu.Unlock()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	var mu sync.Mutex
 	var problems []string
@@ -387,7 +398,7 @@ func visit(t *testing.T, browser context.Context, url string, w, h int64, scheme
 		}
 	}()
 
-	err := chromedp.Do(ctx,
+	err = chromedp.Do(ctx,
 		chromedp.EmulateViewport(w, h),
 		chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
 			_, err := cdp.Call(ctx, t, emulation.SetEmulatedMedia, emulation.SetEmulatedMediaParams{
