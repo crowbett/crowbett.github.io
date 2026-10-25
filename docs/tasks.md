@@ -64,6 +64,10 @@ Done when: the role line is true for every project the site shows.
 Requested by the design session (2026-10-24). `web/demos/ratelimitd/ui.css` (247c22f) reads `--muted` and `--code-bg`, which V2 replaced; both are undefined, so the "denied" legend swatch is invisible, denied bars fall back to black at 35% opacity, and the chart wells have no background. Use `--text-2` (or `--text-3`) for muted text and fills and `--sunken` for wells; docs/demo-contract.md now lists the tokens demos may use.
 Done when: ratelimitd's ui.css uses only tokens listed in the contract and its screenshots show the denied bars and legend swatch in both schemes.
 
+### C3 edgecache: label the scrolling table · order 16 · deps: none · status: todo
+Requested by the design session (2026-10-24). V6's axe scan found `.ec-scroll` (web/demos/edgecache/ui.js) scrolls sideways at 390 px with no keyboard access (WCAG 2.1.1). The frame now makes overflowing scroll boxes focusable and names them "Scrollable area" (docs/demo-contract.md §Frame); a real name is better.
+Done when: `.ec-scroll` carries an `aria-label` that names its content (e.g. "Request log").
+
 ## Rust demos
 
 ### R0 Rust build path · order 30 · deps: D1 · status: todo
