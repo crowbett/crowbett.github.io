@@ -4,7 +4,7 @@ tagline: A durable job queue on Postgres in one Go binary, with no broker.
 lang: Go
 tags: job queue, Postgres, gRPC, cron
 repo: https://github.com/crowbett/jobrun
-demo: planned
+demo: live
 order: 6
 metric: saturates at ~1,030 jobs/s completed with the default 16 workers
 metric_source: README results, one Windows 11 box, Postgres 17, medians of 3 runs
@@ -13,5 +13,7 @@ metric_source: README results, one Windows 11 box, Postgres 17, medians of 3 run
 out-of-process workers over gRPC, a cron scheduler, retries with backoff, a dead-letter state you can
 retry, exactly-once side effects for in-process handlers on the transaction path, and W3C trace context from enqueue to run.
 
-The planned demo runs its real cron parser and retry schedule in your browser: type a cron
-expression and see the next runs, or fail a job and watch the backoff.
+The demo runs jobrun's own cron parser (`internal/cronx`) and retry policy (`job.Policy`), compiled to
+WebAssembly. Type a cron expression and a time zone to see the next ten runs, including what happens
+across a daylight-saving change, or set a backoff policy to see the delay after each failed attempt
+and the attempt that sends the job to the dead-letter state.

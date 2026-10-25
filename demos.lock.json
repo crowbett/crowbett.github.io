@@ -1,32 +1,41 @@
 {
-  "go": "go1.27.0",
+  "go": "go1.27.3",
   "wasm_exec_sha256": "0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14",
   "demos": [
     {
       "slug": "smoke",
       "repo": ".",
       "pkg": "./wasm/smoke",
-      "sha256": "4fcfc2acb0c933141b60e679489dd98acfaa36650c84f0f7180c713637b03b5d",
-      "bytes": 4389196,
-      "gzip_bytes": 1217580
+      "sha256": "618ca38459ce26c9e551d9d1d8bcacd5133a6d6bf379576dc18292b07dffd9d6",
+      "bytes": 4396800,
+      "gzip_bytes": 1220218
     },
     {
       "slug": "ratelimitd",
       "repo": "ratelimitd",
       "ref": "6a63fcb0da980eb4602318f44589375d203cfdfb",
       "pkg": "./cmd/webdemo",
-      "sha256": "7b9d1c425eebdc9f42ce734bab33f7498f801ce6cbbd095745f1c90ea4a2a846",
-      "bytes": 4460492,
-      "gzip_bytes": 1243891
+      "sha256": "7977ab5c0540f0a25604b530f0e2cb32bedb423e286b5861b9b7e76fc1fbcd39",
+      "bytes": 4467874,
+      "gzip_bytes": 1246216
     },
     {
       "slug": "edgecache",
       "repo": "edgecache",
       "ref": "373b43daab7b70410705a76218188ac315d6899b",
       "pkg": "./cmd/webdemo",
-      "sha256": "ccdd5120e64c526822bccb342d957127f5f91d20837ec909b227dd8534913747",
-      "bytes": 7845205,
-      "gzip_bytes": 2176744
+      "sha256": "760af701c2ae76afce1f8794eeccdffa086cf41ccb54e6c9b32f2e856e01c3ec",
+      "bytes": 7856488,
+      "gzip_bytes": 2181042
+    },
+    {
+      "slug": "jobrun",
+      "repo": "jobrun",
+      "ref": "d8d00c4f7924daeabbcdf0775944b470bee80d68",
+      "pkg": "./cmd/webdemo",
+      "sha256": "db9feaa79d7853ff7f85e30a84866edc79ed13eee69a973480bebe1374d24ab3",
+      "bytes": 5290873,
+      "gzip_bytes": 1474581
     }
   ]
 }
