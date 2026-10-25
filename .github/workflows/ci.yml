@@ -10,6 +10,10 @@ jobs:
   gate:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        rep: [1, 2, 3, 4, 5, 6]
     steps:
       - name: Warm Chrome
         # Chrome's first start on a fresh runner took up to ~13 s inside e2e (F2);
@@ -40,4 +44,6 @@ jobs:
           key: go-1.27.0-${{ steps.deps.outputs.hash }}
           restore-keys: go-1.27.0-
       - name: Gate and browser checks
-        run: make -j8 --output-sync=target NICE="nice -n 10" gate e2e
+        run: |
+          lscpu | grep -E 'Model name|^CPU\(s\)'
+          (vmstat -n 1 &) && /usr/bin/time -f "TIME %e wall %U user %S sys: make" make -j8 --output-sync=target NICE="nice -n 10" gate e2e

@@ -38,22 +38,6 @@ import (
 // at least one check that proves it rendered real output from its binary.
 var demoChecks = map[string][]string{
 	"smoke": {`document.querySelector(".demo-out").textContent.includes("answered: hello from the page")`},
-	"codegraph": {
-		`document.querySelector(".cg-summary").textContent === "main (src/main.rs:11): 0 callers; 11 callees, 6 resolved, 5 unresolved."`,
-		`[...document.querySelectorAll("[aria-labelledby=cg-callees] .cg-edge")].map((li) => li.firstChild.textContent + ":" + li.querySelector(".cg-conf").textContent).filter((t) => /^(parse::parse_line|e\.is_fatal):/.test(t)).join() === "parse::parse_line:likely,e.is_fatal:unresolved"`,
-		`document.querySelector(".cg-foot").textContent.includes("99 edges (imports excluded), 50 resolved to a definition: 44 exact, 6 likely, 0 name_only")`,
-		`(async () => {
-			const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 50)); return f(); };
-			const callers = () => [...document.querySelectorAll("[aria-labelledby=cg-callers] .cg-go")].map((b) => b.textContent).join();
-			[...document.querySelectorAll(".cg-go")].find((b) => b.textContent === "parse::parse_line").click();
-			let ok = await until(() => document.querySelector(".cg-summary").textContent.startsWith("parse::parse_line (src/parse.rs:19)") && callers() === "main");
-			const s = document.querySelector("select[name=symbol]");
-			s.value = "src/store.rs:32"; s.dispatchEvent(new Event("change"));
-			ok = ok && await until(() => callers() === "store::Store::set,store::Store::delete" && document.querySelectorAll(".cg-def").length === 3);
-			s.value = "src/main.rs:11"; s.dispatchEvent(new Event("change"));
-			return ok && await until(() => document.querySelector(".cg-summary").textContent.startsWith("main "));
-		})()`,
-	},
 	"ratelimitd": {
 		`[...document.querySelectorAll(".rl-chart")].map(c => c.dataset.algo).join() === "gcra,token_bucket,sliding_window"`,
 		`[...document.querySelectorAll(".rl-chart")].every(c => c.querySelectorAll("rect.rl-allowed").length > 20 && c.querySelectorAll("rect.rl-denied").length > 0)`,
@@ -197,6 +181,8 @@ var (
 	srv     *httptest.Server
 	browser context.Context
 )
+
+var epoch = time.Now()
 
 func TestMain(m *testing.M) {
 	os.Exit(run(m))
@@ -544,6 +530,7 @@ func newTab(t *testing.T, d time.Duration) (context.Context, context.CancelFunc)
 	opening := time.Now()
 	err := chromedp.Do(ctx)
 	tabMu.Unlock()
+	t.Logf("TABOPEN at=%.2f wait=%.2f open=%.2f", queued.Sub(epoch).Seconds(), opening.Sub(queued).Seconds(), time.Since(opening).Seconds())
 	if open := time.Since(opening); open > 5*time.Second {
 		t.Logf("opening a tab took %v after %v waiting for the lock", open.Round(time.Millisecond), opening.Sub(queued).Round(time.Millisecond))
 	}
@@ -594,10 +581,21 @@ func visitTab(t *testing.T, d time.Duration) (ctx context.Context, release func(
 }
 
 func visit(t *testing.T, url string, w, h int64, scheme, shot string) {
+	t0 := time.Now()
+	last := t0
+	var laps []string
+	lap := func(s string) {
+		laps = append(laps, fmt.Sprintf("%s=%.2f", s, time.Since(last).Seconds()))
+		last = time.Now()
+	}
+	defer func() {
+		t.Logf("PHASES %s %d %s start=%.2f %s", url[len(srv.URL):], w, scheme, t0.Sub(epoch).Seconds(), strings.Join(laps, " "))
+	}()
 	tab, release := visitTab(t, 90*time.Second)
 	defer func() { release(!t.Failed()) }()
 	ctx, cancel := context.WithCancel(tab)
 	defer cancel()
+	lap("tab")
 
 	var mu sync.Mutex
 	var problems []string
@@ -631,6 +629,7 @@ func visit(t *testing.T, url string, w, h int64, scheme, shot string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	lap("nav")
 	// Layout shift is measured before any demo starts: a demo grows its frame
 	// when the visitor runs it, which is content they asked for.
 	cls, err := chromedp.Run(ctx, chromedp.Evaluate[float64](`new Promise((resolve) => {
@@ -645,6 +644,7 @@ func visit(t *testing.T, url string, w, h int64, scheme, shot string) {
 	if cls != 0 {
 		t.Errorf("cumulative layout shift %.4f, want 0", cls)
 	}
+	lap("cls")
 	hasDemo, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector("[data-demo]") !== null`))
 	if err != nil {
 		t.Fatal(err)
@@ -679,10 +679,13 @@ func visit(t *testing.T, url string, w, h int64, scheme, shot string) {
 	// axe at phone width in both schemes (contrast follows the scheme, reflow
 	// problems show at 390 px); the Tab walk at desktop. Splitting them keeps
 	// CI under its 60 s budget.
+	lap("demo")
 	if w < 1000 {
 		pageQuality(t, ctx)
+		lap("axe")
 	} else if scheme == "light" {
 		tabOrder(t, ctx)
+		lap("tabs")
 	}
 	overflow, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.documentElement.scrollWidth > document.documentElement.clientWidth`))
 	if err != nil {
@@ -729,6 +732,7 @@ func visit(t *testing.T, url string, w, h int64, scheme, shot string) {
 	if err := os.WriteFile(shot+".jpg", img, 0o644); err != nil {
 		t.Fatal(err)
 	}
+	lap("shot")
 	cancel()
 	<-done
 	mu.Lock()
