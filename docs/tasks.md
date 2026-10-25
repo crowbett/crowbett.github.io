@@ -133,7 +133,7 @@ Done when: e2e asserts CLS = 0 on every page and no animation runs with reduced 
 In e2e: both color schemes (absorbs old P1), WCAG AA contrast on the text/ground pairs in design.md §Colour, an accessibility scan (vendor axe-core into e2e/testdata, test-only, never shipped), keyboard tab order reaches every control with a visible focus ring, LCP and CLS budgets from the Performance API, and no request leaves the origin. CI stays under 60 s.
 Done when: all of those run in `make e2e` and pass, and a deliberately broken case fails each one once.
 
-### V7 Share and meta · order 106 · deps: V3 · status: done 2026-10-24 (SHA in the next line of the log)
+### V7 Share and meta · order 106 · deps: V3 · status: done 2026-10-24 (d77b0f2)
 `og:image` per page (absorbs old P2): static PNGs made once from design.md's type and colour (render with headless Chrome in a `cmd/` tool, commit the PNGs), ≤ 100 KB each, checked by `site check`. Favicon set, theme-color in both schemes, a good 404.
 Done when: links pasted into iMessage/Slack/Discord preview well (check the tags with a validator page), site check enforces the image budget.
 
