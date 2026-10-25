@@ -54,6 +54,10 @@ Bridge `cmd/webdemo` over the stepper. Build needs the kvlite sibling (`siblings
 Before building: quorum and its kvlite import still use the old `github.com/corbettjouett00-sudo/...` module paths, which would be embedded in the public binary. Rename both to `github.com/crowbett/...` first (own commits, gates green).
 Done when: as D1; demoCheck: crash the leader, step, and a new leader with a higher term appears.
 
+### C1 Role line vs Rust projects · order 14 · deps: none · status: todo
+Requested by the design session (2026-10-24). The home kicker and every page's description print `Owner.Role` = "Backend engineer (Go)" (`internal/site/build.go`), while keel, codegraph and strata are Rust (strata also Swift). Decide whether the role should name both languages; the design shows it as a small label above the hero, so any short phrase fits.
+Done when: the role line is true for every project the site shows.
+
 ## Rust demos
 
 ### R0 Rust build path · order 30 · deps: D1 · status: todo
@@ -80,14 +84,18 @@ Owner: the design session. It owns `templates/`, `web/assets/` (site.css, demo.j
 Study 10+ standout engineer portfolios and product sites (name each and what it does well). Write `docs/design.md`: the one-sentence feel, type scale, color tokens for light and dark, spacing, radius, motion rules (durations, easing, reduced motion), the demo frame, and what we will not do.
 Done when: design.md exists and every later V task cites it.
 
-### V2 Foundation: type, tokens, themes · order 101 · deps: V1 · status: done 2026-10-24 (this commit)
+### V2 Foundation: type, tokens, themes · order 101 · deps: V1 · status: done 2026-10-24 (550ee15)
 Implement design.md §Type, §Colour, §Space in site.css (a self-hosted variable woff2 is allowed if it earns its bytes; subset it, `font-display: swap`, budget recorded in PLAN.md). Light and dark both first-class; no theme toggle (design.md §Colour). e2e shoots both schemes so light is reviewed too.
 Done when: every page matches design.md in both themes at 390 and 1280 px, screenshots reviewed.
 
-### V3 Home page · order 102 · deps: V2 · status: todo
+### V3 Home page · order 102 · deps: V2 · status: done 2026-10-24 (this commit; split: the "would remember" verdict moved to V3b)
 Per design.md §Feel and §References (Maggie Appleton's sentence hero, samwho's mechanism cards): a hero that says who and what in one look, and a project grid where each card shows what the project does visually (SVG diagram or static capture per project, not a stock icon), with live/planned state honest.
 Done when: a fresh-eyes reviewer (V8 method) rates it "would remember this site" and the screenshots back it.
 Carry-over from V2 review: the name appears twice at the top (brand and h1); "Demo coming" and "Private source" pills look identical.
+
+### V3b Home page memorable · order 104.5 · deps: V5 · status: todo
+Split from V3 on 2026-10-24. After three fresh-eyes rounds V3 has no MAJOR findings, but the verdict is "maybe, leaning yes": below the hero it is still a familiar card layout (design.md decisions log). The lever left is motion in the diagrams (samwho's thumbnails are memorable because they move), which is V5's. When V5 lands, re-run the V8 method on home.
+Done when: a fresh-eyes reviewer rates home "would remember this site" (yes, not maybe) and the screenshots back it.
 
 ### V4 Project page and demo frame · order 103 · deps: V2 · status: todo
 Per design.md §Demo frame and §Space (metadata gutter): header, metric presentation with its source, body typography, and one consistent demo frame for every demo: title bar, size, loading progress with real bytes (stream the fetch), clear error state with retry, focus handling. Works for planned and live projects.

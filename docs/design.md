@@ -60,18 +60,18 @@ Named by role. Light is warm paper, dark is warm graphite; both first-class. Con
 |---|---|---|---|
 | `--bg` | `#fbfaf7` | `#121110` | page |
 | `--surface` | `#ffffff` | `#1a1917` | cards, demo frame |
-| `--sunken` | `#f3f1ec` | `#22201d` | code, demo output wells |
-| `--line` | `#e5e1d8` | `#2e2b27` | hairlines, card borders (decorative) |
+| `--sunken` | `#f3f1ec` | `#262420` | code, demo output wells |
+| `--line` | `#e5e1d8` | `#36322d` | hairlines, card borders (decorative) |
 | `--line-strong` | `#cfc9bd` | `#47423b` | dividers that carry structure |
-| `--text` | `#1b1a17` (16.7 / 17.4 / 15.4) | `#edeae4` (15.7 / 14.6 / 13.5) | body, headings |
-| `--text-2` | `#57534b` (7.3 / 7.7 / 6.8) | `#aaa499` (7.6 / 7.1 / 6.6) | ledes, meta |
-| `--text-3` | `#6b665c` (5.5 / 5.7 / 5.1) | `#8f897e` (5.4 / 5.1 / 4.7) | captions, sources |
-| `--accent` | `#b0421c` (5.5 / 5.8 / 5.1) | `#f0875a` (7.5 / 7.0 / 6.4) | links, primary action, focus ring |
+| `--text` | `#1b1a17` (16.7 / 17.4 / 15.4) | `#edeae4` (15.7 / 14.6 / 12.9) | body, headings |
+| `--text-2` | `#57534b` (7.3 / 7.7 / 6.8) | `#aaa499` (7.6 / 7.1 / 6.3) | ledes, meta |
+| `--text-3` | `#6b665c` (5.5 / 5.7 / 5.1) | `#958f84` (5.9 / 5.5 / 4.8) | captions, sources |
+| `--accent` | `#b0421c` (5.5 / 5.8 / 5.1) | `#f0875a` (7.5 / 7.0 / 6.1) | links, primary action, focus ring |
 | `--on-accent` | `#ffffff` (5.8 on accent) | `#1a0f0a` (7.5 on accent) | text on accent fills |
 | `--accent-tint` | `#f7e8e0` (accent on it 4.8) | `#3a2219` (5.9) | selected, hover wash |
-| `--live` | `#1b7547` (5.5 / 5.7 / 5.1) | `#5cc58f` (8.8 / 8.2 / 7.6) | "live" state only |
+| `--live` | `#1b7547` (5.5 / 5.7 / 5.1) | `#5cc58f` (8.8 / 8.2 / 7.3) | "live" state only |
 | `--live-tint` | `#e2f0e7` (4.9) | `#16291f` (7.2) | live badge ground |
-| `--danger` | `#b3261e` (6.3 / 6.5 / 5.8) | `#ff8a80` (8.3 / 7.7 / 7.1) | errors only |
+| `--danger` | `#b3261e` (6.3 / 6.5 / 5.8) | `#ff8a80` (8.3 / 7.7 / 6.8) | errors only |
 | `--danger-tint` | `#fbe9e7` (5.6) | `#3a1a18` (6.9) | error panel ground |
 
 Rules: one accent; green means live and nothing else; red means error and nothing else. `--line` is decorative; any control boundary (inputs, secondary buttons) uses a colour with ≥ 3:1 against its ground (WCAG 1.4.11), set in V2. Theme follows `prefers-color-scheme`; no toggle (a toggle needs a blocking script in `<head>` to avoid a flash, and the OS setting is the visitor's stated choice).
@@ -92,6 +92,15 @@ Rules: one accent; green means live and nothing else; red means error and nothin
 - Animate `opacity` and `transform` only; nothing that moves layout.
 - `prefers-reduced-motion: reduce` turns every transition and animation off, and demos do not auto-play.
 - No scroll-triggered reveals of content that should already be readable; no page-load stagger longer than 200 ms total.
+
+## Home
+
+What it is for: in one look, who this is, what they build, and that the proof is runnable. Good looks like a visitor reading the headline, then scanning eight mechanisms they recognise before reading a word of a card.
+
+- **Hero** (Maggie Appleton's sentence hero; Antithesis's mono kicker): role as an accent mono kicker, then one display sentence with the name on its own line ("I'm Corbett." never wraps mid-phrase), then one lede paragraph with the proof method and the honest demo status. The words are the scaffold's; only their arrangement changed.
+- **Work index**: an eyebrow rule with the count on the right (`8 projects`, plus `· N live` once demos ship), counted at build time, so it is always true.
+- **Cards** (samwho's mechanism thumbnails): the first two projects by `order` are full-width feature rows from 54rem (diagram left, text right); the rest sit two to a row, one column on phones. Each card is a diagram panel on `--sunken`, then title, tagline in `--text-2`, the metric in mono, and a foot under a dashed rule with lang, "Private source" and a `→` (all mono) that turns accent on hover, so every card has the same skeleton with or without a metric. Only "Live demo" gets a pill (green tint with a dot); the planned state is said once in the hero, not eight times.
+- **Diagrams** (`templates/diagrams.html`): one inline SVG line drawing per slug, viewBox 240×120, 1.5 px strokes in `--text-3` that stay 1.5 px at any size (`vector-effect: non-scaling-stroke`), one accent element that names the idea (the Raft leaders, the rate limit, the cache, the active segment, the running worker, the queried function, the layer being printed). Labels (`.t`, keel's key ranges) show only at feature size, where they are legible. Inline so they theme with CSS variables and need no request; ~0.6 KB each. A project with no drawing yet renders its card without the panel (`.card-fig:has(> .dg:empty)`); add a drawing when adding a project.
 
 ## Demo frame
 
@@ -115,4 +124,6 @@ No photo, illustration, mascot, emoji section markers or stock icons. No gradien
 - 2026-10-24 V2: JetBrains Mono over Geist Mono (same size, 12,976 vs 13,052 B before the weight limit; longer track record at small sizes) and IBM Plex Mono (16,852 B, and its "Plex" reserved name forbids shipping a subset under that name). Chrome does not implement the `ui-monospace` generic, so before V2 Chrome on macOS fell through to Menlo; self-hosting makes the data face identical everywhere.
 - 2026-10-24 V2: font rebuilt with fonttools 4.x: `fonttools varLib.instancer JetBrainsMono[wght].ttf wght=400:700`, then `pyftsubset --unicodes=U+0020-007E,U+00A9,U+00B1,U+00B5,U+00B7,U+00D7,U+2013,U+2014,U+2018-201D,U+2026,U+2190-2193,U+2212,U+2264-2265 --flavor=woff2 --layout-features=kern --name-IDs='*'` (keeps the licence name records; drops `calt`, so `->` never turns into a ligature). New `Fonts` budget in `site check`: 32 KiB of woff2 in total.
 - 2026-10-24 V2 review, round 1: blocks in the project column ended at three right edges (fixed with `--measure`); 140 px dead gap between hero and Work on desktop (section gap 96 → 64 px); phone cards too padded (24 → 16 px). Round 2: remaining weaknesses belong to V3/V4: the name appears twice at the top of home, "Demo coming" and "Private source" pills look identical, the metric box and the planned-demo notice stack as two boxes, and a metric source like `go test ./internal/sim -seeds 10000` can wrap after its hyphen on phones.
+- 2026-10-24 V3: fresh-eyes review round 1 (screenshots only) said "maybe": flat hierarchy, "Demo coming" eight times read as unfinished, diagrams undersized and uneven in ink, phone hero orphaned "consensus,", dark card bands nearly invisible. Fixes: feature rows, live-only pill, non-scaling strokes with outlined bars, phone display size 2rem, dark `--sunken` #22201d → #262420, `--line` #2e2b27 → #36322d, `--text-3` #8f897e → #958f84 (keeps 4.8:1 on the new sunken). keel got key-range labels, edgecache a cache with entries and a dashed miss path, jobrun a backoff axis, strata a nozzle on the layer being printed.
+- 2026-10-24 V3 rounds 2-3: feature text centred, bands shortened, one diagram scale across feature and grid (grid band 184 px, feature diagram ≤ 12rem, feature split 5:7), jobrun backoff ticks in body ink, dark `--line` → #3b3732. Round 3: no MAJOR findings; all eight diagrams read as their systems; verdict "maybe, leaning yes" because the grid is a familiar shape. The memorable lever moves to V5 (diagram motion) and V3b re-judges it.
 - 2026-10-24 V1: e2e screenshots inherit the OS colour scheme (this machine is dark), so light pages were never reviewed. V2 makes e2e shoot both schemes explicitly.
