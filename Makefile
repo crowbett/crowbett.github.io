@@ -27,7 +27,7 @@ wasm-check:
 	go run ./cmd/wasm check
 
 e2e:
-	set -o pipefail; go test -tags e2e -count=1 -parallel 12 -v ./e2e | grep -E -- "--- |^ok|FAIL"
+	go test -tags e2e -count=1 -parallel 12 -v ./e2e > /tmp/e2e.log; s=$$?; grep -E -- "--- |^ok|FAIL|ZZ" /tmp/e2e.log; exit $$s
 
 serve:
 	go run ./cmd/site serve
