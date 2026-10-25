@@ -105,13 +105,15 @@ Done when: a Rust smoke binary passes e2e alongside the Go one, and docs/demo-co
 Bridge over strata's Rust slicing core (not the Swift app): load a bundled small STL (or one the visitor picks; parse in Rust), slice with default settings, return layer paths; UI scrubs layers on a canvas and shows layer count and slice time. No claim about print quality (the real print is still pending in strata's PLAN).
 Done when: as D1, built from a pinned strata commit.
 
-### D7 codegraph: who calls this · order 32 · deps: R0 · status: todo
+### D7 codegraph: who calls this · order 32 · deps: R0 · status: blocked (owner decision: resolver refactor or name-based demo)
 Spike first: can codegraph's parsers (likely tree-sitter, which has C code) build for wasm32? If not in a day, mark `blocked` with what failed. If yes: index a small bundled sample repo and answer callers/callees queries.
 Done when: as D1, or `blocked` with evidence.
+Spike (2026-10-24, codegraph 8ee6469 on local branch `webdemo`, unpushed): the tree-sitter extractor builds as wasm32-unknown-unknown with no imports, 1,349,742 B gzipped (measured, strip + opt-level s + lto), and answers `callers` on a bundled Go sample under node 22. The resolver (`resolve.rs`, `query.rs`, `store.rs`) is built on SQLite, rayon and threads and is not in the build, so callers are name matches over `extract` output, not resolved edges; the site must not present them as codegraph's resolution. Build needs Homebrew `llvm-ar` (`AR_wasm32_unknown_unknown`; Apple `ar` writes empty archives), a vendored `tree-sitter-language` with its libc shims emptied, a `native` feature gating the CLI/SQLite modules, and a `rust-toolchain.toml` in the crate for `cmd/wasm`. Wall-clock extraction budgets never trip on wasm (`Instant` stubbed); count limits still apply. Options: refactor `resolve`/`resolve_types` onto an in-memory context (real resolution in the browser), or ship an extraction demo that says it matches names.
 
 ### D8 keel: simulation in the browser · order 33 · deps: R0 · status: todo
 Spike: run keel's deterministic simulator for one small seed in wasm32 and stream the trace. Show a seed replaying bit for bit (run twice, same digest) and a fault schedule.
 Done when: as D1, or `blocked` with evidence.
+Spike (2026-10-24, keel c41e400 on local branch `webdemo`, unpushed): `crates/keel-web` runs `keel_workload::register::run_seed_traced` (Raft register under nemesis faults) as wasm32-unknown-unknown. Under node 22, seed 7 gives digest 24f2fb94354d9d25 twice (118,095 steps, linearizable) and seed 8 gives 22e2ba986ec4d67e (measured). Size: 2,169,809 B gzipped with keel's release profile (`debug = 1`, opt-level 3), over budget; 202,807 B with opt-level s, lto, debug 0, strip (measured). Before pinning: keel needs a `rust-toolchain.toml` (`cmd/wasm` refuses without one) and a release profile for the bridge that drops debug info, both in keel's own gate.
 
 ## Design track
 
