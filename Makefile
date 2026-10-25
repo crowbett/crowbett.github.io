@@ -27,7 +27,7 @@ wasm-check:
 	go run ./cmd/wasm check
 
 e2e:
-	go test -tags e2e -count=1 -parallel 12 ./e2e
+	go test -tags e2e -count=1 -parallel 6 -v ./e2e
 
 serve:
 	go run ./cmd/site serve
