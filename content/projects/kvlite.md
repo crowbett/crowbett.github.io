@@ -5,6 +5,7 @@ lang: Go
 tags: storage engine, log-structured, crash safety
 repo: https://github.com/crowbett/kvlite
 demo: live
+demo_try: Put and delete keys, compact the segments, then crash with the last write torn and watch kvlite recover from its own files.
 order: 5
 metric: Get in 3.50 µs sequential / 6.04 µs random (100 B values)
 metric_source: README benchmark table, against bbolt and pebble on the same workload

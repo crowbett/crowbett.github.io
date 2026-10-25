@@ -40,6 +40,8 @@ func TestParseProjectRejects(t *testing.T) {
 	cases := map[string]string{
 		"metric without source": strings.Replace(goodProject, "metric_source: bench.md\n", "", 1),
 		"bad demo state":        strings.Replace(goodProject, "demo: planned", "demo: soon", 1),
+		"live without demo_try": strings.Replace(goodProject, "demo: planned", "demo: live", 1),
+		"demo_try not live":     strings.Replace(goodProject, "demo: planned", "demo: planned\ndemo_try: Try it.", 1),
 		"unknown key":           strings.Replace(goodProject, "order: 2", "order: 2\ncolour: red", 1),
 		"non-github repo":       strings.Replace(goodProject, "https://github.com/crowbett/demo", "https://example.com/x", 1),
 		"no front matter":       "just text",
@@ -69,7 +71,7 @@ func testFS(project string) fstest.MapFS {
 
 func TestBuildAndCheck(t *testing.T) {
 	out := t.TempDir()
-	src := testFS(strings.Replace(goodProject, "demo: planned", "demo: live", 1))
+	src := testFS(strings.Replace(goodProject, "demo: planned", "demo: live\ndemo_try: Try it.", 1))
 	if err := Build(Config{Src: src, Out: out, Owner: DefaultOwner, Now: time.Now()}); err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +96,7 @@ func TestBuildAndCheck(t *testing.T) {
 }
 
 func TestBuildRejectsLiveDemoWithoutBinary(t *testing.T) {
-	src := testFS(strings.Replace(goodProject, "demo: planned", "demo: live", 1))
+	src := testFS(strings.Replace(goodProject, "demo: planned", "demo: live\ndemo_try: Try it.", 1))
 	src["demos.lock.json"] = &fstest.MapFile{Data: []byte(`{"demos":[]}`)}
 	err := Build(Config{Src: src, Out: t.TempDir(), Owner: DefaultOwner, Now: time.Now()})
 	if err == nil || !strings.Contains(err.Error(), "no built binary") {

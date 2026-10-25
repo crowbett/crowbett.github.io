@@ -5,6 +5,7 @@ lang: Go
 tags: HTTP caching, RFC 9111, reverse proxy
 repo: https://github.com/crowbett/edgecache
 demo: live
+demo_try: Set the origin's cache headers and a list of request times, and see which requests hit, go stale or reach the origin.
 order: 4
 metric: 0.65 ms p50 cached against a 50 ms origin (39,253 rps, 99.9% hit ratio)
 metric_source: Ryzen 7 3700X, README benchmarks, results/20260922-181426

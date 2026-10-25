@@ -5,6 +5,7 @@ lang: Go
 tags: rate limiting, GCRA, Redis, gRPC
 repo: https://github.com/crowbett/ratelimitd
 demo: live
+demo_try: Pick a traffic shape, a limit and a burst, and race GCRA, token bucket and sliding window on the same requests.
 order: 3
 metric: 43,574 decisions/s at a 6.83 ms p99 over gRPC against Redis
 metric_source: Ryzen 7 3700X, results/bench/20260919-121852.md
