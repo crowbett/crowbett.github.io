@@ -58,3 +58,26 @@ func TestHeroTrace(t *testing.T) {
 		t.Errorf("%s %s(%s) no longer answers what the home hero replays; if the change is intended, rerun with HERO_TRACE=update and check the hero", trace.Slug, trace.Call, trace.Params)
 	}
 }
+
+// TestHeroRun clicks the hero's "Run it in your browser": the page must
+// download the binary, re-run the recorded call and report a match.
+func TestHeroRun(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := newTab(t, 60*time.Second)
+	defer cancel()
+	err := chromedp.Do(ctx, chromedp.Navigate(srv.URL+"/"), chromedp.Click(chromedp.CSS(".replay-run button")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := chromedp.Run(ctx, chromedp.Poll[bool](`"replayDone" in document.querySelector("[data-replay]").dataset`, chromedp.WithPollingTimeout(45*time.Second))); err != nil {
+		t.Fatal(err)
+	}
+	status, err := chromedp.Run(ctx, chromedp.Text(chromedp.CSS(".replay-run [role=status]")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ok, _ := chromedp.Run(ctx, chromedp.Evaluate[bool](`"replayMatch" in document.querySelector("[data-replay]").dataset`)); !ok {
+		t.Errorf("hero re-run did not match the chart: %q", status)
+	}
+	t.Logf("hero re-run: %s", status)
+}

@@ -181,6 +181,17 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 .replay-foot span::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 2px; vertical-align: 0; }
 .replay-foot .k-a::before { background: var(--live); }
 .replay-foot .k-d::before { background: var(--deny); }
+.replay-run { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin: 0 0 var(--sp-4); }
+.replay-run button {
+  min-width: 11.5em; padding: var(--sp-1) var(--sp-3); border: 1px solid var(--control-line); border-radius: var(--r-1); background: none; cursor: pointer;
+  font: inherit; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums;
+  transition: background-color var(--d-fast) var(--ease-in);
+}
+.replay-run button:hover { background: var(--accent-tint); }
+.replay-run button:active:not(:disabled) { transform: translateY(1px); }
+.replay-run button:disabled { cursor: progress; }
+.replay-run span { flex: 1 1 16em; }
+.replay-run[data-replay-match] span { color: var(--text); }
 .hero-run { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0; }
 .hero-run-k { flex-basis: 100%; font-family: var(--mono); font-size: var(--t-label); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); }
 @media (max-width: 40rem) { .hero-run { display: grid; grid-template-columns: 1fr 1fr; } .hero-run-k { grid-column: 1 / -1; } .hero-run a { text-align: center; } .hero-run a:nth-child(2):nth-last-child(2n+1) { grid-column: 1 / -1; } }
