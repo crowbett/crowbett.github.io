@@ -184,7 +184,9 @@ func tabOrder(t *testing.T, ctx context.Context) {
 	}
 	var got []stop
 	var tDown, tUp, tEval time.Duration
-	defer func() { t.Logf("TABWALK n=%d down=%.2f up=%.2f eval=%.2f", n, tDown.Seconds(), tUp.Seconds(), tEval.Seconds()) }()
+	defer func() {
+		t.Logf("TABWALK n=%d down=%.2f up=%.2f eval=%.2f", n, tDown.Seconds(), tUp.Seconds(), tEval.Seconds())
+	}()
 	for range n {
 		err := chromedp.Do(ctx, chromedp.Func(func(ctx context.Context, tg *chromedp.Target) error {
 			for _, typ := range []input.DispatchKeyEventType{input.DispatchKeyEventTypeRawKeyDown, input.DispatchKeyEventTypeKeyUp} {
