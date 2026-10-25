@@ -55,6 +55,17 @@
       "sha256": "8974a2df60b44a31b9a50d8ae55b37232f75eabc6fe3b6864e27555ac0ba5890",
       "bytes": 5524049,
       "gzip_bytes": 1509649
+    },
+    {
+      "slug": "strata",
+      "kind": "rust",
+      "repo": "strata",
+      "ref": "8996fe6b20be3b5c1be046b542670943b0238f19",
+      "pkg": "./crates/strata-web",
+      "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+      "sha256": "5bae6787d9cc4716c10479cb7da62ad53b2f100a4627621301a629d596dcaa3f",
+      "bytes": 1651703,
+      "gzip_bytes": 510336
     }
   ]
 }
