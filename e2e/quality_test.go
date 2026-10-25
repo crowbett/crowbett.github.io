@@ -42,6 +42,7 @@ var contrastPairs = []struct {
 	{"on-accent", "accent", 4.5}, {"accent", "accent-tint", 4.5},
 	{"live", "live-tint", 4.5}, {"danger", "danger-tint", 4.5}, {"text", "danger-tint", 4.5},
 	{"control-line", "bg", 3}, {"control-line", "surface", 3},
+	{"deny", "surface", 3}, {"deny", "attack", 3}, {"accent", "attack", 4.5},
 }
 
 // TestTokenContrast re-measures every pair in both schemes from the tokens in
@@ -66,10 +67,14 @@ func TestTokenContrast(t *testing.T) {
 	}
 }
 
-var tokenRE = regexp.MustCompile(`--([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})\s*;`)
+var (
+	tokenRE = regexp.MustCompile(`--([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})\s*;`)
+	aliasRE = regexp.MustCompile(`--([a-z0-9-]+):\s*var\(--([a-z0-9-]+)\)\s*;`)
+)
 
 // themeTokens reads the first :root block (light) and the :root inside the
-// prefers-color-scheme: dark query; dark inherits what it does not override.
+// prefers-color-scheme: dark query; dark inherits what it does not override,
+// and an alias (--attack: var(--accent-tint)) takes its target's value in each scheme.
 func themeTokens(t *testing.T, css string) (light, dark map[string]string) {
 	block := func(s string) string {
 		i := strings.Index(s, ":root {")
@@ -78,13 +83,23 @@ func themeTokens(t *testing.T, css string) (light, dark map[string]string) {
 		}
 		return s[i : i+strings.Index(s[i:], "}")]
 	}
-	read := func(b string, into map[string]string) {
+	read := func(b string, into, alias map[string]string) {
 		for _, m := range tokenRE.FindAllStringSubmatch(b, -1) {
 			into[m[1]] = strings.ToLower(m[2])
+			delete(alias, m[1])
+		}
+		for _, m := range aliasRE.FindAllStringSubmatch(b, -1) {
+			alias[m[1]] = m[2]
+		}
+	}
+	resolve := func(into, alias map[string]string) {
+		for k, v := range alias {
+			into[k] = into[v]
 		}
 	}
 	light, dark = map[string]string{}, map[string]string{}
-	read(block(css), light)
+	la, da := map[string]string{}, map[string]string{}
+	read(block(css), light, la)
 	i := strings.Index(css, "@media (prefers-color-scheme: dark)")
 	if i < 0 {
 		t.Fatal("site.css: no dark scheme")
@@ -92,7 +107,12 @@ func themeTokens(t *testing.T, css string) (light, dark map[string]string) {
 	for k, v := range light {
 		dark[k] = v
 	}
-	read(block(css[i:]), dark)
+	for k, v := range la {
+		da[k] = v
+	}
+	read(block(css[i:]), dark, da)
+	resolve(light, la)
+	resolve(dark, da)
 	return light, dark
 }
 
