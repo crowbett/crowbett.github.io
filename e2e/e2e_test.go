@@ -554,8 +554,49 @@ func newTab(t *testing.T, d time.Duration) (context.Context, context.CancelFunc)
 	return ctx, cancel
 }
 
+// idle holds tabs that page visits reuse: opening a tab took 0.1-0.9 s on
+// CI, one at a time behind tabMu, and gated the whole run (F5 in
+// docs/tasks.md). Each visit still loads its page fresh.
+var idle = make(chan idleTab, 64)
+
+type idleTab struct {
+	ctx   context.Context
+	close context.CancelFunc
+}
+
+// visitTab hands out an idle tab, or opens one, with a deadline of d. Release
+// with reuse true puts the tab back blank; false, or a failed blanking, closes it.
+func visitTab(t *testing.T, d time.Duration) (ctx context.Context, release func(reuse bool)) {
+	var tab idleTab
+	select {
+	case tab = <-idle:
+	default:
+		tab.ctx, tab.close = newTab(t, time.Hour)
+	}
+	ctx, cancel := context.WithTimeout(tab.ctx, d)
+	return ctx, func(reuse bool) {
+		cancel()
+		if reuse {
+			blank, cancelBlank := context.WithTimeout(tab.ctx, 10*time.Second)
+			reuse = chromedp.Do(blank, chromedp.Navigate("about:blank")) == nil
+			cancelBlank()
+		}
+		if !reuse {
+			tab.close()
+			return
+		}
+		select {
+		case idle <- tab:
+		default:
+			tab.close()
+		}
+	}
+}
+
 func visit(t *testing.T, url string, w, h int64, scheme, shot string) {
-	ctx, cancel := newTab(t, 90*time.Second)
+	tab, release := visitTab(t, 90*time.Second)
+	defer func() { release(!t.Failed()) }()
+	ctx, cancel := context.WithCancel(tab)
 	defer cancel()
 
 	var mu sync.Mutex
