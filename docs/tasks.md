@@ -6,11 +6,11 @@ When you finish a task, set it `done` with the date and commit SHA(s). If a task
 
 ## Ship
 
-### S1 First deploy · order 1 · deps: none · status: todo
+### S1 First deploy · order 1 · deps: none · status: done 2026-10-24 (aa3fc49, cd7a0a3)
 Create public repo `crowbett/crowbett.github.io`, push `main`, enable Pages with build type "GitHub Actions", watch the run.
 Done when: https://crowbett.github.io/ returns 200, every project page and `/demos/smoke/` load, and the smoke demo answers in a real browser session (headless e2e pointed at the live URL or a manual curl + chromedp check).
 
-### S2 Measure wasm delivery · order 2 · deps: S1 · status: todo
+### S2 Measure wasm delivery · order 2 · deps: S1 · status: done 2026-10-24 (Pages gzips .wasm; see docs/research.md)
 `curl -sI -H 'Accept-Encoding: gzip' https://crowbett.github.io/wasm/smoke.wasm`: record `content-type`, `content-encoding`, transferred size in `docs/research.md`. If Pages does not compress `.wasm`, decide (record in PLAN.md) whether the size shown on the button should be the raw size.
 Done when: the "Downloads ~N KB" text on every demo button matches what a visitor actually transfers.
 

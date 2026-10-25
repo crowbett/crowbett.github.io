@@ -11,4 +11,5 @@ Personal site at https://crowbett.github.io: project pages plus live demos that 
 - Budgets in `internal/site/check.go` are hard limits. Raising one is a recorded decision in `PLAN.md`.
 - No third-party scripts, fonts, analytics or cookies. The CSP in `templates/layout.html` stays strict; no inline scripts or style attributes.
 - A UI claim must stay true: if a page says something is live, measured or available, it is.
+- CI (push to deploy) stays under 60 s wall clock. Check `gh run view` timings after workflow or test changes.
 - Keep files under 1000 lines and comments minimal.

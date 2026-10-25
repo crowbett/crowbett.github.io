@@ -6,7 +6,7 @@ Facts this design rests on, with where each came from. "Measured" means run here
 - GitHub Actions is free for public repositories on standard GitHub-hosted runners (GitHub billing docs). The owner's Pro plan also has 3,000 private minutes/month.
 - GitHub Pages limits: published site ≤ 1 GB, soft 100 GB/month bandwidth, soft 10 builds/hour (does not apply to custom Actions workflows), 10-minute deploy timeout.
 - Pages serves no custom response headers, so CSP is a `<meta>` tag (no `frame-ancestors`, no COOP/COEP, so no `SharedArrayBuffer`).
-- Unverified: whether Pages compresses `.wasm` responses. Task S2 measures it.
+- Measured 2026-10-24: Pages serves `.wasm` as `application/wasm` with `content-encoding: gzip`. smoke.wasm transferred 1,251,322 bytes vs 1,217,580 from gzip -9 in the lock (2.8% more), so the "~N KB" on demo buttons is close to what visitors download.
 
 ## Go WebAssembly (measured, Go 1.27.0, 2026-10-24)
 - `smoke` (syscall/js + encoding/json + runtime), `-trimpath -ldflags=-s -w`: 4,389,028 bytes, 1,217,768 gzip -9.

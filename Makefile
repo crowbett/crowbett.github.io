@@ -1,6 +1,6 @@
 .PHONY: gate fmt vet test site wasm wasm-check e2e serve
 
-# CI runs gate then e2e; run both locally before every push.
+# CI runs `make -j4 gate e2e` and must stay under 60 s; run both locally before every push.
 gate: fmt vet test site wasm-check
 
 fmt:
