@@ -77,6 +77,17 @@
       "sha256": "dd205cd73a14e7fb661a6c847f9d11a5123ea5290f416cded63711f741a1a479",
       "bytes": 584576,
       "gzip_bytes": 204009
+    },
+    {
+      "slug": "codegraph",
+      "kind": "rust",
+      "repo": "codegraph",
+      "ref": "9bd9b13a35a4f4770ef7ba84397afdfe4f5c473d",
+      "pkg": "./crates/codegraph-web",
+      "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+      "sha256": "558823a3efcb847b76ced22aa6982fcca8509fb61f4e42022724cf14483b0546",
+      "bytes": 12408806,
+      "gzip_bytes": 2077179
     }
   ]
 }

@@ -43,14 +43,14 @@ func TestBuildRejectsUnknownKind(t *testing.T) {
 }
 
 func TestExportDirIsFixedAndEmpty(t *testing.T) {
-	slug := "test-" + filepath.Base(t.TempDir())
-	dir, unlock, err := exportDir(slug)
+	slug := "test-fixed-dir"
+	dir, unlock, err := sourceDir(slug)
 	if err != nil {
 		t.Fatal(err)
 	}
 	os.WriteFile(filepath.Join(dir, "left"), nil, 0o644)
 	unlock()
-	again, unlock, err := exportDir(slug)
+	again, unlock, err := sourceDir(slug)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,5 +61,13 @@ func TestExportDirIsFixedAndEmpty(t *testing.T) {
 	}
 	if entries, _ := os.ReadDir(again); len(entries) != 0 {
 		t.Fatalf("export dir not empty: %v", entries)
+	}
+}
+
+func TestSourceDirRejectsPathSlugs(t *testing.T) {
+	for _, slug := range []string{"", "..", "../..", "a/b", "/tmp", "A"} {
+		if _, _, err := sourceDir(slug); err == nil {
+			t.Errorf("slug %q was accepted", slug)
+		}
 	}
 }
