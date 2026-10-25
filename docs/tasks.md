@@ -60,7 +60,7 @@ Requested by the design session (2026-10-24). The home kicker and every page's d
 Done when: the role line is true for every project the site shows.
 
 ### C2 ratelimitd ui.css uses retired tokens · order 15 · deps: none · status: todo
-Requested by the design session (2026-10-24). `web/demos/ratelimitd/ui.css` (247c22f) reads `--muted` and `--code-bg`, which V2 replaced; both are undefined, so the "denied" legend swatch and bars lose their colour and the chart wells have no background. Use `--text-2` (or `--text-3`) for muted text and fills and `--sunken` for wells; docs/demo-contract.md now lists the tokens demos may use.
+Requested by the design session (2026-10-24). `web/demos/ratelimitd/ui.css` (247c22f) reads `--muted` and `--code-bg`, which V2 replaced; both are undefined, so the "denied" legend swatch is invisible, denied bars fall back to black at 35% opacity, and the chart wells have no background. Use `--text-2` (or `--text-3`) for muted text and fills and `--sunken` for wells; docs/demo-contract.md now lists the tokens demos may use.
 Done when: ratelimitd's ui.css uses only tokens listed in the contract and its screenshots show the denied bars and legend swatch in both schemes.
 
 ## Rust demos
@@ -102,12 +102,12 @@ Carry-over from V2 review: the name appears twice at the top (brand and h1); "De
 Split from V3 on 2026-10-24. After three fresh-eyes rounds V3 has no MAJOR findings, but the verdict is "maybe, leaning yes": below the hero it is still a familiar card layout (design.md decisions log). The lever left is motion in the diagrams (samwho's thumbnails are memorable because they move), which is V5's. When V5 lands, re-run the V8 method on home.
 Done when: a fresh-eyes reviewer rates home "would remember this site" (yes, not maybe) and the screenshots back it.
 
-### V4 Project page and demo frame · order 103 · deps: V2 · status: done 2026-10-24 (this commit)
+### V4 Project page and demo frame · order 103 · deps: V2 · status: done 2026-10-24 (aaf4500)
 Per design.md §Demo frame and §Space (metadata gutter): header, metric presentation with its source, body typography, and one consistent demo frame for every demo: title bar, size, loading progress with real bytes (stream the fetch), clear error state with retry, focus handling. Works for planned and live projects.
 Done when: smoke demo shows real byte progress and a styled error (force one in e2e), screenshots reviewed.
 Carry-over from V2 review (design.md decisions log): the metric box and the planned-demo notice stack as two boxes; a metric source with a command (`go test ./internal/sim -seeds 10000`) wraps after its hyphen on phones.
 
-### V5 Motion and feel · order 104 · deps: V3, V4 · status: todo
+### V5 Motion and feel · order 104 · deps: V3, V4 · status: done 2026-10-24 (this commit)
 Per design.md §Motion: micro-interactions that make it feel crafted: hover/focus states, page-load reveal, card transitions, demo start transition. CSS-first, ≤ 200 ms for UI feedback, all off under `prefers-reduced-motion`. No layout shift.
 Done when: e2e asserts CLS = 0 on every page and no animation runs with reduced motion emulated.
 

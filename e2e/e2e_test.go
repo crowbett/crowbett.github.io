@@ -2,8 +2,9 @@
 
 // Package e2e drives the built site in headless Chrome: every page loads with
 // no console errors or CSP violations, fits a phone width without horizontal
-// scroll, and every live demo starts and reports ready. Screenshots of each
-// page, desktop and phone, light and dark, land in e2e/out/ for review.
+// scroll, loads without layout shift, and every live demo starts and reports
+// ready. Screenshots of each page, desktop and phone, light and dark, land in
+// e2e/out/ for review.
 //
 //	go test -tags e2e ./e2e
 package e2e
@@ -226,8 +227,60 @@ func TestDemoFrame(t *testing.T) {
 	}
 }
 
-// smokePage builds the site, serves it and opens the smoke demo page.
-func smokePage(t *testing.T) context.Context {
+// TestReducedMotion loads pages whose diagrams play on load, and the smoke
+// demo whose frame animates on ready: with motion allowed something animates,
+// with prefers-reduced-motion nothing does.
+func TestReducedMotion(t *testing.T) {
+	t.Parallel()
+	srv := serveSite(t)
+	alloc, cancelA := chromedp.NewExecAllocator(context.Background(), allocOpts()...)
+	defer cancelA()
+	browser, cancelB := chromedp.NewContext(alloc)
+	defer cancelB()
+	for _, page := range []string{"/", "/projects/quorum/", "/demos/smoke/"} {
+		for _, motion := range []string{"no-preference", "reduce"} {
+			ctx, cancel := chromedp.NewContext(browser)
+			ctx, cancelT := context.WithTimeout(ctx, 60*time.Second)
+			err := chromedp.Do(ctx,
+				chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
+					_, err := cdp.Call(ctx, t, emulation.SetEmulatedMedia, emulation.SetEmulatedMediaParams{
+						Features: []*emulation.MediaFeature{{Name: "prefers-reduced-motion", Value: motion}},
+					})
+					return err
+				}),
+				chromedp.Navigate(srv.URL+page),
+				chromedp.WaitReady(chromedp.CSS("body")),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			n, err := chromedp.Run(ctx, chromedp.Evaluate[int](`(async () => {
+				const s = document.querySelector("[data-demo]");
+				if (s) {
+					s.querySelector("[data-demo-start]").click();
+					await new Promise((r) => { const t = setInterval(() => { if ("demoReady" in s.dataset) { clearInterval(t); r(); } }, 10); });
+				} else {
+					await new Promise((r) => setTimeout(r, 400));
+				}
+				return document.getAnimations().length;
+			})()`, chromedp.EvalAwaitPromise))
+			cancelT()
+			cancel()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if motion == "reduce" && n != 0 {
+				t.Errorf("%s: %d animations run with reduced motion", page, n)
+			}
+			if motion != "reduce" && n == 0 {
+				t.Errorf("%s: nothing animates with motion allowed, so the reduced-motion check proves nothing", page)
+			}
+		}
+	}
+}
+
+// serveSite builds the site and serves it until the test ends.
+func serveSite(t *testing.T) *httptest.Server {
 	t.Helper()
 	root, err := filepath.Abs("..")
 	if err != nil {
@@ -239,6 +292,13 @@ func smokePage(t *testing.T) context.Context {
 	}
 	srv := httptest.NewServer(http.FileServer(http.Dir(out)))
 	t.Cleanup(srv.Close)
+	return srv
+}
+
+// smokePage serves the site and opens the smoke demo page.
+func smokePage(t *testing.T) context.Context {
+	t.Helper()
+	srv := serveSite(t)
 	alloc, cancelA := chromedp.NewExecAllocator(context.Background(), allocOpts()...)
 	t.Cleanup(cancelA)
 	ctx, cancel := chromedp.NewContext(alloc)
@@ -325,6 +385,20 @@ func visit(t *testing.T, browser context.Context, url string, w, h int64, scheme
 	)
 	if err != nil {
 		t.Fatal(err)
+	}
+	// Layout shift is measured before any demo starts: a demo grows its frame
+	// when the visitor runs it, which is content they asked for.
+	cls, err := chromedp.Run(ctx, chromedp.Evaluate[float64](`new Promise((resolve) => {
+		let sum = 0;
+		new PerformanceObserver((l) => { for (const e of l.getEntries()) if (!e.hadRecentInput) sum += e.value; })
+			.observe({ type: "layout-shift", buffered: true });
+		setTimeout(() => resolve(sum), 50);
+	})`, chromedp.EvalAwaitPromise))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cls != 0 {
+		t.Errorf("cumulative layout shift %.4f, want 0", cls)
 	}
 	hasDemo, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector("[data-demo]") !== null`))
 	if err != nil {
