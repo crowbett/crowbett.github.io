@@ -23,10 +23,12 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"slices"
 	"strings"
@@ -134,11 +136,12 @@ func buildOne(d *Demo) error {
 		if len(d.Ref) != 40 {
 			return fmt.Errorf("ref must be a full commit SHA; use `wasm pin`")
 		}
-		tmp, unlock, err := exportDir(d.Slug)
+		tmp, unlock, err := sourceDir(d.Slug)
 		if err != nil {
 			return err
 		}
 		defer unlock()
+		defer os.RemoveAll(tmp)
 		for _, dep := range append([]Dep{{d.Repo, d.Ref}}, d.Siblings...) {
 			if err := export(dep, filepath.Join(tmp, filepath.Base(dep.Repo))); err != nil {
 				return err
@@ -171,38 +174,46 @@ func buildOne(d *Demo) error {
 	return nil
 }
 
-// exportDir returns an empty directory at a fixed path for slug's exported
-// repos, held under an exclusive lock until unlock. The path is fixed because
-// cargo hashes a path dependency outside the building workspace by its absolute
-// path into every symbol (keel-web's workspace is one crate; its deps are
-// siblings), so a random temp dir gave a different binary on every build.
-func exportDir(slug string) (dir string, unlock func(), err error) {
+var slugRE = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)
+
+// sourceDir returns an empty /tmp/crowbett-wasm/<slug>, locked against another build
+// of the same slug. The path is fixed, not random: cargo hashes the absolute
+// path of a path dependency outside the crate's workspace (codegraph-web's
+// ../..) into its symbols, so a random directory changed the binary every build.
+// The parent must be this user's own 0700 directory, not a link.
+func sourceDir(slug string) (string, func(), error) {
+	if !slugRE.MatchString(slug) {
+		return "", nil, fmt.Errorf("slug %q: want lowercase letters, digits and dashes", slug)
+	}
 	base := filepath.Join("/tmp", "crowbett-wasm")
-	if err := os.MkdirAll(base, 0o755); err != nil {
+	if err := os.Mkdir(base, 0o700); err != nil && !errors.Is(err, fs.ErrExist) {
 		return "", nil, err
 	}
-	f, err := os.OpenFile(filepath.Join(base, slug+".lock"), os.O_CREATE|os.O_RDWR, 0o644)
+	fi, err := os.Lstat(base)
 	if err != nil {
 		return "", nil, err
 	}
-	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_EX); err != nil {
-		f.Close()
+	st, ok := fi.Sys().(*syscall.Stat_t)
+	if !fi.IsDir() || fi.Mode().Perm() != 0o700 || !ok || int(st.Uid) != os.Getuid() {
+		return "", nil, fmt.Errorf("%s must be a directory of yours with mode 0700", base)
+	}
+	lock, err := os.OpenFile(filepath.Join(base, slug+".lock"), os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
 		return "", nil, err
 	}
-	dir = filepath.Join(base, slug)
-	unlock = func() {
-		os.RemoveAll(dir)
-		f.Close()
-	}
-	if err := os.RemoveAll(dir); err != nil {
-		unlock()
+	if err := syscall.Flock(int(lock.Fd()), syscall.LOCK_EX); err != nil {
+		lock.Close()
 		return "", nil, err
 	}
-	if err := os.Mkdir(dir, 0o755); err != nil {
-		unlock()
+	dir := filepath.Join(base, slug)
+	if err := os.RemoveAll(dir); err == nil {
+		err = os.Mkdir(dir, 0o700)
+	}
+	if err != nil {
+		lock.Close()
 		return "", nil, err
 	}
-	return dir, unlock, nil
+	return dir, func() { lock.Close() }, nil
 }
 
 // export writes repo@ref into dst with git archive (committed files only).
