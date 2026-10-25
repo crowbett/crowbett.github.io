@@ -104,6 +104,26 @@ func TestBuildRejectsLiveDemoWithoutBinary(t *testing.T) {
 	}
 }
 
+func TestCheckCountsCSSPerPage(t *testing.T) {
+	out := t.TempDir()
+	write := func(name string, n int) {
+		if err := writeFile(filepath.Join(out, name), []byte(strings.Repeat("a", n))); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("index.html", 0)
+	write("assets/site.css", Budgets.CSS/2)
+	write("demos/a/ui.css", Budgets.CSS/2)
+	write("demos/b/ui.css", Budgets.CSS/2)
+	if err := Check(out); err != nil && strings.Contains(err.Error(), "CSS totals") {
+		t.Fatalf("demo stylesheets on different pages were summed:\n%v", err)
+	}
+	write("demos/c/ui.css", Budgets.CSS/2+1)
+	if err := Check(out); err == nil || !strings.Contains(err.Error(), "site CSS + /demos/c/ui.css") {
+		t.Fatalf("want the heaviest page over budget, got %v", err)
+	}
+}
+
 func TestCheckFindsProblems(t *testing.T) {
 	out := t.TempDir()
 	write := func(name, s string) {
