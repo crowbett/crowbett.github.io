@@ -2,7 +2,7 @@
 
 Goal: a fast, robust personal site that shows visitors what each project does by running the project's real code in their browser, not a list of GitHub links.
 
-Status (2026-10-24): live at https://crowbett.github.io. Scaffold done. 8 project pages, the demo pipeline proven end to end by the `smoke` demo, gate + headless e2e green. No project demo is live yet; `docs/tasks.md` is the queue.
+Status (2026-10-24): live at https://crowbett.github.io. Scaffold done. 8 project pages, the demo pipeline proven end to end by the `smoke` demo, gate + headless e2e green. First project demo live: ratelimitd (D1). `docs/tasks.md` is the queue.
 
 ## Architecture
 - **Generator.** `cmd/site` (Go, goldmark only) renders `content/projects/*.md` through `templates/` into `dist/`, copies `web/` as-is, writes `404.html`, `sitemap.xml`, `robots.txt`. `internal/site/check.go` then fails the build on broken internal links, missing page metadata or a blown budget.
@@ -29,7 +29,7 @@ Status (2026-10-24): live at https://crowbett.github.io. Scaffold done. 8 projec
 | One `.wasm`, gzip -9 | 2 MiB |
 | All `.woff2` fonts | 32 KiB |
 
-Measured: the `smoke` binary (encoding/json + runtime) is 4,389,028 bytes, 1,217,768 gzipped. A real Go demo will likely land at 1.3-2 MiB gzipped (projected), so keep bridges lean; TinyGo is an option only if a demo cannot fit.
+Measured: the `smoke` binary (encoding/json + runtime) is 4,389,196 bytes, 1,217,580 gzipped (lock entry). The first real bridge, ratelimitd (three algorithms, `encoding/json`, `math/rand/v2`), is 4,460,492 bytes, 1,243,891 gzipped (lock entry). Bridges that import `net/http` or more will be larger (projected), so keep them lean; TinyGo is an option only if a demo cannot fit.
 
 Fonts budget (added 2026-10-24, V2): one self-hosted mono, JetBrains Mono subset to 9,796 bytes (measured); 32 KiB leaves room for one more subset face before it needs a recorded decision. Rationale in `docs/design.md` §Type.
 

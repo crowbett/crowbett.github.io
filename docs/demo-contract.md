@@ -4,6 +4,7 @@ A demo is three things: a bridge in the project repo, a UI in this repo, and a l
 
 ## Bridge (project repo, `cmd/webdemo/`)
 - `main.go` is `//go:build js && wasm` and only wires the bridge: set `globalThis.__demo = func(method, paramsJSON string) string`, call `globalThis.__demoReady()`, then `select {}`.
+- A `stub.go` tagged `//go:build !(js && wasm)` holds a `main` that prints "runs only as js/wasm" and exits 2; without it the package has no `main` on native platforms and the project's `go build ./...` / `go vet ./...` fail.
 - All logic lives in a file without build tags (e.g. `handler.go`: `func Handle(method string, params []byte) any`) with a normal `handler_test.go`, so the project's own gate runs it on every commit.
 - It calls the project's real packages (internal ones are fine: `cmd/webdemo` is inside the module). Never reimplement project logic in the bridge; the point is that visitors run the shipped code.
 - Results are JSON objects. Errors are `{"error": "..."}`; a successful result must not have a top-level `error` key.

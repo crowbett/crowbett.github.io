@@ -9,6 +9,15 @@
       "sha256": "4fcfc2acb0c933141b60e679489dd98acfaa36650c84f0f7180c713637b03b5d",
       "bytes": 4389196,
       "gzip_bytes": 1217580
+    },
+    {
+      "slug": "ratelimitd",
+      "repo": "ratelimitd",
+      "ref": "6a63fcb0da980eb4602318f44589375d203cfdfb",
+      "pkg": "./cmd/webdemo",
+      "sha256": "7b9d1c425eebdc9f42ce734bab33f7498f801ce6cbbd095745f1c90ea4a2a846",
+      "bytes": 4460492,
+      "gzip_bytes": 1243891
     }
   ]
 }
