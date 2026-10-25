@@ -23,6 +23,10 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
+      - name: Warm Chrome
+        # Chrome's first start on a fresh runner took up to ~13 s inside e2e (F2);
+        # this one runs in the background while Go is fetched and the gate runs.
+        run: (google-chrome --headless=new --no-sandbox --disable-gpu --dump-dom about:blank > /dev/null 2>&1 &)
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Go 1.27.0
         # setup-go spent ~4 s copying Go into the tool cache on every run (F2).
