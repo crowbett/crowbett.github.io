@@ -21,7 +21,8 @@ import (
 // Front matter is "key: value" lines between "---" fences. Keys:
 // title, tagline, lang, tags (comma list), repo (URL; empty = private source),
 // demo (live | planned | none), order (int; lower first), metric (one measured
-// headline number, quoted from the repo, with its source in metric_source),
+// headline number, quoted from the repo, with its source in metric_source;
+// it leads with the number or a capital so the cards read as one set),
 // demo_try (one line on what a visitor can do in the live demo; live only).
 type Project struct {
 	Slug         string
@@ -123,6 +124,8 @@ func parseProject(slug string, src []byte) (Project, error) {
 		return p, fmt.Errorf("demo_try is required for a live demo and only allowed on one")
 	case p.Metric != "" && p.MetricSource == "":
 		return p, fmt.Errorf("metric needs metric_source: every number on the site cites where it was measured")
+	case p.Metric != "" && !strings.ContainsRune("0123456789~ABCDEFGHIJKLMNOPQRSTUVWXYZ", rune(p.Metric[0])):
+		return p, fmt.Errorf("metric must lead with its number or a capital, got %q", p.Metric)
 	}
 	var html bytes.Buffer
 	if err := goldmark.Convert(body, &html); err != nil {

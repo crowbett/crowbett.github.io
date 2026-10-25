@@ -7,7 +7,7 @@ repo:
 demo: live
 demo_try: Run a seed, run it again for the same digest bit for bit, then try another seed's fault schedule.
 order: 2
-metric: storage, Raft and multi-Raft milestones each gated on 10,000 randomized fault seeds
+metric: 10,000 randomized fault seeds gate each storage, Raft and multi-Raft milestone
 metric_source: README milestone table
 ---
 Every line of keel's data plane runs unmodified inside a deterministic simulator that owns time,

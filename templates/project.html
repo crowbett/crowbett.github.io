@@ -38,13 +38,6 @@
       <p class="demo-status" data-demo-status role="status" aria-live="polite"></p>
     </section>
     <script type="module" src="/assets/demo.js"></script>
-    {{else if eq .Demo "planned"}}
-    <section class="demo planned" aria-labelledby="demo-title">
-      <div class="demo-head">
-        <h2 id="demo-title">Demo</h2>
-      </div>
-      <p class="demo-note">A live in-browser demo of this project is being built.</p>
-    </section>
     {{end}}
 
     <div class="body">{{.Body}}</div>

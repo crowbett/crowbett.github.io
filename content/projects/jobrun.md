@@ -7,7 +7,7 @@ repo: https://github.com/crowbett/jobrun
 demo: live
 demo_try: Type a cron expression and a time zone to see the next ten runs, or set a retry policy and see the delay after each failed attempt.
 order: 6
-metric: saturates at ~1,030 jobs/s completed with the default 16 workers
+metric: ~1,030 jobs/s completed at saturation with the default 16 workers
 metric_source: README results, one Windows 11 box, Postgres 17, medians of 3 runs
 ---
 `SELECT ... FOR UPDATE SKIP LOCKED` plus `LISTEN/NOTIFY` does the dispatching. On top: fenced leases,

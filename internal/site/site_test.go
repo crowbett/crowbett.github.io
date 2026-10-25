@@ -41,6 +41,7 @@ func TestParseProject(t *testing.T) {
 func TestParseProjectRejects(t *testing.T) {
 	cases := map[string]string{
 		"metric without source": strings.Replace(goodProject, "metric_source: bench.md\n", "", 1),
+		"lowercase metric":      strings.Replace(goodProject, "metric: 5 ops/s", "metric: saturates at 5 ops/s", 1),
 		"bad demo state":        strings.Replace(goodProject, "demo: planned", "demo: soon", 1),
 		"live without demo_try": strings.Replace(goodProject, "demo: planned", "demo: live", 1),
 		"demo_try not live":     strings.Replace(goodProject, "demo: planned", "demo: planned\ndemo_try: Try it.", 1),
