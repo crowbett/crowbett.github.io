@@ -397,6 +397,8 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
   border: 1px solid var(--control-line); border-radius: var(--r-1); padding: var(--sp-1) var(--sp-2);
 }
 .demo-mount input[type="range"], .demo-mount input[type="checkbox"], .demo-mount input[type="radio"] { accent-color: var(--accent); padding: 0; border: 0; }
+.demo-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.demo-label { font-family: var(--mono); font-size: var(--t-label); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); }
 .demo-note, .demo-status { font-family: var(--mono); font-size: var(--t-label); color: var(--text-3); margin: 0; }
 .demo-status:not(:empty) { margin-top: var(--sp-3); }
 .demo-mount:not(:empty) { margin-top: var(--sp-4); }

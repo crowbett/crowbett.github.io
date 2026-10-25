@@ -125,6 +125,7 @@ Done when: the lock pins a commit on strata's main.
 ### F4 CSS budget headroom · order 35 · deps: none · status: todo
 After D6 all CSS totals 40,679 bytes against the 40 KiB budget (measured); the next demo's ui.css (2,032–3,336 bytes each so far, measured) will not fit. Options: move the shared `*-field`/`*-label`/control rules every demo copies into site.css under a contract-documented class (each ui.css repeats ~500 bytes of them), or a recorded budget decision in PLAN.md.
 Done when: D7 or D8 can add a ui.css without breaking the budget, with the choice recorded.
+Progress (2026-10-24): V10 and D6 together reached 41,345 bytes, so the field and label rules every demo repeated moved into site.css as the contract classes `demo-field` and `demo-label`: 40,530 bytes (measured), 430 to spare, still short of one more ui.css.
 
 ## Design track
 

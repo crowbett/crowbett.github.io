@@ -41,8 +41,8 @@ const svg = (tag, attrs) => {
 };
 
 function field(label, input, cls) {
-  const wrap = el("label", "ec-field" + (cls ? " " + cls : ""));
-  wrap.append(el("span", "ec-label", label), input);
+  const wrap = el("label", "demo-field ec-field" + (cls ? " " + cls : ""));
+  wrap.append(el("span", "demo-label", label), input);
   return wrap;
 }
 
@@ -167,7 +167,7 @@ export async function mount(root, demo) {
   Object.assign(reqs, { name: "requests", rows: 5, spellcheck: false });
   const origin = el("fieldset", "ec-origin-fields");
   origin.append(
-    el("legend", "ec-label", "Origin response headers"),
+    el("legend", "demo-label", "Origin response headers"),
     field("Cache-Control", cc, "ec-wide"),
     field("ETag", etag),
     field("Vary", vary),

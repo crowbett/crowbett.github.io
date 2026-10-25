@@ -26,8 +26,8 @@ const fmt = (n) => n.toLocaleString("en-US");
 const mm = (n) => n.toLocaleString("en-US", { maximumFractionDigits: 2 });
 
 function field(label, input) {
-  const wrap = el("label", "st-field");
-  wrap.append(el("span", "st-label", label), input);
+  const wrap = el("label", "demo-field st-field");
+  wrap.append(el("span", "demo-label", label), input);
   return wrap;
 }
 
@@ -79,7 +79,7 @@ export async function mount(root, demo) {
   scrub.id = "st-layer";
   const where = el("output", "st-where");
   where.htmlFor = scrub.id;
-  const scrubLabel = el("label", "st-label", "Layer");
+  const scrubLabel = el("label", "demo-label", "Layer");
   scrubLabel.htmlFor = scrub.id;
   const scrubHead = el("div", "st-scrub-h");
   scrubHead.append(scrubLabel, where);
