@@ -20,7 +20,7 @@
   <div class="project-main">
     {{if .Metric}}<figure class="result">
       <p class="result-label">Evidence</p>
-      <p class="metric">{{.Metric}}</p>
+      <p class="metric">{{bind .Metric}}</p>
       <figcaption class="source">Source: {{.MetricSource}}</figcaption>
     </figure>{{end}}
 

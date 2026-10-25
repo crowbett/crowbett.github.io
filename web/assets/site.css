@@ -27,6 +27,7 @@
   --danger-tint: #fbe9e7;
   --shadow: 0 1px 2px rgb(0 0 0 / 6%);
   --dg-soft: #cfc9bd;
+  --fig: var(--sunken);
 
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -84,6 +85,7 @@
     --danger-tint: #3a1a18;
     --shadow: none;
     --dg-soft: #5d574d;
+    --fig: #2c2a26;
   }
 }
 @media (min-width: 48rem) {
@@ -151,7 +153,7 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 }
 .card a:hover { border-color: var(--line-strong); }
 .card a:is(:hover, :focus-visible) h3, .card a:is(:hover, :focus-visible) .go { color: var(--accent); }
-.card-fig { height: var(--fig-h); padding: var(--sp-2); background: var(--sunken); border-bottom: 1px solid var(--line); }
+.card-fig { height: var(--fig-h); padding: var(--sp-2); background: var(--fig); border-bottom: 1px solid var(--line); }
 @media (max-width: 47.99rem) { .feature .card-fig { --fig-h: 168px; } }
 .card-fig:has(> .dg:empty) { display: none; }
 .card-body { display: flex; flex-direction: column; flex: 1; padding: var(--card-pad); }
@@ -159,10 +161,10 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 .card-head .lang { margin: 0; font-size: var(--t-label); color: var(--text-3); white-space: nowrap; }
 .card h3 { margin: 0; font-size: var(--t-lede); letter-spacing: -0.01em; transition: color var(--d-fast) var(--ease-in); }
 .card-tag { margin: 0 0 var(--sp-4); color: var(--text-2); }
-.card .metric { margin: 0 0 var(--sp-4); color: var(--text); text-wrap: balance; }
+.card .metric { margin: 0 0 var(--sp-4); color: var(--text); text-wrap: pretty; }
 .card .meta { margin-top: auto; padding-top: var(--sp-3); border-top: 1px dashed var(--line-strong); }
 .private { font-family: var(--mono); }
-.run { color: var(--live); font-family: var(--mono); font-weight: 600; }
+.run { color: var(--live); font-family: var(--sans); font-size: var(--t-small); font-weight: 600; }
 .run::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: var(--sp-2); border-radius: 50%; background: currentColor; vertical-align: 1px; }
 .feature h3 { font-size: var(--t-h2); }
 .go { margin-left: auto; font-family: var(--mono); font-size: var(--t-small); color: var(--text-2); transition: color var(--d-fast) var(--ease-in), transform var(--d-fast) var(--ease-in); }
@@ -172,16 +174,16 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
   .feature a { display: grid; grid-template-columns: 5fr 7fr; }
   .feature .card-fig { height: auto; min-height: 13rem; padding: var(--sp-5); border-bottom: 0; border-right: 1px solid var(--line); }
   .feature .dg { max-height: 14rem; }
-  .feature .card-body { justify-content: center; padding: var(--sp-6); }
+  .feature .card-body { padding: var(--sp-6); }
   .feature .meta { margin-top: var(--sp-2); }
-  .feature .dg .t { display: inline; }
 }
 
 /* Diagrams (templates/diagrams.html) */
 .dg { display: block; width: 100%; height: 100%; color: var(--text-3); fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
 .dg * { vector-effect: non-scaling-stroke; }
 .dg .n { fill: var(--sunken); }
-.dg .t { display: none; fill: var(--text-3); stroke: none; font: 500 9px var(--mono); text-anchor: middle; }
+.dg .t { display: none; fill: var(--text-3); stroke: none; font: 500 7px var(--mono); text-anchor: middle; }
+.feature .dg .t { display: inline; }
 .dg .s { stroke: var(--dg-soft); }
 .dg .a { stroke: var(--accent); }
 .dg .af { fill: var(--accent); stroke: var(--accent); }
@@ -189,26 +191,24 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 .dg .d { stroke-dasharray: 3 4; }
 .dg .x { stroke-dasharray: 2 3; }
 
-/* Diagram motion: once where the diagram is the subject (feature cards, project facts),
+/* Diagram motion: once when a feature card or the project facts scroll into view (motion.js adds .play),
    looping while a card is hovered or focused. Every keyframe starts and ends on the static drawing. */
 .dg .mp, .dg .my, .dg .mx { transform-box: fill-box; transform-origin: center; }
 .dg .my { transform-origin: 50% 100%; }
 .dg .mx { transform-origin: 0 50%; }
-.feature .dg .mp, .facts .dg .mp { animation: dg-pulse 1.6s var(--ease-in) 0.3s; }
-.feature .dg .mm, .facts .dg .mm { animation: dg-march 1.6s linear 0.3s; }
-.feature .dg .my, .facts .dg .my { animation: dg-grow-y 1.6s var(--ease-in) 0.3s; }
-.feature .dg .mx, .facts .dg .mx { animation: dg-grow-x 1.6s var(--ease-in) 0.3s; }
-.feature .dg .mn, .facts .dg .mn { animation: dg-sweep 1.6s ease-in-out 0.3s; }
+.dg.play .mp { animation: dg-pulse 1.6s var(--ease-in) 0.1s; }
+.dg.play .mm { animation: dg-march 1.6s linear 0.1s; }
+.dg.play .my { animation: dg-grow-y 1.6s var(--ease-in) 0.1s; }
+.dg.play .mx { animation: dg-grow-x 1.6s var(--ease-in) 0.1s; }
+.dg.play .mn { animation: dg-sweep 1.6s ease-in-out 0.1s; }
 .dg .mt, .dg .mt2 { opacity: 0; }
-.feature .dg .ml, .facts .dg .ml { animation: dg-limit 2.4s var(--ease-in) 0.3s; }
-.feature .dg .mt, .facts .dg .mt { animation: dg-hit 2.4s ease-in-out 0.3s; }
-.feature .dg .mt2, .facts .dg .mt2 { animation: dg-miss 2.4s ease-in-out 0.3s; }
+.dg.play .mt { animation: dg-hit 2.4s ease-in-out 0.1s; }
+.dg.play .mt2 { animation: dg-miss 2.4s ease-in-out 0.1s; }
 .card a:is(:hover, :focus-visible) .dg .mp { animation: dg-pulse-l 1.6s var(--ease-in) infinite; }
 .card a:is(:hover, :focus-visible) .dg .mm { animation: dg-march-l 1.6s linear infinite; }
 .card a:is(:hover, :focus-visible) .dg .my { animation: dg-grow-y-l 1.6s var(--ease-in) infinite; }
 .card a:is(:hover, :focus-visible) .dg .mx { animation: dg-grow-x-l 1.6s var(--ease-in) infinite; }
 .card a:is(:hover, :focus-visible) .dg .mn { animation: dg-sweep-l 1.6s ease-in-out infinite; }
-.card a:is(:hover, :focus-visible) .dg .ml { animation: dg-limit-l 2.4s var(--ease-in) infinite; }
 .card a:is(:hover, :focus-visible) .dg .mt { animation: dg-hit-l 2.4s ease-in-out infinite; }
 .card a:is(:hover, :focus-visible) .dg .mt2 { animation: dg-miss-l 2.4s ease-in-out infinite; }
 @keyframes dg-pulse { 40% { transform: scale(1.3); opacity: 0.7; } }
@@ -219,14 +219,12 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 @keyframes dg-grow-y-l { 0% { transform: scaleY(0); } 60% { transform: none; } }
 @keyframes dg-grow-x { 0% { transform: scaleX(0); } 70% { transform: none; } }
 @keyframes dg-grow-x-l { 0% { transform: scaleX(0); } 70% { transform: none; } }
-@keyframes dg-sweep { 50% { transform: translateX(-68px); } }
-@keyframes dg-sweep-l { 50% { transform: translateX(-68px); } }
-@keyframes dg-limit { 30%, 85% { transform: none; } 45%, 70% { transform: translateY(14px); } }
-@keyframes dg-limit-l { 30%, 85% { transform: none; } 45%, 70% { transform: translateY(14px); } }
+@keyframes dg-sweep { 50% { transform: translateX(-40px); } }
+@keyframes dg-sweep-l { 50% { transform: translateX(-40px); } }
 @keyframes dg-hit { 0% { opacity: 0; } 5%, 40% { opacity: 1; } 20% { transform: translateX(26px); } 25% { transform: translate(26px, 16px); } 40%, 100% { transform: translate(0, 16px); } 45% { opacity: 0; } }
 @keyframes dg-hit-l { 0% { opacity: 0; } 5%, 40% { opacity: 1; } 20% { transform: translateX(26px); } 25% { transform: translate(26px, 16px); } 40%, 100% { transform: translate(0, 16px); } 45% { opacity: 0; } }
-@keyframes dg-miss { 0%, 50% { opacity: 0; transform: none; } 55%, 85% { opacity: 1; } 70% { transform: translateX(24px); } 85%, 100% { transform: none; } 90% { opacity: 0; } }
-@keyframes dg-miss-l { 0%, 50% { opacity: 0; transform: none; } 55%, 85% { opacity: 1; } 70% { transform: translateX(24px); } 85%, 100% { transform: none; } 90% { opacity: 0; } }
+@keyframes dg-miss { 0%, 50% { opacity: 0; transform: none; } 55%, 85% { opacity: 1; } 65%, 75% { transform: translateX(24px); } 85%, 100% { transform: none; } 90% { opacity: 0; } }
+@keyframes dg-miss-l { 0%, 50% { opacity: 0; transform: none; } 55%, 85% { opacity: 1; } 65%, 75% { transform: translateX(24px); } 85%, 100% { transform: none; } 90% { opacity: 0; } }
 
 /* Metadata */
 .metric { font-family: var(--mono); font-size: var(--t-small); line-height: 1.55; font-variant-numeric: tabular-nums; }
@@ -251,7 +249,7 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 .project .body li + li { margin-top: var(--sp-1); }
 
 .facts { margin-bottom: var(--sp-6); font-size: var(--t-small); }
-.facts-fig { height: var(--fig-h); padding: var(--sp-3); margin-bottom: var(--sp-4); background: var(--sunken); border: 1px solid var(--line); border-radius: var(--r-1); }
+.facts-fig { height: var(--fig-h); padding: var(--sp-3); margin-bottom: var(--sp-4); background: var(--fig); border: 1px solid var(--line); border-radius: var(--r-1); }
 .facts-fig:has(> .dg:empty) { display: none; }
 .facts dl { display: grid; grid-template-columns: max-content 1fr; gap: var(--sp-2) var(--sp-4); margin: 0; }
 .facts dl > div { display: contents; }
