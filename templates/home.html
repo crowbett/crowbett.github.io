@@ -12,10 +12,12 @@
     </div>
     {{with .Hero}}<figure class="replay">
       <figcaption><span class="replay-k">Replay</span> <span class="replay-t">{{.Slug}}'s {{.Algo}} limiter at {{.Rate}} requests/s{{if eq .Pattern "attack"}} under a 10× attack{{end}}</span> <span class="replay-v">The real code's output, recorded from its WebAssembly build. Every deploy re-runs it and fails if one bar differs.</span></figcaption>
+      <p class="replay-run" data-replay="{{.Slug}}" data-call="{{.Call}}" data-params="{{.Params}}" data-result="{{.Result}}" data-bytes="{{demoBytes .Slug}}"><button type="button">Run it in your browser</button> <span role="status">A ~{{demoKB .Slug}} KB download of {{.Slug}}'s build, checked against every bar of this chart.</span></p>
       {{template "replay-chart" .Wide}}{{template "replay-chart" .Tall}}
       <p class="replay-axis"><span>0 s</span><span>{{.Seconds}} s</span></p>
       <p class="replay-foot"><span class="k-a">{{num .Allowed}} allowed</span> <span class="k-d">{{num .Denied}} denied</span></p>
-    </figure>{{end}}
+    </figure>
+    <script type="module" src="/assets/hero.js"></script>{{end}}
   </div>
 </section>
 <section id="work" aria-labelledby="work-h">

@@ -20,6 +20,8 @@ type heroTrace struct {
 	Allowed int
 	Denied  int
 	Limit   int // requests per bucket
+	// The recorded call and answer as JSON, for the hero's in-browser re-run (web/assets/hero.js).
+	Call, Params, Result string
 	// The same run drawn twice: wide beside the headline, tall on phones,
 	// where a wide chart would leave the allowed lane a few pixels high.
 	Wide, Tall *heroChart
@@ -92,7 +94,11 @@ func loadHeroTrace(src fs.FS) (*heroTrace, error) {
 			} `json:"series"`
 		} `json:"result"`
 	}
-	if err := json.Unmarshal(b, &f); err != nil {
+	var raw struct {
+		Call           string `json:"call"`
+		Params, Result json.RawMessage
+	}
+	if err := errors.Join(json.Unmarshal(b, &f), json.Unmarshal(b, &raw)); err != nil {
 		return nil, fmt.Errorf("data/hero-trace.json: %w", err)
 	}
 	r := f.Result
@@ -105,6 +111,7 @@ func loadHeroTrace(src fs.FS) (*heroTrace, error) {
 		Slug: f.Slug, Algo: strings.ToUpper(s.Algo), Pattern: f.Params.Pattern,
 		Rate: f.Params.Rate, Burst: f.Params.Burst, Seconds: f.Params.DurationMs / 1000,
 		Allowed: s.TotalAllowed, Denied: s.TotalDenied, Limit: int(limit + 0.5),
+		Call: raw.Call, Params: string(raw.Params), Result: string(raw.Result),
 	}
 	first, last := -1, -1
 	for i, o := range r.Offered {
