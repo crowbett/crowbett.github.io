@@ -464,12 +464,15 @@ func visit(t *testing.T, browser context.Context, url string, w, h int64, scheme
 	if overflow {
 		t.Errorf("page scrolls horizontally at %dpx", w)
 	}
-	img, err := chromedp.Run(ctx, chromedp.FullScreenshot(80))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(shot+".jpg", img, 0o644); err != nil {
-		t.Fatal(err)
+	// Screenshots are for review on a laptop; CI never looks at them.
+	if os.Getenv("CI") == "" {
+		img, err := chromedp.Run(ctx, chromedp.FullScreenshot(80))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(shot+".jpg", img, 0o644); err != nil {
+			t.Fatal(err)
+		}
 	}
 	cancelT()
 	<-done
