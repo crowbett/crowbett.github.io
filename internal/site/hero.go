@@ -35,15 +35,15 @@ type heroTrace struct {
 
 type heroBar struct{ X, AY, AH, DY, DH float64 }
 
-// Chart geometry in viewBox units (480 x 160, drawn at its real aspect so
+// Chart geometry in viewBox units (480 x 200, drawn at its real aspect so
 // labels keep their shape): two lanes on one time axis, one 8-unit column per
-// bucket. Denied requests rise from y=84 under an 18-unit label band; allowed
-// requests rise from y=160 on their own scale, with the limit at mid-lane, so
+// bucket. Denied requests rise from y=110 under a 22-unit label band; allowed
+// requests rise from y=200 on their own scale, with the limit at mid-lane, so
 // the attack's size and the flat allowed line both read at a glance.
 const (
-	heroW, heroH, heroCol, heroBarW = 480.0, 160.0, 8.0, 6.0
-	heroDenyBase, heroDenyPlot      = 84.0, 66.0
-	heroAllowPlot                   = 60.0
+	heroW, heroH, heroCol, heroBarW = 480.0, 200.0, 8.0, 6.0
+	heroDenyBase, heroDenyPlot      = 110.0, 88.0
+	heroAllowPlot                   = 72.0
 )
 
 func loadHeroTrace(src fs.FS) (*heroTrace, error) {
@@ -97,7 +97,7 @@ func loadHeroTrace(src fs.FS) (*heroTrace, error) {
 		Rate: f.Params.Rate, Burst: f.Params.Burst, Seconds: f.Params.DurationMs / 1000,
 		Allowed: s.TotalAllowed, Denied: s.TotalDenied,
 		W: heroW, H: heroH, BarW: round(col * heroBarW / heroCol),
-		Limit: int(limit + 0.5), LimitY: round(heroH - limit*scaleA), DenyY: heroDenyBase, LaneY: heroH - heroAllowPlot + 12,
+		Limit: int(limit + 0.5), LimitY: round(heroH - limit*scaleA), DenyY: heroDenyBase, LaneY: heroH - heroAllowPlot + 13,
 	}
 	first, last := -1, -1
 	for i, o := range r.Offered {
