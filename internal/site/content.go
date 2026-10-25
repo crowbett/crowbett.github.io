@@ -21,7 +21,8 @@ import (
 // Front matter is "key: value" lines between "---" fences. Keys:
 // title, tagline, lang, tags (comma list), repo (URL; empty = private source),
 // demo (live | planned | none), order (int; lower first), metric (one measured
-// headline number, quoted from the repo, with its source in metric_source).
+// headline number, quoted from the repo, with its source in metric_source),
+// demo_try (one line on what a visitor can do in the live demo; live only).
 type Project struct {
 	Slug         string
 	Title        string
@@ -30,6 +31,7 @@ type Project struct {
 	Tags         []string
 	Repo         string
 	Demo         string
+	DemoTry      string
 	Order        int
 	Metric       string
 	MetricSource string
@@ -96,6 +98,8 @@ func parseProject(slug string, src []byte) (Project, error) {
 			p.Repo = v
 		case "demo":
 			p.Demo = v
+		case "demo_try":
+			p.DemoTry = v
 		case "order":
 			if p.Order, err = strconv.Atoi(v); err != nil {
 				return p, fmt.Errorf("order %q: %w", v, err)
@@ -115,6 +119,8 @@ func parseProject(slug string, src []byte) (Project, error) {
 		return p, fmt.Errorf("demo must be one of %v, got %q", demoStates, p.Demo)
 	case p.Repo != "" && !strings.HasPrefix(p.Repo, "https://github.com/"):
 		return p, fmt.Errorf("repo must be a https://github.com/ URL or empty")
+	case p.Live() != (p.DemoTry != ""):
+		return p, fmt.Errorf("demo_try is required for a live demo and only allowed on one")
 	case p.Metric != "" && p.MetricSource == "":
 		return p, fmt.Errorf("metric needs metric_source: every number on the site cites where it was measured")
 	}

@@ -87,9 +87,10 @@ Requested by the design session (2026-10-24, V3b review). strata is the only car
 Done when: strata has a sourced metric, or this task records that none exists yet.
 strata's docs/features.md has timings (Benchy slices in 399 ms at defaults, line 53), but neither it nor the commit records the machine, so the card quotes a result that does not depend on hardware: mesh repair of a damaged Benchy (features.md line 22, measured).
 
-### C5 One line of what each live demo lets you do · order 18 · deps: none · status: todo
+### C5 One line of what each live demo lets you do · order 18 · deps: none · status: done 2026-10-24 (this commit)
 Requested by the design session (2026-10-24, V3b review round 3). The reviewer asked for each live card on home to say what a visitor can do in the demo ("Fire 1,000 requests and watch the limit hold", say), so the two demos read as things to try, not just projects. That is project copy, so it is the demo track's: add an optional one-line front-matter field (e.g. `demo_try`) to each live project, true to what its UI does. The design session will render it on the feature card once the field exists.
 Done when: every live project has the field, and a design-track task to render it is filed.
+Field `demo_try`: required on a live project and rejected on any other, so a planned demo never says what you can do in it. Each line is checked against its project's page copy and ui.js controls. Rendering is V10.
 
 ## Rust demos
 
@@ -154,6 +155,10 @@ Done when: two consecutive rounds have no major findings; findings and fixes log
 ### V9 Project-specific drawings for edgecache and jobrun · order 108 · deps: V3b · status: todo
 Round 7 of the home review: edgecache (client, cache, origin) and jobrun (queue, workers) are textbook box-and-arrow drawings that say nothing only this project does, unlike ratelimitd's Redis fallback, kvlite's active segment or quorum's partitioned follower. Draw one behaviour each project's page states (read the page copy first; the drawing must not claim what the page does not), in the shared outline vocabulary, with the same once-on-view motion.
 Done when: each drawing shows a behaviour quoted from its project page, and a fresh-eyes reviewer names it without being told.
+
+### V10 Render demo_try on the live feature cards · order 109 · deps: C5 · status: todo
+Filed by the demo track (C5). Every live project now has a `demo_try` line (`Project.DemoTry`, internal/site/content.go): one sentence on what a visitor can do in its demo. The build requires it on live projects and rejects it on others. Show it on the home feature cards, and wherever else it reads as a thing to try.
+Done when: each live card on home shows its project's `demo_try`, in both schemes and at 390 px.
 
 ## Owner only
 
