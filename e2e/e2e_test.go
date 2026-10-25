@@ -241,7 +241,17 @@ func run(m *testing.M) (code int) {
 			}
 		}()
 	}
-	alloc, cancelA := chromedp.NewExecAllocator(context.Background(), allocOpts(chromeLog)...)
+	opts := allocOpts(chromeLog)
+	// A new profile on the runner's disk queued behind the build cache's
+	// writeback, and Chrome took 8-10 s to start in a third of CI runs; on
+	// tmpfs it does not touch the disk (F5 in docs/tasks.md).
+	if os.Getenv("CI") != "" {
+		if dir, err := os.MkdirTemp("/dev/shm", "e2e-chrome-"); err == nil {
+			defer os.RemoveAll(dir)
+			opts = append(opts, chromedp.UserDataDir(dir))
+		}
+	}
+	alloc, cancelA := chromedp.NewExecAllocator(context.Background(), opts...)
 	defer cancelA()
 	b, cancelB := chromedp.NewContext(alloc)
 	defer cancelB()

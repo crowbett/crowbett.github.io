@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/animation"
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/input"
 	"github.com/chromedp/chromedp"
@@ -170,7 +171,6 @@ func tabOrder(t *testing.T, ctx context.Context) {
 		document.body.tabIndex = -1;
 		document.body.focus();
 		document.body.removeAttribute("tabindex");
-		if (location.pathname === "/") { const st = new CSSStyleSheet(); st.replaceSync(".dg *, .card * { animation: none !important; transition: none !important; }"); document.adoptedStyleSheets = [...document.adoptedStyleSheets, st]; }
 		window.__tab = [...document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]')]
 			.filter((el) => !el.disabled && el.tabIndex >= 0 && el.getClientRects().length > 0);
 		return window.__tab.length;
@@ -183,6 +183,18 @@ func tabOrder(t *testing.T, ctx context.Context) {
 		Tag   string
 		Ring  bool
 	}
+	// Focusing a card loops its diagram, and under load Chrome then held a
+	// key event for 15-25 s (F5 in docs/tasks.md). The walk checks focus
+	// order and rings, which do not depend on animation time, so it runs
+	// with the document timeline paused.
+	if err := chromedp.Do(ctx, setPlaybackRate(0)); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := chromedp.Do(ctx, setPlaybackRate(1)); err != nil {
+			t.Error(err)
+		}
+	}()
 	var got []stop
 	var tDown, tUp, tEval time.Duration
 	defer func() {
@@ -326,4 +338,11 @@ func (s *slowWriter) Write(b []byte) (int, error) {
 		b = b[c:]
 	}
 	return n, nil
+}
+
+func setPlaybackRate(r float64) chromedp.Action[chromedp.Void] {
+	return chromedp.Func(func(ctx context.Context, tg *chromedp.Target) error {
+		_, err := cdp.Call(ctx, tg, animation.SetPlaybackRate, animation.SetPlaybackRateParams{PlaybackRate: r})
+		return err
+	})
 }
