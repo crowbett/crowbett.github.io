@@ -24,11 +24,20 @@ jobs:
           tar -C "$RUNNER_TEMP" -xzf "$RUNNER_TEMP/go.tgz"
           echo "$RUNNER_TEMP/go/bin" >> "$GITHUB_PATH"
           echo "GOTOOLCHAIN=local" >> "$GITHUB_ENV"
+      - name: Cache key
+        # Keyed on go.sum alone, the cache kept what the gate built when it was
+        # first saved, and every import added since was rebuilt on each run (F5):
+        # the key also covers each package's imports and the Makefile.
+        id: deps
+        run: |
+          imports=$(git ls-files -z '*.go' | xargs -0 awk '/^import \(/ { f = 1 } f || /^import "/ { d = FILENAME; sub(/\/[^\/]*$/, "", d); print d, $0 } /^\)/ { f = 0 }' | sort -u)
+          echo "hash=$(echo "$imports" | cat go.sum Makefile - | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: go-1.27.0-${{ hashFiles('go.sum') }}
+          key: go-1.27.0-${{ steps.deps.outputs.hash }}
+          restore-keys: go-1.27.0-
       - name: Gate and browser checks
-        run: make -j4 --output-sync=target gate e2e
+        run: make -j8 --output-sync=target NICE="nice -n 10" gate e2e

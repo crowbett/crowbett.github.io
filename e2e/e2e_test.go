@@ -259,12 +259,17 @@ func run(m *testing.M) (code int) {
 	return m.Run()
 }
 
-func TestSite(t *testing.T) {
+// TestSiteCheck runs the build checks on the site under test, beside the
+// page visits rather than ahead of them (F5 in docs/tasks.md).
+func TestSiteCheck(t *testing.T) {
 	t.Parallel()
 	if err := site.Check(siteOut); err != nil {
 		t.Fatal(err)
 	}
+}
 
+func TestSite(t *testing.T) {
+	t.Parallel()
 	shots := filepath.Join(root, "e2e", "out")
 	if err := os.RemoveAll(shots); err != nil {
 		t.Fatal(err)
