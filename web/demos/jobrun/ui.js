@@ -29,8 +29,8 @@ const svg = (tag, attrs) => {
 };
 
 function field(label, input, cls) {
-  const wrap = el("label", "jr-field" + (cls ? " " + cls : ""));
-  wrap.append(el("span", "jr-label", label), input);
+  const wrap = el("label", "demo-field jr-field" + (cls ? " " + cls : ""));
+  wrap.append(el("span", "demo-label", label), input);
   return wrap;
 }
 

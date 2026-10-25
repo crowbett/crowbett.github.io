@@ -1,8 +1,6 @@
 .kv-controls { display: flex; flex-wrap: wrap; gap: 12px 12px; align-items: flex-end; margin-bottom: 12px; }
 .kv-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.kv-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .kv-grow { flex: 1 1 10rem; }
-.kv-label { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); }
 .kv-field input, .kv-field select, .kv-controls button { height: 2.25rem; box-sizing: border-box; }
 .kv-field input { width: 9rem; max-width: 100%; }
 .kv-grow input { width: 100%; }

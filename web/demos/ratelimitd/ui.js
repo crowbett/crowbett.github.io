@@ -25,8 +25,8 @@ const svg = (tag, attrs) => {
 const fmt = (n) => n.toLocaleString("en-US");
 
 function field(label, input) {
-  const wrap = el("label", "rl-field");
-  wrap.append(el("span", "rl-label", label), input);
+  const wrap = el("label", "demo-field rl-field");
+  wrap.append(el("span", "demo-label", label), input);
   return wrap;
 }
 

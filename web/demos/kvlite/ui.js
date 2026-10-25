@@ -23,8 +23,8 @@ const svg = (tag, attrs) => {
 const bytes = (n) => `${n.toLocaleString("en-US")} B`;
 
 function field(label, input, cls) {
-  const wrap = el("label", "kv-field" + (cls ? " " + cls : ""));
-  wrap.append(el("span", "kv-label", label), input);
+  const wrap = el("label", "demo-field kv-field" + (cls ? " " + cls : ""));
+  wrap.append(el("span", "demo-label", label), input);
   return wrap;
 }
 
