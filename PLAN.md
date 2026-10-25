@@ -9,7 +9,7 @@ Status (2026-10-24): live at https://crowbett.github.io. Scaffold done. 8 projec
 - **Demos.** A project page with `demo: live` gets a "Run the live demo" button. On click, `web/assets/demo.js` starts a Web Worker (`demo-worker.js`) that loads `/wasm/<slug>.wasm` with Go's `wasm_exec.js`, and imports `/demos/<slug>/ui.js`, which renders controls and calls the binary over a JSON RPC. Nothing downloads until the visitor asks; the button states the size. Contract: `docs/demo-contract.md`.
 - **Bridges live in the project repos** (`cmd/webdemo`), so each project's own gate tests them and the demo can never drift from the code it claims to show.
 - **Binaries are built locally and committed.** `cmd/wasm build` exports each pinned commit with `git archive` (committed files only, plus pinned sibling repos for `go.mod` replaces) and builds it with `-trimpath -buildvcs=false -ldflags=-s -w`. `demos.lock.json` records commit, sha256, sizes and the Go version; `wasm_exec.js` is copied from that same toolchain. CI runs `wasm check` and never needs access to private repos.
-- **Deploy.** `.github/workflows/pages.yml`: gate + e2e, then `upload-pages-artifact` + `deploy-pages`. Actions SHAs are pinned.
+- **Deploy.** `.github/workflows/pages.yml` (push to main): one job runs gate + e2e concurrently, then `upload-pages-artifact` + `deploy-pages`, under 60 s. `ci.yml` runs the same checks on pull requests. Actions SHAs are pinned.
 
 ## Decisions
 - Public repo on GitHub Pages: free Actions minutes and hosting for public repos, no server to run. Custom domain is a later user decision.
