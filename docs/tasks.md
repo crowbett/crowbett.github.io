@@ -118,7 +118,7 @@ Spike: run keel's deterministic simulator for one small seed in wasm32 and strea
 Done when: as D1, or `blocked` with evidence.
 Spike (2026-10-24, keel c41e400 on local branch `webdemo`, unpushed): `crates/keel-web` runs `keel_workload::register::run_seed_traced` (Raft register under nemesis faults) as wasm32-unknown-unknown. Under node 22, seed 7 gives digest 24f2fb94354d9d25 twice (118,095 steps, linearizable) and seed 8 gives 22e2ba986ec4d67e (measured). Size: 2,169,809 B gzipped with keel's release profile (`debug = 1`, opt-level 3), over budget; 202,807 B with opt-level s, lto, debug 0, strip (measured). Before pinning: keel needs a `rust-toolchain.toml` (`cmd/wasm` refuses without one) and a release profile for the bridge that drops debug info, both in keel's own gate.
 
-### D6b Re-pin strata after PR #219 lands · order 34 · deps: D6 · status: todo
+### D6b Re-pin strata after PR #219 lands · order 34 · deps: D6 · status: done 2026-10-25 (strata 532b801, tree identical to 8996fe6; strata.wasm sha256 unchanged; site: this commit)
 The strata pin is a commit on the `webdemo` branch. Strata squash-merges PRs, so once #219 merges and the branch is deleted, that commit is on no remote branch and the pin stops being reproducible. After the merge, `go run ./cmd/wasm pin strata <main sha>`, `make wasm`, and check that the binary hash is unchanged (it is if main's crates/ tree matches the branch).
 Done when: the lock pins a commit on strata's main.
 
