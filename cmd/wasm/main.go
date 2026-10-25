@@ -30,6 +30,7 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+	"syscall"
 )
 
 const lockFile = "demos.lock.json"
@@ -133,11 +134,11 @@ func buildOne(d *Demo) error {
 		if len(d.Ref) != 40 {
 			return fmt.Errorf("ref must be a full commit SHA; use `wasm pin`")
 		}
-		tmp, err := os.MkdirTemp("", "wasm-"+d.Slug+"-")
+		tmp, unlock, err := exportDir(d.Slug)
 		if err != nil {
 			return err
 		}
-		defer os.RemoveAll(tmp)
+		defer unlock()
 		for _, dep := range append([]Dep{{d.Repo, d.Ref}}, d.Siblings...) {
 			if err := export(dep, filepath.Join(tmp, filepath.Base(dep.Repo))); err != nil {
 				return err
@@ -168,6 +169,40 @@ func buildOne(d *Demo) error {
 	}
 	d.SHA256, d.Bytes, d.Gzip = sum(b), len(b), gzipLen(b)
 	return nil
+}
+
+// exportDir returns an empty directory at a fixed path for slug's exported
+// repos, held under an exclusive lock until unlock. The path is fixed because
+// cargo hashes a path dependency outside the building workspace by its absolute
+// path into every symbol (keel-web's workspace is one crate; its deps are
+// siblings), so a random temp dir gave a different binary on every build.
+func exportDir(slug string) (dir string, unlock func(), err error) {
+	base := filepath.Join("/tmp", "crowbett-wasm")
+	if err := os.MkdirAll(base, 0o755); err != nil {
+		return "", nil, err
+	}
+	f, err := os.OpenFile(filepath.Join(base, slug+".lock"), os.O_CREATE|os.O_RDWR, 0o644)
+	if err != nil {
+		return "", nil, err
+	}
+	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_EX); err != nil {
+		f.Close()
+		return "", nil, err
+	}
+	dir = filepath.Join(base, slug)
+	unlock = func() {
+		os.RemoveAll(dir)
+		f.Close()
+	}
+	if err := os.RemoveAll(dir); err != nil {
+		unlock()
+		return "", nil, err
+	}
+	if err := os.Mkdir(dir, 0o755); err != nil {
+		unlock()
+		return "", nil, err
+	}
+	return dir, unlock, nil
 }
 
 // export writes repo@ref into dst with git archive (committed files only).
