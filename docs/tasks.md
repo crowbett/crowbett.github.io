@@ -32,6 +32,10 @@ Go toolchain from go.dev plus a build cache (348bab6) took setup from 8-11 s to 
 Done when: ten consecutive Pages runs finish under 60 s, timings listed here.
 Shared Chrome landed (1117599), but ten dispatched Pages runs after it still spread 40-73 s (55, 73, 53, 41, 48, 42, 63, 56, 40, 72 s; e2e 19.6-50.8 s). PR experiments with `-v` (#6 `-parallel 12`, #7 `-parallel 6`, six runs each, 4-vCPU Xeon 8573C runners): TestSite took 14-20 s in both, while e2e minus TestSite (TestMain, mostly the Chrome cold start) ranged ~1-20 s, so parallelism is not the lever. fc20758 starts Chrome in a background step before checkout to warm the disk cache, and TestMain builds the site while Chrome launches: eight PR runs (#8) took 25-37 s (e2e 13.2-23.5 s). One of them failed TestDemoFailures: the call after a timeout rejected after 227 ms against a 100 ms limit, though `send()` rejects synchronously; the main thread was busy. 15f7905 replaced the wall-clock limit with a stricter, load-independent check: the rejection must settle before a zero-delay timer fires. Eleven consecutive Pages runs from 15f7905 on (two pushes, nine dispatches): 40, 41, 40, 49, 52, 45, 41, 44, 53, 51, 39 s, all under 60 s. The slowest of them left 7 s of headroom.
 
+### F3 Local e2e stalls as a whole under machine load · order 8 · deps: F2 · status: todo
+Seen 2026-10-24, locally only. Two of ~10 local runs failed together: every TestSite tab hit the 90 s deadline, pages without a demo as well (keel, home), with load averages of ~26 and ~12-17 from other processes (measured with `uptime`). The next run passed in 12-15 s. None of the 11 consecutive Pages runs in F2 or the 20 PR runs on #6-#8 did this. `newTab` starts the 90 s clock before it waits for `tabMu`, so a single stalled `Target.createTarget` in the shared Chrome runs out every queued test's clock. Why Chrome stalls is not known. Next step: log per-tab open time and Chrome's own stderr on the next stall, then decide whether to start the deadline after the lock, put a timeout on opening a tab, or relaunch Chrome.
+Done when: the cause is named with evidence and fixed, or ten local runs under load (above 10) pass.
+
 ## Go demos (one bridge each, see docs/demo-contract.md)
 
 ### D1 ratelimitd: algorithm race · order 10 · deps: S1 · status: done 2026-10-24 (ratelimitd b730ede, f5d5c37, 2420562, 6a63fcb; site 05c9267; Pages job 45 s)
@@ -67,9 +71,10 @@ Requested by the design session (2026-10-24). The home kicker and every page's d
 Done when: the role line is true for every project the site shows.
 Decision: "Software engineer (Go, Rust)". Five projects are Go and three are Rust, so both languages are named. "Backend" was dropped because strata is an iPad slicer, not a backend. Swift (strata's UI) is left out to keep the label short; it is listed on strata's own page. Only the home share card prints the role, so it alone was regenerated.
 
-### C2 ratelimitd ui.css uses retired tokens · order 15 · deps: none · status: todo
+### C2 ratelimitd ui.css uses retired tokens · order 15 · deps: none · status: done 2026-10-24 (this commit)
 Requested by the design session (2026-10-24). `web/demos/ratelimitd/ui.css` (247c22f) reads `--muted` and `--code-bg`, which V2 replaced; both are undefined, so the "denied" legend swatch is invisible, denied bars fall back to black at 35% opacity, and the chart wells have no background. Use `--text-2` (or `--text-3`) for muted text and fills and `--sunken` for wells; docs/demo-contract.md now lists the tokens demos may use.
 Done when: ratelimitd's ui.css uses only tokens listed in the contract and its screenshots show the denied bars and legend swatch in both schemes.
+`--muted` and `--code-bg` were already gone on main (now `--text-3` and `--sunken`); the file still read `--sp-1..4`, `--t-label` and `--t-small`, now their literal values. The build now fails when a demo's ui.css reads a property that is neither a contract token nor defined in that file (`DemoTokens`, internal/site/check.go); all five demos pass.
 
 ### C3 edgecache: label the scrolling table · order 16 · deps: none · status: todo
 Requested by the design session (2026-10-24). V6's axe scan found `.ec-scroll` (web/demos/edgecache/ui.js) scrolls sideways at 390 px with no keyboard access (WCAG 2.1.1). The frame now makes overflowing scroll boxes focusable and names them "Scrollable area" (docs/demo-contract.md §Frame); a real name is better.

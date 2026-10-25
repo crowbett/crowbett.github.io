@@ -30,13 +30,24 @@ var Budgets = struct {
 	ShareImage:  100 << 10,
 }
 
+// DemoTokens are the site.css properties a demo's ui.css may read
+// (docs/demo-contract.md); other names in site.css may change without notice.
+var DemoTokens = map[string]bool{
+	"--bg": true, "--surface": true, "--sunken": true, "--line": true, "--line-strong": true,
+	"--control-line": true, "--text": true, "--text-2": true, "--text-3": true, "--accent": true,
+	"--accent-tint": true, "--live": true, "--danger": true, "--mono": true, "--sans": true, "--r-1": true,
+}
+
 var (
 	refAttr = regexp.MustCompile(`(?:href|src)="([^"#?]+)`)
 	ogImage = regexp.MustCompile(`property="og:image" content="https?://[^/"]+(/[^"]*)"`)
+	cssUse  = regexp.MustCompile(`var\((--[\w-]+)`)
+	cssDef  = regexp.MustCompile(`(--[\w-]+)\s*:`)
 )
 
 // Check walks a built site: every internal link resolves, every page has a
-// title, a description and lang, and every asset is within budget.
+// title, a description and lang, every asset is within budget, and demo
+// stylesheets read only the tokens the demo contract lists.
 func Check(out string) error {
 	var problems []string
 	add := func(format string, a ...any) { problems = append(problems, fmt.Sprintf(format, a...)) }
@@ -84,6 +95,17 @@ func Check(out string) error {
 			}
 		case ".css":
 			css += len(b)
+			if strings.HasPrefix(rel, "/demos/") {
+				own := map[string]bool{}
+				for _, m := range cssDef.FindAllSubmatch(b, -1) {
+					own[string(m[1])] = true
+				}
+				for _, m := range cssUse.FindAllSubmatch(b, -1) {
+					if name := string(m[1]); !DemoTokens[name] && !own[name] {
+						add("%s: reads %s, which is not a demo token (docs/demo-contract.md)", rel, name)
+					}
+				}
+			}
 		case ".woff2":
 			fonts += len(b)
 		case ".js":
