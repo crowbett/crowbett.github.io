@@ -1,6 +1,8 @@
 package site
 
 import (
+	"fmt"
+	"math/rand/v2"
 	"os"
 	"path/filepath"
 	"strings"
@@ -211,5 +213,27 @@ func TestBuildRejectsStaleShareCards(t *testing.T) {
 	src[ShareSums] = &fstest.MapFile{Data: []byte("home " + ShareSum(cards["home"]) + "\ndemo " + ShareSum(cards["demo"]) + "\n")}
 	if err := Build(cfg); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestCheckGzipsEachBinary(t *testing.T) {
+	defer func(b int) { Budgets.WASMGzipped = b }(Budgets.WASMGzipped)
+	Budgets.WASMGzipped = 1000
+	out := t.TempDir()
+	noise := make([]byte, 4000)
+	rand.NewChaCha8([32]byte{}).Read(noise)
+	for i, b := range [][]byte{noise, make([]byte, 4000), noise[:500], noise[:3000], make([]byte, 9000)} {
+		if err := writeFile(filepath.Join(out, "wasm", fmt.Sprintf("d%d.wasm", i)), b); err != nil {
+			t.Fatal(err)
+		}
+	}
+	err := Check(out)
+	if err == nil {
+		t.Fatal("check passed binaries over the gzip budget")
+	}
+	for i, over := range []bool{true, false, false, true, false} {
+		if got := strings.Contains(err.Error(), fmt.Sprintf("/wasm/d%d.wasm: ", i)); got != over {
+			t.Errorf("d%d.wasm reported %v, want %v:\n%v", i, got, over, err)
+		}
 	}
 }
