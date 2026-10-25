@@ -113,12 +113,15 @@ func run(m *testing.M) int {
 		return 1
 	}
 	defer os.RemoveAll(siteOut)
-	if err := site.Build(site.Config{Src: os.DirFS(root), Out: siteOut, Owner: site.DefaultOwner, Now: time.Now()}); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
-	}
-	srv = httptest.NewServer(http.FileServer(http.Dir(siteOut)))
-	defer srv.Close()
+	// Chrome starts while the site builds: a cold start took up to ~13 s on CI.
+	start := time.Now()
+	built := make(chan error, 1)
+	var build time.Duration
+	go func() {
+		err := site.Build(site.Config{Src: os.DirFS(root), Out: siteOut, Owner: site.DefaultOwner, Now: time.Now()})
+		build = time.Since(start)
+		built <- err
+	}()
 	alloc, cancelA := chromedp.NewExecAllocator(context.Background(), allocOpts()...)
 	defer cancelA()
 	b, cancelB := chromedp.NewContext(alloc)
@@ -127,6 +130,14 @@ func run(m *testing.M) int {
 		fmt.Fprintln(os.Stderr, "start Chrome:", err)
 		return 1
 	}
+	chrome := time.Since(start)
+	if err := <-built; err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	fmt.Fprintf(os.Stderr, "e2e setup: Chrome up in %.1fs, site built in %.1fs\n", chrome.Seconds(), build.Seconds())
+	srv = httptest.NewServer(http.FileServer(http.Dir(siteOut)))
+	defer srv.Close()
 	browser = b
 	return m.Run()
 }
