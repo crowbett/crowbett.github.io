@@ -13,6 +13,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -127,7 +128,7 @@ func TestMain(m *testing.M) {
 	os.Exit(run(m))
 }
 
-func run(m *testing.M) int {
+func run(m *testing.M) (code int) {
 	var err error
 	if root, err = filepath.Abs(".."); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -147,7 +148,24 @@ func run(m *testing.M) int {
 		build = time.Since(start)
 		built <- err
 	}()
-	alloc, cancelA := chromedp.NewExecAllocator(context.Background(), allocOpts()...)
+	// Chrome's own output goes to stderr on CI and to a file locally, kept
+	// for a failed run (F3 in docs/tasks.md).
+	var chromeLog io.Writer = os.Stderr
+	if os.Getenv("CI") == "" {
+		f, err := os.Create(filepath.Join(os.TempDir(), "crowbett-e2e-chrome.log"))
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		defer f.Close()
+		chromeLog = f
+		defer func() {
+			if code != 0 {
+				fmt.Fprintln(os.Stderr, "Chrome output:", f.Name())
+			}
+		}()
+	}
+	alloc, cancelA := chromedp.NewExecAllocator(context.Background(), allocOpts(chromeLog)...)
 	defer cancelA()
 	b, cancelB := chromedp.NewContext(alloc)
 	defer cancelB()
@@ -407,10 +425,10 @@ func lockBytes(t *testing.T, slug string) int {
 // the pages under test are our own. CI also names google-chrome: chromedp
 // would otherwise pick the runner's /usr/bin/chromium, which took 25 s to
 // cold-start against 1.3 s for Chrome (measured on ubuntu-24.04, 2026-10-24).
-func allocOpts() []chromedp.ExecAllocatorOption {
-	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.Flag("mute-audio", true))
+func allocOpts(chromeLog io.Writer) []chromedp.ExecAllocatorOption {
+	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.Flag("mute-audio", true), chromedp.CombinedOutput(chromeLog))
 	if os.Getenv("CI") != "" {
-		opts = append(opts, chromedp.ExecPath("google-chrome"), chromedp.NoSandbox, chromedp.CombinedOutput(os.Stderr))
+		opts = append(opts, chromedp.ExecPath("google-chrome"), chromedp.NoSandbox)
 	}
 	return opts
 }
@@ -426,9 +444,14 @@ func newTab(t *testing.T, d time.Duration) (context.Context, context.CancelFunc)
 	ctx, cancelTab := chromedp.NewContext(browser)
 	ctx, cancelT := context.WithTimeout(ctx, d)
 	cancel := func() { cancelT(); cancelTab() }
+	queued := time.Now()
 	tabMu.Lock()
+	opening := time.Now()
 	err := chromedp.Do(ctx)
 	tabMu.Unlock()
+	if open := time.Since(opening); open > 5*time.Second {
+		t.Logf("opening a tab took %v after %v waiting for the lock", open.Round(time.Millisecond), opening.Sub(queued).Round(time.Millisecond))
+	}
 	if err != nil {
 		cancel()
 		t.Fatal(err)
