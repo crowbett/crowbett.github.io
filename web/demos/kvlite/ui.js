@@ -157,7 +157,7 @@ export async function mount(root, demo) {
   ops.append(put, del, get, bulk);
   form.append(field("Key", key), field("Value", value, "kv-grow"), ops);
   const maint = el("div", "kv-controls");
-  maint.append(compact, field("On crash", tear), crash, reset);
+  maint.append(compact, reset, field("On crash", tear), crash);
   const note = el("p", "kv-note", "Crash and reopen drops the store without Close, as a killed process would, and removes the LOCK file it leaves behind: the browser has no file locks, so kvlite falls back to an O_EXCL file that an operator removes by hand. A tear cuts bytes off the end of the active segment, the way a power cut can leave the last write half on disk. Then kvlite's own Open recovers: it truncates the torn record and logs it. If a decodable record turns up inside the torn record's remaining bytes, kvlite cannot prove the tail was torn and refuses to open with ErrCorrupt, by design.");
 
   const status = el("p", "demo-out kv-status");
