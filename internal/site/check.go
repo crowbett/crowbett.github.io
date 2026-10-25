@@ -19,11 +19,13 @@ var Budgets = struct {
 	CSS         int // bytes, all CSS together
 	JSPerDemo   int // bytes, one demo's ui.js
 	WASMGzipped int // bytes, one demo's .wasm after gzip -9
+	Fonts       int // bytes, all .woff2 together
 }{
 	PageHTML:    60 << 10,
 	CSS:         40 << 10,
 	JSPerDemo:   60 << 10,
 	WASMGzipped: 2 << 20,
+	Fonts:       32 << 10,
 }
 
 var refAttr = regexp.MustCompile(`(?:href|src)="([^"#?]+)`)
@@ -33,7 +35,7 @@ var refAttr = regexp.MustCompile(`(?:href|src)="([^"#?]+)`)
 func Check(out string) error {
 	var problems []string
 	add := func(format string, a ...any) { problems = append(problems, fmt.Sprintf(format, a...)) }
-	css := 0
+	css, fonts := 0, 0
 	err := filepath.WalkDir(out, func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
@@ -68,6 +70,8 @@ func Check(out string) error {
 			}
 		case ".css":
 			css += len(b)
+		case ".woff2":
+			fonts += len(b)
 		case ".js":
 			if strings.HasPrefix(rel, "/demos/") && len(b) > Budgets.JSPerDemo {
 				add("%s: %d bytes, budget %d", rel, len(b), Budgets.JSPerDemo)
@@ -84,6 +88,9 @@ func Check(out string) error {
 	}
 	if css > Budgets.CSS {
 		add("CSS totals %d bytes, budget %d", css, Budgets.CSS)
+	}
+	if fonts > Budgets.Fonts {
+		add("fonts total %d bytes, budget %d", fonts, Budgets.Fonts)
 	}
 	if len(problems) > 0 {
 		return fmt.Errorf("site check failed:\n  %s", strings.Join(problems, "\n  "))
