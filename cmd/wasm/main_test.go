@@ -41,3 +41,25 @@ func TestBuildRejectsUnknownKind(t *testing.T) {
 		t.Fatalf("want kind error, got %v", err)
 	}
 }
+
+func TestExportDirIsFixedAndEmpty(t *testing.T) {
+	slug := "test-" + filepath.Base(t.TempDir())
+	dir, unlock, err := exportDir(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.WriteFile(filepath.Join(dir, "left"), nil, 0o644)
+	unlock()
+	again, unlock, err := exportDir(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(filepath.Join(filepath.Dir(again), slug+".lock"))
+	defer unlock()
+	if again != dir {
+		t.Fatalf("export dir moved: %s then %s", dir, again)
+	}
+	if entries, _ := os.ReadDir(again); len(entries) != 0 {
+		t.Fatalf("export dir not empty: %v", entries)
+	}
+}

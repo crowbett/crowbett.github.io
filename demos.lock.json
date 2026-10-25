@@ -66,6 +66,17 @@
       "sha256": "5bae6787d9cc4716c10479cb7da62ad53b2f100a4627621301a629d596dcaa3f",
       "bytes": 1651703,
       "gzip_bytes": 510336
+    },
+    {
+      "slug": "keel",
+      "kind": "rust",
+      "repo": "keel",
+      "ref": "6a456cb5db07d1960ceb910311ef03ce851a0e73",
+      "pkg": "./crates/keel-web",
+      "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+      "sha256": "dd205cd73a14e7fb661a6c847f9d11a5123ea5290f416cded63711f741a1a479",
+      "bytes": 584576,
+      "gzip_bytes": 204009
     }
   ]
 }

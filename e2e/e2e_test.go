@@ -143,6 +143,22 @@ var demoChecks = map[string][]string{
 			return ok && await until(() => text(".st-where") === "11 of 25 · z 2.2 mm");
 		})()`,
 	},
+	"keel": {
+		`[...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join() === "24f2fb94354d9d25,24f2fb94354d9d25" && document.querySelector(".kl-match") !== null`,
+		`[...document.querySelectorAll(".kl-totals dd")].map((d) => d.textContent).join() === "535,0,6,14,linearizable"`,
+		`document.querySelectorAll(".kl-events li").length === 13 && document.querySelectorAll(".kl-timeline rect.kl-bar").length > 0`,
+		`/^Seed 7: 118,095 scheduler steps and 148,245 traced events over 35\.00 s of simulated time, run in [\d,]+ ms in your browser\.$/.test(document.querySelector(".kl-status").textContent)`,
+		`(async () => {
+			const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 50)); return f(); };
+			const digests = () => [...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join();
+			document.querySelector("input[name=seed]").value = "8";
+			document.querySelector(".kl-controls").requestSubmit();
+			let ok = await until(() => digests() === "22e2ba986ec4d67e" && !document.querySelector(".kl-controls button.secondary").disabled);
+			document.querySelector(".kl-controls button.secondary").click();
+			ok = ok && await until(() => digests() === "22e2ba986ec4d67e,22e2ba986ec4d67e" && document.querySelector(".kl-match") !== null);
+			return ok && document.querySelectorAll(".kl-events li").length === 15;
+		})()`,
+	},
 }
 
 var viewports = []struct {
