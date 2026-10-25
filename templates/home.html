@@ -12,18 +12,7 @@
     </div>
     {{with .Hero}}<figure class="replay">
       <figcaption><span class="replay-k">Replay</span> <span class="replay-t">{{.Slug}}'s {{.Algo}} limiter at {{.Rate}} requests/s{{if eq .Pattern "attack"}} under a 10× attack{{end}}</span> <span class="replay-v">The real code's output, recorded from its WebAssembly build. Every deploy re-runs it and fails if one bar differs.</span></figcaption>
-      <svg class="replay-chart" viewBox="0 0 {{.W}} {{.H}}" role="img" aria-label="{{num .Allowed}} requests allowed and {{num .Denied}} denied over {{.Seconds}} seconds; allowed traffic stays at the limit through the attack">
-      {{if .AttackW}}<rect class="rz" x="{{.AttackX}}" y="0" width="{{.AttackW}}" height="{{.H}}"/>{{end}}
-      {{range .Bars}}<rect class="ra" x="{{.X}}" y="{{.AY}}" width="{{$.Hero.BarW}}" height="{{.AH}}"/>{{if .DH}}<rect class="rd" x="{{.X}}" y="{{.DY}}" width="{{$.Hero.BarW}}" height="{{.DH}}"/>{{end}}{{end}}
-      <line class="rb" x1="0" x2="{{.W}}" y1="{{.DenyY}}" y2="{{.DenyY}}"/>
-      <line class="rl" x1="0" x2="{{.W}}" y1="{{.LimitY}}" y2="{{.LimitY}}"/>
-      <rect class="rw" x="0" y="0" width="{{.W}}" height="{{.H}}"/>
-      <text class="rt rt-n" x="0" y="{{.DenyY}}" dy="-6">denied</text>
-      <text class="rt rt-n" x="0" y="{{.LaneY}}">allowed</text>
-      {{if and .AttackW (eq .Pattern "attack")}}<text class="rt rt-a f{{.AttackStep}}" x="{{.AttackMid}}" y="16">10× attack</text>{{end}}
-      {{if .Burst1X}}<text class="rt rt-e f{{.BurstStep}}" x="{{.Burst1X}}" y="{{.Burst1Y}}">burst</text>{{end}}
-      <text class="rt rt-e" x="{{.W}}" y="{{.LimitY}}" dy="-6">{{.Rate}}/s limit</text>
-      </svg>
+      {{template "replay-chart" .Wide}}{{template "replay-chart" .Tall}}
       <p class="replay-axis"><span>0 s</span><span>{{.Seconds}} s</span></p>
       <p class="replay-foot"><span class="k-a">{{num .Allowed}} allowed</span> <span class="k-d">{{num .Denied}} denied</span></p>
     </figure>{{end}}
@@ -42,3 +31,17 @@
   </ul>
 </section>
 {{template "foot" .}}{{end}}
+{{define "replay-chart"}}<svg class="replay-chart {{.Class}}" viewBox="0 0 {{.W}} {{.H}}" role="img" aria-label="{{.Label}}">
+{{if .AttackW}}<rect class="rz" x="{{.AttackX}}" y="0" width="{{.AttackW}}" height="{{.H}}"/>{{end}}
+{{range .Bars}}<rect class="ra" x="{{.X}}" y="{{.AY}}" width="{{$.BarW}}" height="{{.AH}}"/>{{if .DH}}<rect class="rd" x="{{.X}}" y="{{.DY}}" width="{{$.BarW}}" height="{{.DH}}"/>{{end}}{{end}}
+<rect class="rw" x="0" y="0" width="{{.W}}" height="{{.H}}"/>
+<line class="rb" x1="0" x2="{{.W}}" y1="{{.DenyY}}" y2="{{.DenyY}}"/>
+<line class="rp" x1="0" x2="{{.W}}" y1="{{.PeakY}}" y2="{{.PeakY}}"/>
+<line class="rl" x1="0" x2="{{.W}}" y1="{{.LimitY}}" y2="{{.LimitY}}"/>
+<text class="rt rt-n" x="0" y="{{.DenyY}}" dy="-6">denied</text>
+<text class="rt rt-n" x="0" y="{{.LaneY}}">allowed</text>
+<text class="rt rt-n rt-e" x="{{.W}}" y="{{.PeakY}}" dy="-6">{{.Peak}}/s peak</text>
+{{if and .AttackW .Attack}}<text class="rt rt-a f{{.AttackStep}}" x="{{.AttackMid}}" y="{{.PeakY}}" dy="-6">10× attack</text>{{end}}
+{{if .Burst1X}}<text class="rt rt-e f{{.BurstStep}}" x="{{.Burst1X}}" y="{{.Burst1Y}}">burst</text>{{end}}
+<text class="rt rt-e" x="{{.W}}" y="{{.LimitY}}" dy="-6">{{.Rate}}/s limit</text>
+</svg>{{end}}

@@ -27,6 +27,7 @@ import (
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/emulation"
+	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 
 	"github.com/crowbett/crowbett.github.io/internal/site"
@@ -575,10 +576,36 @@ func visit(t *testing.T, url string, w, h int64, scheme, shot string) {
 	}
 	// Shots show diagrams at rest, not wherever a one-shot animation is, and
 	// sticky elements where a visitor first sees them, not where the Tab walk left them.
-	if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.getAnimations().forEach((a) => { try { a.finish(); } catch {} }), scrollTo(0, 0), true`)); err != nil {
+	// The viewport grows to the whole page first, so every in-view animation
+	// has started and can be finished: a beyond-viewport capture restarted the
+	// replay's wipe, and the desktop home shot showed the chart blank.
+	full, err := chromedp.Run(ctx, chromedp.Evaluate[int64](`scrollTo(0, 0), document.documentElement.scrollHeight`))
+	if err != nil {
 		t.Fatal(err)
 	}
-	img, err := chromedp.Run(ctx, chromedp.FullScreenshot(80))
+	if err := chromedp.Do(ctx, chromedp.EmulateViewport(w, full)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`(async () => {
+		const frames = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+		await frames();
+		const all = document.getAnimations();
+		await Promise.all(all.map((a) => a.ready.catch(() => {})));
+		all.forEach((a) => { try { a.finish(); } catch {} });
+		await frames();
+		return true;
+	})()`, chromedp.EvalAwaitPromise)); err != nil {
+		t.Fatal(err)
+	}
+	var img []byte
+	err = chromedp.Do(ctx, chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
+		q := int64(80)
+		r, err := cdp.Call(ctx, t, page.CaptureScreenshot, page.CaptureScreenshotParams{FromSurface: &[]bool{true}[0], Format: page.CaptureScreenshotFormatJpeg, Quality: &q})
+		if err == nil {
+			img = r.Data
+		}
+		return err
+	}))
 	if err != nil {
 		t.Fatal(err)
 	}

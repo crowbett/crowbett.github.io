@@ -158,6 +158,24 @@ func TestBuildRejectsHeroTraceWithoutLiveDemo(t *testing.T) {
 	}
 }
 
+// The peak label is a number on the page: it must be the tallest denied
+// bucket as a rate, and its line must touch that bar, in both drawings.
+func TestHeroPeakIsTallestDeniedBucket(t *testing.T) {
+	src := fstest.MapFS{"data/hero-trace.json": &fstest.MapFile{Data: []byte(`{"slug":"demo","params":{"rate":50,"durationMs":2000},"result":{"bucketUs":500000,"emissionUs":20000,"offered":[30,300,280,20],"series":[{"algo":"gcra","allowed":[25,25,25,20],"denied":[5,275,255,0]}]}}`)}}
+	h, err := loadHeroTrace(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []*heroChart{h.Wide, h.Tall} {
+		if c.Peak != 550 {
+			t.Errorf("%s: peak %d/s, want 550", c.Class, c.Peak)
+		}
+		if top := c.Bars[1].DY; top != c.PeakY {
+			t.Errorf("%s: tallest denied bar tops out at %v, peak line at %v", c.Class, top, c.PeakY)
+		}
+	}
+}
+
 func TestBuildRejectsStaleShareCards(t *testing.T) {
 	src := testFS(goodProject)
 	src["templates/og.html"] = &fstest.MapFile{Data: []byte(`{{define "og"}}{{if .Project}}{{.Project.Title}}{{else}}home{{end}}{{end}}`)}
