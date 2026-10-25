@@ -9,7 +9,7 @@ Personal site at https://crowbett.github.io: project pages plus live demos that 
 - Never change any repo's visibility. quorum, keel and strata stay private; the site ships their compiled binaries only and says "source available on request".
 - Demo binaries are built locally with `make wasm` from commits pinned in `demos.lock.json` (`go run ./cmd/wasm pin <slug> <sha>`), never from a dirty tree. CI only verifies them.
 - Budgets in `internal/site/check.go` are hard limits. Raising one is a recorded decision in `PLAN.md`.
-- No third-party scripts, fonts, analytics or cookies. The CSP in `templates/layout.html` stays strict; no inline scripts or style attributes.
+- No third-party scripts, analytics, cookies or externally hosted fonts (self-hosted, subset fonts within budget are fine). The CSP in `templates/layout.html` stays strict; no inline scripts or style attributes.
 - A UI claim must stay true: if a page says something is live, measured or available, it is.
 - CI (push to deploy) stays under 60 s wall clock. Check `gh run view` timings after workflow or test changes.
 - Keep files under 1000 lines and comments minimal.
