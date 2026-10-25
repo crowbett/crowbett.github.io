@@ -26,8 +26,9 @@ Done when: README and this site's edgecache page say the same true thing.
 After b931dea the Pages job took 77-91 s: e2e ran 56-57 s on CI against 16-24 s before. Measured on a debug branch: chromedp chose `/usr/bin/chromium`, which cold-starts in 25 s on ubuntu-24.04, against 1.3 s for `google-chrome`; the page subtests themselves took 8.5 s. e2e now names `google-chrome` on CI.
 Done when: the Pages job is back under 60 s.
 
-### F2 CI wall clock has no headroom · order 7 · deps: none · status: todo
+### F2 CI wall clock has no headroom · order 7 · deps: none · status: doing
 Measured 2026-10-24: after D2 (4a78b9c) the Pages job took 61 s (e2e 30.9 s). Two fixes went in: `-parallel 12` (82ecd2e; e2e on the PR workflow 13.9 / 21.3 / 14.4 s) and opening tabs one at a time (this commit; locally TestSite 10.5-12.5 s against 19.9-31.0 s). On CI the spread stays wide: the same commit ran e2e in 15.6 s and 27.2 s (Pages jobs 40 s and 59 s), and on some runners every browser test starts ~9 s late (TestDemoFrame 11.7 s against 2.8 s), which looks like a cold Chrome start. Skipping screenshots on CI showed no clear gain (e2e 28.3 / 24.8 / 20.7 s). Fixed cost outside e2e is ~22 s (setup-go 8-11 s downloads Go 1.27 each run, deploy 7 s). Ideas: one shared Chrome for all e2e tests, fewer duplicate demo boots, caching the Go toolchain.
+Go toolchain from go.dev plus a build cache (348bab6) took setup from 8-11 s to 2-3 s. Ten dispatched Pages runs after it (348bab6 ×4, 2f52864 ×6): 46, 48, 50, 45, 73, 40, 47, 55, 54, 64 s, so 2 of 10 over. The spread is e2e alone: on 2f52864 one run took 48.3 s in e2e and the next 21.1 s. Next: one Chrome for the whole e2e package, and run demoChecks once per demo instead of in all four viewport × scheme tabs.
 Done when: ten consecutive Pages runs finish under 60 s, timings listed here.
 
 ## Go demos (one bridge each, see docs/demo-contract.md)
@@ -43,7 +44,7 @@ Done when: as D1, with a demoCheck that a preset produces the expected outcome s
 Size probe (2026-10-24): a minimal js/wasm main importing `internal/rfc9111` + `net/http` + `encoding/json` built to 6,555,043 bytes, 1,819,664 gzipped (measured), under the 2 MiB budget with ~270 KB to spare.
 Decision (2026-10-24): drive the real engine (`internal/cache` over `internal/memstore`) instead of bare rfc9111, because the orchestration that turns a policy decision into HIT/STALE/REVALIDATED (`metaFor`, `refreshedMeta`) is unexported and copying it would be reimplementation. Probe of engine + memstore + json: 7,204,662 bytes, 1,992,498 gzipped (measured), ~104 KB under budget. The finished bridge came out at 2,176,744 gzipped (lock entry), over 2 MiB: budget raised to 2.25 MiB, decision and measurements in PLAN.md. The bridge found an engine bug: a miss sent `Age: 0` instead of the origin's corrected age (fixed in edgecache c0e5efd).
 
-### D3 jobrun: cron and backoff · order 12 · deps: S1 · status: todo
+### D3 jobrun: cron and backoff · order 12 · deps: S1 · status: done 2026-10-24 (jobrun 9eef3d2, d8d00c4; site: this commit)
 Bridge over `internal/cronx` (parse + next) and the retry backoff from `job.Policy` (`internal/job`; find the function that computes the next delay, do not reimplement). Visitor types a cron expression and a start time and sees the next 10 runs, or fails a job N times and sees the backoff schedule.
 Done when: as D1; parse errors show the parser's own message.
 
