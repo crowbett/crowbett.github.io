@@ -8,7 +8,7 @@
     <span class="lang">{{.Lang}}</span>
     {{range .Tags}}<span class="tag">{{.}}</span>{{end}}
   </p>
-  {{if .Metric}}<p class="metric">{{.Metric}} <span class="source">({{.MetricSource}})</span></p>{{end}}
+  {{if .Metric}}<p class="metric">{{.Metric}} <span class="source">Source: {{.MetricSource}}</span></p>{{end}}
 
   {{if .Live}}
   <section class="demo" data-demo="{{.Slug}}" data-ui="{{demoAsset .Slug}}" aria-label="Live demo">

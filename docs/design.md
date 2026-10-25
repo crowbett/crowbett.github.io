@@ -35,7 +35,7 @@ Principles taken, not pixels.
 Prose stays in the platform UI face (SF on Apple, Segoe on Windows, Roboto on Android): zero bytes, best hinting on each OS. The identity is carried by one self-hosted monospace used for data and labels: metrics, sizes, tags, eyebrows, demo chrome.
 
 - `--sans`: `system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`.
-- `--mono`: a self-hosted variable monospace (candidate: JetBrains Mono, OFL, `wght` axis), subset to printable ASCII plus `µ × · – — … → ← ↑ ↓ ≤ ≥ ±`, `font-display: swap`, falling back to `ui-monospace, "SF Mono", Menlo, Consolas, monospace`. Target ≤ 30 KB woff2, measured in V2; if it cannot fit, ship `ui-monospace` and record why.
+- `--mono`: JetBrains Mono (OFL 1.1, no reserved font name), variable `wght` limited to 400-700, subset to printable ASCII plus `© ± µ · × – — ‘ ’ “ ” … ← ↑ → ↓ − ≤ ≥`: 9,796 bytes woff2 (measured). Preloaded, `font-display: optional` so it never swaps in late and shifts layout; a visitor on a slow first load sees the fallback `ui-monospace, "SF Mono", Menlo, Consolas, monospace` for that page. Licence ships beside it (`web/assets/fonts/OFL.txt`).
 - Figures: `font-variant-numeric: tabular-nums` wherever numbers sit in columns or update live.
 
 Scale (rem at 16 px root; body is 17 px):
@@ -50,7 +50,7 @@ Scale (rem at 16 px root; body is 17 px):
 | `--t-h1` | 2.25rem → 3.5rem | 1.05 | page titles |
 | `--t-display` | 2.5rem → 4.5rem | 1.0 | home hero only |
 
-Headings: weight 650-700, tracking −0.02em at h1 and above. Prose measure 65ch max. No more than three sizes visible in one viewport outside the hero.
+Headings: weight 680, tracking −0.025em at h1, −0.035em at display. Prose and every block in the prose column share `--measure: 42rem` (a `ch` measure differs per font, so mono and sans blocks ended at different right edges). No more than three sizes visible in one viewport outside the hero.
 
 ## Colour
 
@@ -79,8 +79,9 @@ Rules: one accent; green means live and nothing else; red means error and nothin
 ## Space, layout, radius
 
 - Spacing steps (px): 4, 8, 12, 16, 24, 32, 48, 64, 96. Nothing off-scale.
-- Page gutter 16 px on phones, 32 px from 48rem; content max 72rem; prose 65ch.
-- Vertical rhythm: sections 64-96 px apart on desktop, 48 px on phones; within a block, 8-16 px.
+- Page gutter 16 px on phones, 32 px from 48rem; content max 72rem; prose `--measure` 42rem.
+- Vertical rhythm: sections 64 px apart on desktop, 48 px on phones; within a block, 8-16 px.
+- Card padding 16 px on phones, 24 px from 48rem (24 px on a 390 px screen left a 292 px text column).
 - Desktop project pages (≥ 64rem): metadata gutter (lang, tags, status, source) left of the prose column, Stripe-style. Phones: single column, metadata under the title.
 - Radius: 6 px for controls and cards, 10 px for the demo frame, 999 px for pills. Hairline borders (1 px), no shadows in dark; at most one soft shadow (`0 1px 2px` at 6% black) in light.
 
@@ -111,4 +112,7 @@ No photo, illustration, mascot, emoji section markers or stock icons. No gradien
 ## Decisions log
 
 - 2026-10-24 V1: direction "a lab notebook that runs". System sans for prose, one self-hosted mono for data (byte budget decided in V2). Warm rust accent kept from the scaffold: distinctive against the usual blue, and AA in both themes as measured above. No theme toggle (see Colour).
+- 2026-10-24 V2: JetBrains Mono over Geist Mono (same size, 12,976 vs 13,052 B before the weight limit; longer track record at small sizes) and IBM Plex Mono (16,852 B, and its "Plex" reserved name forbids shipping a subset under that name). Chrome does not implement the `ui-monospace` generic, so before V2 Chrome on macOS fell through to Menlo; self-hosting makes the data face identical everywhere.
+- 2026-10-24 V2: font rebuilt with fonttools 4.x: `fonttools varLib.instancer JetBrainsMono[wght].ttf wght=400:700`, then `pyftsubset --unicodes=U+0020-007E,U+00A9,U+00B1,U+00B5,U+00B7,U+00D7,U+2013,U+2014,U+2018-201D,U+2026,U+2190-2193,U+2212,U+2264-2265 --flavor=woff2 --layout-features=kern --name-IDs='*'` (keeps the licence name records; drops `calt`, so `->` never turns into a ligature). New `Fonts` budget in `site check`: 32 KiB of woff2 in total.
+- 2026-10-24 V2 review, round 1: blocks in the project column ended at three right edges (fixed with `--measure`); 140 px dead gap between hero and Work on desktop (section gap 96 → 64 px); phone cards too padded (24 → 16 px). Round 2: remaining weaknesses belong to V3/V4: the name appears twice at the top of home, "Demo coming" and "Private source" pills look identical, the metric box and the planned-demo notice stack as two boxes, and a metric source like `go test ./internal/sim -seeds 10000` can wrap after its hyphen on phones.
 - 2026-10-24 V1: e2e screenshots inherit the OS colour scheme (this machine is dark), so light pages were never reviewed. V2 makes e2e shoot both schemes explicitly.

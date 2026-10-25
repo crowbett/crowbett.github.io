@@ -111,11 +111,12 @@ func TestCheckFindsProblems(t *testing.T) {
 	}
 	write("index.html", `<html lang="en"><title>t</title><meta name="viewport"><a href="/missing/">x</a><a href="https://example.com/">ok</a>`)
 	write("big.css", strings.Repeat("a", Budgets.CSS+1))
+	write("big.woff2", strings.Repeat("a", Budgets.Fonts+1))
 	err := Check(out)
 	if err == nil {
 		t.Fatal("check passed a broken site")
 	}
-	for _, want := range []string{"broken link /missing/", `missing name="description"`, "CSS totals"} {
+	for _, want := range []string{"broken link /missing/", `missing name="description"`, "CSS totals", "fonts total"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("check did not report %q:\n%v", want, err)
 		}

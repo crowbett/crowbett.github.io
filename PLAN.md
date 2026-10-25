@@ -27,8 +27,11 @@ Status (2026-10-24): live at https://crowbett.github.io. Scaffold done. 8 projec
 | All CSS | 40 KiB |
 | One demo's `ui.js` | 60 KiB |
 | One `.wasm`, gzip -9 | 2 MiB |
+| All `.woff2` fonts | 32 KiB |
 
 Measured: the `smoke` binary (encoding/json + runtime) is 4,389,028 bytes, 1,217,768 gzipped. A real Go demo will likely land at 1.3-2 MiB gzipped (projected), so keep bridges lean; TinyGo is an option only if a demo cannot fit.
+
+Fonts budget (added 2026-10-24, V2): one self-hosted mono, JetBrains Mono subset to 9,796 bytes (measured); 32 KiB leaves room for one more subset face before it needs a recorded decision. Rationale in `docs/design.md` §Type.
 
 ## Open
 - Rust demos (strata, codegraph, keel) need a second build path in `cmd/wasm`; see `docs/tasks.md` R0.

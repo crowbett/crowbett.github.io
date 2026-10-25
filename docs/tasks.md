@@ -76,21 +76,23 @@ Done when: as D1, or `blocked` with evidence.
 
 Owner: the design session. It owns `templates/`, `web/assets/` (site.css, demo.js loading/error UX, icons, fonts, images), the home and project page layout, `docs/design.md`, and the page-level e2e checks. It does not touch project repos, `web/demos/<slug>/ui.js`, `wasm/`, `demos.lock.json` or project copy. The `demo-*` class names and the `mount(el, demo)` contract are shared: change them only together with `docs/demo-contract.md`, without breaking live demos.
 
-### V1 Design direction · order 100 · deps: S1 · status: done 2026-10-24 (this commit)
+### V1 Design direction · order 100 · deps: S1 · status: done 2026-10-24 (2e61260)
 Study 10+ standout engineer portfolios and product sites (name each and what it does well). Write `docs/design.md`: the one-sentence feel, type scale, color tokens for light and dark, spacing, radius, motion rules (durations, easing, reduced motion), the demo frame, and what we will not do.
 Done when: design.md exists and every later V task cites it.
 
-### V2 Foundation: type, tokens, themes · order 101 · deps: V1 · status: todo
+### V2 Foundation: type, tokens, themes · order 101 · deps: V1 · status: done 2026-10-24 (this commit)
 Implement design.md §Type, §Colour, §Space in site.css (a self-hosted variable woff2 is allowed if it earns its bytes; subset it, `font-display: swap`, budget recorded in PLAN.md). Light and dark both first-class; no theme toggle (design.md §Colour). e2e shoots both schemes so light is reviewed too.
 Done when: every page matches design.md in both themes at 390 and 1280 px, screenshots reviewed.
 
 ### V3 Home page · order 102 · deps: V2 · status: todo
 Per design.md §Feel and §References (Maggie Appleton's sentence hero, samwho's mechanism cards): a hero that says who and what in one look, and a project grid where each card shows what the project does visually (SVG diagram or static capture per project, not a stock icon), with live/planned state honest.
 Done when: a fresh-eyes reviewer (V8 method) rates it "would remember this site" and the screenshots back it.
+Carry-over from V2 review: the name appears twice at the top (brand and h1); "Demo coming" and "Private source" pills look identical.
 
 ### V4 Project page and demo frame · order 103 · deps: V2 · status: todo
 Per design.md §Demo frame and §Space (metadata gutter): header, metric presentation with its source, body typography, and one consistent demo frame for every demo: title bar, size, loading progress with real bytes (stream the fetch), clear error state with retry, focus handling. Works for planned and live projects.
 Done when: smoke demo shows real byte progress and a styled error (force one in e2e), screenshots reviewed.
+Carry-over from V2 review (design.md decisions log): the metric box and the planned-demo notice stack as two boxes; a metric source with a command (`go test ./internal/sim -seeds 10000`) wraps after its hyphen on phones.
 
 ### V5 Motion and feel · order 104 · deps: V3, V4 · status: todo
 Per design.md §Motion: micro-interactions that make it feel crafted: hover/focus states, page-load reveal, card transitions, demo start transition. CSS-first, ≤ 200 ms for UI feedback, all off under `prefers-reduced-motion`. No layout shift.

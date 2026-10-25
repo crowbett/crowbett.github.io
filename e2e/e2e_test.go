@@ -3,7 +3,7 @@
 // Package e2e drives the built site in headless Chrome: every page loads with
 // no console errors or CSP violations, fits a phone width without horizontal
 // scroll, and every live demo starts and reports ready. Screenshots of each
-// page, desktop and phone, land in e2e/out/ for review.
+// page, desktop and phone, light and dark, land in e2e/out/ for review.
 //
 //	go test -tags e2e ./e2e
 package e2e
@@ -21,6 +21,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
 
 	"github.com/crowbett/crowbett.github.io/internal/site"
@@ -41,6 +43,10 @@ var viewports = []struct {
 	{"phone", 390, 844},
 }
 
+// schemes are emulated explicitly: an unset scheme follows the host OS, so a
+// dark machine would never shoot the light theme.
+var schemes = []string{"light", "dark"}
+
 func TestSite(t *testing.T) {
 	t.Parallel()
 	out := t.TempDir()
@@ -59,6 +65,9 @@ func TestSite(t *testing.T) {
 	defer srv.Close()
 
 	shots := filepath.Join(root, "e2e", "out")
+	if err := os.RemoveAll(shots); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.MkdirAll(shots, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -80,14 +89,17 @@ func TestSite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// One browser, one tab per page and viewport, all in parallel.
+	// One browser, one tab per page, viewport and scheme, all in parallel.
 	t.Run("pages", func(t *testing.T) {
 		for _, page := range pages {
 			for _, vp := range viewports {
-				t.Run(name(page)+"/"+vp.name, func(t *testing.T) {
-					t.Parallel()
-					visit(t, browser, srv.URL+page, vp.width, vp.height, filepath.Join(shots, name(page)+"-"+vp.name))
-				})
+				for _, scheme := range schemes {
+					shot := name(page) + "-" + vp.name + "-" + scheme
+					t.Run(name(page)+"/"+vp.name+"/"+scheme, func(t *testing.T) {
+						t.Parallel()
+						visit(t, browser, srv.URL+page, vp.width, vp.height, scheme, filepath.Join(shots, shot))
+					})
+				}
 			}
 		}
 	})
@@ -170,7 +182,7 @@ func allocOpts() []chromedp.ExecAllocatorOption {
 	return opts
 }
 
-func visit(t *testing.T, browser context.Context, url string, w, h int64, shot string) {
+func visit(t *testing.T, browser context.Context, url string, w, h int64, scheme, shot string) {
 	ctx, cancel := chromedp.NewContext(browser)
 	defer cancel()
 	ctx, cancelT := context.WithTimeout(ctx, 90*time.Second)
@@ -196,6 +208,12 @@ func visit(t *testing.T, browser context.Context, url string, w, h int64, shot s
 
 	err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(w, h),
+		chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
+			_, err := cdp.Call(ctx, t, emulation.SetEmulatedMedia, emulation.SetEmulatedMediaParams{
+				Features: []*emulation.MediaFeature{{Name: "prefers-color-scheme", Value: scheme}},
+			})
+			return err
+		}),
 		chromedp.Navigate(url),
 		chromedp.WaitReady(chromedp.CSS("body")),
 	)
