@@ -249,7 +249,16 @@ func TestSlowConnection(t *testing.T) {
 				.observe({ type: "largest-contentful-paint", buffered: true });
 			new PerformanceObserver((l) => { for (const e of l.getEntries()) if (!e.hadRecentInput) out.CLS += e.value; })
 				.observe({ type: "layout-shift", buffered: true });
-			setTimeout(() => resolve(out), 1000);
+			// Read once the page has loaded and painted its largest element
+			// (a loaded machine can paint after a fixed delay would end), and
+			// after at least 1 s of layout-shift watching; give up at 5 s.
+			const start = performance.now();
+			const tick = () => {
+				const t = performance.now() - start;
+				if ((out.LCP > 0 && document.readyState === "complete" && t >= 1000) || t >= 5000) resolve(out);
+				else setTimeout(tick, 100);
+			};
+			tick();
 		})`, chromedp.EvalAwaitPromise))
 		cancel()
 		if err != nil {

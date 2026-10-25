@@ -8,7 +8,7 @@
       <p class="hook">{{if eq .LiveCount 1}}The live demo below runs the project's real code, compiled to WebAssembly, in your browser.
       {{else if .LiveCount}}The live demos below run each project's real code, compiled to WebAssembly, in your browser.
       {{else}}Live demos are on the way: each project's real code, compiled to WebAssembly and running in your browser.{{end}}</p>
-      {{if .LiveCount}}<p class="hero-run">{{range .Projects}}{{if .Live}}<a href="/projects/{{.Slug}}/#demo">Run {{.Title}} <span aria-hidden="true">→</span></a>{{end}}{{end}}</p>{{end}}
+      {{if .LiveCount}}<p class="hero-run"><span class="hero-run-k">Run a live demo</span>{{range .Projects}}{{if .Live}} <a href="/projects/{{.Slug}}/#demo">{{.Title}} <span aria-hidden="true">→</span></a>{{end}}{{end}}</p>{{end}}
     </div>
     {{with .Hero}}<figure class="replay">
       <figcaption><span class="replay-h"><span class="replay-k">Replay</span><span class="replay-v">Re-run on every deploy</span></span> {{.Slug}}'s {{.Algo}} limiter at {{.Rate}} requests/s{{if eq .Pattern "attack"}} under a 10× attack{{end}}</figcaption>
