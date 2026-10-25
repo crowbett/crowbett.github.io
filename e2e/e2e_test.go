@@ -33,6 +33,17 @@ import (
 	"github.com/crowbett/crowbett.github.io/internal/site"
 )
 
+// untilJS binds until(f) for a demo check: it resolves true once f() holds
+// and otherwise throws naming f after 20 s. A strata re-slice on a busy CI
+// runner outlasted the old 5 s, and a bare false hid which step it was.
+func untilJS(check string) string {
+	return "((until) => (" + check + `))(async (f) => {
+		for (const end = Date.now() + 20000; !f(); await new Promise((r) => setTimeout(r, 50)))
+			if (Date.now() > end) throw new Error("timed out: " + f);
+		return true;
+	})`
+}
+
 // demoChecks holds, per demo slug, JavaScript expressions that must all be
 // true (or resolve true) once the demo reports ready. Every live demo adds
 // at least one check that proves it rendered real output from its binary.
@@ -43,7 +54,6 @@ var demoChecks = map[string][]string{
 		`[...document.querySelectorAll("[aria-labelledby=cg-callees] .cg-edge")].map((li) => li.firstChild.textContent + ":" + li.querySelector(".cg-conf").textContent).filter((t) => /^(parse::parse_line|e\.is_fatal):/.test(t)).join() === "parse::parse_line:likely,e.is_fatal:unresolved"`,
 		`document.querySelector(".cg-foot").textContent.includes("99 edges (imports excluded), 50 resolved to a definition: 44 exact, 6 likely, 0 name_only")`,
 		`(async () => {
-			const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 50)); return f(); };
 			const callers = () => [...document.querySelectorAll("[aria-labelledby=cg-callers] .cg-go")].map((b) => b.textContent).join();
 			[...document.querySelectorAll(".cg-go")].find((b) => b.textContent === "parse::parse_line").click();
 			let ok = await until(() => document.querySelector(".cg-summary").textContent.startsWith("parse::parse_line (src/parse.rs:19)") && callers() === "main");
@@ -82,7 +92,6 @@ var demoChecks = map[string][]string{
 	"kvlite": {
 		`[...document.querySelectorAll(".kv-table tbody tr")].map((r) => r.cells[2].textContent + ":" + r.cells[3].textContent).join() === "put:user:1,put:user:2,put:user:1,delete:user:2"`,
 		`(async () => {
-			const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 50)); return f(); };
 			const click = (t) => [...document.querySelectorAll(".kv-controls button")].find((b) => b.textContent === t).click();
 			const segs = () => [...document.querySelectorAll(".kv-seg")].map((s) => s.querySelector(".kv-seg-meta").textContent + "|" +
 				[...s.querySelectorAll("tbody tr")].map((r) => r.cells[2].textContent + ":" + r.cells[3].textContent).join());
@@ -112,7 +121,6 @@ var demoChecks = map[string][]string{
 		`(async () => {
 			const s = document.querySelector("select[name=preset]");
 			const col = (sel) => [...document.querySelectorAll(sel)].map((c) => c.textContent).join();
-			const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 50)); return f(); };
 			const pick = (v) => { s.value = v; s.dispatchEvent(new Event("change")); };
 			pick("no-store");
 			const ok = await until(() => col(".ec-table .ec-badge") === "MISS,BYPASS,HIT" && col(".ec-table td.ec-body") === "version 1,version 2,version 1");
@@ -126,7 +134,6 @@ var demoChecks = map[string][]string{
 		`[...document.querySelectorAll(".st-key")].map((k) => k.dataset.kind).join() === "OuterWall,InnerWall,SparseInfill"`,
 		`(() => { const c = document.querySelector(".st-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n > 2000; })()`,
 		`(async () => {
-			const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 50)); return f(); };
 			const text = (sel) => document.querySelector(sel).textContent;
 			const set = (sel, v, ev) => { const e = document.querySelector(sel); e.value = v; e.dispatchEvent(new Event(ev)); };
 			set("input[name=layer]", "0", "input");
@@ -165,7 +172,6 @@ var demoChecks = map[string][]string{
 		`document.querySelectorAll(".kl-events li").length === 13 && document.querySelectorAll(".kl-timeline rect.kl-bar").length > 0`,
 		`/^Seed 7: 118,095 scheduler steps and 148,245 traced events over 35\.00 s of simulated time, run in [\d,]+ ms in your browser\.$/.test(document.querySelector(".kl-status").textContent)`,
 		`(async () => {
-			const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 50)); return f(); };
 			const digests = () => [...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join();
 			document.querySelector("input[name=seed]").value = "8";
 			document.querySelector(".kl-controls").requestSubmit();
@@ -671,7 +677,7 @@ func visit(t *testing.T, url string, w, h int64, scheme, shot string) {
 			t.Errorf("demo %q has no entry in demoChecks", slug)
 		}
 		for _, js := range checks {
-			if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](js, chromedp.EvalAwaitPromise)); err != nil || !ok {
+			if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(js), chromedp.EvalAwaitPromise)); err != nil || !ok {
 				t.Errorf("demo check failed: %s (err %v)", js, err)
 			}
 		}
