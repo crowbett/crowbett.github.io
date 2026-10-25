@@ -2,7 +2,8 @@
 
 # CI runs `make -j8 NICE="nice -n 10" gate e2e` and must stay under 60 s: every
 # target starts at once and the gate yields the CPU to e2e, the longest (F5 in
-# docs/tasks.md). Run both locally before every push.
+# docs/tasks.md). Tests skip go test's vet: the vet target runs every analyzer
+# on the same packages. Run both locally before every push.
 gate: fmt tidy vet test site wasm-check
 
 fmt:
