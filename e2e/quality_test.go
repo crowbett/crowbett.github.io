@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/animation"
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/input"
 	"github.com/chromedp/chromedp"
@@ -182,6 +183,17 @@ func tabOrder(t *testing.T, ctx context.Context) {
 		Tag   string
 		Ring  bool
 	}
+	// Focusing a card loops its diagram, and under load Chrome then held one
+	// Tab key event for 15-25 s (F5 in docs/tasks.md). Focus order and rings
+	// do not depend on animation time, so the walk pauses the timeline.
+	if err := chromedp.Do(ctx, setPlaybackRate(0)); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := chromedp.Do(ctx, setPlaybackRate(1)); err != nil {
+			t.Error(err)
+		}
+	}()
 	var got []stop
 	for range n {
 		err := chromedp.Do(ctx, chromedp.Func(func(ctx context.Context, tg *chromedp.Target) error {
@@ -303,4 +315,13 @@ func (s *slowWriter) Write(b []byte) (int, error) {
 		b = b[c:]
 	}
 	return n, nil
+}
+
+// setPlaybackRate sets the rate of the page's document timeline; 0 pauses
+// every animation where it is.
+func setPlaybackRate(r float64) chromedp.Action[chromedp.Void] {
+	return chromedp.Func(func(ctx context.Context, tg *chromedp.Target) error {
+		_, err := cdp.Call(ctx, tg, animation.SetPlaybackRate, animation.SetPlaybackRateParams{PlaybackRate: r})
+		return err
+	})
 }

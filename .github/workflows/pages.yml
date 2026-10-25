@@ -26,12 +26,15 @@ jobs:
       - name: Warm Chrome
         # Chrome's first start on a fresh runner took up to ~13 s inside e2e (F2);
         # this one runs in the background while Go is fetched and the gate runs.
-        run: (google-chrome --headless=new --no-sandbox --disable-gpu --dump-dom about:blank > /dev/null 2>&1 &)
+        # Reading Chrome's files 16 at a time first got it warm in 2-7 s; on its
+        # own the warm start took 8-15 s on some runners and overlapped e2e (F5).
+        run: ({ find /opt/google/chrome -type f -size +100k -print0 | xargs -0 -P 16 -n 1 cat; google-chrome --headless=new --no-sandbox --disable-gpu --dump-dom about:blank; } > /dev/null 2>&1 &)
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Go 1.27.0
         # setup-go spent ~4 s copying Go into the tool cache on every run (F2).
+        # A stalled download held two F5 test jobs to the 5 min timeout.
         run: |
-          curl -fsSL -o "$RUNNER_TEMP/go.tgz" https://go.dev/dl/go1.27.0.linux-amd64.tar.gz
+          curl -fsSL --retry 3 --retry-all-errors --connect-timeout 10 --max-time 20 -o "$RUNNER_TEMP/go.tgz" https://go.dev/dl/go1.27.0.linux-amd64.tar.gz
           echo "675c26c449cbb18fc24b74650de1eabbae6e16f64326fd85a283fb3b58280685  $RUNNER_TEMP/go.tgz" | sha256sum -c --quiet
           tar -C "$RUNNER_TEMP" -xzf "$RUNNER_TEMP/go.tgz"
           echo "$RUNNER_TEMP/go/bin" >> "$GITHUB_PATH"
