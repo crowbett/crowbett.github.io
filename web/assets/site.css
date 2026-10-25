@@ -350,7 +350,8 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 .crumb + h1 { margin-top: var(--sp-3); }
 .project-head { max-width: 52rem; margin-bottom: var(--sp-6); }
 .project-head .lede { margin: 0; }
-.project-main { min-width: 0; max-width: var(--measure); }
+.project-main { min-width: 0; }
+.project-main > :not(.result, .demo), .project-main:not(:has(> .demo)) > .result { max-width: var(--measure); }
 .project .body h2 { font-size: 1.25rem; margin-top: var(--sp-6); }
 .project .body li + li { margin-top: var(--sp-1); }
 
@@ -365,7 +366,7 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 .facts .tags { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
 .facts .badge.live { text-decoration: none; }
 @media (min-width: 64rem) {
-  .project { display: grid; grid-template-columns: 14rem minmax(0, var(--measure)); grid-template-areas: "head head" "facts main"; column-gap: var(--sp-8); align-items: start; }
+  .project { display: grid; grid-template-columns: 14rem minmax(0, 1fr); grid-template-areas: "head head" "facts main"; column-gap: var(--sp-8); align-items: start; }
   .project-head { grid-area: head; }
   .facts { grid-area: facts; position: sticky; top: var(--sp-5); margin: 0; }
   .facts-fig { height: auto; aspect-ratio: 2 / 1; }

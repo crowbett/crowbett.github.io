@@ -50,7 +50,7 @@ Scale (rem at 16 px root; body is 17 px):
 | `--t-h1` | 2.25rem → 3.5rem | 1.05 | page titles |
 | `--t-display` | 2.5rem → 4.5rem | 1.0 | home hero only |
 
-Headings: weight 680, tracking −0.025em at h1, −0.015em at display (−0.035em closed the comma-space gaps in the hero, V3b round 1 and V8 rounds 2 and 4). Prose and every block in the prose column share `--measure: 42rem` (a `ch` measure differs per font, so mono and sans blocks ended at different right edges). No more than three sizes visible in one viewport outside the hero.
+Headings: weight 680, tracking −0.025em at h1, −0.015em at display (−0.035em closed the comma-space gaps in the hero, V3b round 1 and V8 rounds 2 and 4). Prose and every block in the prose column share `--measure: 42rem` (a `ch` measure differs per font, so mono and sans blocks ended at different right edges); on a live project page the evidence box and the demo frame are the exception (§Project page). No more than three sizes visible in one viewport outside the hero.
 
 ## Colour
 
@@ -113,7 +113,7 @@ What it is for: a visitor checks the claim, then runs it. Good looks like the ev
 - **Header**: crumb, h1, tagline as lede, full width up to 52rem.
 - **Facts** (Stripe's docs gutter; jepsen's metadata column): from 64rem a 14rem sticky column left of the text with the project's diagram (2:1, the same drawing as its card) and a `dl` of Language, Topics, Demo (only when live: a pill linking to the frame) and Source (repo or "Private, on request" linking to the mailto line at the foot). On phones the same block sits under the header with the labels in a two-column grid.
 - **Evidence**: one box, accent left rule, mono label `EVIDENCE`, the metric in mono (body size on desktop, 15 px on phones), its source in sans below. "Evidence", not "Measured": keel's metric is a gate, not a measurement.
-- **Body** at `--measure`; the source line closes the column.
+- **Body** at `--measure`; the source line closes the column. On a page with a live demo, the evidence box and the demo frame span the whole column to the content edge (864 px at 1280, against 672 px of prose), so the demo gets the width a 14rem facts column and a 42rem measure left as an empty 192 px rail; both boxes end on one edge, in line with the nav and footer. Without a demo the evidence box stays at the measure, where a lone wide box read as an accidental step.
 
 ## Demo frame
 
