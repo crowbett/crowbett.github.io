@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -75,6 +76,7 @@ func Build(cfg Config) error {
 		"demoAsset": func(slug string) string { return "/demos/" + slug + "/ui.js" },
 		"demoKB":    func(slug string) string { return thousands((sizes[slug].Gzip + 1023) / 1024) },
 		"demoBytes": func(slug string) int { return sizes[slug].Raw },
+		"bind":      bindNumbers,
 	}).ParseFS(cfg.Src, "templates/*.html")
 	if err != nil {
 		return fmt.Errorf("templates: %w", err)
@@ -135,6 +137,12 @@ func Build(cfg Config) error {
 }
 
 type demoSize struct{ Raw, Gzip int }
+
+var numberSpace = regexp.MustCompile(`(\d) `)
+
+// bindNumbers keeps a number on the same line as the word after it ("30 s",
+// "6.83 ms") by turning the space into a no-break space; the text is unchanged.
+func bindNumbers(s string) string { return numberSpace.ReplaceAllString(s, "$1\u00a0") }
 
 // thousands formats n with comma separators, as the site's copy writes numbers.
 func thousands(n int) string {

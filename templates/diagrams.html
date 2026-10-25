@@ -1,4 +1,4 @@
-{{/* One line drawing per project: the mechanism, not a logo. Styled by .dg in site.css; drawn on a 240x120 grid, framed 8 6 224 108 to trim the empty margin. Motion classes (mp pulse, mm march, my/mx grow, mn sweep, ml limit drop, mt/mt2 requests) are animated there. */}}
+{{/* One line drawing per project: the mechanism, not a logo. Styled by .dg in site.css; drawn on a 240x120 grid, framed 8 6 224 108 to trim the empty margin. Motion classes (mp pulse, mm march, my/mx grow, mn sweep, mt/mt2 requests) are animated there. */}}
 {{define "diagram"}}<svg class="dg" viewBox="8 6 224 108" focusable="false">{{if eq . "quorum"}}
 <path class="d mm" d="M120 28 158 47.6M120 28 143.5 92.4M120 28 96.5 92.4M120 28 82 47.6"/>
 <circle class="s" cx="120" cy="60" r="40"/>
@@ -19,7 +19,7 @@
 <path class="s" d="M20 104h200"/>
 <path class="n my" d="M28 104V78h12v26zM48 104V62h12v42zM68 104V50h12v54zM88 104V50h12v54zM108 104V84h12v20zM128 104V72h12v32zM148 104V50h12v54zM168 104V50h12v54zM188 104V80h12v24z"/>
 <path class="s d mm" d="M68 50V24h12v26zM88 50V14h12v36zM148 50V36h12v14zM168 50V20h12v30z"/>
-<path class="a ml" d="M16 50h208"/>
+<path class="a" d="M16 50h208"/><text class="t" x="208" y="45">limit</text>
 {{else if eq . "edgecache"}}
 <rect class="n" x="14" y="42" width="46" height="36" rx="4"/>
 <rect class="a n" x="96" y="26" width="48" height="68" rx="4"/>
@@ -27,7 +27,8 @@
 <rect class="n" x="180" y="42" width="46" height="36" rx="4"/>
 <path d="M62 52h26m-6-5 6 5-6 5M88 68H62m6-5-6 5 6 5"/>
 <path class="s d mm" d="M146 60h26m-6-5 6 5-6 5"/>
-<circle class="ff mt" cx="64" cy="52" r="3"/><circle class="ff mt2" cx="148" cy="60" r="3"/>
+<circle class="af mt" cx="64" cy="52" r="4"/><circle class="af mt2" cx="148" cy="60" r="4"/>
+<text class="t" x="37" y="90">client</text><text class="t" x="120" y="106">cache</text><text class="t" x="203" y="90">origin</text><text class="t" x="75" y="44">hit</text><text class="t" x="159" y="52">miss</text>
 {{else if eq . "kvlite"}}
 <rect class="n" x="20" y="78" width="44" height="22" rx="2"/><rect class="n" x="70" y="78" width="44" height="22" rx="2"/><rect class="n" x="120" y="78" width="44" height="22" rx="2"/>
 <rect class="a n" x="170" y="78" width="50" height="22" rx="2"/><path class="af mx" d="M172 80h22v18h-22z"/>
@@ -50,8 +51,8 @@
 <circle class="af mp" cx="120" cy="60" r="12"/>
 <circle class="n s" cx="190" cy="30" r="8"/><circle class="n s" cx="190" cy="90" r="8"/>
 {{else if eq . "strata"}}
-<ellipse class="s" cx="120" cy="100" rx="40" ry="10"/><ellipse class="s" cx="120" cy="88" rx="54" ry="13"/>
-<ellipse class="n" cx="120" cy="76" rx="62" ry="15"/><ellipse class="n" cx="120" cy="64" rx="58" ry="14"/>
-<ellipse class="n" cx="120" cy="52" rx="48" ry="12"/><path class="a" d="M86 40a34 8 0 0 1 68 0"/><path class="s d mm" d="M154 40a34 8 0 0 1-68 0"/>
-<g class="mn"><path class="af" d="M148 28h12l-6 12z"/><path class="a" d="M154 12v16"/></g>
+<path class="s" d="M36 104h168"/>
+<rect class="n" x="60" y="92" width="120" height="12" rx="1"/><rect class="n" x="70" y="80" width="100" height="12" rx="1"/><rect class="n" x="80" y="68" width="80" height="12" rx="1"/>
+<path class="a" d="M90 63h40"/><path class="s d" d="M130 63h20"/>
+<g class="mn"><path class="af" d="M124 46h12l-6 12z"/><path class="a" d="M130 30v16"/></g>
 {{end}}</svg>{{end}}
