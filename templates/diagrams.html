@@ -1,10 +1,10 @@
-{{/* One line drawing per project: the mechanism, not a logo. Styled by .dg in site.css; viewBox 240x120. */}}
+{{/* One line drawing per project: the mechanism, not a logo. Styled by .dg in site.css; viewBox 240x120. Motion classes (mp pulse, mm march, my/mx grow, mn sweep) are animated there. */}}
 {{define "diagram"}}<svg class="dg" viewBox="0 0 240 120" focusable="false">{{if eq . "quorum"}}
-<path class="d" d="M120 28 158 47.6M120 28 143.5 92.4M120 28 96.5 92.4M120 28 82 47.6"/>
+<path class="d mm" d="M120 28 158 47.6M120 28 143.5 92.4M120 28 96.5 92.4M120 28 82 47.6"/>
 <circle class="s" cx="120" cy="60" r="40"/>
 <circle class="n" cx="158" cy="47.6" r="9"/><circle class="n" cx="143.5" cy="92.4" r="9"/><circle class="n" cx="96.5" cy="92.4" r="9"/><circle class="n x" cx="82" cy="47.6" r="9"/>
 <path class="s" d="M76 41.6l12 12M88 41.6l-12 12"/>
-<circle class="af" cx="120" cy="20" r="10"/>
+<circle class="af mp" cx="120" cy="20" r="10"/>
 <circle class="ff" cx="139" cy="33.8" r="2.5"/><circle class="ff" cx="131.8" cy="60.2" r="2.5"/><circle class="ff" cx="108.3" cy="56.2" r="2.5"/>
 {{else if eq . "keel"}}
 <path class="s" d="M53 50v28M120 50v28M187 50v28"/>
@@ -12,13 +12,13 @@
 <path d="M86.7 78v22M153.3 78v22"/>
 <text class="t" x="53" y="92.5">a–h</text><text class="t" x="120" y="92.5">h–p</text><text class="t" x="187" y="92.5">p–z</text>
 <path class="s" d="M39 32 53 50 67 32M106 32 120 50 134 32M173 32 187 50 201 32"/>
-<circle class="n" cx="39" cy="28" r="7"/><circle class="af" cx="53" cy="50" r="7"/><circle class="n" cx="67" cy="28" r="7"/>
-<circle class="af" cx="106" cy="28" r="7"/><circle class="n" cx="120" cy="50" r="7"/><circle class="n" cx="134" cy="28" r="7"/>
-<circle class="n" cx="173" cy="28" r="7"/><circle class="n" cx="187" cy="50" r="7"/><circle class="af" cx="201" cy="28" r="7"/>
+<circle class="n" cx="39" cy="28" r="7"/><circle class="af mp" cx="53" cy="50" r="7"/><circle class="n" cx="67" cy="28" r="7"/>
+<circle class="af mp" cx="106" cy="28" r="7"/><circle class="n" cx="120" cy="50" r="7"/><circle class="n" cx="134" cy="28" r="7"/>
+<circle class="n" cx="173" cy="28" r="7"/><circle class="n" cx="187" cy="50" r="7"/><circle class="af mp" cx="201" cy="28" r="7"/>
 {{else if eq . "ratelimitd"}}
 <path class="s" d="M20 104h200"/>
-<path class="n" d="M28 104V78h12v26zM48 104V62h12v42zM68 104V50h12v54zM88 104V50h12v54zM108 104V84h12v20zM128 104V72h12v32zM148 104V50h12v54zM168 104V50h12v54zM188 104V80h12v24z"/>
-<path class="s d" d="M68 50V24h12v26zM88 50V14h12v36zM148 50V36h12v14zM168 50V20h12v30z"/>
+<path class="n my" d="M28 104V78h12v26zM48 104V62h12v42zM68 104V50h12v54zM88 104V50h12v54zM108 104V84h12v20zM128 104V72h12v32zM148 104V50h12v54zM168 104V50h12v54zM188 104V80h12v24z"/>
+<path class="s d mm" d="M68 50V24h12v26zM88 50V14h12v36zM148 50V36h12v14zM168 50V20h12v30z"/>
 <path class="a" d="M16 50h208"/>
 {{else if eq . "edgecache"}}
 <rect class="n" x="14" y="42" width="46" height="36" rx="4"/>
@@ -26,10 +26,10 @@
 <path class="s" d="M104 44h32M104 56h32M104 68h32M104 80h20"/>
 <rect class="n" x="180" y="42" width="46" height="36" rx="4"/>
 <path d="M62 52h26m-6-5 6 5-6 5M88 68H62m6-5-6 5 6 5"/>
-<path class="s d" d="M146 60h26m-6-5 6 5-6 5"/>
+<path class="s d mm" d="M146 60h26m-6-5 6 5-6 5"/>
 {{else if eq . "kvlite"}}
 <rect class="n" x="20" y="78" width="44" height="22" rx="2"/><rect class="n" x="70" y="78" width="44" height="22" rx="2"/><rect class="n" x="120" y="78" width="44" height="22" rx="2"/>
-<rect class="a n" x="170" y="78" width="50" height="22" rx="2"/><path class="af" d="M172 80h22v18h-22z"/>
+<rect class="a n" x="170" y="78" width="50" height="22" rx="2"/><path class="af mx" d="M172 80h22v18h-22z"/>
 <rect class="n" x="78" y="16" width="84" height="34" rx="3"/>
 <path class="s" d="M78 27.3h84M78 38.6h84"/>
 <path d="M94 21.5 42 78M118 32.8 142 78M138 44.2 182 78"/>
@@ -38,19 +38,19 @@
 <path class="n" d="M18 30v56c0 5 11 9 24 9s24-4 24-9V30"/><ellipse class="n" cx="42" cy="30" rx="24" ry="9"/>
 <rect class="ff" x="32" y="50" width="20" height="8" rx="2"/><rect class="ff" x="32" y="64" width="20" height="8" rx="2"/>
 <path d="M68 58h54m-6-5 6 5-6 5"/>
-<circle class="af" cx="146" cy="32" r="9"/><circle class="n" cx="146" cy="58" r="9"/><circle class="n" cx="146" cy="84" r="9"/>
-<path class="s d" d="M157 84h41a13 13 0 0 0 0-26h-38"/><path class="s" d="M166 53l-6 5 6 5"/>
+<circle class="af mp" cx="146" cy="32" r="9"/><circle class="n" cx="146" cy="58" r="9"/><circle class="n" cx="146" cy="84" r="9"/>
+<path class="s d mm" d="M157 84h41a13 13 0 0 0 0-26h-38"/><path class="s" d="M166 53l-6 5 6 5"/>
 <path d="M160 108h64M162 100v8M168 100v8M180 100v8M204 100v8"/>
 {{else if eq . "codegraph"}}
 <path d="M58 26 108 54M58 60H106M58 94 108 66"/>
 <path class="s" d="M134 54 182 30M134 66 182 90"/>
-<path class="d s" d="M30 26h28M30 94h28"/>
+<path class="d s mm" d="M30 26h28M30 94h28"/>
 <circle class="n" cx="58" cy="26" r="8"/><circle class="n" cx="58" cy="60" r="8"/><circle class="n" cx="58" cy="94" r="8"/>
-<circle class="af" cx="120" cy="60" r="12"/>
+<circle class="af mp" cx="120" cy="60" r="12"/>
 <circle class="n s" cx="190" cy="30" r="8"/><circle class="n s" cx="190" cy="90" r="8"/>
 {{else if eq . "strata"}}
 <ellipse class="s" cx="120" cy="100" rx="40" ry="10"/><ellipse class="s" cx="120" cy="88" rx="54" ry="13"/>
 <ellipse class="n" cx="120" cy="76" rx="62" ry="15"/><ellipse class="n" cx="120" cy="64" rx="58" ry="14"/>
-<ellipse class="n" cx="120" cy="52" rx="48" ry="12"/><path class="a" d="M86 40a34 8 0 0 1 68 0"/><path class="s d" d="M154 40a34 8 0 0 1-68 0"/>
-<path class="af" d="M148 28h12l-6 12z"/><path class="a" d="M154 12v16"/>
+<ellipse class="n" cx="120" cy="52" rx="48" ry="12"/><path class="a" d="M86 40a34 8 0 0 1 68 0"/><path class="s d mm" d="M154 40a34 8 0 0 1-68 0"/>
+<g class="mn"><path class="af" d="M148 28h12l-6 12z"/><path class="a" d="M154 12v16"/></g>
 {{end}}</svg>{{end}}
