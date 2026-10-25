@@ -135,7 +135,7 @@ func run(m *testing.M) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
-	fmt.Fprintf(os.Stderr, "e2e setup: Chrome up in %.1fs, site built in %.1fs\n", chrome.Seconds(), build.Seconds())
+	fmt.Fprintf(os.Stderr, "e2e setup: Chrome up in %v, site built in %v\n", chrome.Round(time.Millisecond), build.Round(time.Millisecond))
 	srv = httptest.NewServer(http.FileServer(http.Dir(siteOut)))
 	defer srv.Close()
 	browser = b
@@ -189,7 +189,7 @@ func TestDemoFailures(t *testing.T) {
 	ctx := smokePage(t)
 	type result struct {
 		Hang, After, Panic, AfterPanic string
-		HangMs, AfterMs                float64
+		HangMs                         float64
 	}
 	r, err := chromedp.Run(ctx, chromedp.Evaluate[result](`(async () => {
 		const m = await import("/assets/demo.js");
@@ -199,9 +199,9 @@ func TestDemoFailures(t *testing.T) {
 		let t = performance.now();
 		out.Hang = await msg(d.call("hang"));
 		out.HangMs = performance.now() - t;
-		t = performance.now();
-		out.After = await msg(d.call("ping", { echo: "x" }));
-		out.AfterMs = performance.now() - t;
+		// A rejection that settles before any timer fires waited for nothing.
+		out.After = await Promise.race([msg(d.call("ping", { echo: "x" })),
+			new Promise((r) => setTimeout(() => r("still pending after a timer tick"), 0))]);
 		const p = await m.connect("smoke");
 		out.Panic = await msg(p.call("panic"));
 		out.AfterPanic = await msg(p.call("ping", { echo: "x" }));
@@ -214,8 +214,8 @@ func TestDemoFailures(t *testing.T) {
 	if !strings.Contains(r.Hang, "did not answer hang") || r.HangMs > 5000 {
 		t.Errorf("hang: got %q after %.0f ms, want a timeout near 1.5 s", r.Hang, r.HangMs)
 	}
-	if !strings.Contains(r.After, "did not answer hang") || r.AfterMs > 100 {
-		t.Errorf("call after a timeout: got %q after %.0f ms, want an immediate rejection", r.After, r.AfterMs)
+	if !strings.Contains(r.After, "did not answer hang") {
+		t.Errorf("call after a timeout: got %q, want the timeout error before any timer fires", r.After)
 	}
 	if r.Panic == "resolved" || strings.Contains(r.Panic, "JSON") {
 		t.Errorf("panic: got %q, want a clear crash error", r.Panic)
