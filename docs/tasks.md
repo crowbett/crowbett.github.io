@@ -159,7 +159,7 @@ Done when: two consecutive rounds have no major findings; findings and fixes log
 Round 7 of the home review: edgecache (client, cache, origin) and jobrun (queue, workers) are textbook box-and-arrow drawings that say nothing only this project does, unlike ratelimitd's Redis fallback, kvlite's active segment or quorum's partitioned follower. Draw one behaviour each project's page states (read the page copy first; the drawing must not claim what the page does not), in the shared outline vocabulary, with the same once-on-view motion.
 Done when: each drawing shows a behaviour quoted from its project page, and a fresh-eyes reviewer names it without being told.
 
-### V10 Render demo_try on the live feature cards · order 109 · deps: C5 · status: todo
+### V10 Render demo_try on the live feature cards · order 109 · deps: C5 · status: done 2026-10-24
 Filed by the demo track (C5). Every live project now has a `demo_try` line (`Project.DemoTry`, internal/site/content.go): one sentence on what a visitor can do in its demo. The build requires it on live projects and rejects it on others. Show it on the home feature cards, and wherever else it reads as a thing to try.
 Done when: each live card on home shows its project's `demo_try`, in both schemes and at 390 px.
 
