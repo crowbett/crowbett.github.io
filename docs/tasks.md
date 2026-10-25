@@ -148,6 +148,10 @@ Done when: links pasted into iMessage/Slack/Discord preview well (check the tags
 Give a reviewer agent only the screenshots (no code, no design.md; the findings are then checked against design.md §What we will not do) and ask it to critique like a senior product designer: first impression, hierarchy, type, spacing, color, consistency, what looks amateur. Fix every major finding, re-shoot, repeat until a round returns no major findings.
 Done when: two consecutive rounds have no major findings; findings and fixes logged in design.md.
 
+### V9 Project-specific drawings for edgecache and jobrun · order 108 · deps: V3b · status: todo
+Round 7 of the home review: edgecache (client, cache, origin) and jobrun (queue, workers) are textbook box-and-arrow drawings that say nothing only this project does, unlike ratelimitd's Redis fallback, kvlite's active segment or quorum's partitioned follower. Draw one behaviour each project's page states (read the page copy first; the drawing must not claim what the page does not), in the shared outline vocabulary, with the same once-on-view motion.
+Done when: each drawing shows a behaviour quoted from its project page, and a fresh-eyes reviewer names it without being told.
+
 ## Owner only
 
 ### U1 Make more repos public · status: user
