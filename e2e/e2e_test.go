@@ -159,11 +159,13 @@ func TestDemoFailures(t *testing.T) {
 
 // allocOpts runs Chrome headless and muted. Ubuntu runners block Chrome's
 // user-namespace sandbox, so CI (CI=true on GitHub Actions) runs without it;
-// the pages under test are our own.
+// the pages under test are our own. CI also names google-chrome: chromedp
+// would otherwise pick the runner's /usr/bin/chromium, which took 25 s to
+// cold-start against 1.3 s for Chrome (measured on ubuntu-24.04, 2026-10-24).
 func allocOpts() []chromedp.ExecAllocatorOption {
 	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.Flag("mute-audio", true))
 	if os.Getenv("CI") != "" {
-		opts = append(opts, chromedp.NoSandbox, chromedp.CombinedOutput(os.Stderr))
+		opts = append(opts, chromedp.ExecPath("google-chrome"), chromedp.NoSandbox, chromedp.CombinedOutput(os.Stderr))
 	}
 	return opts
 }

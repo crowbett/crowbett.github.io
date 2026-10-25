@@ -18,9 +18,13 @@ Done when: the "Downloads ~N KB" text on every demo button matches what a visito
 
 ## Fixes
 
-### E0 edgecache README claim · order 5 · deps: none · status: done 2026-10-24 (edgecache e04f3da; site: the commit that adds this line)
+### E0 edgecache README claim · order 5 · deps: none · status: done 2026-10-24 (edgecache e04f3da, site b931dea)
 edgecache's README line 5 says "standard library only", but `go.mod` has OpenTelemetry and gRPC and `internal/http/handlers.go` imports `otelhttp`. Reword it truthfully (e.g. caching logic on the standard library, OpenTelemetry for tracing) in the edgecache repo, gate, push.
 Done when: README and this site's edgecache page say the same true thing.
+
+### F1 CI e2e over 60 s · order 6 · deps: none · status: done 2026-10-24 (site: this commit)
+After b931dea the Pages job took 77-91 s: e2e ran 56-57 s on CI against 16-24 s before. Measured on a debug branch: chromedp chose `/usr/bin/chromium`, which cold-starts in 25 s on ubuntu-24.04, against 1.3 s for `google-chrome`; the page subtests themselves took 8.5 s. e2e now names `google-chrome` on CI.
+Done when: the Pages job is back under 60 s.
 
 ## Go demos (one bridge each, see docs/demo-contract.md)
 
