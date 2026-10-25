@@ -28,10 +28,13 @@ Status (2026-10-24): live at https://crowbett.github.io. Scaffold done. 8 projec
 | One demo's `ui.js` | 60 KiB |
 | One `.wasm`, gzip -9 | 2.25 MiB |
 | All `.woff2` fonts | 32 KiB |
+| One share image, `og/*.png` | 100 KiB |
 
 Measured (lock entries, go1.27.3): the `smoke` binary (encoding/json + runtime) is 4,396,800 bytes, 1,220,218 gzipped. The first real bridge, ratelimitd (three algorithms, `encoding/json`, `math/rand/v2`), is 4,467,874 bytes, 1,246,216 gzipped. edgecache (engine + memstore + `net/http`) is 7,856,488 bytes, 2,181,042 gzipped. jobrun (cronx + job.Policy + embedded `time/tzdata`) is 5,290,873 bytes, 1,474,581 gzipped. Bridges that import `net/http` or more will be larger (projected), so keep them lean; TinyGo is an option only if a demo cannot fit.
 
 WASM budget raised from 2 MiB to 2.25 MiB (decision, 2026-10-24, D2): edgecache's engine is an `http.Handler`, so its bridge cannot avoid `net/http`, which links crypto/tls init code (traced with `-ldflags=-dumpdep`). The bridge driving the real engine and memstore was 7,845,205 bytes, 2,176,744 gzipped (lock entry, go1.27.0), 79,592 over 2 MiB. Rejected: disabling inlining (`-gcflags=all=-l`) fit an earlier build at 2,063,987 gzipped (measured) but grew the raw module to 8,495,326 bytes, which the browser must compile; TinyGo lacks the `net/http` server types the engine uses; a bridge over bare `internal/rfc9111` would have to reimplement the engine's unexported orchestration. 2.25 MiB leaves ~178 KB over edgecache (go1.27.3) for later bridges; the next raise is another recorded decision.
+
+Share image budget (added 2026-10-24, V7): 1200×630 cards rendered by `cmd/og`, 32,259–59,869 bytes each (measured), so 100 KiB holds them with room for denser drawings. The build also fails when a card's HTML no longer matches the hash recorded when its PNG was made (`web/og/.sums`): run `go run ./cmd/og` and commit `web/og`.
 
 Fonts budget (added 2026-10-24, V2): one self-hosted mono, JetBrains Mono subset to 9,796 bytes (measured); 32 KiB leaves room for one more subset face before it needs a recorded decision. Rationale in `docs/design.md` §Type.
 

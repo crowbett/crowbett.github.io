@@ -20,15 +20,20 @@ var Budgets = struct {
 	JSPerDemo   int // bytes, one demo's ui.js
 	WASMGzipped int // bytes, one demo's .wasm after gzip -9
 	Fonts       int // bytes, all .woff2 together
+	ShareImage  int // bytes, one og:image PNG
 }{
 	PageHTML:    60 << 10,
 	CSS:         40 << 10,
 	JSPerDemo:   60 << 10,
 	WASMGzipped: 2304 << 10,
 	Fonts:       32 << 10,
+	ShareImage:  100 << 10,
 }
 
-var refAttr = regexp.MustCompile(`(?:href|src)="([^"#?]+)`)
+var (
+	refAttr = regexp.MustCompile(`(?:href|src)="([^"#?]+)`)
+	ogImage = regexp.MustCompile(`property="og:image" content="https?://[^/"]+(/[^"]*)"`)
+)
 
 // Check walks a built site: every internal link resolves, every page has a
 // title, a description and lang, and every asset is within budget.
@@ -55,6 +60,11 @@ func Check(out string) error {
 					add("%s: missing %s", rel, need)
 				}
 			}
+			for _, m := range ogImage.FindAllSubmatch(b, -1) {
+				if _, err := os.Stat(filepath.Join(out, filepath.FromSlash(string(m[1])))); err != nil {
+					add("%s: og:image %s does not exist", rel, m[1])
+				}
+			}
 			for _, m := range refAttr.FindAllSubmatch(b, -1) {
 				ref := string(m[1])
 				if !strings.HasPrefix(ref, "/") || strings.HasPrefix(ref, "//") {
@@ -67,6 +77,10 @@ func Check(out string) error {
 				if _, err := os.Stat(target); err != nil {
 					add("%s: broken link %s", rel, ref)
 				}
+			}
+		case ".png":
+			if strings.HasPrefix(rel, "/og/") && len(b) > Budgets.ShareImage {
+				add("%s: %d bytes, budget %d", rel, len(b), Budgets.ShareImage)
 			}
 		case ".css":
 			css += len(b)
