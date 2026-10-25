@@ -71,9 +71,7 @@ func TestSite(t *testing.T) {
 		pages = append(pages, "/projects/"+p.Slug+"/")
 	}
 
-	alloc, cancel := chromedp.NewExecAllocator(context.Background(), append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.Flag("mute-audio", true),
-	)...)
+	alloc, cancel := chromedp.NewExecAllocator(context.Background(), allocOpts()...)
 	defer cancel()
 
 	for _, page := range pages {
@@ -100,7 +98,9 @@ func TestDemoFailures(t *testing.T) {
 	srv := httptest.NewServer(http.FileServer(http.Dir(out)))
 	defer srv.Close()
 
-	ctx, cancel := chromedp.NewContext(context.Background())
+	alloc, cancelA := chromedp.NewExecAllocator(context.Background(), allocOpts()...)
+	defer cancelA()
+	ctx, cancel := chromedp.NewContext(alloc)
 	defer cancel()
 	ctx, cancelT := context.WithTimeout(ctx, 90*time.Second)
 	defer cancelT()
@@ -144,6 +144,17 @@ func TestDemoFailures(t *testing.T) {
 		t.Error("a call after a panic succeeded")
 	}
 	t.Logf("%+v", r)
+}
+
+// allocOpts runs Chrome headless and muted. Ubuntu runners block Chrome's
+// user-namespace sandbox, so CI (CI=true on GitHub Actions) runs without it;
+// the pages under test are our own.
+func allocOpts() []chromedp.ExecAllocatorOption {
+	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.Flag("mute-audio", true))
+	if os.Getenv("CI") != "" {
+		opts = append(opts, chromedp.NoSandbox, chromedp.CombinedOutput(os.Stderr))
+	}
+	return opts
 }
 
 func visit(t *testing.T, alloc context.Context, url string, w, h int64, shot string) {
