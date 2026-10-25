@@ -210,6 +210,9 @@ func tabOrder(t *testing.T, ctx context.Context) {
 		}
 		got = append(got, s)
 	}
+	if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`(document.activeElement?.blur(), true)`)); err != nil {
+		t.Fatal(err)
+	}
 	for i, s := range got {
 		if s.Index != i {
 			t.Errorf("tab stop %d reached %s (index %d), want element %d in document order", i+1, s.Tag, s.Index, i)

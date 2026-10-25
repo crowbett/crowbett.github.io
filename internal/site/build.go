@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -81,7 +82,18 @@ func Build(cfg Config) error {
 	if err := os.RemoveAll(cfg.Out); err != nil {
 		return err
 	}
-	base := pageData{Owner: cfg.Owner, Projects: projects, Year: cfg.Now.Year()}
+	// Home lists live demos first, then by order: the runnable proof leads.
+	listed := slices.Clone(projects)
+	slices.SortStableFunc(listed, func(a, b Project) int {
+		if a.Live() == b.Live() {
+			return 0
+		}
+		if a.Live() {
+			return -1
+		}
+		return 1
+	})
+	base := pageData{Owner: cfg.Owner, Projects: listed, Year: cfg.Now.Year()}
 	for _, p := range projects {
 		if p.Live() {
 			base.LiveCount++

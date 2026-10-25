@@ -40,10 +40,11 @@
   <a href="/projects/{{.Slug}}/">
     <div class="card-fig" aria-hidden="true">{{template "diagram" .Slug}}</div>
     <div class="card-body">
-      <div class="card-head"><h3>{{.Title}}</h3>{{if .Live}}<span class="badge live">Live demo</span>{{end}}</div>
+      <div class="card-head"><h3>{{.Title}}</h3><span class="lang">{{.Lang}}</span></div>
       <p class="card-tag">{{.Tagline}}</p>
       {{if .Metric}}<p class="metric">{{.Metric}}</p>{{end}}
-      <p class="meta"><span class="lang">{{.Lang}}</span>{{if .Private}}<span class="private">Private source</span>{{end}}<span class="go" aria-hidden="true">→</span></p>
+      {{if .Live}}<p class="meta"><span class="run">Live demo · runs in your browser</span><span class="go" aria-hidden="true">→</span></p>
+      {{else if .Private}}<p class="meta"><span class="private">Private source</span><span class="go" aria-hidden="true">→</span></p>{{end}}
     </div>
   </a>
 {{end}}
