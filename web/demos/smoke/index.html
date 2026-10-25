@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="robots" content="noindex">
+<title>Demo pipeline check</title>
+<meta name="description" content="Checks that the WebAssembly demo pipeline loads and answers a call.">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+<main id="main">
+  <h1>Demo pipeline check</h1>
+  <section class="demo" data-demo="smoke" data-ui="/demos/smoke/ui.js" aria-label="Pipeline check">
+    <div class="demo-bar"><button type="button" data-demo-start>Run</button></div>
+    <div class="demo-mount" data-demo-mount></div>
+    <p class="demo-status" data-demo-status role="status" aria-live="polite"></p>
+  </section>
+  <p><a href="/">Home</a></p>
+</main>
+<script type="module" src="/assets/demo.js"></script>
+</body>
+</html>
