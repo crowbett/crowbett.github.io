@@ -112,11 +112,13 @@ func TestCheckFindsProblems(t *testing.T) {
 	write("index.html", `<html lang="en"><title>t</title><meta name="viewport"><a href="/missing/">x</a><a href="https://example.com/">ok</a>`)
 	write("big.css", strings.Repeat("a", Budgets.CSS+1))
 	write("big.woff2", strings.Repeat("a", Budgets.Fonts+1))
+	write("og/big.png", strings.Repeat("a", Budgets.ShareImage+1))
+	write("share.html", `<html lang="en"><title>t</title><meta name="description"><meta name="viewport"><meta property="og:image" content="https://x.test/og/missing.png">`)
 	err := Check(out)
 	if err == nil {
 		t.Fatal("check passed a broken site")
 	}
-	for _, want := range []string{"broken link /missing/", `missing name="description"`, "CSS totals", "fonts total"} {
+	for _, want := range []string{"broken link /missing/", `missing name="description"`, "CSS totals", "fonts total", "og/big.png", "og:image /og/missing.png does not exist"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("check did not report %q:\n%v", want, err)
 		}
@@ -147,5 +149,23 @@ func TestBuildRejectsHeroTraceWithoutLiveDemo(t *testing.T) {
 	err := Build(Config{Src: src, Out: t.TempDir(), Owner: DefaultOwner, Now: time.Now()})
 	if err == nil || !strings.Contains(err.Error(), "no live demo") {
 		t.Fatalf("want no-live-demo error, got %v", err)
+	}
+}
+
+func TestBuildRejectsStaleShareCards(t *testing.T) {
+	src := testFS(goodProject)
+	src["templates/og.html"] = &fstest.MapFile{Data: []byte(`{{define "og"}}{{if .Project}}{{.Project.Title}}{{else}}home{{end}}{{end}}`)}
+	cfg := Config{Src: src, Out: t.TempDir(), Owner: DefaultOwner, Now: time.Now()}
+	err := Build(cfg)
+	if err == nil || !strings.Contains(err.Error(), "share images out of date for demo, home") {
+		t.Fatalf("want stale-card error, got %v", err)
+	}
+	cards, err := ShareCards(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	src[ShareSums] = &fstest.MapFile{Data: []byte("home " + ShareSum(cards["home"]) + "\ndemo " + ShareSum(cards["demo"]) + "\n")}
+	if err := Build(cfg); err != nil {
+		t.Fatal(err)
 	}
 }

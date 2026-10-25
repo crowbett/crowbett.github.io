@@ -1,0 +1,51 @@
+{{/* Share card (og:image), 1200x630. Not published: cmd/og screenshots it into web/og/<name>.png, and the build fails if this output changes without a new screenshot. */}}
+{{define "og"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+@font-face { font-family: "OG Mono"; src: url("/assets/fonts/jetbrains-mono.woff2") format("woff2"); font-weight: 400 700; font-display: block; }
+:root { --mono: "OG Mono", monospace; }
+html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+.og { box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 56px; width: 1200px; height: 630px; padding: 64px 72px; }
+.og.home { grid-template-columns: 1fr; grid-template-rows: 1fr auto; gap: 40px; }
+.og-text { display: flex; flex-direction: column; min-width: 0; }
+.og-k { margin: 0 0 20px; font: 500 20px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.og h1 { margin: 0; font-size: 88px; line-height: 1; letter-spacing: -0.03em; }
+.og.home h1 { font-size: 64px; line-height: 1.05; letter-spacing: -0.025em; max-width: 15em; text-wrap: wrap; }
+.og-name { display: block; }
+.og-tag { margin: 24px 0 0; font-size: 30px; line-height: 1.35; color: var(--text-2); text-wrap: balance; }
+.og-metric { margin: 20px 0 0; font: 22px/1.45 var(--mono); color: var(--text); text-wrap: balance; }
+.og-foot { display: flex; align-items: center; gap: 20px; margin-top: auto; font: 20px var(--mono); color: var(--text-3); }
+.og-live { padding: 6px 16px; border-radius: 999px; background: var(--live-tint); color: var(--live); font-weight: 600; }
+.og-live::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 10px; border-radius: 50%; background: currentColor; vertical-align: 2px; }
+.og-fig { align-self: center; padding: 32px 28px; background: var(--fig); border: 1px solid var(--line); border-radius: 16px; }
+.og-fig .dg { height: auto; stroke-width: 2.5; }
+.og-fig .dg .t { display: inline; font-size: 8px; }
+.og-strip { display: grid; grid-template-columns: repeat(8, 1fr); gap: 14px; }
+.og-strip div { height: 72px; padding: 8px; background: var(--fig); border: 1px solid var(--line); border-radius: 8px; }
+.og-strip .dg { stroke-width: 1.5; }
+</style>
+</head>
+<body>
+{{if .Project}}{{with .Project}}<div class="og">
+  <div class="og-text">
+    <p class="og-k">{{.Lang}}</p>
+    <h1>{{.Title}}</h1>
+    <p class="og-tag">{{.Tagline}}</p>
+    {{if .Metric}}<p class="og-metric">{{bind .Metric}}</p>{{end}}
+    <p class="og-foot">{{if .Live}}<span class="og-live">Live demo</span>{{end}}<span>{{slice $.Owner.URL 8}}</span></p>
+  </div>
+  <div class="og-fig">{{template "diagram" .Slug}}</div>
+</div>{{end}}{{else}}<div class="og home">
+  <div class="og-text">
+    <p class="og-k">{{.Owner.Role}}</p>
+    <h1><span class="og-name">I'm {{.Owner.Name}}.</span> I build databases, consensus, caches, queues and rate limiters.</h1>
+    <p class="og-foot">{{if .LiveCount}}<span class="og-live">{{.LiveCount}} live demo{{if gt .LiveCount 1}}s{{end}} in your browser</span>{{end}}<span>{{slice .Owner.URL 8}}</span></p>
+  </div>
+  <div class="og-strip">{{range .Projects}}<div>{{template "diagram" .Slug}}</div>{{end}}</div>
+</div>{{end}}
+</body>
+</html>
+{{end}}

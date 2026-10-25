@@ -52,33 +52,39 @@ type pageData struct {
 	Hero      *heroTrace
 }
 
-// Build renders the site into cfg.Out.
-func Build(cfg Config) error {
+// prepared is everything a render needs: parsed templates and the data shared by every page.
+type prepared struct {
+	tmpl     *template.Template
+	base     pageData
+	projects []Project
+}
+
+func prepare(cfg Config) (*prepared, error) {
 	projects, err := LoadProjects(cfg.Src)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	sizes, err := demoSizes(cfg.Src)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, p := range projects {
 		if !p.Live() {
 			continue
 		}
 		if _, ok := sizes[p.Slug]; !ok {
-			return fmt.Errorf("%s: demo is live but demos.lock.json has no built binary for it", p.Slug)
+			return nil, fmt.Errorf("%s: demo is live but demos.lock.json has no built binary for it", p.Slug)
 		}
 		if _, err := fs.Stat(cfg.Src, "web/demos/"+p.Slug+"/ui.js"); err != nil {
-			return fmt.Errorf("%s: demo is live but web/demos/%s/ui.js is missing", p.Slug, p.Slug)
+			return nil, fmt.Errorf("%s: demo is live but web/demos/%s/ui.js is missing", p.Slug, p.Slug)
 		}
 	}
 	hero, err := loadHeroTrace(cfg.Src)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if hero != nil && !slices.ContainsFunc(projects, func(p Project) bool { return p.Slug == hero.Slug && p.Live() }) {
-		return fmt.Errorf("data/hero-trace.json replays %s, which has no live demo", hero.Slug)
+		return nil, fmt.Errorf("data/hero-trace.json replays %s, which has no live demo", hero.Slug)
 	}
 	tmpl, err := template.New("").Funcs(template.FuncMap{
 		"demoAsset": func(slug string) string { return "/demos/" + slug + "/ui.js" },
@@ -88,10 +94,7 @@ func Build(cfg Config) error {
 		"num":       thousands,
 	}).ParseFS(cfg.Src, "templates/*.html")
 	if err != nil {
-		return fmt.Errorf("templates: %w", err)
-	}
-	if err := os.RemoveAll(cfg.Out); err != nil {
-		return err
+		return nil, fmt.Errorf("templates: %w", err)
 	}
 	// Home lists live demos first, then by order: the runnable proof leads.
 	listed := slices.Clone(projects)
@@ -110,6 +113,22 @@ func Build(cfg Config) error {
 			base.LiveCount++
 		}
 	}
+	return &prepared{tmpl: tmpl, base: base, projects: projects}, nil
+}
+
+// Build renders the site into cfg.Out.
+func Build(cfg Config) error {
+	s, err := prepare(cfg)
+	if err != nil {
+		return err
+	}
+	if err := checkShareCards(cfg, s); err != nil {
+		return err
+	}
+	if err := os.RemoveAll(cfg.Out); err != nil {
+		return err
+	}
+	tmpl, base, projects := s.tmpl, s.base, s.projects
 	render := func(name, urlPath, title string, p *Project) error {
 		d := base
 		d.Title, d.Path, d.Project = title, urlPath, p

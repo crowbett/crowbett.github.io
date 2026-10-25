@@ -12,8 +12,19 @@
 <meta property="og:description" content="{{if .Project}}{{.Project.Tagline}}{{else}}Databases, consensus, caches, queues and rate limiters I built and measured.{{end}}">
 <meta property="og:url" content="{{.Canonical}}">
 <meta property="og:type" content="website">
-<meta name="color-scheme" content="light dark">
+<meta property="og:site_name" content="{{.Owner.Name}}">
+<meta property="og:image" content="{{.Owner.URL}}/og/{{if .Project}}{{.Project.Slug}}{{else}}home{{end}}.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{{if .Project}}{{.Project.Title}}: {{.Project.Tagline}}{{else}}{{.Owner.Name}}: I build databases, consensus, caches, queues and rate limiters.{{end}}">
+<meta name="twitter:card" content="summary_large_image">
+{{if eq .Path "/404.html"}}<meta name="robots" content="noindex">
+{{end}}<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fbfaf7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121110" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css">
 </head>
