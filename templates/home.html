@@ -1,14 +1,16 @@
 {{define "home"}}{{template "head" .}}
 <section class="hero">
-  <h1>{{.Owner.Name}}</h1>
-  <p class="lede">{{.Owner.Role}}. I build databases, consensus, caches, queues and rate limiters, and I prove them with deterministic simulation, fault injection and measured benchmarks.</p>
-  {{if .LiveCount}}<p class="lede">The live demos below are not videos. Each one is the project's real code compiled to WebAssembly, running in your browser.</p>
-  {{else}}<p class="lede">Live demos are on the way: each project's real code, compiled to WebAssembly and running in your browser.</p>{{end}}
+  <p class="kicker">{{.Owner.Role}}</p>
+  <h1><span class="hero-name">I'm {{.Owner.Name}}.</span> I build databases, consensus, caches, queues and rate limiters.</h1>
+  <p class="lede">I prove them with deterministic simulation, fault injection and measured benchmarks.
+  {{if .LiveCount}}The live demos below are not videos. Each one is the project's real code compiled to WebAssembly, running in your browser.
+  {{else}}Live demos are on the way: each project's real code, compiled to WebAssembly and running in your browser.{{end}}</p>
 </section>
-<section id="work">
-  <h2 class="eyebrow">Work</h2>
+<section id="work" aria-labelledby="work-h">
+  <h2 class="eyebrow" id="work-h">Work <span class="count">{{len .Projects}} projects{{if .LiveCount}} · {{.LiveCount}} live{{end}}</span></h2>
   <ul class="cards">
-  {{range .Projects}}{{template "card" .}}{{end}}
+  {{range $i, $p := .Projects}}<li class="card{{if lt $i 2}} feature{{end}}">{{template "card" $p}}</li>
+  {{end}}
   </ul>
 </section>
 {{template "foot" .}}{{end}}
