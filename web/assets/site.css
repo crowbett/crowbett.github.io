@@ -160,7 +160,11 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 .replay .rb { stroke: var(--line-strong); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .replay .rl { stroke: var(--accent); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 .replay .rz { fill: var(--accent-tint); }
-.replay .rt { fill: var(--text-2); font: 500 18px var(--mono); }
+.replay .rt { fill: var(--text-2); font: 500 11px var(--mono); }
+.replay .tall .rt { font-size: 12px; }
+.replay .rp { stroke: var(--line-strong); stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
+.replay-chart.tall { display: none; }
+@media (max-width: 40rem) { .replay-chart.wide { display: none; } .replay-chart.tall { display: block; } }
 .replay .rt-n { fill: var(--text-3); }
 .replay :is(.f1, .f2, .f3, .f4, .f5) { animation: fade 0.3s var(--ease-in) 0.56s both; }
 .replay .f2 { animation-delay: 0.92s; }
@@ -169,7 +173,6 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 .replay .f5 { animation-delay: 2s; }
 .replay .rt-a { fill: var(--accent); text-anchor: middle; }
 .replay .rt-e { text-anchor: end; }
-@media (min-width: 40rem) { .replay .rt { font-size: 11px; } }
 .replay .rw { fill: var(--surface); transform-box: fill-box; transform: translateX(100%); animation: replay 1.8s linear 0.2s both; }
 @keyframes replay { from { transform: none; } }
 @keyframes fade { from { opacity: 0; } }
@@ -219,7 +222,7 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 .feature h3 { font-size: var(--t-h2); }
 .go { margin-left: auto; white-space: nowrap; font-family: var(--mono); font-size: var(--t-label); color: var(--text-2); transition: color var(--d-fast) var(--ease-in), transform var(--d-fast) var(--ease-in); }
 .card a:is(:hover, :focus-visible) .go { transform: translateX(3px); }
-/* Five cards in three columns end on two wider cards, not a hole; a lone last card takes its whole row sideways. */
+/* At three columns a short last row splits into wider cards (five end on two, four make two rows of two), so the grid never ends on a hole; a lone card, or a lone last card at two columns, lays out sideways across its row. */
 .small { grid-template-columns: 1fr; }
 @media (min-width: 40rem) and (max-width: 67.99rem) {
   .small { grid-template-columns: repeat(2, 1fr); }
@@ -231,11 +234,12 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 @media (min-width: 68rem) {
   .small { grid-template-columns: repeat(6, 1fr); }
   .small .card { grid-column: span 2; }
-  .small .card:is(:nth-last-child(2):nth-child(3n+1), :last-child:nth-child(3n+2)) { grid-column: span 3; }
-  .small .card:last-child:nth-child(3n+1) { grid-column: 1 / -1; }
-  .small .card:last-child:nth-child(3n+1) a { display: grid; grid-template-columns: calc((100% - 2 * var(--sp-4)) / 3) minmax(0, 1fr); }
-  .small .card:last-child:nth-child(3n+1) .card-fig { display: flex; align-items: center; height: auto; border-bottom: 0; border-right: 1px solid var(--line); }
-  .small .card:last-child:nth-child(3n+1) .dg { height: 7rem; }
+  .small .card:is(:nth-last-child(2):nth-child(3n+1), :last-child:nth-child(3n+2), :nth-child(3n+1):nth-last-child(4)),
+  .small .card:nth-child(3n+1):nth-last-child(4) ~ .card { grid-column: span 3; }
+  .small .card:only-child { grid-column: 1 / -1; }
+  .small .card:only-child a { display: grid; grid-template-columns: calc((100% - 2 * var(--sp-4)) / 3) minmax(0, 1fr); }
+  .small .card:only-child .card-fig { display: flex; align-items: center; height: auto; border-bottom: 0; border-right: 1px solid var(--line); }
+  .small .card:only-child .dg { height: 7rem; }
 }
 .small .card-fig { --fig-h: 80px; }
 .small .card a { --card-pad: var(--sp-4); }

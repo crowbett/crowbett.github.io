@@ -32,12 +32,15 @@
 <circle class="af mt" cx="64" cy="52" r="4"/>
 <text class="t" x="37" y="90">client</text><text class="t" x="120" y="106">cache</text><text class="t" x="203" y="90">origin</text><text class="t" x="75" y="44">hit</text><text class="t" x="159" y="52">miss</text>
 {{else if eq . "kvlite"}}
-<rect class="n" x="20" y="78" width="44" height="22" rx="2"/><rect class="n" x="70" y="78" width="44" height="22" rx="2"/><rect class="n" x="120" y="78" width="44" height="22" rx="2"/>
-<rect class="a n" x="170" y="78" width="50" height="22" rx="2"/><path class="af mx" d="M172 80h22v18h-22z"/>
-<rect class="n" x="78" y="16" width="84" height="34" rx="3"/>
-<path class="s" d="M78 27.3h84M78 38.6h84"/>
-<path d="M94 21.5 42 78M118 32.8 142 78M138 44.2 182 78"/>
-<circle class="ff" cx="94" cy="21.5" r="2.5"/><circle class="ff" cx="118" cy="32.8" r="2.5"/><circle class="ff" cx="138" cy="44.2" r="2.5"/>
+<rect class="n" x="20" y="22" width="72" height="42" rx="3"/>
+<path class="s" d="M20 36h72M20 50h72"/>
+<rect class="n" x="20" y="80" width="200" height="20" rx="2"/>
+<path class="s" d="M70 80v20M120 80v20"/><path d="M170 80v20"/>
+<path class="a" d="M170 80h50v20h-50z"/><path class="af mx" d="M173 83h22v14h-22z"/>
+<path d="M84 29 190 86M84 43 146 86M84 57 100 86"/>
+<circle class="ff" cx="84" cy="29" r="2.5"/><circle class="ff" cx="84" cy="43" r="2.5"/><circle class="ff" cx="84" cy="57" r="2.5"/>
+<circle class="ff" cx="146" cy="86" r="2"/><circle class="ff" cx="100" cy="86" r="2"/>
+<text class="t" x="56" y="16">keydir</text><text class="t" x="195" y="74">active</text><text class="t" x="95" y="111">append-only segments</text>
 {{else if eq . "jobrun"}}
 <path class="n" d="M18 30v56c0 5 11 9 24 9s24-4 24-9V30"/><ellipse class="n" cx="42" cy="30" rx="24" ry="9"/>
 <rect class="n" x="32" y="50" width="20" height="8" rx="2"/><rect class="n" x="32" y="64" width="20" height="8" rx="2"/>
