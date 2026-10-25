@@ -427,7 +427,9 @@ func lockBytes(t *testing.T, slug string) int {
 // would otherwise pick the runner's /usr/bin/chromium, which took 25 s to
 // cold-start against 1.3 s for Chrome (measured on ubuntu-24.04, 2026-10-24).
 func allocOpts(chromeLog io.Writer) []chromedp.ExecAllocatorOption {
-	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.Flag("mute-audio", true), chromedp.CombinedOutput(chromeLog))
+	// Software rendering: on macOS the GPU process hung for ~2 min under load
+	// and stalled every tab until Chrome restarted it (F3 in docs/tasks.md).
+	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.Flag("mute-audio", true), chromedp.DisableGPU, chromedp.CombinedOutput(chromeLog))
 	if os.Getenv("CI") != "" {
 		opts = append(opts, chromedp.ExecPath("google-chrome"), chromedp.NoSandbox)
 	}
