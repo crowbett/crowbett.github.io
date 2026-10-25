@@ -128,9 +128,10 @@ async function start(section) {
     status.textContent = "";
     progress.row.remove();
     section.dataset.demoReady = "";
-    const first = mountEl.querySelector("button, input, select, textarea, a[href], [tabindex]");
-    if (first) first.focus();
-    else { mountEl.tabIndex = -1; mountEl.focus(); }
+    // The mount, not its first control: focusing a text input raised a ring
+    // that read as an error and can open a phone's keyboard (V8 round 7).
+    mountEl.tabIndex = -1;
+    mountEl.focus();
   } catch (err) {
     console.error(err);
     progress.row.remove();
