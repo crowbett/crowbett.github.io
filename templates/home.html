@@ -12,9 +12,13 @@
     </div>
     {{with .Hero}}<figure class="replay">
       <figcaption><span class="replay-k">Replay</span> {{.Slug}}'s {{.Algo}} limiter at {{.Rate}} requests/s{{if eq .Pattern "attack"}} under an attack at 10× the limit{{end}}</figcaption>
-      <svg class="replay-chart" viewBox="0 0 {{.W}} {{.H}}" preserveAspectRatio="none" role="img" aria-label="{{num .Allowed}} requests allowed and {{num .Denied}} denied over {{.Seconds}} seconds">
-      {{range .Bars}}<rect class="ra" x="{{.X}}" y="{{.AY}}" width="0.72" height="{{.AH}}"/>{{if .DH}}<rect class="rd" x="{{.X}}" y="{{.DY}}" width="0.72" height="{{.DH}}"/>{{end}}{{end}}
+      <svg class="replay-chart" viewBox="0 0 {{.W}} {{.H}}" role="img" aria-label="{{num .Allowed}} requests allowed and {{num .Denied}} denied over {{.Seconds}} seconds; allowed traffic stays at the limit through the attack">
+      {{if .AttackW}}<rect class="rz" x="{{.AttackX}}" y="0" width="{{.AttackW}}" height="{{.H}}"/>{{end}}
+      {{range .Bars}}<rect class="ra" x="{{.X}}" y="{{.AY}}" width="{{$.Hero.BarW}}" height="{{.AH}}"/>{{if .DH}}<rect class="rd" x="{{.X}}" y="{{.DY}}" width="{{$.Hero.BarW}}" height="{{.DH}}"/>{{end}}{{end}}
       <line class="rl" x1="0" x2="{{.W}}" y1="{{.LimitY}}" y2="{{.LimitY}}"/>
+      {{if and .AttackW (eq .Pattern "attack")}}<text class="rt rt-a" x="{{.AttackMid}}" y="15">10× attack</text>{{end}}
+      {{if .Burst1X}}<text class="rt rt-e" x="{{.Burst1X}}" y="{{.Burst1Y}}">burst</text>{{end}}
+      <text class="rt rt-e" x="{{.W}}" y="{{.LimitY}}" dy="-6">{{.Rate}}/s limit</text>
       <rect class="rw" x="0" y="0" width="{{.W}}" height="{{.H}}"/>
       </svg>
       <p class="replay-axis"><span>0 s</span><span>{{.Seconds}} s</span></p>
