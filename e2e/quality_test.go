@@ -170,6 +170,7 @@ func tabOrder(t *testing.T, ctx context.Context) {
 		document.body.tabIndex = -1;
 		document.body.focus();
 		document.body.removeAttribute("tabindex");
+		if (location.pathname === "/") { const st = document.createElement("style"); st.textContent = ".dg *, .card * { animation: none !important; transition: none !important; }"; document.head.append(st); }
 		window.__tab = [...document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]')]
 			.filter((el) => !el.disabled && el.tabIndex >= 0 && el.getClientRects().length > 0);
 		return window.__tab.length;
