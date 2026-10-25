@@ -104,7 +104,7 @@ function keyboardScroll(mountEl) {
       }
     }
   };
-  const queue = () => { if (!queued) { queued = true; requestAnimationFrame(check); } };
+  const queue = () => { if (!queued) { queued = true; queueMicrotask(check); } };
   new MutationObserver(queue).observe(mountEl, { childList: true, subtree: true });
   new ResizeObserver(queue).observe(mountEl);
   check();
