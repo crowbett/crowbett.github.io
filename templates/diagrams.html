@@ -1,4 +1,4 @@
-{{/* One line drawing per project: the mechanism, not a logo. Styled by .dg in site.css; drawn on a 240x120 grid, framed 8 6 224 108 to trim the empty margin. Motion classes (mp pulse, mm march, my/mx grow, mo overflow, mn sweep, mf cache fill, mt request) are animated there. */}}
+{{/* One line drawing per project: the mechanism, not a logo. Styled by .dg in site.css; drawn on a 240x120 grid, framed 8 6 224 108 to trim the empty margin. Motion classes (mp pulse, mm march, my/mx grow, mo overflow, mn sweep, ml/mw collapsed request, ms/mk skip and lock) are animated there. */}}
 {{define "diagram"}}<svg class="dg" viewBox="8 6 224 108" focusable="false">{{if eq . "quorum"}}
 <path class="d mm" d="M120 28 158 47.6M120 28 143.5 92.4M120 28 96.5 92.4M120 28 82 47.6"/>
 <circle class="s" cx="120" cy="60" r="40"/>
@@ -23,14 +23,14 @@
 <path class="a" d="M16 50h110"/><text class="t" x="46" y="45">limit</text>
 <path class="s d" d="M126 50h98"/><path class="a d mx" d="M126 34h98"/><text class="t" x="190" y="29">local limit</text>
 {{else if eq . "edgecache"}}
-<rect class="n" x="14" y="42" width="46" height="36" rx="4"/>
-<rect class="a n" x="96" y="26" width="48" height="68" rx="4"/>
-<path class="s" d="M104 44h32M104 56h32M104 68h32"/><path class="s mf" d="M104 80h20"/>
-<rect class="n" x="180" y="42" width="46" height="36" rx="4"/>
-<path d="M62 52h26m-6-5 6 5-6 5M88 68H62m6-5-6 5 6 5"/>
-<path class="s d" d="M146 60h26m-6-5 6 5-6 5"/>
-<circle class="af mt" cx="64" cy="52" r="4"/>
-<text class="t" x="37" y="90">client</text><text class="t" x="120" y="106">cache</text><text class="t" x="203" y="90">origin</text><text class="t" x="75" y="44">hit</text><text class="t" x="159" y="52">miss</text>
+<rect class="n" x="14" y="20" width="36" height="18" rx="3"/><rect class="n" x="14" y="51" width="36" height="18" rx="3"/><rect class="n" x="14" y="82" width="36" height="18" rx="3"/>
+<path d="M50 29c20 0 20 31 40 31M50 91c20 0 20-31 40-31M50 60h40m-6-5 6 5-6 5"/>
+<rect class="a n" x="94" y="38" width="44" height="44" rx="4"/>
+<path class="s" d="M102 50h28M102 60h28M102 70h28"/>
+<rect class="n" x="194" y="46" width="32" height="28" rx="4"/>
+<path class="a" d="M140 60h50m-6-5 6 5-6 5"/>
+<circle class="af ml" cx="52" cy="60" r="3.5"/><circle class="af mw" cx="52" cy="29" r="3.5"/><g transform="matrix(1 0 0 -1 0 120)"><circle class="af mw" cx="52" cy="29" r="3.5"/></g>
+<text class="t" x="32" y="111">clients</text><text class="t" x="116" y="94">cache</text><text class="t" x="210" y="86">origin</text><text class="t" x="166" y="52">one fetch</text>
 {{else if eq . "kvlite"}}
 <rect class="n" x="20" y="22" width="72" height="42" rx="3"/>
 <path class="s" d="M20 36h72M20 50h72"/>
@@ -42,13 +42,14 @@
 <circle class="ff" cx="146" cy="86" r="2"/><circle class="ff" cx="100" cy="86" r="2"/>
 <text class="t" x="56" y="16">keydir</text><text class="t" x="195" y="74">active</text><text class="t" x="95" y="111">append-only segments</text>
 {{else if eq . "jobrun"}}
-<path class="n" d="M18 30v56c0 5 11 9 24 9s24-4 24-9V30"/><ellipse class="n" cx="42" cy="30" rx="24" ry="9"/>
-<rect class="n" x="32" y="50" width="20" height="8" rx="2"/><rect class="n" x="32" y="64" width="20" height="8" rx="2"/>
-<path d="M68 58h54m-6-5 6 5-6 5"/>
-<circle class="af mp" cx="146" cy="32" r="9"/><circle class="n" cx="146" cy="58" r="9"/><circle class="n" cx="146" cy="84" r="9"/>
-<path class="s d mm" d="M157 84h41a13 13 0 0 0 0-26h-38"/><path class="s" d="M166 53l-6 5 6 5"/>
-<path d="M160 108h64M162 100v8M168 100v8M180 100v8M204 100v8"/>
-<text class="t" x="42" y="110">queue</text><text class="t" x="146" y="16">workers</text><text class="t" x="186" y="74">retry</text><text class="t" x="192" y="96">backoff</text>
+<path class="n" d="M76 20v68c0 5 18 9 40 9s40-4 40-9V20"/><ellipse class="n" cx="116" cy="20" rx="40" ry="7"/>
+<rect class="n" x="86" y="30" width="48" height="10" rx="2"/><rect class="n" x="86" y="45" width="48" height="10" rx="2"/><rect class="n" x="86" y="60" width="48" height="10" rx="2"/><rect class="n" x="86" y="75" width="48" height="10" rx="2"/>
+<rect class="n" x="138" y="33" width="10" height="8" rx="1"/><rect class="n" x="138" y="48" width="10" height="8" rx="1"/><path d="M140 33v-2a3 3 0 0 1 6 0v2M140 48v-2a3 3 0 0 1 6 0v2"/>
+<g class="mk"><rect class="af" x="138" y="63" width="10" height="8" rx="1"/><path class="a" d="M140 63v-2a3 3 0 0 1 6 0v2"/></g>
+<circle class="n" cx="36" cy="30" r="8"/><circle class="n" cx="36" cy="56" r="8"/><path d="M44 31 84 35M44 55 84 50"/>
+<path class="a" d="M204 35H160a7.5 7.5 0 0 1 0 15 7.5 7.5 0 0 1 0 15h-9m6-5-6 5 6 5"/>
+<circle class="a n" cx="212" cy="35" r="8"/><circle class="af ms" cx="204" cy="35" r="3"/>
+<text class="t" x="36" y="16">workers</text><text class="t" x="116" y="110">postgres</text><text class="t" x="192" y="82">skip locked</text>
 {{else if eq . "codegraph"}}
 <path d="M58 26 108 54M58 60H106M58 94 108 66"/>
 <path class="s" d="M134 54 182 30M134 66 182 90"/>
