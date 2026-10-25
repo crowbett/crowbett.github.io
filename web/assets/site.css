@@ -144,7 +144,7 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 .hero { padding-top: var(--sp-7); }
 .hero h1 { font-size: var(--t-display); line-height: 1.04; letter-spacing: -0.015em; max-width: 18em; margin: var(--sp-4) 0 var(--sp-5); }
 .hero-name { display: block; }
-.hero .lede { margin-bottom: var(--sp-2); }
+.hero .lede { margin-bottom: var(--sp-2); text-wrap: balance; }
 .hero .lede + .hero-run { margin-top: var(--sp-5); }
 .hook { max-width: var(--measure); margin: 0 0 var(--sp-5); font-size: var(--t-lede); line-height: 1.5; color: var(--text-2); }
 .hero-row { display: grid; gap: var(--sp-6); }
