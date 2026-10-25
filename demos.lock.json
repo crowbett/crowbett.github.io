@@ -71,7 +71,7 @@
       "slug": "keel",
       "kind": "rust",
       "repo": "keel",
-      "ref": "6a456cb5db07d1960ceb910311ef03ce851a0e73",
+      "ref": "4e92a7d277d1bdcd349f91e4cdcd7a4db08e4a69",
       "pkg": "./crates/keel-web",
       "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
       "sha256": "dd205cd73a14e7fb661a6c847f9d11a5123ea5290f416cded63711f741a1a479",
