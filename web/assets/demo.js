@@ -81,6 +81,35 @@ function progressRow(section) {
   return { row, update };
 }
 
+// keyboardScroll makes every box in the mount that scrolls sideways reachable
+// by Tab, so keyboard users can scroll it (Safari does not do this itself).
+// It re-checks when the demo re-renders or the frame resizes.
+function keyboardScroll(mountEl) {
+  let queued = false;
+  const check = () => {
+    queued = false;
+    for (const box of mountEl.querySelectorAll("*")) {
+      const overflow = getComputedStyle(box).overflowX;
+      const scrolls = (overflow === "auto" || overflow === "scroll") && box.scrollWidth > box.clientWidth;
+      if (scrolls && box.tabIndex < 0) {
+        box.tabIndex = 0;
+        box.dataset.demoScroll = "";
+        if (!box.getAttribute("aria-label")) {
+          box.setAttribute("role", "region");
+          box.setAttribute("aria-label", "Scrollable area");
+        }
+      } else if (!scrolls && "demoScroll" in box.dataset) {
+        box.removeAttribute("tabindex");
+        delete box.dataset.demoScroll;
+      }
+    }
+  };
+  const queue = () => { if (!queued) { queued = true; requestAnimationFrame(check); } };
+  new MutationObserver(queue).observe(mountEl, { childList: true, subtree: true });
+  new ResizeObserver(queue).observe(mountEl);
+  check();
+}
+
 async function start(section) {
   const button = section.querySelector("[data-demo-start]");
   const status = section.querySelector("[data-demo-status]");
@@ -97,6 +126,7 @@ async function start(section) {
   try {
     const [ui, demo] = await Promise.all([import(section.dataset.ui), connecting]);
     await ui.mount(mountEl, demo);
+    keyboardScroll(mountEl);
     status.textContent = "";
     progress.row.remove();
     section.dataset.demoReady = "";
