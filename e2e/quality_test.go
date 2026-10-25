@@ -230,15 +230,10 @@ func tabOrder(t *testing.T, ctx context.Context) {
 // largest paint lands within 2.5 s and nothing shifts as fonts and styles arrive.
 func TestSlowConnection(t *testing.T) {
 	t.Parallel()
-	slow := httptest.NewServer(slowLink(serveSite(t).Config.Handler))
+	slow := httptest.NewServer(slowLink(srv.Config.Handler))
 	defer slow.Close()
-	alloc, cancelA := chromedp.NewExecAllocator(context.Background(), allocOpts()...)
-	defer cancelA()
-	browser, cancelB := chromedp.NewContext(alloc)
-	defer cancelB()
 	for _, page := range []string{"/", "/projects/quorum/"} {
-		ctx, cancel := chromedp.NewContext(browser)
-		ctx, cancelT := context.WithTimeout(ctx, 60*time.Second)
+		ctx, cancel := newTab(t, 60*time.Second)
 		err := chromedp.Do(ctx,
 			chromedp.EmulateViewport(390, 844),
 			chromedp.Navigate(slow.URL+page),
@@ -256,7 +251,6 @@ func TestSlowConnection(t *testing.T) {
 				.observe({ type: "layout-shift", buffered: true });
 			setTimeout(() => resolve(out), 1000);
 		})`, chromedp.EvalAwaitPromise))
-		cancelT()
 		cancel()
 		if err != nil {
 			t.Fatal(err)

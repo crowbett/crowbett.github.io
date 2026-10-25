@@ -89,22 +89,53 @@ var viewports = []struct {
 // dark machine would never shoot the light theme.
 var schemes = []string{"light", "dark"}
 
+// The package builds the site once and starts one Chrome for every test:
+// each extra Chrome cost a cold start on CI (F2 in docs/tasks.md).
+var (
+	root    string
+	siteOut string
+	srv     *httptest.Server
+	browser context.Context
+)
+
+func TestMain(m *testing.M) {
+	os.Exit(run(m))
+}
+
+func run(m *testing.M) int {
+	var err error
+	if root, err = filepath.Abs(".."); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	if siteOut, err = os.MkdirTemp("", "e2e-site-"); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	defer os.RemoveAll(siteOut)
+	if err := site.Build(site.Config{Src: os.DirFS(root), Out: siteOut, Owner: site.DefaultOwner, Now: time.Now()}); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	srv = httptest.NewServer(http.FileServer(http.Dir(siteOut)))
+	defer srv.Close()
+	alloc, cancelA := chromedp.NewExecAllocator(context.Background(), allocOpts()...)
+	defer cancelA()
+	b, cancelB := chromedp.NewContext(alloc)
+	defer cancelB()
+	if err := chromedp.Do(b); err != nil {
+		fmt.Fprintln(os.Stderr, "start Chrome:", err)
+		return 1
+	}
+	browser = b
+	return m.Run()
+}
+
 func TestSite(t *testing.T) {
 	t.Parallel()
-	out := t.TempDir()
-	root, err := filepath.Abs("..")
-	if err != nil {
+	if err := site.Check(siteOut); err != nil {
 		t.Fatal(err)
 	}
-	cfg := site.Config{Src: os.DirFS(root), Out: out, Owner: site.DefaultOwner, Now: time.Now()}
-	if err := site.Build(cfg); err != nil {
-		t.Fatal(err)
-	}
-	if err := site.Check(out); err != nil {
-		t.Fatal(err)
-	}
-	srv := httptest.NewServer(http.FileServer(http.Dir(out)))
-	defer srv.Close()
 
 	shots := filepath.Join(root, "e2e", "out")
 	if err := os.RemoveAll(shots); err != nil {
@@ -123,15 +154,7 @@ func TestSite(t *testing.T) {
 		pages = append(pages, "/projects/"+p.Slug+"/")
 	}
 
-	alloc, cancel := chromedp.NewExecAllocator(context.Background(), allocOpts()...)
-	defer cancel()
-	browser, cancelB := chromedp.NewContext(alloc)
-	defer cancelB()
-	if err := chromedp.Do(browser); err != nil {
-		t.Fatal(err)
-	}
-
-	// One browser, one tab per page, viewport and scheme, all in parallel.
+	// One tab per page, viewport and scheme, all in parallel.
 	t.Run("pages", func(t *testing.T) {
 		for _, page := range pages {
 			for _, vp := range viewports {
@@ -139,7 +162,7 @@ func TestSite(t *testing.T) {
 					shot := name(page) + "-" + vp.name + "-" + scheme
 					t.Run(name(page)+"/"+vp.name+"/"+scheme, func(t *testing.T) {
 						t.Parallel()
-						visit(t, browser, srv.URL+page, vp.width, vp.height, scheme, filepath.Join(shots, shot))
+						visit(t, srv.URL+page, vp.width, vp.height, scheme, filepath.Join(shots, shot))
 					})
 				}
 			}
@@ -267,15 +290,9 @@ func TestDemoFrame(t *testing.T) {
 // with prefers-reduced-motion nothing does.
 func TestReducedMotion(t *testing.T) {
 	t.Parallel()
-	srv := serveSite(t)
-	alloc, cancelA := chromedp.NewExecAllocator(context.Background(), allocOpts()...)
-	defer cancelA()
-	browser, cancelB := chromedp.NewContext(alloc)
-	defer cancelB()
 	for _, page := range []string{"/", "/projects/quorum/", "/demos/smoke/"} {
 		for _, motion := range []string{"no-preference", "reduce"} {
-			ctx, cancel := chromedp.NewContext(browser)
-			ctx, cancelT := context.WithTimeout(ctx, 60*time.Second)
+			ctx, cancel := newTab(t, 60*time.Second)
 			err := chromedp.Do(ctx,
 				chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
 					_, err := cdp.Call(ctx, t, emulation.SetEmulatedMedia, emulation.SetEmulatedMediaParams{
@@ -300,7 +317,6 @@ func TestReducedMotion(t *testing.T) {
 				}
 				return document.getAnimations().length;
 			})()`, chromedp.EvalAwaitPromise))
-			cancelT()
 			cancel()
 			if err != nil {
 				t.Fatal(err)
@@ -315,32 +331,11 @@ func TestReducedMotion(t *testing.T) {
 	}
 }
 
-// serveSite builds the site and serves it until the test ends.
-func serveSite(t *testing.T) *httptest.Server {
-	t.Helper()
-	root, err := filepath.Abs("..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	out := t.TempDir()
-	if err := site.Build(site.Config{Src: os.DirFS(root), Out: out, Owner: site.DefaultOwner, Now: time.Now()}); err != nil {
-		t.Fatal(err)
-	}
-	srv := httptest.NewServer(http.FileServer(http.Dir(out)))
-	t.Cleanup(srv.Close)
-	return srv
-}
-
-// smokePage serves the site and opens the smoke demo page.
+// smokePage opens the smoke demo page in a new tab.
 func smokePage(t *testing.T) context.Context {
 	t.Helper()
-	srv := serveSite(t)
-	alloc, cancelA := chromedp.NewExecAllocator(context.Background(), allocOpts()...)
-	t.Cleanup(cancelA)
-	ctx, cancel := chromedp.NewContext(alloc)
+	ctx, cancel := newTab(t, 90*time.Second)
 	t.Cleanup(cancel)
-	ctx, cancelT := context.WithTimeout(ctx, 90*time.Second)
-	t.Cleanup(cancelT)
 	if err := chromedp.Do(ctx, chromedp.Navigate(srv.URL+"/demos/smoke/")); err != nil {
 		t.Fatal(err)
 	}
@@ -389,17 +384,25 @@ func allocOpts() []chromedp.ExecAllocatorOption {
 // it against 20-31 s without (measured locally, 2026-10-24).
 var tabMu sync.Mutex
 
-func visit(t *testing.T, browser context.Context, url string, w, h int64, scheme, shot string) {
-	ctx, cancel := chromedp.NewContext(browser)
-	defer cancel()
-	ctx, cancelT := context.WithTimeout(ctx, 90*time.Second)
-	defer cancelT()
+// newTab opens a tab in the shared Chrome that closes at cancel or after d.
+func newTab(t *testing.T, d time.Duration) (context.Context, context.CancelFunc) {
+	t.Helper()
+	ctx, cancelTab := chromedp.NewContext(browser)
+	ctx, cancelT := context.WithTimeout(ctx, d)
+	cancel := func() { cancelT(); cancelTab() }
 	tabMu.Lock()
 	err := chromedp.Do(ctx)
 	tabMu.Unlock()
 	if err != nil {
+		cancel()
 		t.Fatal(err)
 	}
+	return ctx, cancel
+}
+
+func visit(t *testing.T, url string, w, h int64, scheme, shot string) {
+	ctx, cancel := newTab(t, 90*time.Second)
+	defer cancel()
 
 	var mu sync.Mutex
 	var problems []string
@@ -419,7 +422,7 @@ func visit(t *testing.T, browser context.Context, url string, w, h int64, scheme
 		}
 	}()
 
-	err = chromedp.Do(ctx,
+	err := chromedp.Do(ctx,
 		chromedp.EmulateViewport(w, h),
 		chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
 			_, err := cdp.Call(ctx, t, emulation.SetEmulatedMedia, emulation.SetEmulatedMediaParams{
@@ -504,7 +507,7 @@ func visit(t *testing.T, browser context.Context, url string, w, h int64, scheme
 	if err := os.WriteFile(shot+".jpg", img, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	cancelT()
+	cancel()
 	<-done
 	mu.Lock()
 	defer mu.Unlock()
