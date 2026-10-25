@@ -18,7 +18,7 @@ Done when: the "Downloads ~N KB" text on every demo button matches what a visito
 
 ## Fixes
 
-### E0 edgecache README claim · order 5 · deps: none · status: todo
+### E0 edgecache README claim · order 5 · deps: none · status: done 2026-10-24 (edgecache e04f3da; site: the commit that adds this line)
 edgecache's README line 5 says "standard library only", but `go.mod` has OpenTelemetry and gRPC and `internal/http/handlers.go` imports `otelhttp`. Reword it truthfully (e.g. caching logic on the standard library, OpenTelemetry for tracing) in the edgecache repo, gate, push.
 Done when: README and this site's edgecache page say the same true thing.
 
