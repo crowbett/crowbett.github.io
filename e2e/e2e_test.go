@@ -33,6 +33,11 @@ import (
 // that proves it rendered real output from its binary.
 var demoChecks = map[string][]string{
 	"smoke": {`document.querySelector(".demo-out").textContent.includes("answered: hello from the page")`},
+	"ratelimitd": {
+		`[...document.querySelectorAll(".rl-chart")].map(c => c.dataset.algo).join() === "gcra,token_bucket,sliding_window"`,
+		`[...document.querySelectorAll(".rl-chart")].every(c => c.querySelectorAll("rect.rl-allowed").length > 20 && c.querySelectorAll("rect.rl-denied").length > 0)`,
+		`/^1,\d{3} requests through 3 algorithms/.test(document.querySelector(".rl-status").textContent)`,
+	},
 }
 
 var viewports = []struct {
