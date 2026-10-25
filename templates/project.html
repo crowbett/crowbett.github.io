@@ -1,0 +1,35 @@
+{{define "project"}}{{template "head" .}}
+{{with .Project}}
+<article class="project">
+  <p class="crumb"><a href="/#work">Work</a></p>
+  <h1>{{.Title}}</h1>
+  <p class="lede">{{.Tagline}}</p>
+  <p class="meta">
+    <span class="lang">{{.Lang}}</span>
+    {{range .Tags}}<span class="tag">{{.}}</span>{{end}}
+  </p>
+  {{if .Metric}}<p class="metric">{{.Metric}} <span class="source">({{.MetricSource}})</span></p>{{end}}
+
+  {{if .Live}}
+  <section class="demo" data-demo="{{.Slug}}" data-ui="{{demoAsset .Slug}}" aria-label="Live demo">
+    <div class="demo-bar">
+      <button type="button" data-demo-start>Run the live demo</button>
+      <span class="demo-note">Downloads ~{{demoKB .Slug}} KB of WebAssembly. Runs entirely in your browser.</span>
+    </div>
+    <div class="demo-mount" data-demo-mount></div>
+    <p class="demo-status" data-demo-status role="status" aria-live="polite"></p>
+  </section>
+  <script type="module" src="/assets/demo.js"></script>
+  {{else if eq .Demo "planned"}}
+  <p class="notice">A live in-browser demo of this project is being built.</p>
+  {{end}}
+
+  <div class="body">{{.Body}}</div>
+
+  <p class="source-link">
+  {{if .Private}}Source is private and available on request: <a href="mailto:{{$.Owner.Email}}?subject={{.Title}}%20source">{{$.Owner.Email}}</a>.
+  {{else}}Source: <a href="{{.Repo}}">{{.Repo}}</a>{{end}}
+  </p>
+</article>
+{{end}}
+{{template "foot" .}}{{end}}

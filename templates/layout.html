@@ -1,0 +1,51 @@
+{{define "head"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>{{if .Title}}{{.Title}} · {{end}}{{.Owner.Name}}</title>
+<meta name="description" content="{{if .Project}}{{.Project.Tagline}}{{else}}{{.Owner.Name}}, {{.Owner.Role}}. Databases, consensus, caches, queues and rate limiters I built and measured.{{end}}">
+<link rel="canonical" href="{{.Canonical}}">
+<meta property="og:title" content="{{if .Title}}{{.Title}}{{else}}{{.Owner.Name}}{{end}}">
+<meta property="og:description" content="{{if .Project}}{{.Project.Tagline}}{{else}}Databases, consensus, caches, queues and rate limiters I built and measured.{{end}}">
+<meta property="og:url" content="{{.Canonical}}">
+<meta property="og:type" content="website">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="brand" href="/">{{.Owner.Name}}</a>
+  <nav><a href="/#work">Work</a> <a href="mailto:{{.Owner.Email}}">Email</a></nav>
+</header>
+<main id="main">
+{{end}}
+
+{{define "foot"}}
+</main>
+<footer class="foot">
+  <p>Built with a small Go static site generator. No tracking, no cookies.</p>
+  <p>© {{.Year}} {{.Owner.Name}} · <a href="mailto:{{.Owner.Email}}">{{.Owner.Email}}</a></p>
+</footer>
+</body>
+</html>
+{{end}}
+
+{{define "card"}}
+<li class="card">
+  <a href="/projects/{{.Slug}}/">
+    <h3>{{.Title}}</h3>
+    <p>{{.Tagline}}</p>
+    {{if .Metric}}<p class="metric">{{.Metric}}</p>{{end}}
+    <p class="meta">
+      <span class="lang">{{.Lang}}</span>
+      {{if .Live}}<span class="badge live">Live demo</span>{{else if eq .Demo "planned"}}<span class="badge">Demo coming</span>{{end}}
+      {{if .Private}}<span class="badge">Private source</span>{{end}}
+    </p>
+  </a>
+</li>
+{{end}}
