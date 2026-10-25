@@ -59,6 +59,10 @@ Done when: as D1; demoCheck: crash the leader, step, and a new leader with a hig
 Requested by the design session (2026-10-24). The home kicker and every page's description print `Owner.Role` = "Backend engineer (Go)" (`internal/site/build.go`), while keel, codegraph and strata are Rust (strata also Swift). Decide whether the role should name both languages; the design shows it as a small label above the hero, so any short phrase fits.
 Done when: the role line is true for every project the site shows.
 
+### C2 ratelimitd ui.css uses retired tokens · order 15 · deps: none · status: todo
+Requested by the design session (2026-10-24). `web/demos/ratelimitd/ui.css` (247c22f) reads `--muted` and `--code-bg`, which V2 replaced; both are undefined, so the "denied" legend swatch and bars lose their colour and the chart wells have no background. Use `--text-2` (or `--text-3`) for muted text and fills and `--sunken` for wells; docs/demo-contract.md now lists the tokens demos may use.
+Done when: ratelimitd's ui.css uses only tokens listed in the contract and its screenshots show the denied bars and legend swatch in both schemes.
+
 ## Rust demos
 
 ### R0 Rust build path · order 30 · deps: D1 · status: todo
@@ -89,7 +93,7 @@ Done when: design.md exists and every later V task cites it.
 Implement design.md §Type, §Colour, §Space in site.css (a self-hosted variable woff2 is allowed if it earns its bytes; subset it, `font-display: swap`, budget recorded in PLAN.md). Light and dark both first-class; no theme toggle (design.md §Colour). e2e shoots both schemes so light is reviewed too.
 Done when: every page matches design.md in both themes at 390 and 1280 px, screenshots reviewed.
 
-### V3 Home page · order 102 · deps: V2 · status: done 2026-10-24 (this commit; split: the "would remember" verdict moved to V3b)
+### V3 Home page · order 102 · deps: V2 · status: done 2026-10-24 (9f7c55c; split: the "would remember" verdict moved to V3b)
 Per design.md §Feel and §References (Maggie Appleton's sentence hero, samwho's mechanism cards): a hero that says who and what in one look, and a project grid where each card shows what the project does visually (SVG diagram or static capture per project, not a stock icon), with live/planned state honest.
 Done when: a fresh-eyes reviewer (V8 method) rates it "would remember this site" and the screenshots back it.
 Carry-over from V2 review: the name appears twice at the top (brand and h1); "Demo coming" and "Private source" pills look identical.
@@ -98,7 +102,7 @@ Carry-over from V2 review: the name appears twice at the top (brand and h1); "De
 Split from V3 on 2026-10-24. After three fresh-eyes rounds V3 has no MAJOR findings, but the verdict is "maybe, leaning yes": below the hero it is still a familiar card layout (design.md decisions log). The lever left is motion in the diagrams (samwho's thumbnails are memorable because they move), which is V5's. When V5 lands, re-run the V8 method on home.
 Done when: a fresh-eyes reviewer rates home "would remember this site" (yes, not maybe) and the screenshots back it.
 
-### V4 Project page and demo frame · order 103 · deps: V2 · status: todo
+### V4 Project page and demo frame · order 103 · deps: V2 · status: done 2026-10-24 (this commit)
 Per design.md §Demo frame and §Space (metadata gutter): header, metric presentation with its source, body typography, and one consistent demo frame for every demo: title bar, size, loading progress with real bytes (stream the fetch), clear error state with retry, focus handling. Works for planned and live projects.
 Done when: smoke demo shows real byte progress and a styled error (force one in e2e), screenshots reviewed.
 Carry-over from V2 review (design.md decisions log): the metric box and the planned-demo notice stack as two boxes; a metric source with a command (`go test ./internal/sim -seeds 10000`) wraps after its hyphen on phones.

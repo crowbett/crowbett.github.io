@@ -56,10 +56,10 @@ func TestParseProjectRejects(t *testing.T) {
 func testFS(project string) fstest.MapFS {
 	return fstest.MapFS{
 		"content/projects/demo.md": {Data: []byte(project)},
-		"demos.lock.json":          {Data: []byte(`{"demos":[{"slug":"demo","gzip_bytes":2048}]}`)},
+		"demos.lock.json":          {Data: []byte(`{"demos":[{"slug":"demo","bytes":4194304,"gzip_bytes":1244160}]}`)},
 		"templates/all.html": {Data: []byte(`
 {{define "home"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{range .Projects}}<a href="/projects/{{.Slug}}/">x</a>{{end}}{{end}}
-{{define "project"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{if .Project.Live}}{{demoKB .Project.Slug}}KB{{end}}<a href="/">home</a>{{end}}
+{{define "project"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{if .Project.Live}}{{demoKB .Project.Slug}}KB {{demoBytes .Project.Slug}}B{{end}}<a href="/">home</a>{{end}}
 {{define "notfound"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{end}}`)},
 		"web/assets/site.css":  {Data: []byte("body{}")},
 		"web/demos/demo/ui.js": {Data: []byte("export function mount(){}")},
@@ -80,7 +80,7 @@ func TestBuildAndCheck(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(page), "2KB") {
+	if !strings.Contains(string(page), "1,215KB 4194304B") {
 		t.Errorf("demo size not rendered: %s", page)
 	}
 	for _, f := range []string{"404.html", ".nojekyll", "sitemap.xml", "robots.txt", "assets/site.css"} {

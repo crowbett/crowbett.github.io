@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -71,7 +72,8 @@ func Build(cfg Config) error {
 	}
 	tmpl, err := template.New("").Funcs(template.FuncMap{
 		"demoAsset": func(slug string) string { return "/demos/" + slug + "/ui.js" },
-		"demoKB":    func(slug string) int { return (sizes[slug] + 1023) / 1024 },
+		"demoKB":    func(slug string) string { return thousands((sizes[slug].Gzip + 1023) / 1024) },
+		"demoBytes": func(slug string) int { return sizes[slug].Raw },
 	}).ParseFS(cfg.Src, "templates/*.html")
 	if err != nil {
 		return fmt.Errorf("templates: %w", err)
@@ -120,8 +122,19 @@ func Build(cfg Config) error {
 	return writeSitemap(cfg, projects)
 }
 
-// demoSizes reads the gzipped size of every built demo binary from the lock.
-func demoSizes(src fs.FS) (map[string]int, error) {
+type demoSize struct{ Raw, Gzip int }
+
+// thousands formats n with comma separators, as the site's copy writes numbers.
+func thousands(n int) string {
+	s := strconv.Itoa(n)
+	for i := len(s) - 3; i > 0; i -= 3 {
+		s = s[:i] + "," + s[i:]
+	}
+	return s
+}
+
+// demoSizes reads the raw and gzipped size of every built demo binary from the lock.
+func demoSizes(src fs.FS) (map[string]demoSize, error) {
 	b, err := fs.ReadFile(src, "demos.lock.json")
 	if err != nil {
 		return nil, err
@@ -129,16 +142,17 @@ func demoSizes(src fs.FS) (map[string]int, error) {
 	var lock struct {
 		Demos []struct {
 			Slug string `json:"slug"`
+			Raw  int    `json:"bytes"`
 			Gzip int    `json:"gzip_bytes"`
 		} `json:"demos"`
 	}
 	if err := json.Unmarshal(b, &lock); err != nil {
 		return nil, fmt.Errorf("demos.lock.json: %w", err)
 	}
-	sizes := map[string]int{}
+	sizes := map[string]demoSize{}
 	for _, d := range lock.Demos {
 		if d.Gzip > 0 {
-			sizes[d.Slug] = d.Gzip
+			sizes[d.Slug] = demoSize{Raw: d.Raw, Gzip: d.Gzip}
 		}
 	}
 	return sizes, nil

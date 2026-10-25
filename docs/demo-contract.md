@@ -17,8 +17,14 @@ A demo is three things: a bridge in the project repo, a UI in this repo, and a l
 - Vanilla ES modules and DOM only. Set text with `textContent`, never `innerHTML` with data from the binary. SVG via `createElementNS`, or `<canvas>`.
 - CSP: no inline `<style>` or `style="..."` attributes. Use classes from `web/assets/site.css`, or a `web/demos/<slug>/ui.css` the module adds as a `<link>`. Setting `el.style.prop` from JS is allowed.
 - Accessible: real `<button>`/`<input>` with labels, keyboard-usable, `aria-live` for results that change. Respect `prefers-reduced-motion` (no auto-play animation when it is set).
-- Works at 390 px wide without horizontal page scroll (wide charts scroll inside their own box). Works in light and dark (`--` tokens in site.css).
+- Works at 390 px wide without horizontal page scroll (wide charts scroll inside their own box). Works in light and dark: use only these tokens from site.css, which follow the scheme: `--bg`, `--surface`, `--sunken` (wells, chart backgrounds), `--line`, `--line-strong`, `--control-line`, `--text`, `--text-2` (secondary text), `--text-3` (labels), `--accent`, `--accent-tint`, `--live`, `--danger`, `--mono`, `--sans`, `--r-1`. Other names in site.css may change without notice.
 - Budget: 60 KiB for `ui.js`.
+
+## Frame (site-owned: `templates/project.html`, `web/assets/demo.js`)
+- The site renders the frame: title bar, start button, size, download progress, error state and retry. `ui.js` never builds its own loader or error box.
+- `mount` runs only after the binary is ready. If it throws, the frame shows the message and a "Try again" button that clears the mount and starts a fresh worker, so `mount` must cope with being called again on an empty `el`.
+- After `mount` resolves, focus moves to the first `button, input, select, textarea, a[href], [tabindex]` in the mount, so put the main control first.
+- Hooks for tests: the section carries `data-demo-ready` or `data-demo-error`, and `data-demo-loaded` with the decompressed bytes received; project pages also carry `data-bytes` (the raw size from the lock).
 
 ## Lock and page
 1. Commit and push the bridge in the project repo; its gate must be green.

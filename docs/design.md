@@ -102,17 +102,25 @@ What it is for: in one look, who this is, what they build, and that the proof is
 - **Cards** (samwho's mechanism thumbnails): the first two projects by `order` are full-width feature rows from 54rem (diagram left, text right); the rest sit two to a row, one column on phones. Each card is a diagram panel on `--sunken`, then title, tagline in `--text-2`, the metric in mono, and a foot under a dashed rule with lang, "Private source" and a `→` (all mono) that turns accent on hover, so every card has the same skeleton with or without a metric. Only "Live demo" gets a pill (green tint with a dot); the planned state is said once in the hero, not eight times.
 - **Diagrams** (`templates/diagrams.html`): one inline SVG line drawing per slug, viewBox 240×120, 1.5 px strokes in `--text-3` that stay 1.5 px at any size (`vector-effect: non-scaling-stroke`), one accent element that names the idea (the Raft leaders, the rate limit, the cache, the active segment, the running worker, the queried function, the layer being printed). Labels (`.t`, keel's key ranges) show only at feature size, where they are legible. Inline so they theme with CSS variables and need no request; ~0.6 KB each. A project with no drawing yet renders its card without the panel (`.card-fig:has(> .dg:empty)`); add a drawing when adding a project.
 
+## Project page
+
+What it is for: a visitor checks the claim, then runs it. Good looks like the evidence and its source read before the prose, and the facts (language, topics, demo, source) answered without scrolling.
+
+- **Header**: crumb, h1, tagline as lede, full width up to 52rem.
+- **Facts** (Stripe's docs gutter; jepsen's metadata column): from 64rem a 14rem sticky column left of the text with the project's diagram (2:1, the same drawing as its card) and a `dl` of Language, Topics, Demo (only when live: a pill linking to the frame) and Source (repo or "Private, on request" linking to the mailto line at the foot). On phones the same block sits under the header with the labels in a two-column grid.
+- **Evidence**: one box, accent left rule, mono label `EVIDENCE`, the metric in mono (body size on desktop, 15 px on phones), its source in sans below. "Evidence", not "Measured": keel's metric is a gate, not a measurement.
+- **Body** at `--measure`; the source line closes the column.
+
 ## Demo frame
 
 One frame for every demo, built by the site (`templates/project.html`, `web/assets/demo.js`); the demo's `ui.js` only fills the mount.
 
-- **Title bar:** eyebrow label `LIVE DEMO`, the project name, and on the right the runtime (`Go → WebAssembly`) and the download size, in mono.
-- **Before start:** one instruction sentence (Ciechanowski), the start button (the page's one accent fill), and the honest size. Nothing downloads until clicked.
-- **Loading:** a determinate progress bar from the streamed fetch with real bytes (`412 / 1,190 KB`), then "starting". Indeterminate only when the server sends no length.
-- **Running:** the mount, full frame width; controls above output; output in a `--sunken` well. Wide charts scroll inside the well, never the page.
-- **Error:** `--danger-tint` panel inside the frame, the error message verbatim, and a Retry button that starts a fresh worker. Focus moves to the panel heading.
-- **Focus:** on start, focus moves to the first control the demo renders, or the frame heading if none.
-- Same frame on planned projects, rendered as an inert "demo in progress" state, so every project page has the same shape.
+- **Title bar:** a dot and "Live demo" on the left; on the right the runtime and the transfer size in mono (`WebAssembly · ~1,215 KB`, gzip bytes from the lock). The project name is already the h1, so it is not repeated.
+- **Before start:** the start button (the page's one accent fill) and one honest sentence: runs in your browser, nothing downloads until you start it.
+- **Loading:** the worker streams the fetch and reports decompressed bytes. GitHub Pages sends .wasm gzipped, so Content-Length is the compressed size and useless for progress; the page compares received bytes with the raw size from the lock (`data-bytes`) and shows a determinate bar and a percentage, then "Starting…" while the binary instantiates. The button reads "Loading…"; the note gives way to the bar. Without `data-bytes` (the smoke page) the bar is indeterminate and counts KB. Screen readers get one status ("Downloading the demo…"), not every percent.
+- **Running:** the mount, full frame width; the bar and note go away. Focus moves to the first control the demo renders, or to the mount.
+- **Error:** the status becomes a `--danger-tint` panel above the button, "The demo failed to start." in `--danger` then the message verbatim. The start button turns into "Try again" (one action, not two buttons) and takes focus; it starts a fresh worker.
+- **Planned:** the same frame, dashed and unfilled, hollow dot, heading "Demo", one sentence. Every project page has the same shape.
 
 ## What we will not do
 
@@ -127,3 +135,5 @@ No photo, illustration, mascot, emoji section markers or stock icons. No gradien
 - 2026-10-24 V3: fresh-eyes review round 1 (screenshots only) said "maybe": flat hierarchy, "Demo coming" eight times read as unfinished, diagrams undersized and uneven in ink, phone hero orphaned "consensus,", dark card bands nearly invisible. Fixes: feature rows, live-only pill, non-scaling strokes with outlined bars, phone display size 2rem, dark `--sunken` #22201d → #262420, `--line` #2e2b27 → #36322d, `--text-3` #8f897e → #958f84 (keeps 4.8:1 on the new sunken). keel got key-range labels, edgecache a cache with entries and a dashed miss path, jobrun a backoff axis, strata a nozzle on the layer being printed.
 - 2026-10-24 V3 rounds 2-3: feature text centred, bands shortened, one diagram scale across feature and grid (grid band 184 px, feature diagram ≤ 12rem, feature split 5:7), jobrun backoff ticks in body ink, dark `--line` → #3b3732. Round 3: no MAJOR findings; all eight diagrams read as their systems; verdict "maybe, leaning yes" because the grid is a familiar shape. The memorable lever moves to V5 (diagram motion) and V3b re-judges it.
 - 2026-10-24 V1: e2e screenshots inherit the OS colour scheme (this machine is dark), so light pages were never reviewed. V2 makes e2e shoot both schemes explicitly.
+- 2026-10-24 V4: the project page gets a facts column and one evidence box, and the frame absorbs the planned notice (V2 carry-over: two stacked boxes). Round 1: "Being built" said three times (facts row, frame spec, sentence) → once; the desktop diagram tile was a tall empty box → 2:1; the mono metric wrapped hard on phones → 15 px there. Round 2 (loading, error and ready states shot with a throttled server and the ratelimitd demo): note, bar and disabled button stacked three lines while loading → note hidden, button says "Loading…"; size printed without separators → `thousands()` in the build; the "nothing downloads" note stayed true-looking after a failed download → hidden in the error state. Accepted: a metric source with a command can still wrap after a hyphen on phones (no CSS control over hyphen breaks short of `nowrap`, which would overflow).
+- 2026-10-24 V4: progress throttling started `last` at 0 and `performance.now()` in a fresh worker starts near 0, so the first chunk was swallowed and only the final count arrived; the new e2e check caught it before it shipped.
