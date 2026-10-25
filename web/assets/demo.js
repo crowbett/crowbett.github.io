@@ -94,10 +94,8 @@ function keyboardScroll(mountEl) {
       if (scrolls && box.tabIndex < 0) {
         box.tabIndex = 0;
         box.dataset.demoScroll = "";
-        if (!box.getAttribute("aria-label")) {
-          box.setAttribute("role", "region");
-          box.setAttribute("aria-label", "Scrollable area");
-        }
+        if (!box.getAttribute("role")) box.setAttribute("role", "region");
+        if (!box.getAttribute("aria-label") && !box.getAttribute("aria-labelledby")) box.setAttribute("aria-label", "Scrollable area");
       } else if (!scrolls && "demoScroll" in box.dataset) {
         box.removeAttribute("tabindex");
         delete box.dataset.demoScroll;

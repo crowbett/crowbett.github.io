@@ -77,9 +77,10 @@ Requested by the design session (2026-10-24). `web/demos/ratelimitd/ui.css` (247
 Done when: ratelimitd's ui.css uses only tokens listed in the contract and its screenshots show the denied bars and legend swatch in both schemes.
 `--muted` and `--code-bg` were already gone on main (now `--text-3` and `--sunken`); the file still read `--sp-1..4`, `--t-label` and `--t-small`, now their literal values. The build now fails when a demo's ui.css reads a property that is neither a contract token nor defined in that file (`DemoTokens`, internal/site/check.go); all five demos pass.
 
-### C3 edgecache: label the scrolling table · order 16 · deps: none · status: todo
+### C3 edgecache: label the scrolling table · order 16 · deps: none · status: done 2026-10-24 (this commit)
 Requested by the design session (2026-10-24). V6's axe scan found `.ec-scroll` (web/demos/edgecache/ui.js) scrolls sideways at 390 px with no keyboard access (WCAG 2.1.1). The frame now makes overflowing scroll boxes focusable and names them "Scrollable area" (docs/demo-contract.md §Frame); a real name is better.
 Done when: `.ec-scroll` carries an `aria-label` that names its content (e.g. "Request log").
+`.ec-scroll` is labelled "Request log", checked in e2e at both widths. The sweep found the frame skipped `role="region"` whenever a box brought its own label, which left jobrun's labelled `.jr-scroll` a focusable div with no role; the frame now adds the role to any scroll box without one.
 
 ### C4 strata card has no evidence line · order 17 · deps: none · status: todo
 Requested by the design session (2026-10-24, V3b review). strata is the only card without a `metric`, so its card has an empty slot where every other card states evidence. If strata's repo has a measured, sourced number (slice time for a reference model, layer count, binary size), add it with `metric_source`; otherwise leave it and say so here.
