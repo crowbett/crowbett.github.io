@@ -132,7 +132,7 @@ Done when: the lock pins a commit on keel's main.
 The strata pin is a commit on the `webdemo` branch. Strata squash-merges PRs, so once #219 merges and the branch is deleted, that commit is on no remote branch and the pin stops being reproducible. After the merge, `go run ./cmd/wasm pin strata <main sha>`, `make wasm`, and check that the binary hash is unchanged (it is if main's crates/ tree matches the branch).
 Done when: the lock pins a commit on strata's main.
 
-### D7b Re-pin codegraph after PR #1 lands · order 36 · deps: D7 · status: todo
+### D7b Re-pin codegraph after PR #1 lands · order 36 · deps: D7 · status: done 2026-10-25 (codegraph 0dbef57, tree identical to 9bd9b13; codegraph.wasm sha256 unchanged; site: this commit)
 The codegraph pin is 9bd9b13 on the `webdemo` branch. After PR #1 merges, `go run ./cmd/wasm pin codegraph <main sha>`, `make wasm`, and check the binary hash is unchanged (it is if main's tree matches the branch).
 Done when: the lock pins a commit on codegraph's main.
 

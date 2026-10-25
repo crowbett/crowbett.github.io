@@ -82,7 +82,7 @@
       "slug": "codegraph",
       "kind": "rust",
       "repo": "codegraph",
-      "ref": "9bd9b13a35a4f4770ef7ba84397afdfe4f5c473d",
+      "ref": "0dbef57e463cd7511376487146b875fb91b4050d",
       "pkg": "./crates/codegraph-web",
       "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
       "sha256": "558823a3efcb847b76ced22aa6982fcca8509fb61f4e42022724cf14483b0546",
