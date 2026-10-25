@@ -527,7 +527,11 @@ func lockBytes(t *testing.T, slug string) int {
 func allocOpts(chromeLog io.Writer) []chromedp.ExecAllocatorOption {
 	// Software rendering: on macOS the GPU process hung for ~2 min under load
 	// and stalled every tab until Chrome restarted it (F3 in docs/tasks.md).
-	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.Flag("mute-audio", true), chromedp.DisableGPU, chromedp.CombinedOutput(chromeLog))
+	// E2E_GPU=1 keeps the GPU on locally, to check a GPU-only fault (F6).
+	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.Flag("mute-audio", true), chromedp.CombinedOutput(chromeLog))
+	if os.Getenv("E2E_GPU") == "" {
+		opts = append(opts, chromedp.DisableGPU)
+	}
 	if os.Getenv("CI") != "" {
 		opts = append(opts, chromedp.ExecPath("google-chrome"), chromedp.NoSandbox)
 	}

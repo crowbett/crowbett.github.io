@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -45,7 +46,25 @@ var (
 	ogImage = regexp.MustCompile(`property="og:image" content="https?://[^/"]+(/[^"]*)"`)
 	cssUse  = regexp.MustCompile(`var\((--[\w-]+)`)
 	cssDef  = regexp.MustCompile(`(--[\w-]+)\s*:`)
+	scaleFn = regexp.MustCompile(`\bscale(?:X|Y|Z|3d)?\(([^)]*)\)|(?:^|[\s;{"'])scale\s*:\s*([^;}"']*)`)
 )
+
+// zeroScales lists transform scales with a zero factor. On a
+// non-scaling-stroke shape a singular transform runs Chrome's GPU away and
+// freezes the visitor's machine (F6 in docs/tasks.md).
+func zeroScales(b []byte) []string {
+	var hits []string
+	for _, m := range scaleFn.FindAllSubmatch(b, -1) {
+		args := strings.FieldsFunc(string(m[1])+" "+string(m[2]), func(r rune) bool { return r == ',' || r == ' ' })
+		for _, a := range args {
+			if f, err := strconv.ParseFloat(a, 64); err == nil && f == 0 {
+				hits = append(hits, strings.TrimSpace(string(m[0])))
+				break
+			}
+		}
+	}
+	return hits
+}
 
 // Check walks a built site: every internal link resolves, every page has a
 // title, a description and lang, every asset is within budget, and demo
@@ -64,6 +83,12 @@ func Check(out string) error {
 		b, err := os.ReadFile(p)
 		if err != nil {
 			return err
+		}
+		switch path.Ext(p) {
+		case ".html", ".css", ".js":
+			for _, z := range zeroScales(b) {
+				add("%s: %s scales to zero; use a tiny scale and opacity (F6)", rel, z)
+			}
 		}
 		switch path.Ext(p) {
 		case ".html":

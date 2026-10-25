@@ -138,15 +138,19 @@ func TestCheckFindsProblems(t *testing.T) {
 	write("big.woff2", strings.Repeat("a", Budgets.Fonts+1))
 	write("og/big.png", strings.Repeat("a", Budgets.ShareImage+1))
 	write("demos/x/ui.css", `.x { --x-c: var(--accent); color: var(--x-c); margin: var(--sp-1); }`)
+	write("demos/y/ui.css", `@keyframes y { 0% { transform: scaleY(0); } 50% { transform: scale(1, 0.0); } 90% { transform: scaleX(0.001); } } .z { scale: 1 0; } .k { scale: 0.5; }`)
 	write("share.html", `<html lang="en"><title>t</title><meta name="description"><meta name="viewport"><meta property="og:image" content="https://x.test/og/missing.png">`)
 	err := Check(out)
 	if err == nil {
 		t.Fatal("check passed a broken site")
 	}
-	for _, want := range []string{"broken link /missing/", `missing name="description"`, "CSS totals", "fonts total", "og/big.png", "og:image /og/missing.png does not exist", "demos/x/ui.css: reads --sp-1"} {
+	for _, want := range []string{"broken link /missing/", `missing name="description"`, "CSS totals", "fonts total", "og/big.png", "og:image /og/missing.png does not exist", "demos/x/ui.css: reads --sp-1", "scaleY(0) scales to zero", "scale(1, 0.0) scales to zero", "scale: 1 0 scales to zero"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("check did not report %q:\n%v", want, err)
 		}
+	}
+	if strings.Contains(err.Error(), "scaleX(0.001)") || strings.Contains(err.Error(), "scale: 0.5") {
+		t.Errorf("check reported a nonzero scale:\n%v", err)
 	}
 	if strings.Contains(err.Error(), "--x-c") || strings.Contains(err.Error(), "--accent") {
 		t.Errorf("check reported a demo's own property or a contract token:\n%v", err)
