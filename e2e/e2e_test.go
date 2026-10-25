@@ -60,6 +60,31 @@ var demoChecks = map[string][]string{
 			return ok;
 		})()`,
 	},
+	"kvlite": {
+		`[...document.querySelectorAll(".kv-table tbody tr")].map((r) => r.cells[2].textContent + ":" + r.cells[3].textContent).join() === "put:user:1,put:user:2,put:user:1,delete:user:2"`,
+		`(async () => {
+			const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 50)); return f(); };
+			const click = (t) => [...document.querySelectorAll(".kv-controls button")].find((b) => b.textContent === t).click();
+			const segs = () => [...document.querySelectorAll(".kv-seg")].map((s) => s.querySelector(".kv-seg-meta").textContent + "|" +
+				[...s.querySelectorAll("tbody tr")].map((r) => r.cells[2].textContent + ":" + r.cells[3].textContent).join());
+			const keys = () => [...document.querySelectorAll(".kv-keys li span:first-child")].map((s) => s.textContent).join();
+			const log = () => document.querySelector(".kv-log").textContent;
+			click("Compact");
+			let ok = await until(() => /^sealed · \d+ B · hint file\|put:user:1;active · 16 B\|$/.test(segs().join(";")));
+			const k = document.querySelector("input[name=key]");
+			k.value = "late";
+			click("Put");
+			ok = ok && await until(() => keys() === "late,user:1");
+			const tear = document.querySelector("select[name=tear]");
+			tear.value = "5";
+			click("Crash and reopen");
+			const status = () => document.querySelector(".kv-status").textContent;
+			ok = ok && await until(() => log().includes("truncated torn tail") && keys() === "user:1" && status().includes(", 5 bytes torn off"));
+			click("Reset");
+			click("Compact");
+			return ok && await until(() => status().startsWith("Nothing to compact") && keys() === "");
+		})()`,
+	},
 	"edgecache": {
 		`[...document.querySelectorAll(".ec-table .ec-badge")].map(b => b.textContent).join() === "MISS,HIT,REVALIDATED,HIT"`,
 		`[...document.querySelectorAll(".ec-table td.ec-origin")].map(c => c.textContent).join("|") === "GET → 200|none|conditional GET → 304|none"`,
