@@ -54,23 +54,24 @@ Headings: weight 680, tracking −0.025em at h1, −0.035em at display. Prose an
 
 ## Colour
 
-Named by role. Light is warm paper, dark is warm graphite; both first-class. Contrast measured 2026-10-24 with the WCAG 2 relative-luminance formula; ratios in brackets are against `bg` / `surface` / `sunken`, or the named ground. V6 re-measures them in e2e on every run.
+Named by role. Light is warm paper, dark is warm graphite; both first-class. Contrast measured 2026-10-24 with the WCAG 2 relative-luminance formula; ratios in brackets are against `bg` / `surface` / `sunken`, or the named ground. `TestTokenContrast` (e2e/quality_test.go) re-measures every pair below from site.css on every run; the table was regenerated from it on 2026-10-24.
 
 | Token | Light | Dark | Role |
 |---|---|---|---|
 | `--bg` | `#fbfaf7` | `#121110` | page |
 | `--surface` | `#ffffff` | `#1a1917` | cards, demo frame |
 | `--sunken` | `#f3f1ec` | `#262420` | code, demo output wells |
-| `--line` | `#e5e1d8` | `#36322d` | hairlines, card borders (decorative) |
+| `--line` | `#e5e1d8` | `#3b3732` | hairlines, card borders (decorative) |
 | `--line-strong` | `#cfc9bd` | `#47423b` | dividers that carry structure |
+| `--control-line` | `#8a8376` (3.6 / 3.8) | `#7a7469` (4.1 / 3.8) | input and secondary-button borders (3:1 minimum) |
 | `--text` | `#1b1a17` (16.7 / 17.4 / 15.4) | `#edeae4` (15.7 / 14.6 / 12.9) | body, headings |
 | `--text-2` | `#57534b` (7.3 / 7.7 / 6.8) | `#aaa499` (7.6 / 7.1 / 6.3) | ledes, meta |
 | `--text-3` | `#6b665c` (5.5 / 5.7 / 5.1) | `#958f84` (5.9 / 5.5 / 4.8) | captions, sources |
 | `--accent` | `#b0421c` (5.5 / 5.8 / 5.1) | `#f0875a` (7.5 / 7.0 / 6.1) | links, primary action, focus ring |
-| `--on-accent` | `#ffffff` (5.8 on accent) | `#1a0f0a` (7.5 on accent) | text on accent fills |
-| `--accent-tint` | `#f7e8e0` (accent on it 4.8) | `#3a2219` (5.9) | selected, hover wash |
+| `--on-accent` | `#ffffff` (5.8 on accent) | `#1a0f0a` (7.4 on accent) | text on accent fills |
+| `--accent-tint` | `#f7e8e0` (accent on it 4.8) | `#3a2219` (5.8) | selected, hover wash |
 | `--live` | `#1b7547` (5.5 / 5.7 / 5.1) | `#5cc58f` (8.8 / 8.2 / 7.3) | "live" state only |
-| `--live-tint` | `#e2f0e7` (4.9) | `#16291f` (7.2) | live badge ground |
+| `--live-tint` | `#e2f0e7` (4.8) | `#16291f` (7.2) | live badge ground |
 | `--danger` | `#b3261e` (6.3 / 6.5 / 5.8) | `#ff8a80` (8.3 / 7.7 / 6.8) | errors only |
 | `--danger-tint` | `#fbe9e7` (5.6) | `#3a1a18` (6.9) | error panel ground |
 
@@ -142,3 +143,4 @@ No photo, illustration, mascot, emoji section markers or stock icons. No gradien
 - 2026-10-24 V4: progress throttling started `last` at 0 and `performance.now()` in a fresh worker starts near 0, so the first chunk was swallowed and only the final count arrived; the new e2e check caught it before it shipped.
 - 2026-10-24 V5: hover loops use duplicate keyframes (`dg-pulse-l` beside `dg-pulse`): a feature card already ran `dg-pulse` once, and re-applying the same name does not restart it, so the loop would start mid-cycle with a jump. The cost is ~0.4 KB. Leaving a feature card replays its once-animation (a soft settle); leaving a grid card snaps to the static drawing. Accepted: both end on the static picture.
 - 2026-10-24 V5: CLS is measured before a demo starts. Running the smoke demo shifted the content below it by 0.0017 (measured) more than 500 ms after the click, as the frame grows to fit the result; that is content the visitor asked for, and reserving its height would mean guessing each demo's size. No page-load reveal: the content is readable at first paint and a fade would only delay LCP.
+- 2026-10-24 V6: quality gates in `make e2e` (e2e/quality_test.go). Token contrast for every §Colour pair in both schemes; axe-core 4.10.3 (vendored test-only in e2e/testdata/axe, MPL-2.0, same SHA-256 from cdnjs and unpkg, injected through DevTools so the CSP is untouched) on every page, viewport and scheme with WCAG 2.0/2.1 A+AA and 2.2 AA tags, after finishing entrance animations (a mid-fade scan flagged ratelimitd's labels on 2 of 4 runs); a Tab walk at desktop that must visit every visible focusable in document order with a ≥ 2 px `:focus-visible` outline (demo controls included, after the demo starts); every resource on the page's origin plus a strict CSP; CLS 0 at load; LCP ≤ 2.5 s and CLS 0 from a server that answers like a slow mobile link (150 ms to first byte, 200 KB/s). Chrome's network emulation, rule-based or classic, left the navigation request unthrottled (first byte 2 ms, measured), so the throttle lives in the test server. Measured: LCP 420 ms home, 432 ms quorum. Each check failed once on a deliberate break (text-3 #a39e94; `:focus-visible { outline: none }`; an off-origin img with `img-src https:`; an img without alt; 600 KB of CSS → LCP 3.7 s).

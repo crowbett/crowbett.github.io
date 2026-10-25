@@ -446,6 +446,10 @@ func visit(t *testing.T, browser context.Context, url string, w, h int64, scheme
 			}
 		}
 	}
+	pageQuality(t, ctx)
+	if w > 1000 && scheme == "light" {
+		tabOrder(t, ctx)
+	}
 	overflow, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.documentElement.scrollWidth > document.documentElement.clientWidth`))
 	if err != nil {
 		t.Fatal(err)

@@ -108,11 +108,11 @@ Per design.md §Demo frame and §Space (metadata gutter): header, metric present
 Done when: smoke demo shows real byte progress and a styled error (force one in e2e), screenshots reviewed.
 Carry-over from V2 review (design.md decisions log): the metric box and the planned-demo notice stack as two boxes; a metric source with a command (`go test ./internal/sim -seeds 10000`) wraps after its hyphen on phones.
 
-### V5 Motion and feel · order 104 · deps: V3, V4 · status: done 2026-10-24 (this commit)
+### V5 Motion and feel · order 104 · deps: V3, V4 · status: done 2026-10-24 (5671275)
 Per design.md §Motion: micro-interactions that make it feel crafted: hover/focus states, page-load reveal, card transitions, demo start transition. CSS-first, ≤ 200 ms for UI feedback, all off under `prefers-reduced-motion`. No layout shift.
 Done when: e2e asserts CLS = 0 on every page and no animation runs with reduced motion emulated.
 
-### V6 Quality gates · order 105 · deps: V2 · status: todo
+### V6 Quality gates · order 105 · deps: V2 · status: done 2026-10-24 (this commit)
 In e2e: both color schemes (absorbs old P1), WCAG AA contrast on the text/ground pairs in design.md §Colour, an accessibility scan (vendor axe-core into e2e/testdata, test-only, never shipped), keyboard tab order reaches every control with a visible focus ring, LCP and CLS budgets from the Performance API, and no request leaves the origin. CI stays under 60 s.
 Done when: all of those run in `make e2e` and pass, and a deliberately broken case fails each one once.
 
