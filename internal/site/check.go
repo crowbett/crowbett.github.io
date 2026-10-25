@@ -16,7 +16,7 @@ import (
 // recorded in PLAN.md, never a quick fix to get the gate green.
 var Budgets = struct {
 	PageHTML    int // bytes, per HTML file
-	CSS         int // bytes, all CSS together
+	CSS         int // bytes, the CSS one page loads: site CSS plus the largest demo ui.css
 	JSPerDemo   int // bytes, one demo's ui.js
 	WASMGzipped int // bytes, one demo's .wasm after gzip -9
 	Fonts       int // bytes, all .woff2 together
@@ -51,7 +51,7 @@ var (
 func Check(out string) error {
 	var problems []string
 	add := func(format string, a ...any) { problems = append(problems, fmt.Sprintf(format, a...)) }
-	css, fonts := 0, 0
+	css, fonts, demoCSS, heaviest := 0, 0, 0, ""
 	err := filepath.WalkDir(out, func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
@@ -94,8 +94,12 @@ func Check(out string) error {
 				add("%s: %d bytes, budget %d", rel, len(b), Budgets.ShareImage)
 			}
 		case ".css":
-			css += len(b)
-			if strings.HasPrefix(rel, "/demos/") {
+			if !strings.HasPrefix(rel, "/demos/") {
+				css += len(b)
+			} else {
+				if len(b) > demoCSS {
+					demoCSS, heaviest = len(b), rel
+				}
 				own := map[string]bool{}
 				for _, m := range cssDef.FindAllSubmatch(b, -1) {
 					own[string(m[1])] = true
@@ -122,8 +126,8 @@ func Check(out string) error {
 	if err != nil {
 		return err
 	}
-	if css > Budgets.CSS {
-		add("CSS totals %d bytes, budget %d", css, Budgets.CSS)
+	if css+demoCSS > Budgets.CSS {
+		add("CSS totals %d bytes on the heaviest page (site CSS + %s), budget %d", css+demoCSS, heaviest, Budgets.CSS)
 	}
 	if fonts > Budgets.Fonts {
 		add("fonts total %d bytes, budget %d", fonts, Budgets.Fonts)
