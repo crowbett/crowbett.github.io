@@ -27,7 +27,7 @@ type Owner struct {
 // DefaultOwner is the published identity.
 var DefaultOwner = Owner{
 	Name:  "Corbett",
-	Role:  "Backend engineer (Go)",
+	Role:  "Software engineer (Go, Rust)",
 	Email: "corbettjouett00@gmail.com",
 	URL:   "https://crowbett.github.io",
 }
