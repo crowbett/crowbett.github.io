@@ -34,3 +34,10 @@ func TestBuildRequiresPinnedRef(t *testing.T) {
 		t.Fatalf("want pin error, got %v", err)
 	}
 }
+
+func TestBuildRejectsUnknownKind(t *testing.T) {
+	d := &Demo{Slug: "x", Kind: "zig", Repo: ".", Pkg: "./wasm/x"}
+	if err := buildOne(d); err == nil || !strings.Contains(err.Error(), `unknown kind "zig"`) {
+		t.Fatalf("want kind error, got %v", err)
+	}
+}

@@ -13,6 +13,14 @@ A demo is three things: a bridge in the project repo, a UI in this repo, and a l
 - Bounded: one call does at most ~50 ms of work on a laptop. Long runs are many calls (`step`, `run {ticks: n}` with a cap). State between calls is fine and lives in Go.
 - Small: import only what the demo needs. `fmt` and `encoding/json` are fine; gRPC and database drivers are not. Avoid `net/http` (a probe of it plus `internal/rfc9111` gzipped to 1,819,664 bytes against 1,217,580 for the json-only smoke binary, measured) unless the project's own API is built on it, as edgecache's engine is; `regexp` added ~130 KB gzipped to edgecache's bridge (measured), so hand-check simple formats.
 
+## Rust bridge (project repo)
+A Rust demo is a `cdylib` crate (e.g. `crates/webdemo`) built for `wasm32-unknown-unknown` with no wasm-bindgen; `wasm/smoke-rs` in this repo is the reference. The same rules hold: real crates only, JSON in and out, `{"error"}` for errors, deterministic, bounded, small.
+- It imports nothing and exports `memory` plus three functions (prefixed so they cannot clash with C's `malloc`/`free` in a linked library). `demo_alloc(len) -> ptr` returns `len` bytes the worker writes into, and traps if memory cannot grow. `demo_call(method_ptr, method_len, params_ptr, params_len) -> ptr` returns a buffer holding a 4-byte little-endian length and then that many bytes of UTF-8 JSON. `demo_free(ptr, len)` takes back a buffer from `demo_alloc` (with its `len`) or from `demo_call` (with length + 4). All three use alignment 1.
+- The worker tells the two kinds apart by the module's imports (a Go binary imports `gojs`), so the page and the lock need nothing else at load time.
+- A panic aborts, which traps; the worker logs the trap to the console, reports "the demo crashed" and refuses further calls, as for Go. Set `panic = "abort"` in the release profile.
+- Put the logic in a plain function (`handle(method, params) -> serde_json::Value`) with normal tests, so the project's own `cargo test` covers it.
+- The lock entry has `"kind": "rust"` and `pkg` is the crate's directory. `cmd/wasm` runs `cargo build --release --locked --target wasm32-unknown-unknown` there with the toolchain rustup picks from the repo's `rust-toolchain.toml` (required; it adds the target if missing), into a scratch target dir. It drops every `CARGO_*` (except `CARGO_HOME`) and `RUST*` (except `RUSTUP_HOME`) variable from the environment, replaces any `rustflags` from cargo config, and remaps the checkout and its siblings, the target dir, cargo home and the sysroot (rust-src installed or not) so no local path is embedded and the binary does not depend on where it was built. Known limit: a `[profile.release]` in a cargo config file (`~/.cargo/config.toml`, or a `.cargo/` above the checkout) still applies. The lock records `rustc -V`. Building needs rustup (Homebrew's cargo is ignored); CI only checks hashes.
+
 ## UI (`web/demos/<slug>/ui.js`, this repo)
 - `export async function mount(el, demo)`: render into `el`; resolve only after the first real output is on screen. `demo.call(method, params)` returns a Promise of the result object and rejects with an Error on `{"error"}`, a crash or a 30 s timeout.
 - Vanilla ES modules and DOM only. Set text with `textContent`, never `innerHTML` with data from the binary. SVG via `createElementNS`, or `<canvas>`.
@@ -30,7 +38,7 @@ A demo is three things: a bridge in the project repo, a UI in this repo, and a l
 
 ## Lock and page
 1. Commit and push the bridge in the project repo; its gate must be green.
-2. Add `{"slug", "repo", "pkg": "./cmd/webdemo", "siblings"?}` to `demos.lock.json`, then `go run ./cmd/wasm pin <slug> <sha>` and `make wasm`.
+2. Add `{"slug", "kind"?, "repo", "pkg": "./cmd/webdemo", "siblings"?}` to `demos.lock.json`, then `go run ./cmd/wasm pin <slug> <sha>` and `make wasm`.
 3. Set `demo: live` in `content/projects/<slug>.md`; replace the "planned demo" sentence with what the demo shows.
 4. Add the slug to `demoChecks` in `e2e/e2e_test.go` with at least one expression that proves real output from the binary rendered.
 5. `make gate && make e2e`, then look at `e2e/out/projects-<slug>-*.jpg`.
