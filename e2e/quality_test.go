@@ -183,9 +183,19 @@ func tabOrder(t *testing.T, ctx context.Context) {
 		Ring  bool
 	}
 	var got []stop
+	var tDown, tUp, tEval time.Duration
+	defer func() { t.Logf("TABWALK n=%d down=%.2f up=%.2f eval=%.2f", n, tDown.Seconds(), tUp.Seconds(), tEval.Seconds()) }()
 	for range n {
 		err := chromedp.Do(ctx, chromedp.Func(func(ctx context.Context, tg *chromedp.Target) error {
 			for _, typ := range []input.DispatchKeyEventType{input.DispatchKeyEventTypeRawKeyDown, input.DispatchKeyEventTypeKeyUp} {
+				t0 := time.Now()
+				defer func() {
+					if typ == input.DispatchKeyEventTypeKeyUp {
+						tUp += time.Since(t0)
+					} else {
+						tDown += time.Since(t0)
+					}
+				}()
 				if _, err := cdp.Call(ctx, tg, input.DispatchKeyEvent, input.DispatchKeyEventParams{
 					Type: typ, Key: "Tab", Code: "Tab", WindowsVirtualKeyCode: 9, NativeVirtualKeyCode: 9,
 				}); err != nil {
@@ -197,6 +207,7 @@ func tabOrder(t *testing.T, ctx context.Context) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		t1 := time.Now()
 		s, err := chromedp.Run(ctx, chromedp.Evaluate[stop](`(() => {
 			const el = document.activeElement, cs = getComputedStyle(el);
 			return {
@@ -208,6 +219,7 @@ func tabOrder(t *testing.T, ctx context.Context) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		tEval += time.Since(t1)
 		got = append(got, s)
 	}
 	if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`(document.activeElement?.blur(), true)`)); err != nil {
