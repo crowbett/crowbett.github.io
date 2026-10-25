@@ -104,6 +104,45 @@ var demoChecks = map[string][]string{
 			return ok && await until(() => col(".ec-table .ec-badge") === "MISS,HIT,REVALIDATED,HIT");
 		})()`,
 	},
+	"strata": {
+		`/^XY test piece: 272 triangles, 20 × 20 × 5 mm\. Sliced into 25 layers of 1,033 toolpaths, 10\.79 m in all, in \d[\d,]* ms in your browser\.$/.test(document.querySelector(".st-summary").textContent)`,
+		`document.querySelector(".st-where").textContent === "11 of 25 · z 2.2 mm"`,
+		`[...document.querySelectorAll(".st-key")].map((k) => k.dataset.kind).join() === "OuterWall,InnerWall,SparseInfill"`,
+		`(() => { const c = document.querySelector(".st-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n > 2000; })()`,
+		`(async () => {
+			const until = async (f) => { for (let i = 0; i < 100 && !f(); i++) await new Promise((r) => setTimeout(r, 50)); return f(); };
+			const text = (sel) => document.querySelector(sel).textContent;
+			const set = (sel, v, ev) => { const e = document.querySelector(sel); e.value = v; e.dispatchEvent(new Event(ev)); };
+			set("input[name=layer]", "0", "input");
+			let ok = await until(() => text(".st-where") === "1 of 25 · z 0.2 mm" && !!document.querySelector(".st-key[data-kind=Skirt]"));
+			set("select[name=layerHeight]", "0.12", "change");
+			ok = ok && await until(() => text(".st-summary").includes("Sliced into 41 layers") && text(".st-where") === "1 of 41 · z 0.2 mm");
+			let stl = "solid t\n";
+			const v = [[0, 0, 0], [10, 0, 0], [0, 10, 0], [0, 0, 10]];
+			for (const f of [[0, 2, 1], [0, 1, 3], [0, 3, 2], [1, 2, 3]]) stl += "facet normal 0 0 0\nouter loop\n" + f.map((i) => "vertex " + v[i].join(" ") + "\n").join("") + "endloop\nendfacet\n";
+			const dt = new DataTransfer();
+			dt.items.add(new File([stl + "endsolid t\n"], "tetra.stl"));
+			const file = document.querySelector("input[name=file]");
+			file.files = dt.files;
+			file.dispatchEvent(new Event("change"));
+			const tetra = (n) => text(".st-summary").startsWith("tetra.stl: 4 triangles, 10 × 10 × 10 mm. Sliced into " + n + " layers");
+			ok = ok && await until(() => tetra(83) && document.querySelector("select[name=model]").selectedOptions[0].textContent === "tetra.stl");
+			const pickFile = (body, name) => { const t = new DataTransfer(); t.items.add(new File([body], name)); file.files = t.files; file.dispatchEvent(new Event("change")); };
+			const model = () => document.querySelector("select[name=model]").selectedOptions[0].textContent;
+			set("select[name=layerHeight]", "0.2", "change");
+			pickFile("AAAA", "bad.stl");
+			ok = ok && await until(() => text(".st-summary").startsWith("bad.stl: ") && model() === "tetra.stl" && / of 50 · /.test(text(".st-where")));
+			pickFile(stl + "endsolid t\n", "tetra.stl");
+			set("select[name=layerHeight]", "0.12", "change");
+			ok = ok && await until(() => tetra(83) && model() === "tetra.stl" && / of 83 · /.test(text(".st-where")));
+			set("select[name=layerHeight]", "0.2", "change");
+			ok = ok && await until(() => tetra(50));
+			set("select[name=model]", "xy", "change");
+			ok = ok && await until(() => text(".st-summary").startsWith("XY test piece: 272 triangles") && text(".st-summary").includes("Sliced into 25 layers") && !document.querySelector("option[value=file]"));
+			set("input[name=layer]", "10", "input");
+			return ok && await until(() => text(".st-where") === "11 of 25 · z 2.2 mm");
+		})()`,
+	},
 }
 
 var viewports = []struct {

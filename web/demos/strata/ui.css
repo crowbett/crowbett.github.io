@@ -1,0 +1,28 @@
+.st-controls { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; margin-bottom: 12px; }
+.st-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.st-label { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); }
+.st-field select, .st-controls button { height: 2.25rem; box-sizing: border-box; max-width: 100%; }
+.st-summary { margin: 0 0 12px; font-size: 0.875rem; color: var(--text-2); }
+.st-scrub { margin-bottom: 8px; }
+.st-scrub-h { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.st-scrub input { width: 100%; height: 2.25rem; }
+.st-where { font-family: var(--mono); font-size: 0.8125rem; color: var(--text); white-space: nowrap; }
+.st-canvas { display: block; width: 100%; aspect-ratio: 3 / 2; max-height: 32rem; background: var(--sunken); border-radius: var(--r-1); }
+@media (max-width: 600px) { .st-canvas { aspect-ratio: 1; } }
+.st-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.8125rem; color: var(--text-2); margin: 8px 0 0; min-height: 1.25rem; }
+.st-key { --st-c: var(--text-3); }
+.st-key::before { content: ""; display: inline-block; width: 0.8rem; height: 0.8rem; margin-right: 0.35rem; vertical-align: -0.1rem; border-radius: 2px; background: var(--st-c); }
+.st-note { margin: 8px 0 0; font-size: 0.8125rem; color: var(--text-2); }
+.st-note:empty { display: none; }
+.demo-mount {
+  --st-Skirt: #8a8f98; --st-OuterWall: #c2410c; --st-InnerWall: #d99a1e; --st-TopSurface: #be2f6e;
+  --st-SolidInfill: #7c4dbd; --st-SparseInfill: #2a72b5; --st-GapFill: #1b8a5a; --st-Bridge: #0e7d8c;
+  --st-Support: #6b7a55; --st-SupportInterface: #9aa07a; --st-Ironing: #b77fd1;
+}
+@media (prefers-color-scheme: dark) {
+  .demo-mount {
+    --st-Skirt: #8d939c; --st-OuterWall: #f2804a; --st-InnerWall: #f2c14e; --st-TopSurface: #ee6fa6;
+    --st-SolidInfill: #a98be6; --st-SparseInfill: #6aaaf0; --st-GapFill: #57c993; --st-Bridge: #4fc6d4;
+    --st-Support: #a3b38a; --st-SupportInterface: #c9cfa6; --st-Ironing: #d4a8ea;
+  }
+}
