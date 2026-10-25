@@ -142,7 +142,7 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 
 /* Home */
 .hero { padding-top: var(--sp-7); }
-.hero h1 { font-size: var(--t-display); line-height: 1.04; letter-spacing: -0.02em; max-width: 18em; margin: var(--sp-4) 0 var(--sp-5); }
+.hero h1 { font-size: var(--t-display); line-height: 1.04; letter-spacing: -0.015em; max-width: 18em; margin: var(--sp-4) 0 var(--sp-5); }
 .hero-name { display: block; }
 .hero .lede { margin-bottom: var(--sp-2); }
 .hero .lede + .hero-run { margin-top: var(--sp-5); }
@@ -196,7 +196,6 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 .replay-run[data-replay-match] span { color: var(--text); }
 .hero-run { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0; }
 .hero-run-k { flex-basis: 100%; font-family: var(--mono); font-size: var(--t-label); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); }
-@media (max-width: 40rem) { .hero-run { display: grid; grid-template-columns: 1fr 1fr; } .hero-run-k { grid-column: 1 / -1; } .hero-run a { text-align: center; } .hero-run a:last-child:nth-child(2n) { grid-column: 1 / -1; } }
 .hero-run a {
   padding: var(--sp-2) var(--sp-3); border: 1px solid var(--control-line); border-radius: var(--r-1);
   font-size: var(--t-small); font-weight: 600; text-decoration: none;
@@ -231,9 +230,8 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 .try-k { margin-right: var(--sp-2); font-family: var(--mono); font-size: var(--t-label); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
 .card .meta { margin-top: auto; padding-top: var(--sp-3); border-top: 1px dashed var(--line-strong); }
 .private { font-family: var(--mono); }
-.go.act { font-family: var(--sans); font-size: var(--t-small); font-weight: 600; color: var(--accent); }
 .feature h3 { font-size: var(--t-h2); }
-.go { margin-left: auto; white-space: nowrap; font-family: var(--mono); font-size: var(--t-label); color: var(--text-2); transition: color var(--d-fast) var(--ease-in), transform var(--d-fast) var(--ease-in); }
+.go { margin-left: auto; white-space: nowrap; font-size: var(--t-small); font-weight: 600; color: var(--accent); transition: color var(--d-fast) var(--ease-in), transform var(--d-fast) var(--ease-in); }
 .card a:is(:hover, :focus-visible) .go { transform: translateX(3px); }
 /* At three columns a short last row splits into wider cards (five end on two, four make two rows of two), so the grid never ends on a hole; a lone card, or a lone last card at two columns, lays out sideways across its row. */
 .small { grid-template-columns: 1fr; }
