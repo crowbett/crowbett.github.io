@@ -4,7 +4,7 @@ tagline: An embedded bitcask-style key-value store for Go with zero dependencies
 lang: Go
 tags: storage engine, log-structured, crash safety
 repo: https://github.com/crowbett/kvlite
-demo: planned
+demo: live
 order: 5
 metric: Get in 3.50 µs sequential / 6.04 µs random (100 B values)
 metric_source: README benchmark table, against bbolt and pebble on the same workload
@@ -13,5 +13,9 @@ Append-only segments, an in-memory keydir (one map lookup and one `ReadAt` per `
 for fast startup, crc32c on every record, TTLs, atomic batches, sorted snapshot iterators and
 crash-safe compaction. It is the storage layer under [quorum](/projects/quorum/).
 
-The planned demo is a live store in your browser: put and delete keys, watch segments fill,
-then run compaction and see the dead records go.
+The demo runs kvlite's own engine, compiled to WebAssembly, on an in-memory file system in your
+tab. Puts and deletes append records to a real segment file; Compact rotates the active segment,
+merges the sealed ones into a new segment with a hint file and swaps the MANIFEST; Crash and
+reopen drops the store without closing it, can tear bytes off the last write, and lets kvlite's
+recovery truncate the torn tail. The record tables are decoded from the files the engine wrote,
+by its own segment reader.

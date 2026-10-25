@@ -4,7 +4,8 @@
 // The binary sets globalThis.__demo(method, paramsJSON) -> resultJSON and then
 // calls globalThis.__demoReady(). See docs/demo-contract.md.
 
-importScripts("/wasm/wasm_exec.js");
+// memfs.js first: wasm_exec.js keeps an existing globalThis.fs.
+importScripts("/assets/memfs.js", "/wasm/wasm_exec.js");
 
 const READY_TIMEOUT_MS = 20000;
 
