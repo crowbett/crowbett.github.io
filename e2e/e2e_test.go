@@ -42,6 +42,7 @@ var viewports = []struct {
 }
 
 func TestSite(t *testing.T) {
+	t.Parallel()
 	out := t.TempDir()
 	root, err := filepath.Abs("..")
 	if err != nil {
@@ -73,20 +74,30 @@ func TestSite(t *testing.T) {
 
 	alloc, cancel := chromedp.NewExecAllocator(context.Background(), allocOpts()...)
 	defer cancel()
-
-	for _, page := range pages {
-		for _, vp := range viewports {
-			t.Run(name(page)+"/"+vp.name, func(t *testing.T) {
-				visit(t, alloc, srv.URL+page, vp.width, vp.height, filepath.Join(shots, name(page)+"-"+vp.name))
-			})
-		}
+	browser, cancelB := chromedp.NewContext(alloc)
+	defer cancelB()
+	if err := chromedp.Do(browser); err != nil {
+		t.Fatal(err)
 	}
+
+	// One browser, one tab per page and viewport, all in parallel.
+	t.Run("pages", func(t *testing.T) {
+		for _, page := range pages {
+			for _, vp := range viewports {
+				t.Run(name(page)+"/"+vp.name, func(t *testing.T) {
+					t.Parallel()
+					visit(t, browser, srv.URL+page, vp.width, vp.height, filepath.Join(shots, name(page)+"-"+vp.name))
+				})
+			}
+		}
+	})
 }
 
 // TestDemoFailures drives the smoke binary's hang and panic methods: a stuck
 // call must time out and kill the worker, and a crash must surface a clear
 // error instead of a JSON parse failure.
 func TestDemoFailures(t *testing.T) {
+	t.Parallel()
 	root, err := filepath.Abs("..")
 	if err != nil {
 		t.Fatal(err)
@@ -157,8 +168,8 @@ func allocOpts() []chromedp.ExecAllocatorOption {
 	return opts
 }
 
-func visit(t *testing.T, alloc context.Context, url string, w, h int64, shot string) {
-	ctx, cancel := chromedp.NewContext(alloc)
+func visit(t *testing.T, browser context.Context, url string, w, h int64, shot string) {
+	ctx, cancel := chromedp.NewContext(browser)
 	defer cancel()
 	ctx, cancelT := context.WithTimeout(ctx, 90*time.Second)
 	defer cancelT()
