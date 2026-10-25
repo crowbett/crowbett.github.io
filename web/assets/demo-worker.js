@@ -1,8 +1,11 @@
 // Runs one demo binary. Messages in: {id, type: "load", slug} then
 // {id, type: "call", method, params}. Messages out: {id, result} or {id, error},
 // and during a load {id, loaded} with the bytes of the binary received so far.
-// The binary sets globalThis.__demo(method, paramsJSON) -> resultJSON and then
-// calls globalThis.__demoReady(). See docs/demo-contract.md.
+// A Go binary sets globalThis.__demo(method, paramsJSON) -> resultJSON and then
+// calls globalThis.__demoReady(). A Rust binary imports nothing and exports
+// memory, demo_alloc, demo_call and demo_free, which rustBridge wraps as the
+// same __demo.
+// See docs/demo-contract.md.
 
 // memfs.js first: wasm_exec.js keeps an existing globalThis.fs.
 importScripts("/assets/memfs.js", "/wasm/wasm_exec.js");
@@ -37,13 +40,51 @@ async function load(slug, onLoaded) {
   let reportReady;
   const ready = new Promise((resolve) => { reportReady = resolve; });
   globalThis.__demoReady = () => reportReady();
-  const bin = await fetchBinary(`/wasm/${slug}.wasm`, onLoaded);
-  const go = new Go();
-  const { instance } = await WebAssembly.instantiate(bin, go.importObject);
-  go.run(instance).then(() => { globalThis.__demoExited = true; });
+  const mod = await WebAssembly.compile(await fetchBinary(`/wasm/${slug}.wasm`, onLoaded));
+  if (WebAssembly.Module.imports(mod).some((i) => i.module === "gojs")) {
+    const go = new Go();
+    go.run(await WebAssembly.instantiate(mod, go.importObject)).then(() => { globalThis.__demoExited = true; });
+  } else {
+    globalThis.__demo = rustBridge((await WebAssembly.instantiate(mod, {})).exports);
+    reportReady();
+  }
   // The clock starts after the download, so a slow link is not a failure.
   await Promise.race([ready, new Promise((_, reject) =>
     setTimeout(() => reject(new Error("demo binary did not report ready")), READY_TIMEOUT_MS))]);
+}
+
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+
+// rustBridge copies both strings into the instance, calls it, and reads back
+// a 4-byte little-endian length and that many bytes of JSON. A trap (a Rust
+// panic aborts) returns undefined, which call reports as a crash.
+function rustBridge(x) {
+  for (const name of ["memory", "demo_alloc", "demo_call", "demo_free"]) {
+    if (!(name in x)) throw new Error(`demo binary does not export ${name}`);
+  }
+  const put = (s) => {
+    const b = enc.encode(s);
+    const p = x.demo_alloc(b.length) >>> 0;
+    new Uint8Array(x.memory.buffer, p, b.length).set(b);
+    return [p, b.length];
+  };
+  return (method, params) => {
+    try {
+      const [mp, ml] = put(method);
+      const [pp, pl] = put(params);
+      const r = x.demo_call(mp, ml, pp, pl) >>> 0;
+      x.demo_free(mp, ml);
+      x.demo_free(pp, pl);
+      const n = new DataView(x.memory.buffer).getUint32(r, true);
+      const out = dec.decode(new Uint8Array(x.memory.buffer, r + 4, n));
+      x.demo_free(r, n + 4);
+      return out;
+    } catch (err) {
+      console.error("demo binary trapped:", err);
+      return undefined;
+    }
+  };
 }
 
 function call(method, params) {

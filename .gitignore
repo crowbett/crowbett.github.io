@@ -1,2 +1,3 @@
 /dist/
 /e2e/out/
+/wasm/smoke-rs/target/

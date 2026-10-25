@@ -19,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -225,35 +226,49 @@ func TestSite(t *testing.T) {
 	})
 }
 
-// TestDemoFailures drives the smoke binary's hang and panic methods: a stuck
-// call must time out and kill the worker, and a crash must surface a clear
-// error instead of a JSON parse failure.
+// TestDemoFailures drives each smoke binary (Go and Rust) through the worker:
+// a ping answers, a stuck call must time out and kill the worker, and a crash
+// must surface a clear error instead of a JSON parse failure.
 func TestDemoFailures(t *testing.T) {
 	t.Parallel()
+	for slug, lang := range map[string]string{"smoke": "go", "smoke-rs": "rust"} {
+		t.Run(slug, func(t *testing.T) {
+			t.Parallel()
+			demoFailures(t, slug, lang)
+		})
+	}
+}
+
+func demoFailures(t *testing.T, slug, lang string) {
 	ctx := smokePage(t)
 	type result struct {
+		Ping                           map[string]string
 		Hang, After, Panic, AfterPanic string
 		HangMs                         float64
 	}
-	r, err := chromedp.Run(ctx, chromedp.Evaluate[result](`(async () => {
+	r, err := chromedp.Run(ctx, chromedp.Evaluate[result](`(async (slug) => {
 		const m = await import("/assets/demo.js");
 		const msg = (p) => p.then(() => "resolved", (e) => e.message);
 		const out = {};
-		const d = await m.connect("smoke", { callTimeoutMs: 1500 });
+		const d = await m.connect(slug, { callTimeoutMs: 1500 });
+		out.Ping = await d.call("ping", { echo: "x" });
 		let t = performance.now();
 		out.Hang = await msg(d.call("hang"));
 		out.HangMs = performance.now() - t;
 		// A rejection that settles before any timer fires waited for nothing.
 		out.After = await Promise.race([msg(d.call("ping", { echo: "x" })),
 			new Promise((r) => setTimeout(() => r("still pending after a timer tick"), 0))]);
-		const p = await m.connect("smoke");
+		const p = await m.connect(slug);
 		out.Panic = await msg(p.call("panic"));
 		out.AfterPanic = await msg(p.call("ping", { echo: "x" }));
 		p.close();
 		return out;
-	})()`, chromedp.EvalAwaitPromise))
+	})(`+strconv.Quote(slug)+`)`, chromedp.EvalAwaitPromise))
 	if err != nil {
 		t.Fatal(err)
+	}
+	if r.Ping["echo"] != "x" || r.Ping[lang] == "" {
+		t.Errorf("ping: got %v, want echo x and a %s version", r.Ping, lang)
 	}
 	if !strings.Contains(r.Hang, "did not answer hang") || r.HangMs > 5000 {
 		t.Errorf("hang: got %q after %.0f ms, want a timeout near 1.5 s", r.Hang, r.HangMs)

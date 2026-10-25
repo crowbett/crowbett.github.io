@@ -8,6 +8,8 @@
 // Project repos are read from $DEV_ROOT (default ~/dev) with `git archive`, so
 // uncommitted work never leaks into a published binary. The demo with repo "."
 // is built from this repository's working tree (the pipeline smoke test).
+// A demo of kind "rust" is a cdylib crate built for wasm32-unknown-unknown with
+// the toolchain its rust-toolchain.toml pins (docs/demo-contract.md).
 package main
 
 import (
@@ -42,10 +44,12 @@ type Lock struct {
 // Demo is one binary.
 type Demo struct {
 	Slug     string `json:"slug"`
+	Kind     string `json:"kind,omitempty"`     // "go" (default) or "rust"
 	Repo     string `json:"repo"`               // directory under $DEV_ROOT, or "." for this repo
 	Ref      string `json:"ref,omitempty"`      // full commit SHA; empty only for repo "."
-	Pkg      string `json:"pkg"`                // package to build, e.g. ./cmd/webdemo
+	Pkg      string `json:"pkg"`                // Go package or Rust crate directory, e.g. ./cmd/webdemo
 	Siblings []Dep  `json:"siblings,omitempty"` // repos the build needs next to it (go.mod replace ../x)
+	Rustc    string `json:"rustc,omitempty"`    // compiler that built a rust demo, from rustc -V
 	SHA256   string `json:"sha256"`
 	Bytes    int    `json:"bytes"`
 	Gzip     int    `json:"gzip_bytes"`
@@ -121,6 +125,9 @@ func build(lock *Lock, only []string) error {
 }
 
 func buildOne(d *Demo) error {
+	if d.Kind != "" && d.Kind != "go" && d.Kind != "rust" {
+		return fmt.Errorf("unknown kind %q (want go or rust)", d.Kind)
+	}
 	dir := "."
 	if d.Repo != "." {
 		if len(d.Ref) != 40 {
@@ -142,12 +149,18 @@ func buildOne(d *Demo) error {
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command("go", "build", "-trimpath", "-buildvcs=false", "-ldflags=-s -w", "-o", out, d.Pkg)
-	cmd.Dir = dir
-	cmd.Env = append(os.Environ(), "GOOS=js", "GOARCH=wasm", "CGO_ENABLED=0")
-	cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("go build: %w", err)
+	if d.Kind == "rust" {
+		if err := buildRust(d, dir, out); err != nil {
+			return err
+		}
+	} else {
+		cmd := exec.Command("go", "build", "-trimpath", "-buildvcs=false", "-ldflags=-s -w", "-o", out, d.Pkg)
+		cmd.Dir = dir
+		cmd.Env = append(os.Environ(), "GOOS=js", "GOARCH=wasm", "CGO_ENABLED=0")
+		cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("go build: %w", err)
+		}
 	}
 	b, err := os.ReadFile(out)
 	if err != nil {

@@ -1,5 +1,5 @@
 // Starts a project's live demo on request. A Web Worker runs the project's
-// real code (Go compiled to WebAssembly) and answers JSON RPC calls; the
+// real code (Go or Rust compiled to WebAssembly) and answers JSON RPC calls; the
 // project's ui.js renders the controls. Contract: docs/demo-contract.md.
 
 const CALL_TIMEOUT_MS = 30000;
