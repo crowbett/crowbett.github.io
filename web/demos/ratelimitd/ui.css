@@ -1,6 +1,6 @@
 .rl-controls { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; margin-bottom: 16px; }
 .rl-field select, .rl-field input { height: 2.25rem; box-sizing: border-box; }
-.rl-field input { width: 6.5rem; }
+.rl-field input { width: 0; min-width: max(100%, 6.5rem); }
 .rl-field select { max-width: 100%; }
 .rl-controls button { height: 2.25rem; }
 .rl-charts { display: grid; gap: 12px; }
