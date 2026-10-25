@@ -132,3 +132,11 @@ func TestParseProjectCRLF(t *testing.T) {
 		t.Fatalf("CRLF front matter leaked into the body: %q", p.Body)
 	}
 }
+
+func TestBindNumbers(t *testing.T) {
+	got := string(bindNumbers(`10,000 seeds gate multi-Raft & "x"`))
+	want := "10,000 seeds gate <span class=\"nw\">multi-Raft</span> &amp; &#34;x&#34;"
+	if got != want {
+		t.Errorf("bindNumbers = %q, want %q", got, want)
+	}
+}

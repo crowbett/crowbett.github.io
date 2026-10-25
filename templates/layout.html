@@ -44,7 +44,7 @@
       <div class="card-head"><h3>{{.Title}}</h3><span class="lang">{{.Lang}}</span></div>
       <p class="card-tag">{{.Tagline}}</p>
       {{if .Metric}}<p class="metric">{{bind .Metric}}</p>{{end}}
-      <p class="meta">{{if .Live}}<span class="run">Live demo · runs in your browser</span>{{else if .Private}}<span class="private">Private source</span>{{else}}<span class="private">Source on GitHub</span>{{end}}<span class="go" aria-hidden="true">→</span></p>
+      <p class="meta">{{if .Live}}<span class="badge live">Live demo</span><span class="run">runs in your browser</span>{{else if .Private}}<span class="private">Private source</span>{{else}}<span class="private">Source on GitHub</span>{{end}}<span class="go">Details <span aria-hidden="true">→</span></span></p>
     </div>
   </a>
 {{end}}

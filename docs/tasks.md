@@ -76,6 +76,10 @@ Done when: `.ec-scroll` carries an `aria-label` that names its content (e.g. "Re
 Requested by the design session (2026-10-24, V3b review). strata is the only card without a `metric`, so its card has an empty slot where every other card states evidence. If strata's repo has a measured, sourced number (slice time for a reference model, layer count, binary size), add it with `metric_source`; otherwise leave it and say so here.
 Done when: strata has a sourced metric, or this task records that none exists yet.
 
+### C5 One line of what each live demo lets you do · order 18 · deps: none · status: todo
+Requested by the design session (2026-10-24, V3b review round 3). The reviewer asked for each live card on home to say what a visitor can do in the demo ("Fire 1,000 requests and watch the limit hold", say), so the two demos read as things to try, not just projects. That is project copy, so it is the demo track's: add an optional one-line front-matter field (e.g. `demo_try`) to each live project, true to what its UI does. The design session will render it on the feature card once the field exists.
+Done when: every live project has the field, and a design-track task to render it is filed.
+
 ## Rust demos
 
 ### R0 Rust build path · order 30 · deps: D1 · status: todo
@@ -111,7 +115,7 @@ Per design.md §Feel and §References (Maggie Appleton's sentence hero, samwho's
 Done when: a fresh-eyes reviewer (V8 method) rates it "would remember this site" and the screenshots back it.
 Carry-over from V2 review: the name appears twice at the top (brand and h1); "Demo coming" and "Private source" pills look identical.
 
-### V3b Home page memorable · order 104.5 · deps: V5 · status: doing
+### V3b Home page memorable · order 104.5 · deps: V5 · status: doing (4f944f0, a4da0df, 7f2f2f5; round 4 pending)
 Split from V3 on 2026-10-24. After three fresh-eyes rounds V3 has no MAJOR findings, but the verdict is "maybe, leaning yes": below the hero it is still a familiar card layout (design.md decisions log). The lever left is motion in the diagrams (samwho's thumbnails are memorable because they move), which is V5's. When V5 lands, re-run the V8 method on home.
 Done when: a fresh-eyes reviewer rates home "would remember this site" (yes, not maybe) and the screenshots back it.
 

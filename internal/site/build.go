@@ -138,11 +138,18 @@ func Build(cfg Config) error {
 
 type demoSize struct{ Raw, Gzip int }
 
-var numberSpace = regexp.MustCompile(`(\d) `)
+var (
+	numberSpace = regexp.MustCompile(`(\d) `)
+	hyphenWord  = regexp.MustCompile(`[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)+`)
+)
 
 // bindNumbers keeps a number on the same line as the word after it ("30 s",
-// "6.83 ms") by turning the space into a no-break space; the text is unchanged.
-func bindNumbers(s string) string { return numberSpace.ReplaceAllString(s, "$1\u00a0") }
+// "6.83 ms") with a no-break space, and a hyphenated word ("multi-Raft") whole
+// in a .nw span; the text is unchanged.
+func bindNumbers(s string) template.HTML {
+	s = template.HTMLEscapeString(numberSpace.ReplaceAllString(s, "$1\u00a0"))
+	return template.HTML(hyphenWord.ReplaceAllString(s, `<span class="nw">$0</span>`))
+}
 
 // thousands formats n with comma separators, as the site's copy writes numbers.
 func thousands(n int) string {

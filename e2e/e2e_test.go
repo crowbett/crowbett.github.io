@@ -473,6 +473,10 @@ func visit(t *testing.T, browser context.Context, url string, w, h int64, scheme
 	if overflow {
 		t.Errorf("page scrolls horizontally at %dpx", w)
 	}
+	// Shots show diagrams at rest, not wherever a one-shot animation is.
+	if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.getAnimations().forEach((a) => { try { a.finish(); } catch {} }), true`)); err != nil {
+		t.Fatal(err)
+	}
 	img, err := chromedp.Run(ctx, chromedp.FullScreenshot(80))
 	if err != nil {
 		t.Fatal(err)
