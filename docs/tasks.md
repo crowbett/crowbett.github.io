@@ -82,9 +82,10 @@ Requested by the design session (2026-10-24). V6's axe scan found `.ec-scroll` (
 Done when: `.ec-scroll` carries an `aria-label` that names its content (e.g. "Request log").
 `.ec-scroll` is labelled "Request log", checked in e2e at both widths. The sweep found the frame skipped `role="region"` whenever a box brought its own label, which left jobrun's labelled `.jr-scroll` a focusable div with no role; the frame now adds the role to any scroll box without one.
 
-### C4 strata card has no evidence line · order 17 · deps: none · status: todo
+### C4 strata card has no evidence line · order 17 · deps: none · status: done 2026-10-24 (this commit)
 Requested by the design session (2026-10-24, V3b review). strata is the only card without a `metric`, so its card has an empty slot where every other card states evidence. If strata's repo has a measured, sourced number (slice time for a reference model, layer count, binary size), add it with `metric_source`; otherwise leave it and say so here.
 Done when: strata has a sourced metric, or this task records that none exists yet.
+strata's docs/features.md has timings (Benchy slices in 399 ms at defaults, line 53), but neither it nor the commit records the machine, so the card quotes a result that does not depend on hardware: mesh repair of a damaged Benchy (features.md line 22, measured).
 
 ### C5 One line of what each live demo lets you do · order 18 · deps: none · status: todo
 Requested by the design session (2026-10-24, V3b review round 3). The reviewer asked for each live card on home to say what a visitor can do in the demo ("Fire 1,000 requests and watch the limit hold", say), so the two demos read as things to try, not just projects. That is project copy, so it is the demo track's: add an optional one-line front-matter field (e.g. `demo_try`) to each live project, true to what its UI does. The design session will render it on the feature card once the field exists.
