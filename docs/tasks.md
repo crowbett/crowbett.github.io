@@ -176,7 +176,7 @@ Per design.md §Feel and §References (Maggie Appleton's sentence hero, samwho's
 Done when: a fresh-eyes reviewer (V8 method) rates it "would remember this site" and the screenshots back it.
 Carry-over from V2 review: the name appears twice at the top (brand and h1); "Demo coming" and "Private source" pills look identical.
 
-### V3b Home page memorable · order 104.5 · deps: V5 · status: doing (4f944f0, a4da0df, 7f2f2f5, 2f52864, 3cd851f, fc2a0a1, 2c63cc1, c82ef25, b79800e; V8 rounds 1-6 on 2026-10-25 asked it every round and all six said "maybe", the last ones "leaning yes for engineers" now that the hero re-runs in the browser (design.md log); what they say is left is owner copy, identity and the house style)
+### V3b Home page memorable · order 104.5 · deps: V5 · status: doing (4f944f0, a4da0df, 7f2f2f5, 2f52864, 3cd851f, fc2a0a1, 2c63cc1, c82ef25, b79800e; V8 rounds 1-7 on 2026-10-25 asked it every round and all seven said "maybe", the last ones "leaning yes for engineers" now that the hero re-runs in the browser (design.md log); what they say is left is owner copy, identity and the house style)
 Split from V3 on 2026-10-24. After three fresh-eyes rounds V3 has no MAJOR findings, but the verdict is "maybe, leaning yes": below the hero it is still a familiar card layout (design.md decisions log). The lever left is motion in the diagrams (samwho's thumbnails are memorable because they move), which is V5's. When V5 lands, re-run the V8 method on home.
 Done when: a fresh-eyes reviewer rates home "would remember this site" (yes, not maybe) and the screenshots back it.
 
@@ -197,7 +197,7 @@ Done when: all of those run in `make e2e` and pass, and a deliberately broken ca
 `og:image` per page (absorbs old P2): static PNGs made once from design.md's type and colour (render with headless Chrome in a `cmd/` tool, commit the PNGs), ≤ 100 KB each, checked by `site check`. Favicon set, theme-color in both schemes, a good 404.
 Done when: links pasted into iMessage/Slack/Discord preview well (check the tags with a validator page), site check enforces the image budget.
 
-### V8 Fresh-eyes review · order 107 · deps: V5, V6, V7 · status: doing 2026-10-25 (0f0f5c0, 19f6641, 9506d00, 8ebfb10, 7e92c6b; six rounds: MAJOR findings in 1, 3 and 5, none in 2, 4 and 6, so the done bar (two clean rounds in a row) still needs one more clean round after round 6; design.md log)
+### V8 Fresh-eyes review · order 107 · deps: V5, V6, V7 · status: done 2026-10-25 (0f0f5c0, 19f6641, 9506d00, 8ebfb10, 7e92c6b; seven rounds: MAJOR findings in 1, 3 and 5, none in 2, 4, 6 and 7, so rounds 6 and 7 are the two clean rounds in a row; design.md log)
 Give a reviewer agent only the screenshots (no code, no design.md; the findings are then checked against design.md §What we will not do) and ask it to critique like a senior product designer: first impression, hierarchy, type, spacing, color, consistency, what looks amateur. Fix every major finding, re-shoot, repeat until a round returns no major findings.
 Done when: two consecutive rounds have no major findings; findings and fixes logged in design.md.
 
