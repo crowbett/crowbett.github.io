@@ -18,7 +18,7 @@ jobs:
       - name: Warm Chrome
         # Chrome's first start on a fresh runner took up to ~13 s inside e2e (F2);
         # this one runs in the background while Go is fetched and the gate runs.
-        run: (google-chrome --headless=new --no-sandbox --disable-gpu --dump-dom about:blank > /dev/null 2>&1 &)
+        run: (date +%s.%N > /tmp/warm.start; google-chrome --headless=new --no-sandbox --disable-gpu --dump-dom about:blank > /dev/null 2>&1; date +%s.%N > /tmp/warm.end &)
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Go 1.27.0
         # setup-go spent ~4 s copying Go into the tool cache on every run (F2).
@@ -46,4 +46,6 @@ jobs:
       - name: Gate and browser checks
         run: |
           lscpu | grep -E 'Model name|^CPU\(s\)'
+          echo "WARM start $(cat /tmp/warm.start) end $(cat /tmp/warm.end 2>/dev/null || echo running) now $(date +%s.%N)"
+          ls -la ~/.cache/fontconfig 2>&1 | head -3
           (vmstat -n 1 &) && /usr/bin/time -f "TIME %e wall %U user %S sys: make" make -j8 --output-sync=target NICE="nice -n 10" gate e2e
