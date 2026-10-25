@@ -200,17 +200,60 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 .crumb a::before { content: "← "; }
 .crumb a:hover { color: var(--accent); }
 .crumb + h1 { margin-top: var(--sp-3); }
-.project > .meta { margin-bottom: var(--sp-5); }
-.project > .metric { max-width: var(--measure); margin: 0 0 var(--sp-6); padding: var(--sp-4) var(--sp-5); border-left: 2px solid var(--accent); background: var(--surface); border-radius: 0 var(--r-1) var(--r-1) 0; }
-.project .body { max-width: var(--measure); }
+.project-head { max-width: 52rem; margin-bottom: var(--sp-6); }
+.project-head .lede { margin: 0; }
+.project-main { min-width: 0; max-width: var(--measure); }
 .project .body h2 { font-size: 1.25rem; margin-top: var(--sp-6); }
 .project .body li + li { margin-top: var(--sp-1); }
-.notice { max-width: var(--measure); margin: 0 0 var(--sp-6); padding: var(--sp-3) var(--sp-4); background: var(--sunken); border-radius: var(--r-1); color: var(--text-2); font-size: var(--t-small); }
-.source-link { max-width: var(--measure); margin-top: var(--sp-7); padding-top: var(--sp-4); border-top: 1px solid var(--line); color: var(--text-2); font-size: var(--t-small); }
+
+.facts { margin-bottom: var(--sp-6); font-size: var(--t-small); }
+.facts-fig { height: var(--fig-h); padding: var(--sp-3); margin-bottom: var(--sp-4); background: var(--sunken); border: 1px solid var(--line); border-radius: var(--r-1); }
+.facts-fig:has(> .dg:empty) { display: none; }
+.facts dl { display: grid; grid-template-columns: max-content 1fr; gap: var(--sp-2) var(--sp-4); margin: 0; }
+.facts dl > div { display: contents; }
+.facts dt { font-family: var(--mono); font-size: var(--t-label); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); line-height: 1.9; }
+.facts dd { margin: 0; color: var(--text-2); line-height: 1.6; min-width: 0; }
+.facts .lang { margin: 0; color: var(--text); }
+.facts .tags { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+.facts .badge.live { text-decoration: none; }
+@media (min-width: 64rem) {
+  .project { display: grid; grid-template-columns: 14rem minmax(0, var(--measure)); grid-template-areas: "head head" "facts main"; column-gap: var(--sp-8); align-items: start; }
+  .project-head { grid-area: head; }
+  .facts { grid-area: facts; position: sticky; top: var(--sp-5); margin: 0; }
+  .facts-fig { height: auto; aspect-ratio: 2 / 1; }
+  .facts dl { grid-template-columns: 1fr; gap: 0; }
+  .facts dt { margin-top: var(--sp-3); }
+  .facts dl > div:first-child dt { margin-top: 0; }
+  .project-main { grid-area: main; }
+}
+
+.result { margin: 0 0 var(--sp-6); padding: var(--sp-4) var(--sp-5); background: var(--surface); border: 1px solid var(--line); border-left: 2px solid var(--accent); border-radius: 0 var(--r-1) var(--r-1) 0; }
+.result-label { margin: 0 0 var(--sp-1); font-family: var(--mono); font-size: var(--t-label); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.result .metric { margin: 0; font-size: 0.9375rem; color: var(--text); }
+@media (min-width: 48rem) { .result .metric { font-size: var(--t-body); } }
+.source-link { margin-top: var(--sp-7); padding-top: var(--sp-4); border-top: 1px solid var(--line); color: var(--text-2); font-size: var(--t-small); }
 
 /* Demo frame (class names shared with demos: docs/demo-contract.md) */
-.demo { margin: var(--sp-6) 0; padding: var(--sp-5); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-2); box-shadow: var(--shadow); }
+.demo { display: flex; flex-direction: column; margin: var(--sp-6) 0; padding: var(--sp-5); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-2); box-shadow: var(--shadow); }
+.demo-head { order: -2; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--sp-1) var(--sp-4); margin: calc(-1 * var(--sp-5)) calc(-1 * var(--sp-5)) var(--sp-5); padding: var(--sp-3) var(--sp-5); border-bottom: 1px solid var(--line); }
+.demo-head h2 { display: flex; align-items: center; gap: var(--sp-2); margin: 0; font-size: var(--t-small); letter-spacing: 0; }
+.demo-head h2::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--live); }
+.demo-spec { font-family: var(--mono); font-size: var(--t-label); color: var(--text-3); }
+.demo.planned { background: none; box-shadow: none; border-style: dashed; border-color: var(--line-strong); }
+.demo.planned .demo-head { border-bottom-style: dashed; border-color: var(--line-strong); }
+.demo.planned .demo-head h2::before { box-sizing: border-box; background: none; border: 1.5px solid var(--control-line); }
+.demo.planned .demo-note { font-family: var(--sans); font-size: var(--t-small); color: var(--text-2); }
 .demo-bar { display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-4); align-items: center; }
+.demo-load { display: flex; align-items: center; gap: var(--sp-3); margin-top: var(--sp-4); }
+.demo:has(.demo-load) .demo-note, .demo[data-demo-error] .demo-note { display: none; }
+.demo-progress { flex: 1; height: 6px; border: 0; border-radius: 3px; background: var(--sunken); color: var(--accent); accent-color: var(--accent); appearance: none; overflow: hidden; }
+.demo-progress::-webkit-progress-bar { background: var(--sunken); }
+.demo-progress::-webkit-progress-value { background: var(--accent); transition: inline-size var(--d-fast) linear; }
+.demo-progress::-moz-progress-bar { background: var(--accent); }
+.demo-pct { min-width: 4ch; text-align: right; font-family: var(--mono); font-size: var(--t-label); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.demo[data-demo-error] .demo-status { order: -1; margin: 0 0 var(--sp-4); padding: var(--sp-3) var(--sp-4); border: 1px solid var(--danger); border-radius: var(--r-1); background: var(--danger-tint); color: var(--text); font-family: var(--sans); font-size: var(--t-small); overflow-wrap: anywhere; }
+.demo[data-demo-error] .demo-status strong { color: var(--danger); }
+.demo:has(.demo-load) .demo-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .demo button, .demo-mount button {
   font: inherit; font-size: var(--t-small); font-weight: 600; line-height: 1.4;
   padding: var(--sp-2) var(--sp-4); border-radius: var(--r-1); cursor: pointer;

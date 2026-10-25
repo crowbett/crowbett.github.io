@@ -10,6 +10,7 @@ package e2e
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -115,26 +116,7 @@ func TestSite(t *testing.T) {
 // error instead of a JSON parse failure.
 func TestDemoFailures(t *testing.T) {
 	t.Parallel()
-	root, err := filepath.Abs("..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	out := t.TempDir()
-	if err := site.Build(site.Config{Src: os.DirFS(root), Out: out, Owner: site.DefaultOwner, Now: time.Now()}); err != nil {
-		t.Fatal(err)
-	}
-	srv := httptest.NewServer(http.FileServer(http.Dir(out)))
-	defer srv.Close()
-
-	alloc, cancelA := chromedp.NewExecAllocator(context.Background(), allocOpts()...)
-	defer cancelA()
-	ctx, cancel := chromedp.NewContext(alloc)
-	defer cancel()
-	ctx, cancelT := context.WithTimeout(ctx, 90*time.Second)
-	defer cancelT()
-	if err := chromedp.Do(ctx, chromedp.Navigate(srv.URL+"/demos/smoke/")); err != nil {
-		t.Fatal(err)
-	}
+	ctx := smokePage(t)
 	type result struct {
 		Hang, After, Panic, AfterPanic string
 		HangMs, AfterMs                float64
@@ -172,6 +154,125 @@ func TestDemoFailures(t *testing.T) {
 		t.Error("a call after a panic succeeded")
 	}
 	t.Logf("%+v", r)
+}
+
+// TestDemoFrame drives the frame around a demo on the smoke page: progress
+// reports real decompressed bytes up to the binary's raw size, a failed start
+// shows the error and moves focus to the retry button, and a retry with a
+// fresh worker ends ready with focus inside the demo.
+func TestDemoFrame(t *testing.T) {
+	t.Parallel()
+	raw := lockBytes(t, "smoke")
+	ctx := smokePage(t)
+	type result struct {
+		Error, Button, Focus, ErrorBg string
+		Seen                          []int
+		Loaded                        int
+		ReadyFocus                    bool
+		Out                           string
+	}
+	r, err := chromedp.Run(ctx, chromedp.Evaluate[result](`(async () => {
+		const s = document.querySelector("[data-demo]");
+		const button = s.querySelector("[data-demo-start]");
+		const until = (f) => new Promise((resolve) => { const t = setInterval(() => { if (f()) { clearInterval(t); resolve(); } }, 20); });
+		const out = {};
+		s.dataset.demo = "missing";
+		button.click();
+		await until(() => "demoError" in s.dataset);
+		const status = s.querySelector("[data-demo-status]");
+		out.Error = status.textContent;
+		out.Button = button.textContent;
+		out.Focus = document.activeElement === button ? "button" : document.activeElement.outerHTML.slice(0, 80);
+		out.ErrorBg = getComputedStyle(status).backgroundColor;
+		out.Seen = [];
+		new MutationObserver(() => out.Seen.push(Number(s.dataset.demoLoaded)))
+			.observe(s, { attributes: true, attributeFilter: ["data-demo-loaded"] });
+		s.dataset.demo = "smoke";
+		button.click();
+		await until(() => "demoReady" in s.dataset || "demoError" in s.dataset);
+		out.Loaded = Number(s.dataset.demoLoaded);
+		out.ReadyFocus = s.querySelector("[data-demo-mount]").contains(document.activeElement);
+		out.Out = s.querySelector("[data-demo-mount]").textContent;
+		return out;
+	})()`, chromedp.EvalAwaitPromise))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(r.Error, "failed to start") || !strings.Contains(r.Error, "HTTP 404") {
+		t.Errorf("forced failure: status %q, want the start failure and the HTTP 404", r.Error)
+	}
+	if r.Button != "Try again" || r.Focus != "button" {
+		t.Errorf("after a failure: button %q, focus on %s; want focus on Try again", r.Button, r.Focus)
+	}
+	if r.ErrorBg == "" || r.ErrorBg == "rgba(0, 0, 0, 0)" {
+		t.Errorf("error status is unstyled (background %q)", r.ErrorBg)
+	}
+	if !strings.Contains(r.Out, "answered: hello from the page") {
+		t.Errorf("retry did not reach ready: mount %q", r.Out)
+	}
+	if r.Loaded != raw {
+		t.Errorf("progress ended at %d bytes, want the raw binary size %d", r.Loaded, raw)
+	}
+	if len(r.Seen) < 2 || r.Seen[0] <= 0 || r.Seen[0] >= raw {
+		t.Errorf("progress reported %v, want an intermediate count before %d", r.Seen, raw)
+	}
+	for i := 1; i < len(r.Seen); i++ {
+		if r.Seen[i] < r.Seen[i-1] {
+			t.Errorf("progress went backwards: %v", r.Seen)
+		}
+	}
+	if !r.ReadyFocus {
+		t.Error("focus is not inside the demo after it started")
+	}
+}
+
+// smokePage builds the site, serves it and opens the smoke demo page.
+func smokePage(t *testing.T) context.Context {
+	t.Helper()
+	root, err := filepath.Abs("..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := t.TempDir()
+	if err := site.Build(site.Config{Src: os.DirFS(root), Out: out, Owner: site.DefaultOwner, Now: time.Now()}); err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(http.FileServer(http.Dir(out)))
+	t.Cleanup(srv.Close)
+	alloc, cancelA := chromedp.NewExecAllocator(context.Background(), allocOpts()...)
+	t.Cleanup(cancelA)
+	ctx, cancel := chromedp.NewContext(alloc)
+	t.Cleanup(cancel)
+	ctx, cancelT := context.WithTimeout(ctx, 90*time.Second)
+	t.Cleanup(cancelT)
+	if err := chromedp.Do(ctx, chromedp.Navigate(srv.URL+"/demos/smoke/")); err != nil {
+		t.Fatal(err)
+	}
+	return ctx
+}
+
+func lockBytes(t *testing.T, slug string) int {
+	t.Helper()
+	b, err := os.ReadFile(filepath.Join("..", "demos.lock.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var lock struct {
+		Demos []struct {
+			Slug  string `json:"slug"`
+			Bytes int    `json:"bytes"`
+		} `json:"demos"`
+	}
+	if err := json.Unmarshal(b, &lock); err != nil {
+		t.Fatal(err)
+	}
+	for _, d := range lock.Demos {
+		if d.Slug == slug && d.Bytes > 0 {
+			return d.Bytes
+		}
+	}
+	t.Fatalf("demos.lock.json has no size for %s", slug)
+	return 0
 }
 
 // allocOpts runs Chrome headless and muted. Ubuntu runners block Chrome's
