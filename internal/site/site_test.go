@@ -140,3 +140,12 @@ func TestBindNumbers(t *testing.T) {
 		t.Errorf("bindNumbers = %q, want %q", got, want)
 	}
 }
+
+func TestBuildRejectsHeroTraceWithoutLiveDemo(t *testing.T) {
+	src := testFS(goodProject)
+	src["data/hero-trace.json"] = &fstest.MapFile{Data: []byte(`{"slug":"demo","params":{"rate":50},"result":{"bucketUs":500000,"emissionUs":20000,"offered":[30],"series":[{"algo":"gcra","allowed":[25],"denied":[5]}]}}`)}
+	err := Build(Config{Src: src, Out: t.TempDir(), Owner: DefaultOwner, Now: time.Now()})
+	if err == nil || !strings.Contains(err.Error(), "no live demo") {
+		t.Fatalf("want no-live-demo error, got %v", err)
+	}
+}

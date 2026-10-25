@@ -2,11 +2,26 @@
 <section class="hero">
   <p class="kicker">{{.Owner.Role}}</p>
   <h1><span class="hero-name">I'm {{.Owner.Name}}.</span> I build databases, consensus, caches, queues and rate limiters.</h1>
-  <p class="lede">I prove them with deterministic simulation, fault injection and measured benchmarks.</p>
-  <p class="hook">{{if eq .LiveCount 1}}The live demo below runs the project's real code, compiled to WebAssembly, in your browser.
-  {{else if .LiveCount}}The live demos below run each project's real code, compiled to WebAssembly, in your browser.
-  {{else}}Live demos are on the way: each project's real code, compiled to WebAssembly and running in your browser.{{end}}</p>
-  {{if .LiveCount}}<p class="hero-run">{{range .Projects}}{{if .Live}}<a href="/projects/{{.Slug}}/#demo">Run {{.Title}} <span aria-hidden="true">→</span></a>{{end}}{{end}}</p>{{end}}
+  <div class="hero-row">
+    <div>
+      <p class="lede">I prove them with deterministic simulation, fault injection and measured benchmarks.</p>
+      <p class="hook">{{if eq .LiveCount 1}}The live demo below runs the project's real code, compiled to WebAssembly, in your browser.
+      {{else if .LiveCount}}The live demos below run each project's real code, compiled to WebAssembly, in your browser.
+      {{else}}Live demos are on the way: each project's real code, compiled to WebAssembly and running in your browser.{{end}}</p>
+      {{if .LiveCount}}<p class="hero-run">{{range .Projects}}{{if .Live}}<a href="/projects/{{.Slug}}/#demo">Run {{.Title}} <span aria-hidden="true">→</span></a>{{end}}{{end}}</p>{{end}}
+    </div>
+    {{with .Hero}}<figure class="replay">
+      <figcaption><span class="replay-k">Replay</span> {{.Slug}}'s {{.Algo}} limiter at {{.Rate}} requests/s{{if eq .Pattern "attack"}} under an attack at 10× the limit{{end}}</figcaption>
+      <svg class="replay-chart" viewBox="0 0 {{.W}} {{.H}}" preserveAspectRatio="none" role="img" aria-label="{{num .Allowed}} requests allowed and {{num .Denied}} denied over {{.Seconds}} seconds">
+      {{range .Bars}}<rect class="ra" x="{{.X}}" y="{{.AY}}" width="0.72" height="{{.AH}}"/>{{if .DH}}<rect class="rd" x="{{.X}}" y="{{.DY}}" width="0.72" height="{{.DH}}"/>{{end}}{{end}}
+      <line class="rl" x1="0" x2="{{.W}}" y1="{{.LimitY}}" y2="{{.LimitY}}"/>
+      <rect class="rw" x="0" y="0" width="{{.W}}" height="{{.H}}"/>
+      </svg>
+      <p class="replay-axis"><span>0 s</span><span>{{.Seconds}} s</span></p>
+      <p class="replay-foot"><span class="k-a">{{num .Allowed}} allowed</span> <span class="k-d">{{num .Denied}} denied</span> <span class="k-l">limit</span></p>
+      <p class="replay-src">Recorded from the WebAssembly demo and re-checked against it on every deploy.</p>
+    </figure>{{end}}
+  </div>
 </section>
 <section id="work" aria-labelledby="work-h">
   <h2 class="eyebrow" id="work-h">Work <span class="count">{{len .Projects}} projects{{if .LiveCount}} · {{.LiveCount}} live{{end}}</span></h2>

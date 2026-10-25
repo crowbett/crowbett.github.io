@@ -33,3 +33,6 @@ A demo is three things: a bridge in the project repo, a UI in this repo, and a l
 3. Set `demo: live` in `content/projects/<slug>.md`; replace the "planned demo" sentence with what the demo shows.
 4. Add the slug to `demoChecks` in `e2e/e2e_test.go` with at least one expression that proves real output from the binary rendered.
 5. `make gate && make e2e`, then look at `e2e/out/projects-<slug>-*.jpg`.
+
+## Home replay (site-owned: `data/hero-trace.json`, `internal/site/hero.go`)
+The home hero draws one recorded call to a live demo (today ratelimitd `race`, attack pattern, seed 1). e2e `TestHeroTrace` re-runs that call through the built binary and fails if the answer differs. If a demo change alters it on purpose, run `HERO_TRACE=update go test -tags e2e -run TestHeroTrace ./e2e`, look at `e2e/out/home-*.jpg`, and commit the new file. The build refuses a trace whose slug is not a live demo.

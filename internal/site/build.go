@@ -49,6 +49,7 @@ type pageData struct {
 	Year      int
 	LiveCount int
 	Canonical string
+	Hero      *heroTrace
 }
 
 // Build renders the site into cfg.Out.
@@ -72,11 +73,19 @@ func Build(cfg Config) error {
 			return fmt.Errorf("%s: demo is live but web/demos/%s/ui.js is missing", p.Slug, p.Slug)
 		}
 	}
+	hero, err := loadHeroTrace(cfg.Src)
+	if err != nil {
+		return err
+	}
+	if hero != nil && !slices.ContainsFunc(projects, func(p Project) bool { return p.Slug == hero.Slug && p.Live() }) {
+		return fmt.Errorf("data/hero-trace.json replays %s, which has no live demo", hero.Slug)
+	}
 	tmpl, err := template.New("").Funcs(template.FuncMap{
 		"demoAsset": func(slug string) string { return "/demos/" + slug + "/ui.js" },
 		"demoKB":    func(slug string) string { return thousands((sizes[slug].Gzip + 1023) / 1024) },
 		"demoBytes": func(slug string) int { return sizes[slug].Raw },
 		"bind":      bindNumbers,
+		"num":       thousands,
 	}).ParseFS(cfg.Src, "templates/*.html")
 	if err != nil {
 		return fmt.Errorf("templates: %w", err)
@@ -95,7 +104,7 @@ func Build(cfg Config) error {
 		}
 		return 1
 	})
-	base := pageData{Owner: cfg.Owner, Projects: listed, Year: cfg.Now.Year()}
+	base := pageData{Owner: cfg.Owner, Projects: listed, Year: cfg.Now.Year(), Hero: hero}
 	for _, p := range projects {
 		if p.Live() {
 			base.LiveCount++
