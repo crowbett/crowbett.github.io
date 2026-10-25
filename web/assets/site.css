@@ -27,6 +27,7 @@
   --danger-tint: #fbe9e7;
   --shadow: 0 1px 2px rgb(0 0 0 / 6%);
   --dg-soft: #cfc9bd;
+  --deny: #948d82;
   --fig: var(--sunken);
 
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -85,6 +86,7 @@
     --danger-tint: #3a1a18;
     --shadow: none;
     --dg-soft: #5d574d;
+    --deny: #7a7266;
     --fig: #2c2a26;
   }
 }
@@ -146,13 +148,23 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 @media (min-width: 64rem) { .hero-row { grid-template-columns: minmax(0, 1fr) minmax(0, 33rem); gap: var(--sp-7); align-items: start; } }
 .replay { margin: 0; padding: var(--sp-4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-2); box-shadow: var(--shadow); font-size: var(--t-small); color: var(--text-2); }
 .replay figcaption { margin-bottom: var(--sp-3); line-height: 1.5; text-wrap: balance; }
-.replay-k { margin-right: var(--sp-2); font-family: var(--mono); font-size: var(--t-label); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.replay-h { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--sp-1) var(--sp-3); margin-bottom: var(--sp-1); }
+.replay-v { font-family: var(--mono); font-size: var(--t-label); font-weight: 600; color: var(--live); }
+.replay-v::before { content: ""; display: inline-block; width: 0.35em; height: 0.7em; margin: 0 0.6em 0 0.15em; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); vertical-align: 0.1em; }
+.replay-k { font-family: var(--mono); font-size: var(--t-label); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
 .replay-chart { display: block; width: 100%; height: auto; overflow: hidden; border-bottom: 1px solid var(--line-strong); }
 .replay .ra { fill: var(--live); }
-.replay .rd { fill: var(--dg-soft); }
+.replay .rd { fill: var(--deny); }
+.replay .rb { stroke: var(--line-strong); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .replay .rl { stroke: var(--accent); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 .replay .rz { fill: var(--accent-tint); }
-.replay .rt { fill: var(--text-2); font: 500 13px var(--mono); animation: fade 0.4s var(--ease-in) 2.7s both; }
+.replay .rt { fill: var(--text-2); font: 500 13px var(--mono); }
+.replay .rt-n { fill: var(--text-3); }
+.replay :is(.f1, .f2, .f3, .f4, .f5) { animation: fade 0.4s var(--ease-in) 0.78s both; }
+.replay .f2 { animation-delay: 1.26s; }
+.replay .f3 { animation-delay: 1.74s; }
+.replay .f4 { animation-delay: 2.22s; }
+.replay .f5 { animation-delay: 2.7s; }
 .replay .rt-a { fill: var(--accent); text-anchor: middle; }
 .replay .rt-e { text-anchor: end; }
 @media (max-width: 40rem) { .replay .rt { font-size: 18px; } }
@@ -163,11 +175,11 @@ h3 { font-size: 1.125rem; margin: var(--sp-6) 0 var(--sp-2); }
 .replay-foot { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); margin: var(--sp-3) 0 0; font-family: var(--mono); font-size: var(--t-label); color: var(--text); }
 .replay-foot span::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 2px; vertical-align: 0; }
 .replay-foot .k-a::before { background: var(--live); }
-.replay-foot .k-d::before { background: var(--dg-soft); }
+.replay-foot .k-d::before { background: var(--deny); }
 .replay-foot .k-l::before { height: 2px; vertical-align: 3px; background: var(--accent); border-radius: 0; }
-.replay-src { margin: var(--sp-3) 0 0; padding-top: var(--sp-3); border-top: 1px solid var(--line); color: var(--text); }
+.replay-src { margin: var(--sp-2) 0 0; font-size: var(--t-label); color: var(--text-3); }
 .hero-run { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin: 0; }
-@media (max-width: 40rem) { .hero-run { flex-direction: column; } .hero-run a { text-align: center; } }
+@media (max-width: 40rem) { .hero-run { display: grid; grid-template-columns: 1fr 1fr; } .hero-run a { text-align: center; } .hero-run a:first-child { grid-column: 1 / -1; } }
 .hero-run a {
   padding: var(--sp-2) var(--sp-4); border: 1px solid var(--control-line); border-radius: var(--r-1);
   font-size: var(--t-small); font-weight: 600; text-decoration: none;
