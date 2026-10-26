@@ -465,7 +465,7 @@ func TestReducedMotion(t *testing.T) {
 					s.querySelector("[data-demo-start]").click();
 					await new Promise((r) => { const t = setInterval(() => { if ("demoReady" in s.dataset) { clearInterval(t); r(); } }, 10); });
 				} else {
-					document.querySelector(".feature, .facts")?.scrollIntoView({ block: "center" });
+					document.querySelector(".row, .facts")?.scrollIntoView({ block: "center" });
 					await new Promise((r) => setTimeout(r, 400));
 				}
 				return document.getAnimations().length;

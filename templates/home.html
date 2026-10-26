@@ -1,34 +1,38 @@
 {{define "home"}}{{template "head" .}}
 <section class="hero">
-  <p class="kicker">{{.Owner.Role}}</p>
-  <h1><span class="hero-name">I'm {{.Owner.Name}}.</span> I build databases, consensus, caches, queues and rate limiters.</h1>
-  <div class="hero-row">
-    <div>
-      <p class="lede">I prove them with deterministic simulation, fault injection and measured benchmarks.</p>
-      <p class="hook">{{if eq .LiveCount 1}}The live demo below runs the project's real code, compiled to WebAssembly, in your browser.
-      {{else if .LiveCount}}The live demos below run each project's real code, compiled to WebAssembly, in your browser.
+  <p class="role">{{.Owner.Role}}</p>
+  <h1><span class="wordmark">{{.Owner.Name}}</span> <span class="hero-line">builds databases, consensus, caches, queues and rate limiters, and proves them with deterministic simulation, fault injection and measured benchmarks.</span></h1>
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <p class="hook">{{if eq .LiveCount 1}}One of them runs live on this site: the project's real code, compiled to WebAssembly, in your browser.
+      {{else if .LiveCount}}{{.LiveCount}} of them run live on this site: each project's real code, compiled to WebAssembly, in your browser.
       {{else}}Live demos are on the way: each project's real code, compiled to WebAssembly and running in your browser.{{end}}</p>
-      {{if .LiveCount}}<p class="hero-run"><span class="hero-run-k">Run a live demo</span>{{range .Projects}}{{if .Live}} <a href="/projects/{{.Slug}}/#demo">{{.Title}} <span aria-hidden="true">→</span></a>{{end}}{{end}}</p>{{end}}
+      {{if .LiveCount}}<nav class="keys" aria-label="Live demos">{{range .Projects}}{{if .Live}}<a href="/projects/{{.Slug}}/#demo">{{.Title}}</a>{{end}}{{end}}</nav>{{end}}
     </div>
     {{with .Hero}}<figure class="replay">
-      <figcaption><span class="replay-k">Replay</span> <span class="replay-t">{{.Slug}}'s {{.Algo}} limiter at {{.Rate}} requests/s{{if eq .Pattern "attack"}} under a 10× attack{{end}}</span> <span class="replay-v">The real code's output, recorded from its WebAssembly build. Every deploy re-runs it and fails if one bar differs.</span></figcaption>
-      <p class="replay-run" data-replay="{{.Slug}}" data-call="{{.Call}}" data-params="{{.Params}}" data-result="{{.Result}}" data-bytes="{{demoBytes .Slug}}"><button type="button">Run it in your browser</button> <span role="status">A ~{{demoKB .Slug}} KB download of {{.Slug}}'s build, checked against every bar of this chart.</span> <a href="/projects/{{.Slug}}/#demo" hidden>Try your own limit and attack <span aria-hidden="true">→</span></a></p>
-      {{template "replay-chart" .Wide}}{{template "replay-chart" .Tall}}
-      <p class="replay-axis"><span>0 s</span><span>{{.Seconds}} s</span></p>
-      <p class="replay-foot"><span class="k-a">{{num .Allowed}} allowed</span> <span class="k-d">{{num .Denied}} denied</span> <span class="replay-stamp" hidden>{{len .Wide.Bars}}/{{len .Wide.Bars}} buckets identical in your browser</span></p>
+      <figcaption>
+        <span class="replay-t">{{.Slug}}'s {{.Algo}} limiter at {{.Rate}} requests/s{{if eq .Pattern "attack"}} under a 10× attack{{end}}</span>
+        <span class="replay-v">The real code's output, recorded from its WebAssembly build. Every deploy re-runs it and fails if one bar differs.</span>
+      </figcaption>
+      <div class="screen">
+        {{template "replay-chart" .Wide}}{{template "replay-chart" .Tall}}
+        <p class="replay-axis"><span>0 s</span><span>{{.Seconds}} s</span></p>
+      </div>
+      <dl class="readouts">
+        <div><dt>allowed</dt><dd class="k-a">{{num .Allowed}}</dd></div>
+        <div><dt>denied</dt><dd class="k-d">{{num .Denied}}</dd></div>
+        <div><dt>limit</dt><dd>{{.Rate}}/s</dd></div>
+      </dl>
+      <p class="replay-run" data-replay="{{.Slug}}" data-call="{{.Call}}" data-params="{{.Params}}" data-result="{{.Result}}" data-bytes="{{demoBytes .Slug}}"><button type="button">Run it in your browser</button> <span role="status">A ~{{demoKB .Slug}} KB download of {{.Slug}}'s build, checked against every bar of this chart.</span> <span class="replay-stamp" hidden>{{len .Wide.Bars}}/{{len .Wide.Bars}} buckets identical in your browser</span> <a href="/projects/{{.Slug}}/#demo" hidden>Try your own limit and attack</a></p>
     </figure>
     <script type="module" src="/assets/hero.js"></script>{{end}}
   </div>
 </section>
-<section id="work" aria-labelledby="work-h">
-  <h2 class="eyebrow" id="work-h">Work <span class="count">{{len .Projects}} projects{{if .LiveCount}} · {{.LiveCount}} live{{end}}</span></h2>
-  {{if .LiveCount}}<ul class="cards">
-  {{range .Projects}}{{if .Live}}<li class="card feature">{{template "card" .}}</li>
-  {{end}}{{end}}
-  </ul>
-  <p class="eyebrow more">More projects</p>{{end}}
-  <ul class="cards small">
-  {{range .Projects}}{{if not .Live}}<li class="card">{{template "card" .}}</li>
+<section id="work" class="index" aria-labelledby="work-h">
+  <div class="index-head"><h2 id="work-h">Work</h2><p class="count">{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} live{{end}}</p></div>
+  <ul class="rows">
+  {{range .Projects}}{{if .Live}}<li class="row">{{template "row" .}}</li>
+  {{end}}{{end}}{{range .Projects}}{{if not .Live}}<li class="row">{{template "row" .}}</li>
   {{end}}{{end}}
   </ul>
 </section>

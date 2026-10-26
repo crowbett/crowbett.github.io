@@ -1,8 +1,7 @@
 {{define "notfound"}}{{template "head" .}}
-<section class="hero notfound">
-  <p class="kicker">404</p>
-  <h1>Not found</h1>
+<section class="notfound">
+  <h1><span class="code">404</span> Not found</h1>
   <p class="lede">No page lives at this address. Everything I've built is on <a href="/">the home page</a>{{if .LiveCount}}, and the live demos are one click away{{end}}.</p>
-  {{if .LiveCount}}<p class="hero-run"><span class="hero-run-k">Run a live demo</span>{{range .Projects}}{{if .Live}} <a href="/projects/{{.Slug}}/#demo">{{.Title}} <span aria-hidden="true">→</span></a>{{end}}{{end}}</p>{{end}}
+  {{if .LiveCount}}<nav class="keys" aria-label="Live demos">{{range .Projects}}{{if .Live}}<a href="/projects/{{.Slug}}/#demo">{{.Title}}</a>{{end}}{{end}}</nav>{{end}}
 </section>
 {{template "foot" .}}{{end}}

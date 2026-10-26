@@ -42,7 +42,9 @@ var contrastPairs = []struct {
 	{"on-accent", "accent", 4.5}, {"accent", "accent-tint", 4.5},
 	{"live", "live-tint", 4.5}, {"danger", "danger-tint", 4.5}, {"text", "danger-tint", 4.5},
 	{"control-line", "bg", 3}, {"control-line", "surface", 3},
-	{"deny", "surface", 3}, {"deny", "attack", 3}, {"accent", "attack", 4.5},
+	{"plate-ink", "plate", 4.5},
+	{"screen-ink", "screen", 4.5}, {"screen-dim", "screen", 4.5}, {"fault", "screen", 4.5}, {"fault", "attack", 4.5},
+	{"screen-ok", "screen", 3}, {"deny", "screen", 3}, {"deny", "attack", 3},
 }
 
 // TestTokenContrast re-measures every pair in both schemes from the tokens in

@@ -38,7 +38,7 @@ CSS budget counts one page, not the site (decision, 2026-10-25, F4): the limit s
 
 Share image budget (added 2026-10-24, V7): 1200×630 cards rendered by `cmd/og`, 32,259–59,869 bytes each (measured), so 100 KiB holds them with room for denser drawings. The build also fails when a card's HTML no longer matches the hash recorded when its PNG was made (`web/og/.sums`): run `go run ./cmd/og` and commit `web/og`.
 
-Fonts budget (added 2026-10-24, V2): one self-hosted mono, JetBrains Mono subset to 9,796 bytes (measured); 32 KiB leaves room for one more subset face before it needs a recorded decision. Rationale in `docs/design.md` §Type.
+Fonts budget (added 2026-10-24, V2): 32 KiB of woff2. Since the instrument-panel redesign (2026-10-26) four pinned OFL subsets ship: Archivo Expanded 800, Archivo 400, Martian Mono 400 and Doto 800, 21,784 bytes in total (measured), ~10.9 KB under the limit. Rationale in `docs/design.md` §Type.
 
 ## Open
 - Rust demos (strata, codegraph, keel) need a second build path in `cmd/wasm`; see `docs/tasks.md` R0.

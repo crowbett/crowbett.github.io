@@ -210,6 +210,10 @@ Done: edgecache draws "request collapsing with a detached leader" (three clients
 Filed by the demo track (C5). Every live project now has a `demo_try` line (`Project.DemoTry`, internal/site/content.go): one sentence on what a visitor can do in its demo. The build requires it on live projects and rejects it on others. Show it on the home feature cards, and wherever else it reads as a thing to try.
 Done when: each live card on home shows its project's `demo_try`, in both schemes and at 390 px.
 
+### V11 Instrument panel redesign · order 110 · deps: V8 · status: done 2026-10-26 (this commit)
+The owner: the site "looks too much like a claude vibe coded" page. Research (`~/research/reports/Striking engineer portfolio design.md`) matched the old look to Anthropic's own list of AI defaults and recommended Direction C, the instrument panel; the owner chose it. Rebuild type, colour, home, project page, demo frame, 404, share cards and icon to design.md §Feel through §What we will not do, within every budget.
+Done when: every page matches design.md in both themes at 390 and 1280 px, `make gate && make e2e` pass, and the decision is logged in design.md.
+
 ## Owner only
 
 ### U1 Make more repos public · status: user

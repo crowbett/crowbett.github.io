@@ -5,45 +5,44 @@
 <meta charset="utf-8">
 <link rel="stylesheet" href="/assets/site.css">
 <style>
-@font-face { font-family: "OG Mono"; src: url("/assets/fonts/jetbrains-mono.woff2") format("woff2"); font-weight: 400 700; font-display: block; }
-:root { --mono: "OG Mono", monospace; }
+@font-face { font-family: "OG Sans"; src: url("/assets/fonts/archivo-400.woff2") format("woff2"); font-weight: 400; font-display: block; }
+@font-face { font-family: "OG Display"; src: url("/assets/fonts/archivo-expanded-800.woff2") format("woff2"); font-weight: 800; font-display: block; }
+@font-face { font-family: "OG Mono"; src: url("/assets/fonts/martian-mono-400.woff2") format("woff2"); font-weight: 400; font-display: block; }
+:root { --sans: "OG Sans", sans-serif; --display: "OG Display", sans-serif; --mono: "OG Mono", monospace; }
 html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
-.og { box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 56px; width: 1200px; height: 630px; padding: 64px 72px; }
-.og.home { grid-template-columns: 1fr; grid-template-rows: 1fr auto; gap: 40px; }
+.og { box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr) 400px; grid-template-rows: auto 1fr; gap: 0 56px; width: 1200px; height: 630px; padding: 0 64px 56px; }
+.og.home { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 1fr auto; }
+.og-bar { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 48px; padding: 20px 0; border-bottom: 3px solid var(--rule); font: 20px var(--mono); color: var(--text); }
 .og-text { display: flex; flex-direction: column; min-width: 0; }
-.og-k { margin: 0 0 20px; font: 500 20px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
-.og h1 { margin: 0; font-size: 88px; line-height: 1; letter-spacing: -0.03em; }
-.og.home h1 { font-size: 64px; line-height: 1.05; letter-spacing: -0.025em; max-width: 15em; text-wrap: wrap; }
-.og-name { display: block; }
-.og-tag { margin: 24px 0 0; font-size: 30px; line-height: 1.35; color: var(--text-2); text-wrap: balance; }
-.og-metric { margin: 20px 0 0; font: 22px/1.45 var(--mono); color: var(--text); text-wrap: balance; }
-.og-foot { display: flex; align-items: center; gap: 20px; margin-top: auto; font: 20px var(--mono); color: var(--text-3); }
-.og-live { padding: 6px 16px; border-radius: 999px; background: var(--live-tint); color: var(--live); font-weight: 600; }
-.og-live::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 10px; border-radius: 50%; background: currentColor; vertical-align: 2px; }
-.og-fig { align-self: center; padding: 32px 28px; background: var(--fig); border: 1px solid var(--line); border-radius: 16px; }
+.og h1 { margin: 0 0 0 -4px; font-size: 104px; line-height: 0.9; letter-spacing: -0.05em; }
+.og-tag { margin: 28px 0 0; font: 30px/1.35 var(--sans); color: var(--text-2); text-wrap: balance; }
+.og-metric { margin: auto 0 0; padding-top: 20px; border-top: 1px solid var(--rule); font: 21px/1.5 var(--mono); color: var(--text); text-wrap: balance; }
+.og .led { font-size: 20px; gap: 12px; }
+.og .led::before { width: 12px; height: 12px; }
+.og-fig { align-self: stretch; display: flex; align-items: center; padding: 32px 28px; border: 2px solid var(--rule); background: radial-gradient(var(--grid-dot) 1.5px, transparent 2px) 6px 6px / 12px 12px; }
 .og-fig .dg { height: auto; stroke-width: 2.5; }
 .og-fig .dg .t { display: inline; font-size: 8px; }
-.og-strip { display: grid; grid-template-columns: repeat(8, 1fr); gap: 14px; }
-.og-strip div { height: 72px; padding: 8px; background: var(--fig); border: 1px solid var(--line); border-radius: 8px; }
+.og .og-mark { margin: 0 0 0 -8px; font: 800 240px/0.8 var(--display); letter-spacing: -0.055em; }
+.og.home .og-tag { max-width: 34em; margin-top: 28px; font-size: 26px; }
+.og-strip { align-self: end; display: grid; grid-template-columns: repeat(8, 1fr); border: 2px solid var(--rule); }
+.og-strip div { height: 84px; padding: 10px; background: radial-gradient(var(--grid-dot) 1.5px, transparent 2px) 4px 4px / 10px 10px; }
+.og-strip div + div { border-left: 1px solid var(--line-strong); }
 .og-strip .dg { stroke-width: 1.5; }
 </style>
 </head>
 <body>
 {{if .Project}}{{with .Project}}<div class="og">
+  <p class="og-bar"><span>{{slice $.Owner.URL 8}}</span>{{if .Live}}<span class="led">Live demo in your browser</span>{{else}}<span>{{.Lang}}</span>{{end}}</p>
   <div class="og-text">
-    <p class="og-k">{{.Lang}}</p>
     <h1>{{.Title}}</h1>
     <p class="og-tag">{{.Tagline}}</p>
     {{if .Metric}}<p class="og-metric">{{bind .Metric}}</p>{{end}}
-    <p class="og-foot">{{if .Live}}<span class="og-live">Live demo</span>{{end}}<span>{{slice $.Owner.URL 8}}</span></p>
   </div>
   <div class="og-fig">{{template "diagram" .Slug}}</div>
 </div>{{end}}{{else}}<div class="og home">
-  <div class="og-text">
-    <p class="og-k">{{.Owner.Role}}</p>
-    <h1><span class="og-name">I'm {{.Owner.Name}}.</span> I build databases, consensus, caches, queues and rate limiters.</h1>
-    <p class="og-foot">{{if .LiveCount}}<span class="og-live">{{.LiveCount}} live demo{{if gt .LiveCount 1}}s{{end}} in your browser</span>{{end}}<span>{{slice .Owner.URL 8}}</span></p>
-  </div>
+  <p class="og-bar"><span>{{slice .Owner.URL 8}}</span>{{if .LiveCount}}<span class="led">{{.LiveCount}} live demo{{if gt .LiveCount 1}}s{{end}} in your browser</span>{{end}}</p>
+  <h1 class="og-mark">{{.Owner.Name}}</h1>
+  <p class="og-tag">builds databases, consensus, caches, queues and rate limiters, and proves them with deterministic simulation, fault injection and measured benchmarks.</p>
   <div class="og-strip">{{range .Projects}}<div>{{template "diagram" .Slug}}</div>{{end}}</div>
 </div>{{end}}
 </body>
