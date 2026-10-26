@@ -1,4 +1,4 @@
-// Plays a feature or project diagram once, when it is mostly on screen, so
+// Plays a project diagram once, when it is mostly on screen, so
 // the visitor sees it (site.css animates .dg.play; hover loops need no JS).
 const seen = new IntersectionObserver((entries) => {
   for (const e of entries) {
@@ -7,4 +7,4 @@ const seen = new IntersectionObserver((entries) => {
     seen.unobserve(e.target);
   }
 }, { threshold: 0.6 });
-for (const dg of document.querySelectorAll(".feature .dg, .facts .dg")) seen.observe(dg);
+for (const dg of document.querySelectorAll(".row .dg, .facts .dg")) seen.observe(dg);

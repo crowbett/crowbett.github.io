@@ -16,23 +16,26 @@
 <meta property="og:image" content="{{.Owner.URL}}/og/{{if .Project}}{{.Project.Slug}}{{else}}home{{end}}.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="{{if .Project}}{{.Project.Title}}: {{.Project.Tagline}}{{else}}{{.Owner.Name}}: I build databases, consensus, caches, queues and rate limiters.{{end}}">
+<meta property="og:image:alt" content="{{if .Project}}{{.Project.Title}}: {{.Project.Tagline}}{{else}}{{.Owner.Name}} builds databases, consensus, caches, queues and rate limiters.{{end}}">
 <meta name="twitter:card" content="summary_large_image">
 {{if eq .Path "/404.html"}}<meta name="robots" content="noindex">
 {{end}}<meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#fbfaf7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121110" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f1f2f3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0e12" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="preload" href="/assets/fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/archivo-expanded-800.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/archivo-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/martian-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/doto-800.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <header class="top">
   <a class="brand" href="/">{{.Owner.Name}}</a>
-  <nav><a href="/#work">Work</a> <a href="mailto:{{.Owner.Email}}">Email</a></nav>
+  <nav><a href="/#work">Work</a><a href="mailto:{{.Owner.Email}}">Email</a></nav>
 </header>
 <main id="main">
 {{end}}
@@ -41,22 +44,21 @@
 </main>
 <footer class="foot">
   <p>Built with a small Go static site generator. No tracking, no cookies.</p>
-  <p>© {{.Year}} {{.Owner.Name}} · <a href="mailto:{{.Owner.Email}}">{{.Owner.Email}}</a></p>
+  <p>© {{.Year}} {{.Owner.Name}}, <a href="mailto:{{.Owner.Email}}">{{.Owner.Email}}</a></p>
 </footer>
 <script type="module" src="/assets/motion.js"></script>
 </body>
 </html>
 {{end}}
 
-{{define "card"}}
+{{define "row"}}
   <a href="/projects/{{.Slug}}/{{if .Live}}#demo{{end}}">
-    <div class="card-fig" aria-hidden="true">{{template "diagram" .Slug}}</div>
-    <div class="card-body">
-      <div class="card-head"><h3>{{.Title}}</h3><span class="lang">{{.Lang}}</span></div>
-      <p class="card-tag">{{.Tagline}}</p>
+    <div class="row-fig" aria-hidden="true">{{template "diagram" .Slug}}</div>
+    <div class="row-name"><h3>{{.Title}}</h3><span class="row-lang">{{.Lang}}</span></div>
+    <div class="row-body">
+      <p class="row-tag">{{.Tagline}}</p>
       {{if .Metric}}<p class="metric">{{bind .Metric}}</p>{{end}}
-      {{if .DemoTry}}<p class="try"><span class="try-k">Try it</span> {{.DemoTry}}</p>{{end}}
-      <p class="meta">{{if .Live}}<span class="badge live">Live demo</span><span class="go">Run it in your browser <span aria-hidden="true">→</span></span>{{else}}<span class="private">Source on {{if .Private}}request{{else}}GitHub{{end}}</span><span class="go">Details <span aria-hidden="true">→</span></span>{{end}}</p>
     </div>
+    <div class="row-act">{{if .Live}}<span class="led">Live demo</span><span class="key">Run it</span>{{else}}<span class="led off">Source on {{if .Private}}request{{else}}GitHub{{end}}</span><span class="key">Details</span>{{end}}</div>
   </a>
 {{end}}
