@@ -214,6 +214,10 @@ Done when: each live card on home shows its project's `demo_try`, in both scheme
 The owner: the site "looks too much like a claude vibe coded" page. Research (`~/research/reports/Striking engineer portfolio design.md`) matched the old look to Anthropic's own list of AI defaults and recommended Direction C, the instrument panel; the owner chose it. Rebuild type, colour, home, project page, demo frame, 404, share cards and icon to design.md §Feel through §What we will not do, within every budget.
 Done when: every page matches design.md in both themes at 390 and 1280 px, `make gate && make e2e` pass, and the decision is logged in design.md.
 
+### V12 Instrument panel, second pass · order 111 · deps: V11 · status: done 2026-10-26 (this commit)
+The owner's brief closes V11's gaps: reproducible font subsets, oklch tokens with blue blocks and one vermilion accent, a 1 px hairline panel at radius 0 with fluid spacing, the projects as a dense index table, diagrams as 1-bit dithered masks (`cmd/dither`), mono cells, spring easing, and counters only on real data. The approved calls are logged in design.md (2026-10-26 V12).
+Done when: every page matches design.md in both themes at 390 and 1280 px and with reduced motion, every budget holds with measured sizes in PLAN.md, `make gate && make e2e` pass.
+
 ## Owner only
 
 ### U1 Make more repos public · status: user

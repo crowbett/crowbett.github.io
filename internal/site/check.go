@@ -46,6 +46,7 @@ var (
 	ogImage = regexp.MustCompile(`property="og:image" content="https?://[^/"]+(/[^"]*)"`)
 	cssUse  = regexp.MustCompile(`var\((--[\w-]+)`)
 	cssDef  = regexp.MustCompile(`(--[\w-]+)\s*:`)
+	cssURL  = regexp.MustCompile(`url\("?(/[^)"]+)`)
 	scaleFn = regexp.MustCompile(`\bscale(?:X|Y|Z|3d)?\(([^)]*)\)|(?:^|[\s;{"'])scale\s*:\s*([^;}"']*)`)
 )
 
@@ -123,6 +124,11 @@ func Check(out string) error {
 				add("%s: %d bytes, budget %d", rel, len(b), Budgets.ShareImage)
 			}
 		case ".css":
+			for _, m := range cssURL.FindAllSubmatch(b, -1) {
+				if _, err := os.Stat(filepath.Join(out, filepath.FromSlash(string(m[1])))); err != nil {
+					add("%s: url %s does not exist", rel, m[1])
+				}
+			}
 			if !strings.HasPrefix(rel, "/demos/") {
 				css += len(b)
 			} else {

@@ -5,6 +5,7 @@ package e2e
 import (
 	"context"
 	_ "embed"
+	"fmt"
 	"math"
 	"net/http"
 	"net/http/httptest"
@@ -37,13 +38,14 @@ var contrastPairs = []struct {
 	{"text-2", "bg", 4.5}, {"text-2", "surface", 4.5}, {"text-2", "sunken", 4.5},
 	{"text-3", "bg", 4.5}, {"text-3", "surface", 4.5}, {"text-3", "sunken", 4.5},
 	{"accent", "bg", 4.5}, {"accent", "surface", 4.5}, {"accent", "sunken", 4.5},
+	{"signal", "bg", 4.5}, {"signal", "surface", 4.5}, {"signal", "sunken", 4.5},
 	{"live", "bg", 4.5}, {"live", "surface", 4.5}, {"live", "sunken", 4.5},
 	{"danger", "bg", 4.5}, {"danger", "surface", 4.5}, {"danger", "sunken", 4.5},
-	{"on-accent", "accent", 4.5}, {"accent", "accent-tint", 4.5},
+	{"accent-hover", "bg", 4.5}, {"accent-hover", "surface", 4.5}, {"accent", "accent-tint", 4.5},
+	{"on-block", "block", 4.5}, {"on-block", "block-hover", 4.5}, {"block", "bg", 3},
 	{"live", "live-tint", 4.5}, {"danger", "danger-tint", 4.5}, {"text", "danger-tint", 4.5},
 	{"control-line", "bg", 3}, {"control-line", "surface", 3},
-	{"plate-ink", "plate", 4.5},
-	{"screen-ink", "screen", 4.5}, {"screen-dim", "screen", 4.5}, {"fault", "screen", 4.5}, {"fault", "attack", 4.5},
+	{"screen-ink", "screen", 4.5}, {"screen-dim", "screen", 4.5}, {"screen-signal", "screen", 4.5}, {"screen-signal", "attack", 4.5},
 	{"screen-ok", "screen", 3}, {"deny", "screen", 3}, {"deny", "attack", 3},
 }
 
@@ -70,7 +72,7 @@ func TestTokenContrast(t *testing.T) {
 }
 
 var (
-	tokenRE = regexp.MustCompile(`--([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})\s*;`)
+	tokenRE = regexp.MustCompile(`--([a-z0-9-]+):\s*(#[0-9a-fA-F]{6}|oklch\([0-9. ]+\))\s*;`)
 	aliasRE = regexp.MustCompile(`--([a-z0-9-]+):\s*var\(--([a-z0-9-]+)\)\s*;`)
 )
 
@@ -123,15 +125,35 @@ func contrast(a, b string) float64 {
 	return (math.Max(la, lb) + 0.05) / (math.Min(la, lb) + 0.05)
 }
 
-func luminance(hex string) float64 {
+// luminance takes #rrggbb or oklch(L C H) and returns WCAG relative luminance.
+func luminance(v string) float64 {
 	var c [3]float64
-	for i := range c {
-		v, _ := strconv.ParseUint(hex[1+2*i:3+2*i], 16, 8)
-		s := float64(v) / 255
-		if s <= 0.03928 {
-			c[i] = s / 12.92
-		} else {
-			c[i] = math.Pow((s+0.055)/1.055, 2.4)
+	if strings.HasPrefix(v, "oklch(") {
+		var l, ch, h float64
+		if _, err := fmt.Sscanf(v, "oklch(%g %g %g)", &l, &ch, &h); err != nil {
+			panic(v)
+		}
+		a, b := ch*math.Cos(h*math.Pi/180), ch*math.Sin(h*math.Pi/180)
+		lc := math.Pow(l+0.3963377774*a+0.2158037573*b, 3)
+		mc := math.Pow(l-0.1055613458*a-0.0638541728*b, 3)
+		sc := math.Pow(l-0.0894841775*a-1.2914855480*b, 3)
+		c = [3]float64{
+			4.0767416621*lc - 3.3077115913*mc + 0.2309699292*sc,
+			-1.2684380046*lc + 2.6097574011*mc - 0.3413193965*sc,
+			-0.0041960863*lc - 0.7034186147*mc + 1.7076147010*sc,
+		}
+		for i := range c {
+			c[i] = math.Min(1, math.Max(0, c[i]))
+		}
+	} else {
+		for i := range c {
+			n, _ := strconv.ParseUint(v[1+2*i:3+2*i], 16, 8)
+			s := float64(n) / 255
+			if s <= 0.04045 {
+				c[i] = s / 12.92
+			} else {
+				c[i] = math.Pow((s+0.055)/1.055, 2.4)
+			}
 		}
 	}
 	return 0.2126*c[0] + 0.7152*c[1] + 0.0722*c[2]

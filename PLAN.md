@@ -36,9 +36,11 @@ WASM budget raised from 2 MiB to 2.25 MiB (decision, 2026-10-24, D2): edgecache'
 
 CSS budget counts one page, not the site (decision, 2026-10-25, F4): the limit summed every stylesheet, so each new demo's `ui.css` (2,090–3,336 bytes, measured) ate into it although a visitor only ever loads `site.css` and one demo's `ui.css`. After the shared field and label rules moved into site.css the sum was 40,530 bytes with 430 to spare, short of D7 and D8. The limit stays 40 KiB, now on the heaviest page: `site.css` 27,664 bytes plus edgecache's 3,126 is 30,790 (measured at the change), so ~10 KB is free for any one demo. A page's CSS weight, the thing the budget protects, is unchanged.
 
-Share image budget (added 2026-10-24, V7): 1200×630 cards rendered by `cmd/og`, 32,259–59,869 bytes each (measured), so 100 KiB holds them with room for denser drawings. The build also fails when a card's HTML no longer matches the hash recorded when its PNG was made (`web/og/.sums`): run `go run ./cmd/og` and commit `web/og`.
+Share image budget (added 2026-10-24, V7): 1200×630 cards rendered by `cmd/og`, 48,139–66,604 bytes each (measured 2026-10-26), so 100 KiB holds them. The build also fails when a card's HTML, site.css or a font no longer matches the hash recorded when its PNG was made (`web/og/.sums`, `site.ImageSum`): run `go run ./cmd/og` and commit `web/og`. Diagram masks work the same way: `go run ./cmd/dither` (needs Chrome and oxipng) writes `web/assets/dg/*.png` and `.sums`.
 
-Fonts budget (added 2026-10-24, V2): 32 KiB of woff2. Since the instrument-panel redesign (2026-10-26) four pinned OFL subsets ship: Archivo Expanded 800, Archivo 400, Martian Mono 400 and Doto 800, 21,784 bytes in total (measured), ~10.9 KB under the limit. Rationale in `docs/design.md` §Type.
+Fonts budget (added 2026-10-24, V2): 32 KiB of woff2. Since V12 (2026-10-26) `make fonts` (`scripts/fonts.sh`) builds four OFL subsets from google/fonts at a pinned commit, sha256-checked: Archivo Expanded 800 (7,752 B), Archivo 400 (7,704 B), Martian Mono 400-700 (9,076 B) and Doto 700 (2,376 B), 26,908 bytes in total (measured), 5,860 under the limit. Rationale in `docs/design.md` §Type.
+
+V12 decisions (2026-10-26, owner-approved): no animation library (CSS `linear()` springs; the libraries that inject `<style>` break the CSP); diagrams are 1-bit masks dithered with an 8×8 Bayer matrix (ordered, so the two motion poses do not crawl; blue noise skipped as a third tool for 112 px drawings); Archivo 400 kept for prose. Details in `docs/design.md` (2026-10-26 V12).
 
 ## Open
 - Rust demos (strata, codegraph, keel) need a second build path in `cmd/wasm`; see `docs/tasks.md` R0.

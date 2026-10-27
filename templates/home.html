@@ -1,8 +1,7 @@
 {{define "home"}}{{template "head" .}}
 <section class="hero">
   <p class="role">{{.Owner.Role}}</p>
-  <h1><span class="wordmark">{{.Owner.Name}}</span> <span class="hero-line">builds databases, consensus, caches, queues and rate limiters, and proves them with deterministic simulation, fault injection and measured benchmarks.</span></h1>
-  <div class="hero-grid">
+  <h1><b>{{.Owner.Name}}</b> builds databases, consensus, caches, queues and rate limiters, and proves them with deterministic simulation, fault injection and measured benchmarks.</h1>
     <div class="hero-copy">
       <p class="hook">{{if eq .LiveCount 1}}One of them runs live on this site: the project's real code, compiled to WebAssembly, in your browser.
       {{else if .LiveCount}}{{.LiveCount}} of them run live on this site: each project's real code, compiled to WebAssembly, in your browser.
@@ -26,15 +25,15 @@
       <p class="replay-run" data-replay="{{.Slug}}" data-call="{{.Call}}" data-params="{{.Params}}" data-result="{{.Result}}" data-bytes="{{demoBytes .Slug}}"><button type="button">Run it in your browser</button> <span role="status">A ~{{demoKB .Slug}} KB download of {{.Slug}}'s build, checked against every bar of this chart.</span> <span class="replay-stamp" hidden>{{len .Wide.Bars}}/{{len .Wide.Bars}} buckets identical in your browser</span> <a href="/projects/{{.Slug}}/#demo" hidden>Try your own limit and attack</a></p>
     </figure>
     <script type="module" src="/assets/hero.js"></script>{{end}}
-  </div>
 </section>
 <section id="work" class="index" aria-labelledby="work-h">
   <div class="index-head"><h2 id="work-h">Work</h2><p class="count">{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} live{{end}}</p></div>
-  <ul class="rows">
+  <div class="index-cols" aria-hidden="true"><span>#</span><span>mechanism</span><span>project</span><span>lang</span><span>what it is</span><span>evidence</span><span>demo</span></div>
+  <ol class="rows">
   {{range .Projects}}{{if .Live}}<li class="row">{{template "row" .}}</li>
   {{end}}{{end}}{{range .Projects}}{{if not .Live}}<li class="row">{{template "row" .}}</li>
   {{end}}{{end}}
-  </ul>
+  </ol>
 </section>
 {{template "foot" .}}{{end}}
 {{define "replay-chart"}}<svg class="replay-chart {{.Class}}" viewBox="0 0 {{.W}} {{.H}}" role="img" aria-label="{{.Label}}">
