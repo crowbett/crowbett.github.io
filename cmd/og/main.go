@@ -39,12 +39,6 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	icon, err := os.ReadFile("web/assets/icon.svg")
-	if err != nil {
-		return err
-	}
-	// iOS rounds touch icons itself and fills transparency black: square corners.
-	touch := strings.Replace(string(icon), ` rx="7"`, "", 1)
 	mux := http.NewServeMux()
 	mux.Handle("/", http.FileServer(http.Dir("web")))
 	mux.HandleFunc("/og/{name}", func(w http.ResponseWriter, r *http.Request) {
@@ -55,10 +49,6 @@ func run() error {
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Write(card)
-	})
-	mux.HandleFunc("/touch.svg", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "image/svg+xml")
-		w.Write([]byte(touch))
 	})
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
@@ -110,14 +100,19 @@ func run() error {
 		if err := os.WriteFile(filepath.Join("web/og", name+".png"), png, 0o644); err != nil {
 			return err
 		}
-		fmt.Fprintf(&sums, "%s %s\n", name, site.ShareSum(cards[name]))
+		sum, err := site.ImageSum(cfg.Src, cards[name], site.ShareDeps)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(&sums, "%s %s\n", name, sum)
 		fmt.Printf("web/og/%s.png %d bytes\n", name, len(png))
 	}
 	if err := os.WriteFile(site.ShareSums, []byte(sums.String()), 0o644); err != nil {
 		return err
 	}
 
-	apple, err := shot(srv.URL+"/touch.svg", 180, 180, false)
+	// The icon is a full square, as iOS wants: it rounds the corners itself.
+	apple, err := shot(srv.URL+"/assets/icon.svg", 180, 180, false)
 	if err != nil {
 		return err
 	}

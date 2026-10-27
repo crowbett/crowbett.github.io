@@ -20,15 +20,15 @@
 <meta name="twitter:card" content="summary_large_image">
 {{if eq .Path "/404.html"}}<meta name="robots" content="noindex">
 {{end}}<meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#f1f2f3" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0c0e12" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f2f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a0d13" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/archivo-expanded-800.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/archivo-400.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/assets/fonts/martian-mono-400.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/assets/fonts/doto-800.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/martian-mono.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/doto-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
@@ -53,12 +53,12 @@
 
 {{define "row"}}
   <a href="/projects/{{.Slug}}/{{if .Live}}#demo{{end}}">
-    <div class="row-fig" aria-hidden="true">{{template "diagram" .Slug}}</div>
-    <div class="row-name"><h3>{{.Title}}</h3><span class="row-lang">{{.Lang}}</span></div>
-    <div class="row-body">
-      <p class="row-tag">{{.Tagline}}</p>
-      {{if .Metric}}<p class="metric">{{bind .Metric}}</p>{{end}}
-    </div>
+    <span class="row-n" aria-hidden="true"></span>
+    <div class="row-fig" aria-hidden="true">{{template "dmask" .Slug}}</div>
+    <h3 class="row-name">{{.Title}}</h3>
+    <span class="row-lang">{{.Lang}}</span>
+    <p class="row-tag">{{.Tagline}}</p>
+    <p class="metric">{{if .Metric}}{{bind .Metric}}{{end}}</p>
     <div class="row-act">{{if .Live}}<span class="led">Live demo</span><span class="key">Run it</span>{{else}}<span class="led off">Source on {{if .Private}}request{{else}}GitHub{{end}}</span><span class="key">Details</span>{{end}}</div>
   </a>
 {{end}}

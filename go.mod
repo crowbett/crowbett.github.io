@@ -5,6 +5,7 @@ go 1.27.0
 require (
 	github.com/chromedp/cdproto v0.157.8
 	github.com/chromedp/chromedp v0.21.0
+	github.com/makeworld-the-better-one/dither/v2 v2.4.0
 	github.com/yuin/goldmark v1.8.6
 )
 

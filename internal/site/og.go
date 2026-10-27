@@ -52,10 +52,30 @@ func (s *prepared) shareCards() (map[string][]byte, error) {
 	return cards, nil
 }
 
-// ShareSum is the hash cmd/og records for a card's HTML.
-func ShareSum(card []byte) string {
-	h := sha256.Sum256(card)
-	return hex.EncodeToString(h[:])
+// ShareDeps are the files a share card loads besides its own HTML.
+var ShareDeps = []string{"web/assets/site.css", "web/assets/fonts/*.woff2"}
+
+// ImageSum is the hash cmd/og and cmd/dither record for an image screenshotted
+// from page, which loads deps (glob patterns in src): a change to either makes
+// the image stale.
+func ImageSum(src fs.FS, page []byte, deps []string) (string, error) {
+	h := sha256.New()
+	h.Write(page)
+	for _, pat := range deps {
+		names, err := fs.Glob(src, pat)
+		if err != nil {
+			return "", err
+		}
+		for _, n := range names {
+			b, err := fs.ReadFile(src, n)
+			if err != nil {
+				return "", err
+			}
+			h.Write([]byte(n))
+			h.Write(b)
+		}
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 // checkShareCards fails the build when a card's text or drawing changed
@@ -65,7 +85,13 @@ func checkShareCards(cfg Config, s *prepared) error {
 	if err != nil || cards == nil {
 		return err
 	}
-	b, err := fs.ReadFile(cfg.Src, ShareSums)
+	return checkSums(cfg, ShareSums, cards, ShareDeps, "share images", "go run ./cmd/og")
+}
+
+// checkSums compares each item's hash with the one recorded in path when its
+// image was made, and names the command that remakes the stale ones.
+func checkSums(cfg Config, path string, items map[string][]byte, deps []string, what, cmd string) error {
+	b, err := fs.ReadFile(cfg.Src, path)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return err
 	}
@@ -77,14 +103,18 @@ func checkShareCards(cfg Config, s *prepared) error {
 		}
 	}
 	var stale []string
-	for name, card := range cards {
-		if recorded[name] != ShareSum(card) {
+	for name, item := range items {
+		sum, err := ImageSum(cfg.Src, item, deps)
+		if err != nil {
+			return err
+		}
+		if recorded[name] != sum {
 			stale = append(stale, name)
 		}
 	}
 	if len(stale) > 0 {
 		slices.Sort(stale)
-		return fmt.Errorf("share images out of date for %s: run `go run ./cmd/og` (needs Chrome) and commit web/og", strings.Join(stale, ", "))
+		return fmt.Errorf("%s out of date for %s: run `%s` (needs Chrome) and commit %s", what, strings.Join(stale, ", "), cmd, path[:strings.LastIndex(path, "/")])
 	}
 	return nil
 }

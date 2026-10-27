@@ -1,0 +1,47 @@
+{{/* Mask sheet, not published: cmd/dither screenshots it and dithers it into web/assets/dg/<slug>-<size>.png. Four tiles: ink and accent of the drawing at rest (pose a), then mid-motion (pose b). */}}
+{{define "dither"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+@font-face { font-family: "D Mono"; src: url("/assets/fonts/martian-mono.woff2") format("woff2"); font-weight: 400 700; font-display: block; }
+html, body { margin: 0; background: #fff; -webkit-font-smoothing: none; }
+.sheet { display: grid; grid-template-columns: repeat(2, {{.W}}px); grid-template-rows: repeat(2, {{.H}}px); }
+.dg { display: block; width: {{.W}}px; height: {{.H}}px; fill: none; stroke: #000; stroke-width: 1; stroke-linecap: square; stroke-linejoin: miter; shape-rendering: crispEdges; overflow: hidden; }
+.dg * { vector-effect: non-scaling-stroke; }
+.dg .n { fill: {{.Tone}}; }
+.dg .s { stroke: #808080; }
+.dg .ff { fill: #000; stroke: none; }
+.dg .t { display: {{if .Labels}}inline{{else}}none{{end}}; fill: #000; stroke: none; font: 600 7px "D Mono"; text-anchor: middle; }
+.dg .d { stroke-dasharray: 3 4; }
+.dg .x { stroke-dasharray: 2 3; }
+.ink .dg .a { stroke: transparent; }
+.ink .dg .af { fill: transparent; stroke: transparent; }
+.acc .dg * { fill: transparent; stroke: transparent; }
+.acc .dg .t { display: none; }
+.acc .dg .a { stroke: #000; }
+.acc .dg .af { fill: #000; stroke: #000; }
+.dg :is(.mp, .my, .mo, .mx, .mk) { transform-box: fill-box; transform-origin: center; }
+.dg :is(.my, .mo) { transform-origin: 50% 100%; }
+.dg .mx { transform-origin: 0 50%; }
+.pa :is(.ml, .mw, .ms) { opacity: 0; }
+.pb .mp { transform: scale(1.3); }
+.pb .mm { stroke-dashoffset: -7; }
+.pb .my { transform: scaleY(0.6); }
+.pb .mo { opacity: 0; }
+.pb .mx { transform: scaleX(0.45); }
+.pb .mn { transform: translateX(-40px); }
+.pb .ml { transform: translateX(140px); }
+.pb .mw { transform: translate(21px, 20px); }
+.pb .ms { transform: translate(-44px, 15px); }
+.pb .mk { opacity: 0; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="ink pa">{{template "diagram" .Slug}}</div><div class="acc pa">{{template "diagram" .Slug}}</div>
+  <div class="ink pb">{{template "diagram" .Slug}}</div><div class="acc pb">{{template "diagram" .Slug}}</div>
+</div>
+</body>
+</html>
+{{end}}

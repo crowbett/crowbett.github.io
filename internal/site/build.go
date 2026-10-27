@@ -125,6 +125,9 @@ func Build(cfg Config) error {
 	if err := checkShareCards(cfg, s); err != nil {
 		return err
 	}
+	if err := checkMasks(cfg, s); err != nil {
+		return err
+	}
 	if err := os.RemoveAll(cfg.Out); err != nil {
 		return err
 	}

@@ -215,9 +215,21 @@ func TestBuildRejectsStaleShareCards(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	src[ShareSums] = &fstest.MapFile{Data: []byte("home " + ShareSum(cards["home"]) + "\ndemo " + ShareSum(cards["demo"]) + "\n")}
+	var sums strings.Builder
+	for _, name := range []string{"home", "demo"} {
+		sum, err := ImageSum(src, cards[name], ShareDeps)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Fprintf(&sums, "%s %s\n", name, sum)
+	}
+	src[ShareSums] = &fstest.MapFile{Data: []byte(sums.String())}
 	if err := Build(cfg); err != nil {
 		t.Fatal(err)
+	}
+	src["web/assets/site.css"] = &fstest.MapFile{Data: []byte("body{color:red}")}
+	if err := Build(cfg); err == nil || !strings.Contains(err.Error(), "share images out of date") {
+		t.Fatalf("want stale-card error after a site.css change, got %v", err)
 	}
 }
 

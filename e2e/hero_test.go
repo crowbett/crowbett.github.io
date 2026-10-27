@@ -3,14 +3,21 @@
 package e2e
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
 )
 
@@ -80,4 +87,74 @@ func TestHeroRun(t *testing.T) {
 		t.Errorf("hero re-run did not match the chart: %q", status)
 	}
 	t.Logf("hero re-run: %s", status)
+}
+
+// TestHeroTicker checks the readouts count up with the replay's wipe and land
+// on the totals the page prints, and that with reduced motion they never
+// leave them.
+func TestHeroTicker(t *testing.T) {
+	t.Parallel()
+	res, err := http.Get(srv.URL + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	html, err := io.ReadAll(res.Body)
+	res.Body.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var printed []string
+	for _, m := range regexp.MustCompile(`<dd class="k-[ad]">([^<]+)</dd>`).FindAllSubmatch(html, -1) {
+		printed = append(printed, string(m[1]))
+	}
+	if len(printed) != 2 {
+		t.Fatalf("found %d readouts in the served home page, want 2", len(printed))
+	}
+	want := strings.Join(printed, " ")
+	for _, motion := range []string{"no-preference", "reduce"} {
+		ctx, cancel := newTab(t, 60*time.Second)
+		err := chromedp.Do(ctx,
+			chromedp.Func(func(ctx context.Context, tg *chromedp.Target) error {
+				_, err := cdp.Call(ctx, tg, emulation.SetEmulatedMedia, emulation.SetEmulatedMediaParams{
+					Features: []*emulation.MediaFeature{{Name: "prefers-reduced-motion", Value: motion}},
+				})
+				return err
+			}),
+			chromedp.Navigate(srv.URL+"/"),
+			chromedp.WaitReady(chromedp.CSS("body")),
+		)
+		if err != nil {
+			cancel()
+			t.Fatal(err)
+		}
+		got, err := chromedp.Run(ctx, chromedp.Evaluate[[]string](`(async () => {
+			const frames = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+			const read = () => [...document.querySelectorAll(".readouts .k-a, .readouts .k-d")].map((c) => c.textContent).join(" ");
+			await frames();
+			const wipe = [...document.querySelectorAll(".replay .rw")].flatMap((r) => r.getAnimations())[0];
+			if (!wipe) return [read(), read()];
+			const { delay, duration } = wipe.effect.getTiming();
+			wipe.pause();
+			wipe.currentTime = delay + duration / 2;
+			await frames();
+			const mid = read();
+			wipe.finish();
+			await frames();
+			return [mid, read()];
+		})()`, chromedp.EvalAwaitPromise))
+		cancel()
+		if err != nil {
+			t.Fatal(err)
+		}
+		mid, end := got[0], got[1]
+		if end != want {
+			t.Errorf("%s: readouts end on %q, the page prints %q", motion, end, want)
+		}
+		if motion == "reduce" && mid != want {
+			t.Errorf("reduce: readouts moved to %q with reduced motion", mid)
+		}
+		if motion != "reduce" && mid == want {
+			t.Errorf("no-preference: readouts already show %q halfway through the wipe", mid)
+		}
+	}
 }
