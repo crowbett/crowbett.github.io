@@ -251,7 +251,8 @@ var demoChecks = map[string][]string{
 // layoutOnly viewports check layout (overflow, CLS, a screenshot with the
 // demo running) but leave demo checks and axe to desktop and phone, which
 // already cover them: running both on a third width pushed CI's CPU-bound
-// demos past their waits.
+// demos past their waits. Demo behaviour does not depend on the scheme, so
+// dark tabs run at most each demo's first check.
 var viewports = []struct {
 	name          string
 	width, height int64
@@ -730,7 +731,9 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 	if err != nil {
 		t.Fatal(err)
 	}
-	if hasDemo {
+	// Dark tabs start the demo only at phone width, where axe checks its
+	// contrast; desktop and tablet dark share the light layout.
+	if hasDemo && (scheme == "light" || (w < 1000 && !layoutOnly)) {
 		err := chromedp.Do(ctx, chromedp.Click(chromedp.CSS("[data-demo-start]")))
 		if err == nil {
 			_, err = chromedp.Run(ctx, chromedp.Poll[bool](`document.querySelector("[data-demo-ready],[data-demo-error]") !== null`,
@@ -748,7 +751,7 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 			t.Fatal(err)
 		}
 		checks := demoChecks[slug]
-		if layoutOnly {
+		if layoutOnly || scheme == "dark" {
 			checks = checks[:min(1, len(checks))]
 		}
 		if len(checks) == 0 {
