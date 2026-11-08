@@ -39,7 +39,7 @@ A Rust demo is a `cdylib` crate (e.g. `crates/webdemo`) built for `wasm32-unknow
 ## Lock and page
 1. Commit and push the bridge in the project repo; its gate must be green.
 2. Add `{"slug", "kind"?, "repo", "pkg": "./cmd/webdemo", "siblings"?}` to `demos.lock.json`, then `go run ./cmd/wasm pin <slug> <sha>` and `make wasm`.
-3. Set `demo: live` in `content/projects/<slug>.md`; replace the "planned demo" sentence with what the demo shows.
+3. Set `demo: live` in `content/projects/<slug>.md`; replace its `## Planned demo` section with `## How the demo works`, saying what the demo shows.
 4. Add the slug to `demoChecks` in `e2e/e2e_test.go` with at least one expression that proves real output from the binary rendered.
 5. `make gate && make e2e`, then look at `e2e/out/projects-<slug>-*.jpg`.
 

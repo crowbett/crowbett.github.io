@@ -2,7 +2,7 @@
 
 Goal: a fast, robust personal site that shows visitors what each project does by running the project's real code in their browser, not a list of GitHub links.
 
-Status (2026-10-25): live at https://crowbett.github.io. Scaffold done. 8 project pages, the demo pipeline proven end to end by the `smoke` demo, gate + headless e2e green. Project demos live: ratelimitd (D1), edgecache (D2), jobrun (D3), kvlite (D4), strata (D6, the first Rust one), keel (D8). quorum (Q0, D5) waits on U4: the repo is archived. `docs/tasks.md` is the queue.
+Status (2026-10-25): live at https://crowbett.github.io. Scaffold done. 8 project pages, the demo pipeline proven end to end by the `smoke` demo, gate + headless e2e green. Project demos live: ratelimitd (D1), edgecache (D2), jobrun (D3), kvlite (D4), strata (D6, the first Rust one), codegraph (D7), keel (D8). quorum (Q0, D5) waits on U4: the repo is archived. `docs/tasks.md` is the queue.
 
 ## Architecture
 - **Generator.** `cmd/site` (Go, goldmark only) renders `content/projects/*.md` through `templates/` into `dist/`, copies `web/` as-is, writes `404.html`, `sitemap.xml`, `robots.txt`. `internal/site/check.go` then fails the build on broken internal links, missing page metadata or a blown budget.
@@ -41,6 +41,3 @@ Share image budget (added 2026-10-24, V7): 1200×630 cards rendered by `cmd/og`,
 Fonts budget (added 2026-10-24, V2): 32 KiB of woff2. Since V12 (2026-10-26) `make fonts` (`scripts/fonts.sh`) builds four OFL subsets from google/fonts at a pinned commit, sha256-checked: Archivo Expanded 800 (7,752 B), Archivo 400 (7,704 B), Martian Mono 400-700 (9,076 B) and Doto 700 (2,376 B), 26,908 bytes in total (measured), 5,860 under the limit. Rationale in `docs/design.md` §Type.
 
 V12 decisions (2026-10-26, owner-approved): no animation library (CSS `linear()` springs; the libraries that inject `<style>` break the CSP); diagrams are 1-bit masks dithered with an 8×8 Bayer matrix (ordered, so the two motion poses do not crawl; blue noise skipped as a third tool for 112 px drawings); Archivo 400 kept for prose. Details in `docs/design.md` (2026-10-26 V12).
-
-## Open
-- Rust demos (strata, codegraph, keel) need a second build path in `cmd/wasm`; see `docs/tasks.md` R0.

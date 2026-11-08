@@ -5,48 +5,40 @@
     <p class="crumb"><a href="/#work">Work</a> <span aria-hidden="true">/</span> {{.Slug}}</p>
     <h1>{{.Title}}</h1>
     <p class="lede">{{.Tagline}}</p>
-  </header>
-
-  <aside class="facts" aria-label="Project facts">
-    <div class="facts-fig" aria-hidden="true">{{template "dmask" .Slug}}</div>
-    <dl>
-      <div><dt>language</dt><dd class="lang">{{.Lang}}</dd></div>
-      <div><dt>topics</dt><dd class="tags">{{range .Tags}}<span class="tag">{{.}}</span>{{end}}</dd></div>
-      {{if .Live}}<div><dt>demo</dt><dd><a class="led" href="#demo">Live in this page</a></dd></div>{{end}}
-      <div><dt>source</dt><dd>{{if .Private}}Private, <a href="#source">on request</a>{{else}}<a href="{{.Repo}}">{{slice .Repo 8}}</a>{{end}}</dd></div>
-    </dl>
-  </aside>
-
-  <div class="project-main">
     {{if .Metric}}<figure class="result">
       <p class="result-label">Evidence</p>
       <p class="metric">{{bind .Metric}}</p>
-      <figcaption class="source">Source: {{.MetricSource}}</figcaption>
+      <figcaption class="source">{{.MetricSource}}</figcaption>
     </figure>{{end}}
+  </header>
 
-    {{if .Live}}
-    <section class="demo" id="demo" data-demo="{{.Slug}}" data-ui="{{demoAsset .Slug}}" data-bytes="{{demoBytes .Slug}}" aria-labelledby="demo-title">
-      <div class="demo-head">
-        <h2 id="demo-title">Live demo</h2>
-        <span class="demo-spec">WebAssembly, ~{{demoKB .Slug}} KB</span>
-      </div>
-      <p class="demo-try">{{.DemoTry}}</p>
-      <div class="demo-bar">
-        <button type="button" data-demo-start>Run the live demo</button>
-        <span class="demo-note">Runs entirely in your browser. Nothing downloads until you start it.</span>
-      </div>
-      <div class="demo-mount" data-demo-mount></div>
-      <p class="demo-status" data-demo-status role="status" aria-live="polite"></p>
-    </section>
-    <script type="module" src="/assets/demo.js"></script>
-    {{end}}
+  {{if .Live}}
+  <section class="demo" id="demo" data-demo="{{.Slug}}" data-ui="{{demoAsset .Slug}}" data-bytes="{{demoBytes .Slug}}" aria-labelledby="demo-title">
+    <div class="demo-head">
+      <h2 id="demo-title">Live demo</h2>
+      <span class="demo-spec">WebAssembly, ~{{demoKB .Slug}} KB</span>
+    </div>
+    <p class="demo-try">{{.DemoTry}}</p>
+    <div class="demo-bar">
+      <button type="button" data-demo-start>Run the live demo</button>
+      <span class="demo-note">Runs in your browser. Nothing downloads until you start.</span>
+    </div>
+    <div class="demo-mount" data-demo-mount></div>
+    <p class="demo-status" data-demo-status role="status" aria-live="polite"></p>
+  </section>
+  <script type="module" src="/assets/demo.js"></script>
+  {{end}}
 
+  <div class="project-info">
     <div class="body">{{.Body}}</div>
-
-    <p class="source-link" id="source">
-    {{if .Private}}Source is private and available on request: <a href="mailto:{{$.Owner.Email}}?subject={{.Title}}%20source">{{$.Owner.Email}}</a>.
-    {{else}}Source: <a href="{{.Repo}}">{{.Repo}}</a>{{end}}
-    </p>
+    <aside class="facts" aria-label="Project facts">
+      <div class="facts-fig" aria-hidden="true">{{template "dmask" .Slug}}</div>
+      <dl>
+        <div><dt>language</dt><dd class="lang">{{.Lang}}</dd></div>
+        <div><dt>topics</dt><dd class="tags">{{range .Tags}}<span class="tag">{{.}}</span>{{end}}</dd></div>
+        <div id="source"><dt>source</dt><dd>{{if .Private}}Private, <a href="mailto:{{$.Owner.Email}}?subject={{.Title}}%20source">on request</a>{{else}}<a href="{{.Repo}}">{{slice .Repo 8}}</a>{{end}}</dd></div>
+      </dl>
+    </aside>
   </div>
 </article>
 {{end}}
