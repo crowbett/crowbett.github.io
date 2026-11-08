@@ -92,11 +92,11 @@
     {
       "slug": "mcpbridge",
       "repo": "mcpbridge",
-      "ref": "4826a43b8277023daa7e4a1faaba68137166b58f",
+      "ref": "5cc4eb5f0b825a674f10a409bb2337281bb49ce1",
       "pkg": "./cmd/webdemo",
-      "sha256": "ef2fbb8d47455832a79c8ac5c8046125ea53d2d4ec2b4e2f2341f717ee99d559",
-      "bytes": 5514693,
-      "gzip_bytes": 1490570
+      "sha256": "dc47dc17bac0515b356ec8a53ac6ebfd575838b28e4803237720ade2cc8eea23",
+      "bytes": 5583959,
+      "gzip_bytes": 1504610
     }
   ]
 }
