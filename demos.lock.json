@@ -88,6 +88,15 @@
       "sha256": "558823a3efcb847b76ced22aa6982fcca8509fb61f4e42022724cf14483b0546",
       "bytes": 12408806,
       "gzip_bytes": 2077179
+    },
+    {
+      "slug": "lobby",
+      "repo": "lobby",
+      "ref": "3ed17da7f366cba223045bb9f4d95fdca2db2335",
+      "pkg": "./cmd/webdemo",
+      "sha256": "9d7466e64399e94ed17afa6270077da049c0820b7134e7512f79da5d838c521d",
+      "bytes": 5026616,
+      "gzip_bytes": 1399796
     }
   ]
 }

@@ -64,6 +64,30 @@ var demoChecks = map[string][]string{
 			return ok && await until(() => document.querySelector(".cg-summary").textContent.startsWith("main "));
 		})()`,
 	},
+	"lobby": {
+		`Number(document.querySelector(".lb-cells [data-k=rooms] .lb-v").textContent) > 0 && /^Matchmaking floor at [\d.]+ s of simulated time: \d+ waiting, \d+ rooms started/.test(document.querySelector(".lb-canvas").getAttribute("aria-label"))`,
+		`(() => { const c = document.querySelector(".lb-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
+		`(async () => {
+			const click = (t) => [...document.querySelectorAll(".lb-acts button")].find((b) => b.textContent === t).click();
+			const v = (k) => document.querySelector(".lb-cells [data-k=" + k + "] .lb-v").textContent;
+			if (document.querySelector(".lb-acts button").textContent === "Pause") click("Pause");
+			click("Reset");
+			let ok = await until(() => v("t") === "8.0 s" && v("rooms") === "12" && v("queue") === "5");
+			const s = document.querySelector("input[name=skill]");
+			s.value = "1500";
+			click("Queue me");
+			ok = ok && await until(() => document.querySelector(".lb-you").textContent.startsWith("You are queued at skill 1,500."));
+			click("Step 1 s");
+			return ok && await until(() => document.querySelector(".lb-you").textContent === "Matched after 0.1 s into m13 with 1,461; skill spread 39." && v("rooms") === "13");
+		})()`,
+		`(async () => {
+			const v = (k) => document.querySelector(".lb-cells [data-k=" + k + "] .lb-v").textContent;
+			const m = document.querySelector("select[name=mode]");
+			m.value = "squad"; m.dispatchEvent(new Event("change"));
+			return await until(() => v("t") === "8.0 s" && v("rooms") === "3" && v("refills") === "1" && v("walkouts") === "1" && v("short") === "0" &&
+				!document.querySelector(".lb-cells [data-k=refills]").hidden && !document.querySelector("input[name=refill]").closest("label").hidden);
+		})()`,
+	},
 	"ratelimitd": {
 		`[...document.querySelectorAll(".rl-chart")].map(c => c.dataset.algo).join() === "gcra,token_bucket,sliding_window"`,
 		`[...document.querySelectorAll(".rl-chart")].every(c => c.querySelectorAll("rect.rl-allowed").length > 20 && c.querySelectorAll("rect.rl-denied").length > 0)`,
