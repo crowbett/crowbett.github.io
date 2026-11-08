@@ -188,6 +188,7 @@ var viewports = []struct {
 	width, height int64
 }{
 	{"desktop", 1280, 900},
+	{"tablet", 820, 1180},
 	{"phone", 390, 844},
 }
 
