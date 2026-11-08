@@ -62,5 +62,13 @@
 <rect class="n" x="60" y="92" width="120" height="12" rx="1"/><rect class="n" x="70" y="80" width="100" height="12" rx="1"/><rect class="n" x="80" y="68" width="80" height="12" rx="1"/>
 <path class="a" d="M90 63h40"/><path class="s d" d="M130 63h20"/>
 <g class="mn"><path class="af" d="M124 46h12l-6 12z"/><path class="a" d="M130 30v16"/></g>
+{{else if eq . "netcode"}}
+<rect class="n" x="92" y="12" width="56" height="20" rx="3"/><text class="t" x="120" y="24.5">server</text>
+<path d="M102 32 76 57M138 32 164 57"/>
+<rect class="n" x="20" y="58" width="72" height="44" rx="2"/><rect class="n" x="148" y="58" width="72" height="44" rx="2"/>
+<circle class="s d" cx="42" cy="82" r="6"/><path class="a" d="M48 82h10"/><circle class="af mp" cx="64" cy="82" r="6"/>
+<circle class="s d" cx="178" cy="76" r="5"/><circle class="ff" cx="172" cy="78" r="4"/><circle class="ff" cx="200" cy="88" r="4"/>
+<circle class="af mw" cx="142" cy="36" r="2.5"/><g transform="matrix(-1 0 0 1 240 0)"><circle class="af mw" cx="142" cy="36" r="2.5"/></g>
+<text class="t" x="56" y="111">you</text><text class="t" x="184" y="111">bot</text>
 {{end}}</svg>{{end}}
 {{define "dmask"}}<span class="dm dm-{{.}}"><i class="pa"></i><i class="pb"></i></span>{{end}}
