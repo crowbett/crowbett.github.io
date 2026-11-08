@@ -230,7 +230,8 @@ pre code { background: none; padding: 0; }
   .hero > .replay { grid-template-columns: minmax(0, 1fr) 15rem; grid-template-areas: "cap cap" "screen read" "run read"; }
   .replay figcaption { grid-area: cap; }
   .replay > .screen { grid-area: screen; }
-  .readouts { grid-area: read; grid-template-columns: 1fr; align-content: start; gap: 0; background: var(--surface); }
+  .readouts { grid-area: read; grid-template-columns: 1fr; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 0; background: var(--surface); }
+  .readouts > div:last-child { border-bottom: 0; }
   .readouts > div { border-bottom: 1px solid var(--line-strong); }
   .readouts > div { padding: var(--sp-3) var(--sp-4) var(--sp-4); }
   .readouts dd { font-size: 3rem; }
