@@ -127,6 +127,17 @@
       "sha256": "dc47dc17bac0515b356ec8a53ac6ebfd575838b28e4803237720ade2cc8eea23",
       "bytes": 5583959,
       "gzip_bytes": 1504610
+    },
+    {
+      "slug": "netcode",
+      "kind": "rust",
+      "repo": "netcode",
+      "ref": "8f311f54d715e41558031c7835506717f1707669",
+      "pkg": "./crates/webdemo",
+      "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+      "sha256": "3d475b6a5fc33ad89af48590441de1b3fd81244c67f514544b66b8769203e025",
+      "bytes": 216604,
+      "gzip_bytes": 91677
     }
   ]
 }

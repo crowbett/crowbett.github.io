@@ -274,6 +274,22 @@ var demoChecks = map[string][]string{
 			return ok && await until(() => info().startsWith("Cornell box: ") && document.querySelector(".rt").dataset.split === "on" && /^Cornell box: [1-9]/.test(document.querySelector(".rt-status").textContent));
 		})()`,
 	},
+	"netcode": {
+		`document.querySelector(".nc-lamp").dataset.state === "ok" && /^State hashes match: client [1-6], tick [\d,]+$/.test(document.querySelector(".nc-lamp-text").textContent) && /^[0-9a-f]{16}$/.test(document.querySelector(".nc-lamp-hash").textContent)`,
+		`(() => { const v = [...document.querySelectorAll(".nc-world .nc-v")].map((n) => n.textContent); return v[3] === "0" && Number(v[2].replace(/,/g, "")) > 0; })()`,
+		`[...document.querySelectorAll(".nc-cells")].every((c) => /^[\d,]+$/.test(c.querySelector(".nc-v").textContent))`,
+		`(() => { const c = document.querySelector(".nc-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n > 20000; })()`,
+		`(async () => {
+			const play = document.querySelector(".nc-play");
+			if (play.textContent === "Pause") play.click();
+			const tick = () => Number(document.querySelector(".nc-world .nc-v").textContent.replace(/,/g, ""));
+			await new Promise((r) => setTimeout(r, 100));
+			const before = tick();
+			document.querySelector(".nc-step").click();
+			await until(() => tick() === before + 60);
+			return /^Tick [\d,]+, [\d.]+ s simulated: you rolled back [\d,]+ times?, [\d,]+ frames? resimulated; [\d,]+ hash checks, 0 desyncs\.$/.test(document.querySelector(".nc-status").textContent);
+		})()`,
+	},
 }
 
 // layoutOnly viewports check layout (overflow, CLS, a screenshot with the
