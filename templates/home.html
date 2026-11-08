@@ -1,7 +1,7 @@
 {{define "home"}}{{template "head" .}}
 <section class="hero">
   <div class="hero-text">
-    <h1><b>{{.Owner.Name}}</b> builds databases, queues, caches and rate limiters in Go and Rust, and tests them with simulation, fault injection and benchmarks.</h1>
+    <h1><b>{{.Owner.Name}}</b> builds databases, caches, queues, code search and game netcode in Go, Rust and C++, and tests them with simulation, fault injection and benchmarks.</h1>
     {{if .LiveCount}}<p class="hook">{{.LiveCount}} of them run live in your browser: the real code, compiled to WebAssembly.</p>
     <nav class="keys" aria-label="Live demos">{{range .Projects}}{{if .Live}}<a href="/projects/{{.Slug}}/#demo">{{.Title}}</a>{{end}}{{end}}</nav>{{end}}
   </div>

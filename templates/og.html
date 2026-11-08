@@ -40,7 +40,7 @@ html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
 </div>{{end}}{{else}}<div class="og home">
   <p class="og-bar"><span>{{slice .Owner.URL 8}}</span>{{if .LiveCount}}<span class="led">{{.LiveCount}} live demo{{if gt .LiveCount 1}}s{{end}} in your browser</span>{{end}}</p>
   <h1 class="og-mark">{{.Owner.Name}}</h1>
-  <p class="og-tag">builds databases, queues, caches and rate limiters in Go and Rust, and tests them with simulation, fault injection and benchmarks.</p>
+  <p class="og-tag">builds databases, caches, queues, code search and game netcode in Go, Rust and C++, and tests them with simulation, fault injection and benchmarks.</p>
   <div class="og-strip">{{range .Projects}}<div>{{template "dmask" .Slug}}</div>{{end}}</div>
 </div>{{end}}
 </body>
