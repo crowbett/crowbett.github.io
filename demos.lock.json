@@ -109,6 +109,15 @@
       "sha256": "abdd6768535684e33bfb8f1c7440a0c97d1eb018bc6f06f9d4c47cc51b792c7a",
       "bytes": 280179,
       "gzip_bytes": 112204
+    },
+    {
+      "slug": "grepall",
+      "repo": "grepall",
+      "ref": "e2806b0b283311c3d5cd2c7008e1a280231636f3",
+      "pkg": "./cmd/webdemo",
+      "sha256": "fea45d9dba53fd93a4ce18a14fc820f2888d1bbb7993a51a148e99dba56d2657",
+      "bytes": 8199239,
+      "gzip_bytes": 2244121
     }
   ]
 }

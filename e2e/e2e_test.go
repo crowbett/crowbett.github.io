@@ -190,6 +190,26 @@ var demoChecks = map[string][]string{
 			return ok && await until(() => text(".st-where") === "11 of 25 · z 2.2 mm");
 		})()`,
 	},
+	"grepall": {
+		`[...document.querySelectorAll(".ga-fcount")].map((c) => c.textContent).join() === "283,158,23"`,
+		`[...document.querySelectorAll(".ga-chip code")].map((c) => c.textContent).slice(0, 3).join() === "fun,new,unc" && document.querySelector(".ga-ptree .ga-op").textContent === "Concat"`,
+		`document.querySelector(".ga-rh .ga-t").textContent === "34 lines in 23 files" && document.querySelectorAll(".ga-list mark").length > 0`,
+		`/^Index built here in [\d.,]+ ms: 283 files, 1\.84 MiB of source/.test(document.querySelector(".ga-built").textContent)`,
+		`(async () => {
+			const counts = () => [...document.querySelectorAll(".ga-fcount")].map((c) => c.textContent).join();
+			const preset = (q) => [...document.querySelectorAll(".ga-presets button")].find((b) => b.querySelector("code").textContent === q).click();
+			preset("Kelvin");
+			let ok = await until(() => counts() === "283,3,1" && document.querySelector(".ga-list").textContent.includes("Kelvin"));
+			preset(":=.*<-");
+			ok = ok && await until(() => counts() === "283,283,1" && document.querySelector(".ga-all") !== null);
+			const q = document.querySelector("input[name=q]");
+			q.value = "func(";
+			q.dispatchEvent(new Event("input"));
+			ok = ok && await until(() => document.querySelector(".ga-status").textContent.includes("missing closing )"));
+			preset("func\\s+New\\w+\\(");
+			return ok && await until(() => counts() === "283,158,23" && !document.querySelector(".ga-err"));
+		})()`,
+	},
 	"keel": {
 		`[...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join() === "24f2fb94354d9d25,24f2fb94354d9d25" && document.querySelector(".kl-match") !== null`,
 		`[...document.querySelectorAll(".kl-totals dd")].map((d) => d.textContent).join() === "535,0,6,14,linearizable"`,
