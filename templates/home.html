@@ -24,14 +24,16 @@
     <script type="module" src="/assets/hero.js"></script>{{end}}
 </section>
 <section id="work" class="index" aria-labelledby="work-h">
-  <div class="index-head"><h2 id="work-h">Work</h2><p class="count">{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} live{{end}}</p></div>
+  <div class="index-head"><h2 id="work-h">Work</h2><p class="count">{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} live{{end}}</p>
+    <div class="filter" role="group" aria-label="Filter projects" hidden><button type="button" data-f="" aria-pressed="true">All</button>{{if .LiveCount}}<button type="button" data-f="live" aria-pressed="false">Live demos</button>{{end}}<button type="button" data-f="go" aria-pressed="false">Go</button><button type="button" data-f="rust" aria-pressed="false">Rust</button></div></div>
   <div class="index-cols" aria-hidden="true"><span>#</span><span>mechanism</span><span>project</span><span>lang</span><span>what it is</span><span>evidence</span><span>demo</span></div>
   <ol class="rows">
-  {{range .Projects}}{{if .Live}}<li class="row">{{template "row" .}}</li>
-  {{end}}{{end}}{{range .Projects}}{{if not .Live}}<li class="row">{{template "row" .}}</li>
+  {{range .Projects}}{{if .Live}}<li class="row" data-tags="live {{langs .Lang}}">{{template "row" .}}</li>
+  {{end}}{{end}}{{range .Projects}}{{if not .Live}}<li class="row" data-tags="{{langs .Lang}}">{{template "row" .}}</li>
   {{end}}{{end}}
   </ol>
 </section>
+<script type="module" src="/assets/filter.js"></script>
 {{template "foot" .}}{{end}}
 {{define "replay-chart"}}<svg class="replay-chart {{.Class}}" viewBox="0 0 {{.W}} {{.H}}" role="img" aria-label="{{.Label}}">
 {{if .AttackW}}<rect class="rz" x="{{.AttackX}}" y="0" width="{{.AttackW}}" height="{{.H}}"/>{{end}}

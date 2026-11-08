@@ -92,6 +92,7 @@ func prepare(cfg Config) (*prepared, error) {
 		"demoBytes": func(slug string) int { return sizes[slug].Raw },
 		"bind":      bindNumbers,
 		"num":       thousands,
+		"langs":     func(l string) string { return strings.ToLower(strings.ReplaceAll(l, ",", "")) },
 	}).ParseFS(cfg.Src, "templates/*.html")
 	if err != nil {
 		return nil, fmt.Errorf("templates: %w", err)
