@@ -88,6 +88,34 @@ var demoChecks = map[string][]string{
 				!document.querySelector(".lb-cells [data-k=refills]").hidden && !document.querySelector("input[name=refill]").closest("label").hidden);
 		})()`,
 	},
+	"mcpbridge": {
+		`document.querySelector('.mb-row[data-leg="b2s"] .mb-method').textContent === "server/discover"`,
+		`document.querySelector(".mb-ihead").textContent === "16 · bridge to server · tools/list" && [...document.querySelectorAll(".mb-json .mb-add .mb-k")].some((k) => k.textContent === '"io.modelcontextprotocol/protocolVersion"')`,
+		`document.querySelector(".mb-refused .mb-badge").textContent === "unsupported" && document.querySelector(".mb-status").textContent.startsWith("7 client frames, 26 frames on the wire: 4 translated, 4 made by the bridge, 1 refused")`,
+		`(async () => {
+			const st = () => document.querySelector(".mb-status").textContent;
+			const settled = () => !document.querySelector(".mb-pending");
+			const click = (t) => [...document.querySelectorAll(".mb-bar button")].find((b) => b.textContent.startsWith(t)).click();
+			click("Step");
+			let ok = await until(() => st().startsWith("1 client frame, 6 frames on the wire") && settled());
+			click("Play");
+			ok = ok && await until(() => document.querySelector(".mb-bar button").textContent === "Playing…");
+			return ok && await until(() => st().startsWith("7 client frames, 26 frames") && settled() && document.querySelector(".mb-bar button").textContent === "Play");
+		})()`,
+		`(async () => {
+			const methods = (leg) => [...document.querySelectorAll('.mb-row[data-leg="' + leg + '"] .mb-method')].map((m) => m.textContent);
+			const d = document.querySelector("select[name=direction]");
+			d.value = "reverse"; d.dispatchEvent(new Event("change"));
+			let ok = await until(() => methods("b2s").includes("initialize") && methods("b2c").includes("prompts/list error -32602"));
+			document.querySelectorAll('.mb-row[data-leg="c2b"] .mb-pkt')[3].click();
+			const ta = document.querySelector(".mb-ed textarea");
+			ta.value = JSON.stringify({ jsonrpc: "2.0", id: 4, method: "prompts/list", params: { _meta: { "io.modelcontextprotocol/protocolVersion": "2026-07-28", "io.modelcontextprotocol/clientCapabilities": {} } } });
+			ta.dispatchEvent(new Event("input"));
+			ok = ok && await until(() => methods("b2c").includes("prompts/list result") && methods("b2s").includes("prompts/list"));
+			d.value = "forward"; d.dispatchEvent(new Event("change"));
+			return ok && await until(() => methods("b2s")[0] === "server/discover" && document.querySelector(".mb-ihead").textContent.startsWith("16 "));
+		})()`,
+	},
 	"ratelimitd": {
 		`[...document.querySelectorAll(".rl-chart")].map(c => c.dataset.algo).join() === "gcra,token_bucket,sliding_window"`,
 		`[...document.querySelectorAll(".rl-chart")].every(c => c.querySelectorAll("rect.rl-allowed").length > 20 && c.querySelectorAll("rect.rl-denied").length > 0)`,

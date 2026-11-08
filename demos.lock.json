@@ -118,6 +118,15 @@
       "sha256": "fea45d9dba53fd93a4ce18a14fc820f2888d1bbb7993a51a148e99dba56d2657",
       "bytes": 8199239,
       "gzip_bytes": 2244121
+    },
+    {
+      "slug": "mcpbridge",
+      "repo": "mcpbridge",
+      "ref": "5cc4eb5f0b825a674f10a409bb2337281bb49ce1",
+      "pkg": "./cmd/webdemo",
+      "sha256": "dc47dc17bac0515b356ec8a53ac6ebfd575838b28e4803237720ade2cc8eea23",
+      "bytes": 5583959,
+      "gzip_bytes": 1504610
     }
   ]
 }
