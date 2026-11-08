@@ -205,6 +205,27 @@ var demoChecks = map[string][]string{
 			return ok && document.querySelectorAll(".kl-events li").length === 15;
 		})()`,
 	},
+	"raytracer": {
+		`document.querySelector(".rt-info").textContent === "Cornell box: 300 × 300 px, 8 top-level objects, 1 sampled light, SAH BVH of 9 nodes (depth 5), up to 50 bounces, seed 1."`,
+		`(() => { const lit = (sel) => { const c = document.querySelector(sel); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i + 3] === 255 && d[i] + d[i + 1] + d[i + 2] > 0) n++; return c.width === 300 && c.height === 300 ? n / (c.width * c.height) : 0; }; const m = lit(".rt-canvas-l"), n = lit(".rt-canvas:not(.rt-canvas-l)"); return m > 0.02 && n > 0.6 && n > 2 * m; })()`,
+		`(() => { const v = [...document.querySelectorAll(".rt-cells .rt-v")].map((n) => n.textContent); return Number(v[0]) >= 1 && Number(v[2]) > Number(v[3]) && /^\d+\.\d\d×$/.test(v[4]) && /^[\d,]+k$/.test(v[1]); })()`,
+		`(async () => {
+			const grip = document.querySelector(".rt-grip");
+			const left = document.querySelector(".rt-canvas-l");
+			grip.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+			let ok = grip.getAttribute("aria-valuenow") === "48" && left.style.clipPath === "inset(0px 52% 0px 0px)";
+			grip.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true }));
+			ok = ok && grip.getAttribute("aria-valuenow") === "100";
+			for (const key of ["Home", "PageUp", "PageUp", "PageUp", "PageUp", "PageUp"]) grip.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+			ok = ok && grip.getAttribute("aria-valuenow") === "50";
+			const s = document.querySelector("select[name=scene]");
+			s.value = "cover"; s.dispatchEvent(new Event("change"));
+			const info = () => document.querySelector(".rt-info").textContent;
+			ok = ok && await until(() => info().startsWith("Book 1 cover (sky-lit): 300 × 168 px, 484 top-level objects, 0 sampled lights, SAH BVH of 581 nodes (depth 12)") && document.querySelector(".rt").dataset.split === "off");
+			s.value = "cornell"; s.dispatchEvent(new Event("change"));
+			return ok && await until(() => info().startsWith("Cornell box: ") && document.querySelector(".rt").dataset.split === "on" && /^Cornell box: [1-9]/.test(document.querySelector(".rt-status").textContent));
+		})()`,
+	},
 }
 
 // layoutOnly viewports check layout (overflow, CLS, a screenshot with the

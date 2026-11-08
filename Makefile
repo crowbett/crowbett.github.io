@@ -1,4 +1,4 @@
-.PHONY: gate fmt tidy vet test site wasm wasm-check e2e serve fonts
+.PHONY: gate fmt tidy vet test site wasm wasm-check wasi-sdk e2e serve fonts
 
 # CI runs `make -j8 NICE="nice -n 10" gate e2e` and must stay under 60 s: every
 # target starts at once and the gate yields the CPU to e2e, the longest (F5 in
@@ -25,6 +25,10 @@ site:
 
 wasm:
 	go run ./cmd/wasm build
+
+# The C++ toolchain `wasm build` needs for cpp demos; CI only checks hashes.
+wasi-sdk:
+	./scripts/wasi-sdk.sh
 
 wasm-check:
 	$(NICE) go run ./cmd/wasm check
