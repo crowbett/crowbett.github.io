@@ -2,9 +2,9 @@
 // {id, type: "call", method, params}. Messages out: {id, result} or {id, error},
 // and during a load {id, loaded} with the bytes of the binary received so far.
 // A Go binary sets globalThis.__demo(method, paramsJSON) -> resultJSON and then
-// calls globalThis.__demoReady(). A Rust binary imports nothing and exports
-// memory, demo_alloc, demo_call and demo_free, which rustBridge wraps as the
-// same __demo.
+// calls globalThis.__demoReady(). A Rust or C++ binary imports nothing and
+// exports memory, demo_alloc, demo_call and demo_free, which rustBridge wraps
+// as the same __demo.
 // See docs/demo-contract.md.
 
 // memfs.js first: wasm_exec.js keeps an existing globalThis.fs.
