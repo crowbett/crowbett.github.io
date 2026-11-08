@@ -9,7 +9,8 @@
 // uncommitted work never leaks into a published binary. The demo with repo "."
 // is built from this repository's working tree (the pipeline smoke test).
 // A demo of kind "rust" is a cdylib crate built for wasm32-unknown-unknown with
-// the toolchain its rust-toolchain.toml pins (docs/demo-contract.md).
+// the toolchain its rust-toolchain.toml pins; one of kind "cpp" is a directory of
+// C++ built with the pinned wasi-sdk (docs/demo-contract.md).
 package main
 
 import (
@@ -47,12 +48,14 @@ type Lock struct {
 // Demo is one binary.
 type Demo struct {
 	Slug     string `json:"slug"`
-	Kind     string `json:"kind,omitempty"`     // "go" (default) or "rust"
+	Kind     string `json:"kind,omitempty"`     // "go" (default), "rust" or "cpp"
 	Repo     string `json:"repo"`               // directory under $DEV_ROOT, or "." for this repo
 	Ref      string `json:"ref,omitempty"`      // full commit SHA; empty only for repo "."
 	Pkg      string `json:"pkg"`                // Go package or Rust crate directory, e.g. ./cmd/webdemo
 	Siblings []Dep  `json:"siblings,omitempty"` // repos the build needs next to it (go.mod replace ../x)
 	Rustc    string `json:"rustc,omitempty"`    // compiler that built a rust demo, from rustc -V
+	Clang    string `json:"clang,omitempty"`    // compiler that built a cpp demo, from clang++ --version
+	WasiSDK  string `json:"wasi_sdk,omitempty"` // SDK (and its wasi-libc) that built a cpp demo
 	SHA256   string `json:"sha256"`
 	Bytes    int    `json:"bytes"`
 	Gzip     int    `json:"gzip_bytes"`
@@ -128,8 +131,8 @@ func build(lock *Lock, only []string) error {
 }
 
 func buildOne(d *Demo) error {
-	if d.Kind != "" && d.Kind != "go" && d.Kind != "rust" {
-		return fmt.Errorf("unknown kind %q (want go or rust)", d.Kind)
+	if d.Kind != "" && d.Kind != "go" && d.Kind != "rust" && d.Kind != "cpp" {
+		return fmt.Errorf("unknown kind %q (want go, rust or cpp)", d.Kind)
 	}
 	dir := "."
 	if d.Repo != "." {
@@ -153,11 +156,16 @@ func buildOne(d *Demo) error {
 	if err != nil {
 		return err
 	}
-	if d.Kind == "rust" {
+	switch d.Kind {
+	case "rust":
 		if err := buildRust(d, dir, out); err != nil {
 			return err
 		}
-	} else {
+	case "cpp":
+		if err := buildCpp(d, dir, out); err != nil {
+			return err
+		}
+	default:
 		cmd := exec.Command("go", "build", "-trimpath", "-buildvcs=false", "-ldflags=-s -w", "-o", out, d.Pkg)
 		cmd.Dir = dir
 		cmd.Env = append(os.Environ(), "GOOS=js", "GOARCH=wasm", "CGO_ENABLED=0")

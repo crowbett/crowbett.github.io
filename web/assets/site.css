@@ -321,6 +321,7 @@ pre code { background: none; padding: 0; }
 .dm-kvlite { --m: url(/assets/dg/kvlite-s.png); --ml: url(/assets/dg/kvlite-l.png); }
 .dm-quorum { --m: url(/assets/dg/quorum-s.png); --ml: url(/assets/dg/quorum-l.png); }
 .dm-ratelimitd { --m: url(/assets/dg/ratelimitd-s.png); --ml: url(/assets/dg/ratelimitd-l.png); }
+.dm-raytracer { --m: url(/assets/dg/raytracer-s.png); --ml: url(/assets/dg/raytracer-l.png); }
 .dm-strata { --m: url(/assets/dg/strata-s.png); --ml: url(/assets/dg/strata-l.png); }
 
 /* Metadata */
