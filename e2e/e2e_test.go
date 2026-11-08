@@ -183,13 +183,18 @@ var demoChecks = map[string][]string{
 	},
 }
 
+// layoutOnly viewports check layout (overflow, CLS, a screenshot with the
+// demo running) but leave demo checks and axe to desktop and phone, which
+// already cover them: running both on a third width pushed CI's CPU-bound
+// demos past their waits.
 var viewports = []struct {
 	name          string
 	width, height int64
+	layoutOnly    bool
 }{
-	{"desktop", 1280, 900},
-	{"tablet", 820, 1180},
-	{"phone", 390, 844},
+	{"desktop", 1280, 900, false},
+	{"tablet", 820, 1180, true},
+	{"phone", 390, 844, false},
 }
 
 // schemes are emulated explicitly: an unset scheme follows the host OS, so a
@@ -302,7 +307,7 @@ func TestSite(t *testing.T) {
 					shot := name(page) + "-" + vp.name + "-" + scheme
 					t.Run(name(page)+"/"+vp.name+"/"+scheme, func(t *testing.T) {
 						t.Parallel()
-						visit(t, srv.URL+page, vp.width, vp.height, scheme, filepath.Join(shots, shot))
+						visit(t, srv.URL+page, vp.width, vp.height, vp.layoutOnly, scheme, filepath.Join(shots, shot))
 					})
 				}
 			}
@@ -604,7 +609,7 @@ func visitTab(t *testing.T, d time.Duration) (ctx context.Context, release func(
 	}
 }
 
-func visit(t *testing.T, url string, w, h int64, scheme, shot string) {
+func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot string) {
 	tab, release := visitTab(t, 90*time.Second)
 	defer func() { release(!t.Failed()) }()
 	ctx, cancel := context.WithCancel(tab)
@@ -678,6 +683,9 @@ func visit(t *testing.T, url string, w, h int64, scheme, shot string) {
 			t.Fatal(err)
 		}
 		checks := demoChecks[slug]
+		if layoutOnly {
+			checks = checks[:min(1, len(checks))]
+		}
 		if len(checks) == 0 {
 			t.Errorf("demo %q has no entry in demoChecks", slug)
 		}
@@ -690,7 +698,7 @@ func visit(t *testing.T, url string, w, h int64, scheme, shot string) {
 	// axe at phone width in both schemes (contrast follows the scheme, reflow
 	// problems show at 390 px); the Tab walk at desktop. Splitting them keeps
 	// CI under its 60 s budget.
-	if w < 1000 {
+	if w < 1000 && !layoutOnly {
 		pageQuality(t, ctx)
 	} else if scheme == "light" {
 		tabOrder(t, ctx)
