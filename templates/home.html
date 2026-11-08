@@ -25,7 +25,7 @@
 </section>
 <section id="work" class="index" aria-labelledby="work-h">
   <div class="index-head"><h2 id="work-h">Work</h2><p class="count">{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} live{{end}}</p>
-    <div class="filter" role="group" aria-label="Filter projects" hidden><button type="button" data-f="" aria-pressed="true">All</button>{{if .LiveCount}}<button type="button" data-f="live" aria-pressed="false">Live demos</button>{{end}}<button type="button" data-f="go" aria-pressed="false">Go</button><button type="button" data-f="rust" aria-pressed="false">Rust</button></div></div>
+    <div class="filter" role="group" aria-label="Filter projects" hidden><button type="button" data-f="" aria-pressed="true">All</button>{{if .LiveCount}}<button type="button" data-f="live" aria-pressed="false">Live demos</button>{{end}}{{range .Langs}}<button type="button" data-f="{{langs .}}" aria-pressed="false">{{.}}</button>{{end}}</div></div>
   <div class="index-cols" aria-hidden="true"><span>#</span><span>mechanism</span><span>project</span><span>lang</span><span>what it is</span><span>evidence</span><span>demo</span></div>
   <ol class="rows">
   {{range .Projects}}{{if .Live}}<li class="row" data-tags="live {{langs .Lang}}">{{template "row" .}}</li>

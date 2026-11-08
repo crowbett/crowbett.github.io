@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -69,5 +71,111 @@ func TestSourceDirRejectsPathSlugs(t *testing.T) {
 		if _, _, err := sourceDir(slug); err == nil {
 			t.Errorf("slug %q was accepted", slug)
 		}
+	}
+}
+
+func wasmSection(id byte, parts ...[]byte) []byte {
+	body := bytes.Join(parts, nil)
+	return append([]byte{id, byte(len(body))}, body...)
+}
+
+func wasmStr(s string) []byte { return append([]byte{byte(len(s))}, s...) }
+
+func TestCheckBareModule(t *testing.T) {
+	head := []byte("\x00asm\x01\x00\x00\x00")
+	exports := func(names ...string) []byte {
+		parts := [][]byte{{byte(len(names))}}
+		for i, n := range names {
+			kind := byte(0)
+			if n == "memory" {
+				kind = 2
+			}
+			parts = append(parts, wasmStr(n), []byte{kind, byte(i)})
+		}
+		return wasmSection(7, parts...)
+	}
+	ok := bytes.Join([][]byte{head, wasmSection(1, []byte{0}), exports("memory", "demo_alloc", "demo_free", "demo_call", "_extra")}, nil)
+	if err := checkBareModule(ok); err != nil {
+		t.Fatalf("bare module rejected: %v", err)
+	}
+	imp := wasmSection(2, []byte{1}, wasmStr("wasi_snapshot_preview1"), wasmStr("fd_write"), []byte{0, 0})
+	withImport := bytes.Join([][]byte{head, imp, exports("memory", "demo_alloc", "demo_free", "demo_call")}, nil)
+	if err := checkBareModule(withImport); err == nil || !strings.Contains(err.Error(), "1 imports (first wasi_snapshot_preview1.fd_write)") {
+		t.Fatalf("want import error, got %v", err)
+	}
+	missing := bytes.Join([][]byte{head, exports("memory", "demo_alloc", "demo_call")}, nil)
+	if err := checkBareModule(missing); err == nil || !strings.Contains(err.Error(), "does not export demo_free") {
+		t.Fatalf("want export error, got %v", err)
+	}
+	for _, bad := range [][]byte{nil, []byte("\x00asm\x02\x00\x00\x00"), append(head[:8:8], 7, 9, 1)} {
+		if err := checkBareModule(bad); err == nil {
+			t.Errorf("malformed module %q accepted", bad)
+		}
+	}
+}
+
+func TestCppArgs(t *testing.T) {
+	root := t.TempDir()
+	os.MkdirAll(filepath.Join(root, "webdemo", "sub"), 0o755)
+	for _, f := range []string{"wasm.cpp", "extra.cpp", "bridge_test.cpp", "bridge.h", "sub/deep.cpp"} {
+		os.WriteFile(filepath.Join(root, "webdemo", f), nil, 0o644)
+	}
+	args, err := cppArgs("/sdk", root, "./webdemo", "/out.wasm")
+	if err != nil {
+		t.Fatal(err)
+	}
+	n := len(args)
+	if got := args[n-2:]; got[0] != filepath.Join(root, "webdemo", "extra.cpp") || got[1] != filepath.Join(root, "webdemo", "wasm.cpp") {
+		t.Fatalf("sources: want extra.cpp then wasm.cpp, no tests or subdirectories; got %v", args)
+	}
+	for _, want := range []string{"--no-default-config", "--target=wasm32-wasip1", "--sysroot=/sdk/share/wasi-sysroot", "-fno-exceptions", "-fno-rtti",
+		"-nostartfiles", "-Wl,--no-entry", "-Wl,--strip-all", "-ffile-prefix-map=" + root + "=/src", "-ffile-prefix-map=/sdk=/wasi-sdk"} {
+		if !slices.Contains(args, want) {
+			t.Errorf("missing %s in %v", want, args)
+		}
+	}
+	if _, err := cppArgs("/sdk", root, "./webdemo/sub/none", "/out.wasm"); err == nil {
+		t.Error("missing directory accepted")
+	}
+	os.MkdirAll(filepath.Join(root, "empty"), 0o755)
+	if _, err := cppArgs("/sdk", root, "./empty", "/out.wasm"); err == nil || !strings.Contains(err.Error(), "no .cpp files") {
+		t.Errorf("want no-sources error, got %v", err)
+	}
+}
+
+func TestWasiSDKVersion(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("WASI_SDK_PATH", dir)
+	if _, _, err := wasiSDK(); err == nil || !strings.Contains(err.Error(), "make wasi-sdk") {
+		t.Fatalf("missing SDK: want install hint, got %v", err)
+	}
+	os.WriteFile(filepath.Join(dir, "VERSION"), []byte("33.0\nwasi-libc: abc\n"), 0o644)
+	if _, _, err := wasiSDK(); err == nil || !strings.Contains(err.Error(), "want "+wasiSDKVersion) {
+		t.Fatalf("old SDK: want version error, got %v", err)
+	}
+	os.WriteFile(filepath.Join(dir, "VERSION"), []byte(wasiSDKVersion+"\nwasi-libc: 2e6fb9d8ee0c\nllvm: 895aa2c896ad\n"), 0o644)
+	got, version, err := wasiSDK()
+	if err != nil || version != "wasi-sdk "+wasiSDKVersion+", wasi-libc 2e6fb9d8ee0c" || !filepath.IsAbs(got) {
+		t.Fatalf("got %q %q %v", got, version, err)
+	}
+	script, err := os.ReadFile("../../scripts/wasi-sdk.sh")
+	if err != nil || !bytes.Contains(script, []byte("\nversion="+wasiSDKVersion+"\n")) {
+		t.Fatalf("scripts/wasi-sdk.sh must install wasi-sdk %s (%v)", wasiSDKVersion, err)
+	}
+}
+
+func TestClangEnvDropsSteering(t *testing.T) {
+	for _, k := range []string{"CPATH", "CPLUS_INCLUDE_PATH", "SDKROOT", "CCC_OVERRIDE_OPTIONS", "CXXFLAGS", "WASI_SDK_PATH"} {
+		t.Setenv(k, "x")
+	}
+	t.Setenv("KEEP_ME", "1")
+	env := clangEnv()
+	for _, kv := range env {
+		if k, _, _ := strings.Cut(kv, "="); k != "KEEP_ME" && os.Getenv(k) == "x" {
+			t.Errorf("%s kept", k)
+		}
+	}
+	if !slices.Contains(env, "KEEP_ME=1") {
+		t.Error("unrelated variable dropped")
 	}
 }

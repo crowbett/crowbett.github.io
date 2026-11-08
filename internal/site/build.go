@@ -48,6 +48,7 @@ type pageData struct {
 	Project   *Project
 	Year      int
 	LiveCount int
+	Langs     []string
 	Canonical string
 	Hero      *heroTrace
 }
@@ -112,6 +113,11 @@ func prepare(cfg Config) (*prepared, error) {
 	for _, p := range projects {
 		if p.Live() {
 			base.LiveCount++
+		}
+		for _, l := range strings.Split(p.Lang, ", ") {
+			if !slices.Contains(base.Langs, l) {
+				base.Langs = append(base.Langs, l)
+			}
 		}
 	}
 	return &prepared{tmpl: tmpl, base: base, projects: projects}, nil
