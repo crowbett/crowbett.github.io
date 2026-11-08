@@ -322,6 +322,7 @@ pre code { background: none; padding: 0; }
 @keyframes dm-b-l { 50% { opacity: 1; } }
 .dm-codegraph { --m: url(/assets/dg/codegraph-s.png); --ml: url(/assets/dg/codegraph-l.png); }
 .dm-edgecache { --m: url(/assets/dg/edgecache-s.png); --ml: url(/assets/dg/edgecache-l.png); }
+.dm-grepall { --m: url(/assets/dg/grepall-s.png); --ml: url(/assets/dg/grepall-l.png); }
 .dm-jobrun { --m: url(/assets/dg/jobrun-s.png); --ml: url(/assets/dg/jobrun-l.png); }
 .dm-keel { --m: url(/assets/dg/keel-s.png); --ml: url(/assets/dg/keel-l.png); }
 .dm-kvlite { --m: url(/assets/dg/kvlite-s.png); --ml: url(/assets/dg/kvlite-l.png); }
