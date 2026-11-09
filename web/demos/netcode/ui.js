@@ -896,7 +896,7 @@ export async function mount(root, demo) {
       held |= bit;
       if (bit === DASH) pulse |= DASH;
       b.toggleAttribute("data-on", true);
-      if (e.pointerId !== undefined) b.setPointerCapture(e.pointerId);
+      if (e.pointerId >= 0) b.setPointerCapture(e.pointerId);
       kick();
     };
     const off = () => { held &= ~bit; b.toggleAttribute("data-on", false); };

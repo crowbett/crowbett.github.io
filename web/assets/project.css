@@ -245,3 +245,15 @@
 .xr-box { position: absolute; top: 0; left: 0; outline: 1px dashed var(--signal); outline-offset: 3px; }
 .xr-tag { position: absolute; bottom: calc(100% + 5px); left: 0; max-width: 100%; padding: 0 var(--sp-2); border-radius: 4px; background: var(--signal); color: var(--screen); font: 700 .6875rem/1.6 var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: rise var(--d-spring) var(--spring-soft); }
 @media (width < 40rem) { .xr { inset: auto 0 0; width: auto; border-radius: var(--r-2) var(--r-2) 0 0; } }
+
+/* Autopilot tours and share links */
+.demo-acts { position: sticky; z-index: 3; top: var(--top-h); display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); align-items: center; }
+.demo .demo-acts button.secondary { background: var(--bg); color: var(--text); border-color: var(--rule); }
+.demo .demo-acts button.secondary:hover { background: var(--block); border-color: var(--block); color: var(--on-block); }
+.tour-cap { display: flex; flex-basis: 100%; gap: var(--sp-3); margin: 0; padding: var(--sp-2) var(--sp-3); border-left: 3px solid var(--signal); background: var(--sunken); font-size: var(--t-small); animation: rise var(--d-spring) var(--spring-soft); }
+.demo-acts[hidden], .tour-cap[hidden] { display: none; }
+.tour-n { flex: none; font: 400 var(--t-label)/1.6 var(--mono); color: var(--text-3); font-variant-numeric: tabular-nums; }
+.tour-cursor { position: fixed; z-index: 9; top: 0; left: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; border: 2px solid var(--signal); border-radius: 50%; background: color-mix(in oklab, var(--signal) 25%, transparent); box-shadow: 0 0 0 6px color-mix(in oklab, var(--signal) 15%, transparent); pointer-events: none; transition: translate 480ms var(--spring-snappy); }
+.tour-on { outline: 2px solid var(--signal); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .tour-cursor { transition: none; } }
+@media (width < 40rem) { .demo-acts { padding-block: var(--sp-2); gap: var(--sp-2); } .demo .demo-acts button { padding: var(--sp-1) var(--sp-2); font-size: var(--t-label); } .tour-cap { padding-block: var(--sp-1); } }
