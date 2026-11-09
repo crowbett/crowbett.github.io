@@ -137,7 +137,7 @@
 .pager [rel=prev] .pg-k::before { content: "← "; }
 .pager [rel=next] { text-align: end; }
 .pager [rel=next] .pg-k::after { content: " →"; }
-.pager a:is(:hover, :focus-visible) { background: var(--block); box-shadow: var(--lift), 0 0 0 1px var(--block); color: var(--on-block); }
+.pager a:is(:hover, :focus-visible) { background: radial-gradient(18rem circle at var(--mx, 50%) var(--my, 50%), oklch(1 0 0 / 0.18), transparent 70%), var(--block); box-shadow: var(--lift), 0 0 0 1px var(--block); color: var(--on-block); }
 .pager a:is(:hover, :focus-visible) .pg-k { color: var(--on-block); }
 .pager a:hover .pg-shot img { scale: 1.04; }
 .pager a:focus-visible { outline-offset: 2px; }
