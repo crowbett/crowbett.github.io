@@ -70,7 +70,8 @@ func testFS(project string) fstest.MapFS {
 		"templates/all.html": {Data: []byte(`
 {{define "home"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{range .Projects}}<a href="/projects/{{.Slug}}/">x</a>{{end}}{{end}}
 {{define "project"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{if .Project.Live}}{{demoKB .Project.Slug}}KB {{demoBytes .Project.Slug}}B{{end}}<a href="/">home</a>{{end}}
-{{define "notfound"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{end}}`)},
+{{define "notfound"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{end}}
+{{define "numbers"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{range .Bins}}{{.Slug}} {{.Gzip}} {{.Pct}}{{end}}{{end}}`)},
 		"web/assets/site.css":  {Data: []byte("body{}")},
 		"web/demos/demo/ui.js": {Data: []byte("export function mount(){}")},
 		"web/.hidden":          {Data: []byte("skip me")},

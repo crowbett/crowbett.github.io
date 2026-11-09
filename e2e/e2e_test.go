@@ -161,7 +161,7 @@ func TestSite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pages := []string{"/", "/404.html", "/demos/smoke/"}
+	pages := []string{"/", "/404.html", "/numbers/", "/demos/smoke/"}
 	projects, err := site.LoadProjects(os.DirFS(root))
 	if err != nil {
 		t.Fatal(err)
