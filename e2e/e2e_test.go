@@ -875,6 +875,22 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 	if overflow {
 		t.Errorf("page scrolls horizontally at %dpx", w)
 	}
+	// CI keeps no screenshots, so it skips taking them.
+	if os.Getenv("CI") == "" {
+		screenshot(t, ctx, w, shot)
+	}
+	cancel()
+	<-done
+	mu.Lock()
+	defer mu.Unlock()
+	for _, p := range problems {
+		t.Error(p)
+	}
+}
+
+// screenshot saves the whole page at width w to shot.jpg.
+func screenshot(t *testing.T, ctx context.Context, w int64, shot string) {
+	t.Helper()
 	// Shots show diagrams at rest, not wherever a one-shot animation is, and
 	// sticky elements where a visitor first sees them, not where the Tab walk left them.
 	// The viewport grows to the whole page first, so every in-view animation
@@ -912,13 +928,6 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 	}
 	if err := os.WriteFile(shot+".jpg", img, 0o644); err != nil {
 		t.Fatal(err)
-	}
-	cancel()
-	<-done
-	mu.Lock()
-	defer mu.Unlock()
-	for _, p := range problems {
-		t.Error(p)
 	}
 }
 
