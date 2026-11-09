@@ -46,7 +46,7 @@
           {{if .Metric}}<p class="it-metric"><span class="metric">{{bind .Metric}}</span></p>{{end}}
           <p class="it-act">{{if .Live}}<a class="key" href="/projects/{{.Slug}}/#demo">Run it live</a>{{else}}<span class="led off">Source on {{if .Private}}request{{else}}GitHub{{end}}</span>{{end}}<span class="it-lang">{{.Lang}}</span></p>
         </div>
-        <a class="it-screen" href="/projects/{{.Slug}}/" tabindex="-1" aria-hidden="true"><canvas class="glow" width="16" height="10"></canvas><span class="it-glass">{{if .Live}}<img src="/reel/{{.Slug}}.webp" width="882" height="552" alt="" loading="lazy" decoding="async">{{else}}<span class="it-dm">{{template "dmask" .Slug}}</span>{{end}}</span><span class="it-go">Open</span><span class="it-of">{{rank .Slug}} / {{len $.Projects}}</span></a>
+        <a class="it-screen" href="/projects/{{.Slug}}/" tabindex="-1" aria-hidden="true"><canvas class="glow" width="16" height="10"></canvas><span class="it-glass">{{if .Live}}<img src="/reel/{{.Slug}}.webp" width="1324" height="828" alt="" loading="lazy" decoding="async">{{else}}<span class="it-dm">{{template "dmask" .Slug}}</span>{{end}}</span><span class="it-go">Open</span><span class="it-of">{{rank .Slug}} / {{len $.Projects}}</span></a>
       </div>
     </li>{{end}}{{end}}
   </ol>
