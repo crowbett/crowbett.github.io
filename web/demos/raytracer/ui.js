@@ -133,6 +133,7 @@ export async function mount(root, demo) {
   const [ratioCell, ratio] = cell("noise, left ÷ right");
   const [timeCell, elapsed] = cell("render time");
   cells.append(sppCell, rateCell, errCellL, errCellR, ratioCell, timeCell);
+  const receipt = el("p", "demo-out rt-out");
   const sceneInfo = el("p", "rt-info");
   const status = el("p", "rt-status");
   status.setAttribute("aria-live", "polite");
@@ -152,7 +153,7 @@ export async function mount(root, demo) {
 
   const main = el("div", "rt-main");
   main.append(screen, side);
-  wrap.append(form, main);
+  wrap.append(form, main, receipt);
   root.replaceChildren(wrap);
 
   let info = null; // the binary's load result
@@ -165,8 +166,10 @@ export async function mount(root, demo) {
   let rows = 8;
   let passes = 0;
   let renderMs = 0;
+  let samples = 0;
   let meter = [];
   let last = { material: null, nee: null, mixture: null };
+  let shown = [NaN, NaN]; // the estimates as of the last finished pass, so cells and sentence agree
   let split = 0.5;
   let readoutQueued = false;
   let failure = null;
@@ -185,7 +188,7 @@ export async function mount(root, demo) {
 
   function readouts() {
     readoutQueued = false;
-    const [a, b] = strategies().map((s) => last[s]);
+    const [a, b] = shown;
     spp.textContent = fmt(passes);
     const now = performance.now();
     meter = meter.filter(([t]) => now - t < METER_MS);
@@ -195,16 +198,17 @@ export async function mount(root, demo) {
       if (span > 0) rate.textContent = `${fmt(Math.round(n / span / 1000))}k`;
     }
     elapsed.textContent = `${(renderMs / 1000).toFixed(1)} s`;
+    receipt.textContent = `${fmt(samples)} pixel samples traced by the renderer, in ${(renderMs / 1000).toFixed(1)} s, in your browser.`;
     if (lit) {
-      errLv.textContent = sig(a?.rmse_estimate);
-      errRv.textContent = sig(b?.rmse_estimate);
-      errL.textContent = `est. RMSE ${sig(a?.rmse_estimate)}`;
-      errR.textContent = `est. RMSE ${sig(b?.rmse_estimate)}`;
-      const r = a && b ? a.rmse_estimate / b.rmse_estimate : NaN;
+      errLv.textContent = sig(a);
+      errRv.textContent = sig(b);
+      errL.textContent = `est. RMSE ${sig(a)}`;
+      errR.textContent = `est. RMSE ${sig(b)}`;
+      const r = a / b;
       ratio.textContent = Number.isFinite(r) ? `${r.toFixed(2)}×` : "–";
     } else {
-      errRv.textContent = sig(a?.rmse_estimate);
-      errR.textContent = `est. RMSE ${sig(a?.rmse_estimate)}`;
+      errRv.textContent = sig(a);
+      errR.textContent = `est. RMSE ${sig(a)}`;
     }
     passLabel.textContent = `pass ${fmt(passes + 1)}`;
     passFill.style.transform = `scaleX(${Math.max(0.001, y / info.height)})`;
@@ -224,7 +228,7 @@ export async function mount(root, demo) {
   let sceneLabel = "";
   function milestone() {
     if (!lit || passes < 2) return;
-    const [a, b] = strategies().map((s) => last[s].rmse_estimate);
+    const [a, b] = shown;
     say(`${sceneLabel}: ${fmt(passes)} spp, est. RMSE ${sig(a)} with ${STRATEGY.material}, ${sig(b)} with ${rightName()} (${(a / b).toFixed(2)}× the noise).`);
   }
 
@@ -249,6 +253,7 @@ export async function mount(root, demo) {
     const now = performance.now();
     const ms = now - t0;
     renderMs += ms;
+    samples += n * info.width * strategies().length;
     meter.push([now, n * info.width * strategies().length]);
     const ideal = (n * TARGET_MS * strategies().length) / Math.max(ms, 0.5);
     rows = Math.max(1, Math.min(Math.round((rows + ideal) / 2), Math.floor(info.max_pixels_per_call / info.width)));
@@ -256,6 +261,7 @@ export async function mount(root, demo) {
     if (y >= info.height) {
       y = 0;
       passes = last[strategies()[0]].spp;
+      shown = strategies().map((s) => last[s].rmse_estimate);
       milestone();
       readouts();
     } else {
@@ -319,8 +325,10 @@ export async function mount(root, demo) {
     y = 0;
     passes = 0;
     renderMs = 0;
+    samples = 0;
     meter = [];
     last = { material: null, nee: null, mixture: null };
+    shown = [NaN, NaN];
     nameR.textContent = rightName();
     keyRName.textContent = rightName();
     keyRText.textContent = !lit

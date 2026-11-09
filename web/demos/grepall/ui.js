@@ -231,7 +231,8 @@ export async function mount(root, demo) {
 
   const corpusNote = el("details", "ga-corpus");
   const indexNote = el("p", "ga-built");
-  root.replaceChildren(form, presets, status, stages, funnel, mapWrap, indexNote, resHead, list, corpusNote);
+  const receipt = el("p", "demo-out ga-out");
+  root.replaceChildren(form, presets, status, stages, funnel, mapWrap, indexNote, resHead, list, corpusNote, receipt);
   await cssReady;
   // On a phone the matches come first; parse and plan follow them.
   const place = () => (mobile.matches ? corpusNote.before(mapWrap, indexNote, stages) : status.after(stages, funnel, mapWrap, indexNote, resHead, list));
@@ -505,6 +506,7 @@ export async function mount(root, demo) {
     status.textContent = `${fmt(N)} files → ${plural(f.candidates, "candidate")} (${size(f.candidate_bytes)}) → ` +
       `${m.truncated ? "at least " : ""}${plural(m.files_matched, "matching file")}. ` +
       (f.full_scan ? "Full scan: the index could not rule any file out." : `The index ruled out ${fmt(N - f.candidates)} files without reading them.`);
+    receipt.textContent = `Query planned, looked up in the index and verified over ${plural(f.candidates, "candidate file")} in ${ms(t3 - t0)}, in your browser.`;
     map.setAttribute("aria-label", `File map: ${fmt(N)} files, ${fmt(f.candidates)} candidates, ${fmt(m.files_matched)} matched`);
     readout.textContent = describe(sel);
     showMatches(m);

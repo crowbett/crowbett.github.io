@@ -4,9 +4,10 @@
 .rt-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 16px; }
 .rt-controls button { height: 2.25rem; min-width: 6.5rem; }
 .rt-field { flex: 1 1 11rem; max-width: 18rem; }
-.rt-field select { height: 2.25rem; box-sizing: border-box; width: 100%; font-family: var(--mono); }
+.rt-field select { height: 2.25rem; box-sizing: border-box; width: 100%; }
 
 .rt-main { display: grid; gap: 16px; }
+.rt-out { margin-top: 16px; }
 @media (min-width: 64rem) { .rt-main { grid-template-columns: minmax(0, 3fr) minmax(17rem, 2fr); align-items: start; } }
 
 .rt-screen { margin: 0; padding: 10px 12px 12px; background: var(--rt-screen); color: var(--rt-ink); font-family: var(--mono); font-size: 0.6875rem; line-height: 1.4; font-variant-numeric: tabular-nums; }

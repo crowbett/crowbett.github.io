@@ -221,7 +221,15 @@ export async function mount(root, demo) {
   const cells = el("ul", "cells mb-cells");
   cells.setAttribute("aria-label", "Bridge state");
   const nonceNote = el("p", "mb-fine");
-  root.replaceChildren(bar, note, from, main, status, cells, nonceNote);
+  const receipt = el("p", "demo-out mb-out");
+  root.replaceChildren(bar, note, from, main, status, cells, nonceNote, receipt);
+  let lastCall = null;
+  const timed = async (method, params, frames) => {
+    const t0 = performance.now();
+    const r = await demo.call(method, params);
+    lastCall = { frames, ms: performance.now() - t0 };
+    return r;
+  };
 
   // State
   let scenarios = [];
@@ -586,12 +594,13 @@ export async function mount(root, demo) {
     ];
     cells.replaceChildren(...items.map(([k, v]) => {
       const li = el("li");
-      li.append(el("span", "mb-ck", k + " "), el("span", null, String(v)));
+      li.append(el("span", "mb-ck", k), el("span", "mb-cv", String(v)));
       return li;
     }));
     const sent = events.filter((e) => e.leg === "c2b").length;
     status.textContent = `${sent} client frame${sent === 1 ? "" : "s"}, ${s.wire} frames on the wire: ${s.touched} translated, ${s.made} made by the bridge, ${s.refused} refused` +
       (state?.ended ? ". The bridge ended the session." : ".");
+    if (lastCall) receipt.textContent = `${lastCall.frames} client frame${lastCall.frames === 1 ? "" : "s"} through the bridge's real code in ${Math.round(lastCall.ms)} ms, in your browser.`;
     nonceNote.textContent = state ? `Bridge-minted ids carry nonce ${state.nonce}, fixed here so a replay is identical; the shipped binary draws a fresh one per connection.` : "";
     stepB.textContent = `Step ${(cursor % script.length) + 1}/${script.length}`;
   }
@@ -631,7 +640,7 @@ export async function mount(root, demo) {
   async function replay(focusStep, fromEditor) {
     const [frames, bad] = compact();
     if (!frames) { status.textContent = `Frame ${bad} is not valid JSON; fix it to replay.`; return; }
-    const r = await demo.call("run", { server: DIRS[dir].server, seed: SEED, frames });
+    const r = await timed("run", { server: DIRS[dir].server, seed: SEED, frames }, frames.length);
     const keep = fromEditor ? scroller.scrollTop : 0;
     clear();
     events = r.events;
@@ -660,7 +669,7 @@ export async function mount(root, demo) {
     }
     const [frames, bad] = compact();
     if (!frames) { status.textContent = `Frame ${bad} is not valid JSON; fix it to replay.`; return; }
-    const r = await demo.call("send", { frame: frames[cursor] });
+    const r = await timed("send", { frame: frames[cursor] }, 1);
     cursor++;
     events = events.concat(r.events);
     state = r.state;

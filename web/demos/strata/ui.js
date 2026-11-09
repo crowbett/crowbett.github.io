@@ -90,7 +90,10 @@ export async function mount(root, demo) {
   canvas.setAttribute("role", "img");
   const legend = el("p", "st-legend");
   const note = el("p", "st-note");
-  root.replaceChildren(form, summary, scrubRow, canvas, legend, note);
+  const receipt = el("p", "demo-out st-out");
+  let sliceMs = 0;
+  let layerMs = 0;
+  root.replaceChildren(form, summary, scrubRow, canvas, legend, note, receipt);
 
   // One loop issues every engine call, in order, and records each answer as
   // the engine's state; controls only change what is wanted and start it.
@@ -219,6 +222,8 @@ export async function mount(root, demo) {
         const last = Number(scrub.max);
         const frac = last > 0 ? Number(scrub.value) / last : 0.4;
         engine.slice = { ...s, height: h, id: ++slices };
+        sliceMs = ms;
+        layerMs = 0;
         engine.sliceFail = null;
         scrub.max = String(Math.max(0, s.layers - 1));
         want = Math.round(frac * Math.max(0, s.layers - 1));
@@ -241,8 +246,11 @@ export async function mount(root, demo) {
       }
       const sl = engine.slice;
       if (sl && sl.layers && (!shown || shown.slice !== sl.id || shown.index !== want)) {
+        const t2 = performance.now();
         const r = await demo.call("layer", { index: want });
+        layerMs = performance.now() - t2;
         shown = { ...r, slice: sl.id };
+        receipt.textContent = `${fmt(sl.paths)} toolpaths sliced in ${fmt(Math.round(sliceMs))} ms; layer ${want + 1} fetched in ${layerMs < 10 ? layerMs.toFixed(1) : fmt(Math.round(layerMs))} ms, in your browser.`;
         describe();
         draw();
         continue;

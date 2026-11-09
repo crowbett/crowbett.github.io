@@ -147,7 +147,8 @@ export async function mount(root, demo) {
   const status = el("p", "nc-status");
   status.setAttribute("aria-live", "polite");
 
-  root.replaceChildren(bar, canvas, lamp, world, readouts, legend, hint, status);
+  const receipt = el("p", "demo-out nc-out");
+  root.replaceChildren(bar, canvas, lamp, world, readouts, legend, hint, status, receipt);
 
   let col = colors(root);
   const scheme = matchMedia("(prefers-color-scheme: dark)");
@@ -155,8 +156,16 @@ export async function mount(root, demo) {
   scheme.addEventListener("change", recolor);
 
   let chain = Promise.resolve();
+  let callMs = 0;
   const call = (method, params) => {
-    const p = chain.then(() => demo.call(method, params));
+    const p = chain.then(async () => {
+      const t0 = performance.now();
+      try {
+        return await demo.call(method, params);
+      } finally {
+        callMs += performance.now() - t0;
+      }
+    });
     chain = p.catch(() => {});
     return p;
   };
@@ -375,6 +384,7 @@ export async function mount(root, demo) {
   function show(v) {
     if (gen !== generation) return;
     view = v;
+    put(receipt, `${fmt(v.tick)} ticks of ${PLAYERS} players simulated in ${fmt(Math.round(callMs))} ms of calls, in your browser.`);
     if (playing) summary();
     readout();
     paint();

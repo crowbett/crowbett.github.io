@@ -52,13 +52,13 @@ function button(text, cls, onClick) {
 }
 
 function cellsList(pairs) {
-  const dl = el("dl", "bt-facts");
+  const ul = el("ul", "cells bt-facts");
   for (const [k, v, cls] of pairs) {
-    const d = el("div", cls);
-    d.append(el("dt", null, k), el("dd", null, v));
-    dl.append(d);
+    const li = el("li", cls);
+    li.append(el("span", "bt-k", k), el("span", "bt-v", v));
+    ul.append(li);
   }
-  return dl;
+  return ul;
 }
 
 export async function mount(root, demo) {
@@ -71,6 +71,16 @@ export async function mount(root, demo) {
     cssReady = new Promise((r) => { css.onload = r; css.onerror = r; });
     document.head.append(css);
   }
+
+  let work = 0;
+  const rpc = async (method, params) => {
+    const t0 = performance.now();
+    try {
+      return await demo.call(method, params);
+    } finally {
+      work += performance.now() - t0;
+    }
+  };
 
   // Controls
   const sampleBtn = button("Load the sample file", null, () => guard(() => load(null)));
@@ -143,7 +153,8 @@ export async function mount(root, demo) {
   rowsSec.append(rowsHead, rowsBox, exportRow, sqliteNote);
 
   const wrap = el("div", "bt");
-  wrap.append(controls, privacy, status, bar, tabs, mapSec, pair, rowsSec);
+  const receipt = el("p", "demo-out bt-out");
+  wrap.append(controls, privacy, status, bar, tabs, mapSec, pair, rowsSec, receipt);
   root.replaceChildren(wrap);
 
   // State
@@ -159,6 +170,7 @@ export async function mount(root, demo) {
   const guard = async (f, rethrow) => {
     if (busy) return;
     busy = true;
+    work = 0;
     setDisabled(true);
     try {
       await f();
@@ -177,25 +189,25 @@ export async function mount(root, demo) {
   async function upload(list) {
     const total = list.reduce((a, f) => a + f.size, 0);
     if (total > MAX_BYTES) throw new Error(`These files hold ${mib(total)}; the demo takes up to 32 MiB at once (the btrv command has no such limit).`);
-    await demo.call("reset");
+    await rpc("reset");
     let sent = 0;
     bar.hidden = false;
     for (const f of list) {
-      await demo.call("begin", { name: f.name, size: f.size });
+      await rpc("begin", { name: f.name, size: f.size });
       for (let off = 0; off < f.size; off += CHUNK) {
-        await demo.call("chunk", { b64: await b64(f.slice(off, off + CHUNK)) });
+        await rpc("chunk", { b64: await b64(f.slice(off, off + CHUNK)) });
         sent += Math.min(CHUNK, f.size - off);
         bar.value = total ? sent / total : 1;
         status.textContent = `Handing ${f.name} to btrv: ${mib(sent)} of ${mib(total)}`;
       }
     }
-    return demo.call("open");
+    return rpc("open");
   }
 
   async function load(list) {
     damaged.clear();
     picked.textContent = list ? list.map((f) => f.name).join(", ") : "the sample file";
-    opened = list ? await upload(list) : await demo.call("sample");
+    opened = list ? await upload(list) : await rpc("sample");
     renderTabs();
     if (!opened.selected) {
       cur = null;
@@ -225,7 +237,7 @@ export async function mount(root, demo) {
 
   async function select(name, schema) {
     const g = ++gen;
-    const sel = await demo.call("select", { name, schema });
+    const sel = await rpc("select", { name, schema });
     const n = sel.pages;
     const c = { name, sel, n, kinds: sel.kinds, kind: new Uint8Array(n), lp: new Float64Array(n), a: new Int32Array(n), b: new Int32Array(n),
       x: new Int32Array(n), problems: new Map(), read: 0, done: false, scan: null, table: !!sel.names, sel2: null, hover: -1, pick: -1 };
@@ -233,7 +245,7 @@ export async function mount(root, demo) {
     sampleBtn.classList.add("secondary");
     for (const b of tabs.querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.name === name));
     for (let from = 0; from < n; from += 4096) {
-      const p = await demo.call("pages", { from, n: 4096 });
+      const p = await rpc("pages", { from, n: 4096 });
       if (g !== gen) return;
       p.cells.forEach((cell, i) => {
         const k = from + i;
@@ -264,6 +276,7 @@ export async function mount(root, demo) {
     if (!c.table) {
       status.textContent = describe(sel.file) + (sel.schemaError ? ` No schema: ${sel.schemaError}` : "");
       bar.hidden = true;
+      receipt.textContent = `${fmt(n)} pages mapped by btrv in ${Math.round(work)} ms, in your browser.`;
       return;
     }
     await scan(g);
@@ -279,7 +292,7 @@ export async function mount(root, demo) {
     const step = still() ? 4000 : Math.max(120, Math.ceil(total / 90));
     bar.hidden = false;
     for (;;) {
-      const r = await demo.call("scan", { n: step });
+      const r = await rpc("scan", { n: step });
       if (g !== gen) return;
       c.read = r.read;
       c.bytes = r.bytes;
@@ -294,12 +307,13 @@ export async function mount(root, demo) {
     bar.hidden = true;
     renderSummary();
     initRows();
+    receipt.textContent = `${fmt(c.n)} pages mapped and ${fmt(c.scan.report.rowsRead)} rows decoded by btrv in ${Math.round(work)} ms, in your browser.`;
   }
 
   async function damage() {
     const c = cur;
     const p = c.pick;
-    await demo.call("damage", { name: c.name, from: p });
+    await rpc("damage", { name: c.name, from: p });
     const set = damaged.get(c.name) || new Set();
     if (set.has(p)) set.delete(p); else set.add(p);
     damaged.set(c.name, set);
@@ -650,7 +664,7 @@ export async function mount(root, demo) {
     paintRows();
   }
   function block(b) {
-    if (!cache.has(b)) cache.set(b, demo.call("rows", { from: b * BLOCK, n: BLOCK }));
+    if (!cache.has(b)) cache.set(b, rpc("rows", { from: b * BLOCK, n: BLOCK }));
     return cache.get(b);
   }
   let painting = 0;
@@ -698,9 +712,9 @@ export async function mount(root, demo) {
     if (!c || !c.table) return;
     const parts = [];
     let bytes = 0;
-    await demo.call("export", { format, n: 0 });
+    await rpc("export", { format, n: 0 });
     for (;;) {
-      const r = await demo.call("export", { format, n: 2000 });
+      const r = await rpc("export", { format, n: 2000 });
       parts.push(r.chunk);
       bytes += r.chunk.length;
       expStatus.textContent = `Writing ${format === "csv" ? "CSV" : "JSON Lines"}: ${mib(bytes)}`;
