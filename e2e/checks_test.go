@@ -250,7 +250,7 @@ var demoChecks = map[string][]string{
 			const cut = document.querySelector("select[name=cut]");
 			cut.value = "mid";
 			click("Pull the plug");
-			ok = ok && await until(() => status() === "Plug pulled: 15 B cut off the end of 00000006.log at byte 135. kvlite reopened from its own files, truncated the torn record at byte 120 (its own log line is below) and rebuilt the keydir from 13 records. 1 write lost; rolled back: stock:sku-7 v1 → gone." &&
+			ok = ok && await until(() => status() === "Plug pulled: 15 B cut off the end of 00000006.log at byte 135. kvlite reopened from its own files and truncated the torn record at byte 120 (its own log line is below); 13 records survive on disk. 1 write lost; rolled back: stock:sku-7 v1 → gone." &&
 				v("lost") === "1 record" && v("recovered") === "13 records" && document.querySelector(".kv-log").textContent.includes("truncated torn tail of active segment seg=6 off=120 dropped=15"));
 			click("Get");
 			ok = ok && await until(() => status() === "Get my:key = hello, the value of its newest record at byte 92 of 00000006.log.");
