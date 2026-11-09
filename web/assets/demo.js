@@ -172,6 +172,11 @@ function fullScreen(section) {
 }
 
 for (const section of document.querySelectorAll("[data-demo]")) {
-  section.querySelector("[data-demo-start]").addEventListener("click", () => start(section));
+  const button = section.querySelector("[data-demo-start]");
+  button.addEventListener("click", () => start(section));
+  // "Run it live" in the page head jumps to the frame and starts it.
+  document.querySelector("[data-demo-go]")?.addEventListener("click", () => {
+    if (!button.disabled && !("demoReady" in section.dataset)) start(section);
+  });
   fullScreen(section);
 }

@@ -167,8 +167,16 @@ func pageQuality(t *testing.T, ctx context.Context) {
 		Nodes            []string
 	}
 	// Finish entrance animations first: mid-fade text fails contrast. Looping
-	// ones cannot finish and are left running.
-	if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.getAnimations().forEach((a) => { try { a.finish(); } catch {} }), true`)); err != nil {
+	// ones cannot finish and are left running; scroll-driven ones follow the
+	// scroll position, and finishing one would fade the page head. axe runs
+	// from the top: scrolled, the sheet covers the pinned head and axe would
+	// measure the head's text against the sheet.
+	if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`(async () => {
+		scrollTo({ top: 0, behavior: "instant" });
+		await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+		document.getAnimations().filter((a) => a.timeline === document.timeline).forEach((a) => { try { a.finish(); } catch {} });
+		return true;
+	})()`, chromedp.EvalAwaitPromise)); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](axeSource+";true")); err != nil {
