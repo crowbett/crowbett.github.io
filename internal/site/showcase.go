@@ -130,20 +130,25 @@ var Showcases = map[string]Showcase{
 		Focus: ".mb-head", Pad: 8, Seconds: 7.5,
 	},
 	// keel: a new seed every 1.2 s; the digest, fault timeline and totals change.
+	// keel: seed 2's whole fault schedule plays at 10×, from the first partition
+	// to the verdict, then the sweep moves on to seed 3.
 	"keel": {
 		Setup: `(async () => {
-			const seed = document.querySelector("input[name=seed]"), run = document.querySelector(".kl-controls button[type=submit]");
-			seed.value = "2"; run.click();
-			for (let i = 0; i < 200 && (document.querySelectorAll(".kl-digest").length !== 1 || run.disabled); i++) await new Promise((r) => setTimeout(r, 25));
+			const click = (t) => [...document.querySelectorAll(".kl-controls button")].find((b) => b.textContent === t).click();
+			const v = (k) => document.querySelector(".kl-cells [data-k=" + k + "] .kl-v").textContent;
+			if (document.querySelector(".kl-acts button").textContent === "Pause") click("Pause");
+			const speed = document.querySelector("select[name=speed]");
+			speed.value = "10"; speed.dispatchEvent(new Event("change"));
+			click("Reset");
+			for (let i = 0; i < 400 && !(v("seeds") === "24" && v("t") === "0.00 s" && document.querySelector(".kl-match")); i++) await new Promise((r) => setTimeout(r, 25));
+			await new Promise((r) => setTimeout(r, 400));
 		})()`,
 		Play: `(async () => {
-			const seed = document.querySelector("input[name=seed]"), run = document.querySelector(".kl-controls button[type=submit]");
-			for (const s of [6, 14, 18, 22, 33]) {
-				await new Promise((r) => setTimeout(r, 1200));
-				seed.value = String(s); run.click();
-			}
+			const click = (t) => [...document.querySelectorAll(".kl-controls button")].find((b) => b.textContent === t).click();
+			await new Promise((r) => setTimeout(r, 200));
+			click("Play");
 		})()`,
-		Focus: ".kl-replay", Pad: 8, Seconds: 7.2,
+		Focus: ".kl-canvas", Pad: 4, Seconds: 8,
 	},
 	// lobby: you queue twice; players fill rooms on their own meanwhile.
 	"lobby": {
