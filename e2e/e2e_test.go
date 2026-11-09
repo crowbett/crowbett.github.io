@@ -349,8 +349,8 @@ var demoChecks = map[string][]string{
 // layoutOnly viewports check page layout (overflow, CLS, a screenshot) and
 // leave demos and axe to desktop and phone, which already cover them: running
 // demos on a third width pushed CI past its 60 s budget. Demo behaviour does
-// not depend on width or scheme: desktop light runs every check, other tabs
-// mount the demo and run its first check.
+// not depend on the scheme: light tabs run every check, dark tabs mount the
+// demo and run its first check.
 var viewports = []struct {
 	name          string
 	width, height int64
@@ -469,9 +469,9 @@ func TestSite(t *testing.T) {
 	}
 
 	// One tab per page, viewport and scheme, all in parallel. The slowest tabs
-	// start first so they do not run on alone at the end: desktop light, which
-	// runs every demo check, then the pages with the most checks (home replays
-	// the hero).
+	// start first so they do not run on alone at the end: desktop and phone
+	// light, which run every demo check, then the pages with the most checks
+	// (home replays the hero).
 	type tab struct {
 		page, scheme string
 		vp           int
@@ -491,7 +491,7 @@ func TestSite(t *testing.T) {
 		if x.page == "/" {
 			n = 99
 		}
-		if viewports[x.vp].name == "desktop" && x.scheme == "light" {
+		if !viewports[x.vp].layoutOnly && x.scheme == "light" {
 			n += 1000
 		}
 		if viewports[x.vp].layoutOnly || x.scheme == "dark" && viewports[x.vp].name != "phone" {
@@ -906,7 +906,7 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 			t.Fatal(err)
 		}
 		checks := demoChecks[slug]
-		if scheme == "dark" || w < 1000 {
+		if scheme == "dark" {
 			checks = checks[:min(1, len(checks))]
 		}
 		if len(checks) == 0 {
