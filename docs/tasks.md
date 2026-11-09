@@ -121,6 +121,7 @@ Owner: the design session. It owns `templates/`, `web/assets/` (site.css, demo.j
 
 ### V3b Home page memorable · order 104.5 · deps: V5 · status: doing (4f944f0, a4da0df, 7f2f2f5, 2f52864, 3cd851f, fc2a0a1, 2c63cc1, c82ef25, b79800e)
 V8 rounds 1-7 (2026-10-25) all said "maybe", the last ones "leaning yes for engineers" since the hero re-runs in the browser. What reviewers say is left is owner copy, published identity and the house style.
+2026-11-09 review: "maybe" (hook buried in a caption, keys inflate the hero at 1024+, the run climax is weak). Fixed: hook in the headline, keys dropped, measured run time lights a third readout. Next: a fresh-eyes re-review of the shipped page.
 Done when: a fresh-eyes reviewer rates home "would remember this site" (yes, not maybe) and the screenshots back it.
 
 ### V13 Tighten copy and tablet layout · status: done 2026-11-08 (083e2e3, 7fb2184, 3c2a6e1, 42541b5, e6a9555)
