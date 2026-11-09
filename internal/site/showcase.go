@@ -283,4 +283,22 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".st-canvas", Pad: -46, WideFocus: ".st-canvas", WidePad: 4, Seconds: 8,
 	},
+	// The tour's first query has ranked; you type "heartbeat lease" and the
+	// two lanes re-rank and fuse word by word, then your note joins them.
+	"recall": {
+		Setup: `(async () => {
+			document.querySelector(".rc-svg").scrollIntoView({ block: "center" });
+			for (let i = 0; i < 400 && !document.querySelector(".rc-row.is-sel"); i++) await new Promise((r) => setTimeout(r, 50));
+		})()`,
+		Play: `(async () => {
+			const w = (ms) => new Promise((r) => setTimeout(r, ms));
+			const q = document.querySelector("input[name=q]");
+			await w(1400);
+			q.value = "";
+			for (const ch of "heartbeat lease") { q.value += ch; q.dispatchEvent(new Event("input")); await w(110); }
+			await w(2200);
+			document.querySelector(".rc-mine button").click();
+		})()`,
+		Focus: ".rc-svg", Pad: 8, WideFocus: ".rc-svg", WidePad: 8, Seconds: 8,
+	},
 }
