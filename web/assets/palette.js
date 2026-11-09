@@ -2,8 +2,11 @@
 // you type. A modal <dialog> keeps focus inside and closes on Escape; the input
 // is a combobox over a listbox, so a screen reader hears the active option.
 // Loaded on first use by nav.js; /search.json is written by the site build.
+// A query of three letters or more also searches /find.json: every page's
+// write-up, measured result and code, fetched the first time it is needed.
 const data = fetch("/search.json").then((r) => r.json());
-let dlg, input, list, count, shown = [], active = 0, projects = [];
+let dlg, input, list, count, shown = [], active = 0, projects = [], docs = null, docsP = null;
+const FIND_MAX = 8;
 
 function el(tag, cls, text) {
   const e = document.createElement(tag);
@@ -84,6 +87,13 @@ function option(item, words) {
     const text = el("span", "pal-t");
     text.append(marked(item.title, words), el("small", null, `${item.lang} · ${item.group}`), el("span", "pal-d", item.tagline));
     li.append(dm, text, el("span", item.live ? "led" : "led off", item.live ? "live" : "source"));
+  } else if (item.doc) {
+    const text = el("span", "pal-t");
+    const said = marked(item.text, words);
+    const d = el(item.code ? "samp" : "span", "pal-d");
+    d.append(...said.childNodes);
+    text.append(marked(item.title, words), d);
+    li.append(el("span", "pal-i", item.tag), text);
   } else {
     const text = el("span", "pal-t");
     text.append(marked(item.title, words));
@@ -93,8 +103,46 @@ function option(item, words) {
   return li;
 }
 
+function loadDocs() {
+  docsP ??= fetch("/find.json").then((r) => r.json()).then((d) => {
+    docs = d.map((x) => ({ ...x, hay: [x.t, x.p, x.y, ...(x.l || [])].filter(Boolean).join("\n").toLowerCase() }));
+    if (dlg?.open) render();
+  }, () => { docsP = null; });
+}
+
+const KINDS = { m: "stat", d: "demo", w: "text", c: "code" };
+// A passage short enough to show: the words around the first hit.
+function around(text, w, n = 96) {
+  const i = Math.max(0, text.toLowerCase().indexOf(w));
+  let from = Math.max(0, i - 28);
+  if (from) from = text.indexOf(" ", from) + 1 || from;
+  const out = text.slice(from, from + n);
+  return (from ? "…" : "") + out + (from + n < text.length ? "…" : "");
+}
+// The opening words of a passage, which project.js finds on the page.
+const needle = (t) => t.length <= 60 ? t : t.slice(0, t.lastIndexOf(" ", 60));
+
+function finds(words) {
+  if (!docs || words.join("").length < 3) return { hits: [], total: 0 };
+  const bySlug = new Map(projects.map((p) => [p.slug, p]));
+  const all = docs.filter((d) => words.every((w) => d.hay.includes(w)));
+  const hits = all.slice(0, FIND_MAX).map((d) => {
+    const p = bySlug.get(d.s);
+    const base = `/projects/${d.s}/`;
+    if (d.k !== "c") return { doc: d.k, tag: KINDS[d.k], title: p?.title ?? d.s, text: around(d.t, words[0]), href: `${base}#find=${encodeURIComponent(needle(d.t))}` };
+    const lines = d.l || [];
+    const n = lines.findIndex((l) => words.some((w) => l.toLowerCase().includes(w)));
+    const x = d.x || 0;
+    if (n < 0) return { doc: "c", tag: "code", title: `${p?.title ?? d.s} · ${d.t}`, text: d.y || d.p, href: `${base}#code-${x}` };
+    const at = (d.f || 1) + n;
+    return { doc: "c", tag: "code", title: `${p?.title ?? d.s} · ${d.p.split("/").pop()}:${at}`, text: around(lines[n].trim(), words.find((w) => lines[n].toLowerCase().includes(w))), code: true, href: `${base}#code-${x}-L${at}` };
+  });
+  return { hits, total: all.length };
+}
+
 function render() {
   const words = input.value.toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.join("").length >= 3) loadDocs();
   shown = [];
   const acts = actions().filter((a) => words.every((w) => a.title.toLowerCase().includes(w)));
   const hits = projects.map((p) => [score(p, words), p]).filter(([s]) => s >= 0);
@@ -103,6 +151,8 @@ function render() {
   const page = acts.filter((a) => !a.contact), contact = acts.filter((a) => a.contact);
   if (page.length) nodes.push(el("li", "pal-h", "This page"), ...page.map((a) => option(a, words)));
   if (hits.length) nodes.push(el("li", "pal-h", `Projects · ${hits.length}`), ...hits.map(([, p]) => option(p, words)));
+  const found = finds(words);
+  if (found.hits.length) nodes.push(el("li", "pal-h", `In the write-ups and code · ${found.total > FIND_MAX ? `${FIND_MAX} of ${found.total}` : found.total}`), ...found.hits.map((d) => option(d, words)));
   if (contact.length) nodes.push(el("li", "pal-h", "Contact"), ...contact.map((a) => option(a, words)));
   if (!nodes.length) nodes.push(el("li", "pal-h", "Nothing matches. Try a language or a topic."));
   for (const n of nodes) if (n.className === "pal-h") n.setAttribute("role", "presentation");
@@ -142,9 +192,9 @@ function build() {
   plate.append(el("span", null, "Go to"), shut);
   const bar = el("div", "pal-in");
   input = el("input");
-  Object.assign(input, { type: "text", placeholder: "Project, language or topic", autocomplete: "off", spellcheck: false, enterKeyHint: "go" });
+  Object.assign(input, { type: "text", placeholder: "Project, topic, or any word on the site", autocomplete: "off", spellcheck: false, enterKeyHint: "go" });
   input.setAttribute("role", "combobox");
-  input.setAttribute("aria-label", "Search projects and actions");
+  input.setAttribute("aria-label", "Search projects, write-ups, code and actions");
   input.setAttribute("aria-expanded", "true");
   input.setAttribute("aria-controls", "pal-list");
   input.setAttribute("aria-autocomplete", "list");

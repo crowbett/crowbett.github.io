@@ -36,6 +36,22 @@ if (root) {
     });
   }
 
+  // #code-<excerpt>-L<line>, as the palette links code, opens that excerpt
+  // and marks the line.
+  const reveal = () => {
+    const m = /^#code-(\d+)(?:-L(\d+))?$/.exec(location.hash);
+    const p = m && panels[Number(m[1])];
+    if (!p) return;
+    if (tabs.length) select(Number(m[1]));
+    root.querySelector(".l.hit")?.classList.remove("hit");
+    const first = Number(p.querySelector(".ln")?.textContent);
+    const l = m[2] ? p.querySelectorAll(".l")[Number(m[2]) - first] : null;
+    l?.classList.add("hit");
+    (l ?? p).scrollIntoView({ block: "center" });
+  };
+  addEventListener("hashchange", reveal);
+  if (document.readyState === "complete") reveal(); else addEventListener("load", reveal, { once: true });
+
   // Lines arrive in a quick cascade the first time a panel scrolls into view.
   for (const p of panels) p.querySelectorAll(".l").forEach((l, i) => l.style.setProperty("--i", String(Math.min(i, 40))));
   root.classList.add("cue");
