@@ -29,6 +29,7 @@ Status (2026-10-25): live at https://crowbett.github.io. Scaffold done. 8 projec
 | One `.wasm`, gzip -9 | 2.25 MiB |
 | All `.woff2` fonts | 32 KiB |
 | One share image, `og/*.png` | 100 KiB |
+| One reel clip or its poster, `reel/*.mp4` / `*.webp` | 300 KiB |
 
 Measured (lock entries, go1.27.3): the `smoke` binary (encoding/json + runtime) is 4,396,800 bytes, 1,220,218 gzipped. The first real bridge, ratelimitd (three algorithms, `encoding/json`, `math/rand/v2`), is 4,467,874 bytes, 1,246,216 gzipped. edgecache (engine + memstore + `net/http`) is 7,856,488 bytes, 2,181,042 gzipped. jobrun (cronx + job.Policy + embedded `time/tzdata`) is 5,290,873 bytes, 1,474,581 gzipped. The Rust `smoke-rs` binary (serde_json, rustc 1.98.1, R0) is 79,972 bytes, 31,939 gzipped. Bridges that import `net/http` or more will be larger (projected), so keep them lean; TinyGo is an option only if a demo cannot fit.
 
@@ -39,6 +40,8 @@ CSS budget counts one page, not the site (decision, 2026-10-25, F4): the limit s
 CSS budget raised from 40 KiB to 48 KiB (decision, 2026-11-08, V14): the command palette, the project title and diagram morph, demo full screen, the Search key and the grouped index with its search box are site-wide, so their rules belong in site.css. That took site.css from 33,302 to ~37,500 bytes (measured), and with grepall's 7,167-byte `ui.css` the heaviest page passed 40 KiB. 8,697 bytes gzipped (measured), which is what crosses the wire. Rejected: a lazily linked palette stylesheet, since the build sums every non-demo stylesheet anyway and a first-open fetch would flash an unstyled dialog. 48 KiB leaves ~3.5 KB on the heaviest page; the next raise is another recorded decision.
 
 Share image budget (added 2026-10-24, V7): 1200×630 cards rendered by `cmd/og`, 48,139–66,604 bytes each (measured 2026-10-26), so 100 KiB holds them. The build also fails when a card's HTML, site.css or a font no longer matches the hash recorded when its PNG was made (`web/og/.sums`, `site.ImageSum`): run `go run ./cmd/og` and commit `web/og`. Diagram masks work the same way: `go run ./cmd/dither` (needs Chrome and oxipng) writes `web/assets/dg/*.png` and `.sums`.
+
+Reel clip budget (added 2026-11-09, Reel): the home reel plays a 16:10 clip of each live demo, recorded by `go run ./cmd/reel [slug…]` (needs Chrome and ffmpeg) from a dist built with `Config.Recording`, H.264 at CRF 30, 24 fps, 960 px wide CSS at 1.5x. The 14 clips measured 35,948–190,551 bytes (edgecache smallest, raytracer largest), so 300 KiB holds them; only the clip in view plays and clips load a viewport ahead, so a visitor never fetches all of them up front. The build fails when a live demo has no clip or its lock entry, `ui.js`, `ui.css` or showcase changed since recording (`web/reel/.sums`): re-record that slug and commit `web/reel`.
 
 Fonts budget (added 2026-10-24, V2): 32 KiB of woff2. Since V12 (2026-10-26) `make fonts` (`scripts/fonts.sh`) builds four OFL subsets from google/fonts at a pinned commit, sha256-checked: Archivo Expanded 800 (7,752 B), Archivo 400 (7,704 B), Martian Mono 400-700 (9,076 B) and Doto 700 (2,376 B), 26,908 bytes in total (measured), 5,860 under the limit. Rationale in `docs/design.md` §Type.
 

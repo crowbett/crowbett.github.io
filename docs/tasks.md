@@ -135,6 +135,9 @@ Shared readout, legend and stat styles landed in V15.
 Fixes from a fresh-eyes design review: the work table at 1024–1279 px (PR #14), facts overflow at 768–820, garbled diagram labels (labelled masks now 2x), palette house rules and phone layout, uppercase labels in four demos, raytracer readouts that disagreed mid-pass, mixed input faces, the inset jog, field bugs in kvlite, jobrun and edgecache, four stat block formats unified on `.cells`, off-palette legends, codegraph opening on an empty half, tag chips breaking, the 404 panel and hero alignment. Additions: a receipt line in every demo, measured start-up time in the plate, keypad hero keys, palette plate.
 Then: every demo on `.cells stack` and `.demo-legend`, colours from demo tokens via `color-mix(in oklab)` (oklch swung orange through magenta on grepall), canvases read tokens through a probe, lowercase field labels; ui.css 54,058 → 50,603 B. Left: the raytracer screen palette mirrors `--screen*`; lobby's 300 ms seat flights cross card headers in flight (by design).
 
+### V16 Work reel · status: done 2026-11-09
+The grouped work table became a scroll reel: one panel per project with a looping clip of its live demo (`cmd/reel`, showcases in `internal/site/showcase.go`, `web/reel/`), a sticky rail from 64rem, a current-project bar below, only the centred clip playing, posters only under reduced motion or Save-Data. Clips go stale with the lock entry, `ui.js`, `ui.css` or showcase (`checkReel`). Search moved to the palette (`/`). Found while recording, not fixed: codegraph scrolls the page when a link click focuses the picker; btrv flashes page 40 on Damage / Undo; kvlite's segment table resets its scroll on re-render; stash jumps when the editor is near the viewport top; lobby flights cross card headers.
+
 ## Owner only
 
 ### U1 Make more repos public · status: user

@@ -1,5 +1,5 @@
-// Cross-document view transitions: a project's title and diagram fly between
-// its home row and its page, and between projects. Only the two elements of
+// Cross-document view transitions: a project's title flies between its reel
+// panel and its page, and title and diagram between projects. Only the two elements of
 // the project being opened or left get names, so nothing else lifts out of
 // the page. Classic and in the head: pagereveal fires before modules run.
 (() => {
@@ -7,8 +7,7 @@
   const here = slugOf(location.href);
   const parts = (slug) => {
     if (here) return [document.querySelector(".project-head h1 span"), document.querySelector(".facts-fig .dm")];
-    const a = document.querySelector(`.row:not([hidden]) a[href^="/projects/${slug}/"]`);
-    return a ? [a.querySelector(".row-name span"), a.querySelector(".dm")] : [];
+    return [document.querySelector(`#p-${slug} .shot-name span`)];
   };
   const name = (slug, vt) => {
     if (!slug || !vt) return;
