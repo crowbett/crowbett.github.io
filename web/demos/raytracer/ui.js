@@ -360,7 +360,7 @@ export async function mount(root, demo) {
       x0 = Math.min(x0, X(p)); x1 = Math.max(x1, X(p));
       e0 = Math.min(e0, p.e); e1 = Math.max(e1, p.e);
     }
-    if (byTime) { x0 /= 1.5; x1 *= 1.5; } else { x0 = 1; x1 = 2 ** Math.ceil(Math.log2(Math.max(8, x1 * 1.08))); }
+    if (byTime) { x0 /= 1.5; x1 *= 1.5; } else { x0 = 2; x1 = 2 ** Math.ceil(Math.log2(Math.max(16, x1 * 1.08))); }
     e0 /= 1.3; e1 *= 1.3;
     if (e1 / e0 < 5) { const m = Math.sqrt(e0 * e1); e0 = m / Math.sqrt(5); e1 = m * Math.sqrt(5); }
     const px = (v) => L + (Math.log(v / x0) / Math.log(x1 / x0)) * (W - L - R);
@@ -380,7 +380,7 @@ export async function mount(root, demo) {
     }
     g.textAlign = "center";
     g.textBaseline = "top";
-    const xt = byTime ? ticks125(x0, x1) : Array.from({ length: Math.log2(x1) + 1 }, (_, i) => 2 ** i);
+    const xt = byTime ? ticks125(x0, x1) : Array.from({ length: Math.log2(x1) }, (_, i) => 2 ** (i + 1));
     const every = Math.ceil(xt.length / Math.max(2, Math.floor((W - L - R) / 46)));
     xt.forEach((v, i) => {
       const xx = Math.round(px(v)) + 0.5;
@@ -566,7 +566,8 @@ export async function mount(root, demo) {
       used[s].ms += ms;
       used[s].samples = r.samples;
       const e = r.rmse_estimate;
-      if (Number.isFinite(e)) {
+      // Plotted once every row has two samples, so the estimate covers the whole image.
+      if (Number.isFinite(e) && r.spp >= 2) {
         const p = { x: r.samples / (info.width * info.height), t: used[s].ms, e };
         const list = pts[s];
         if (list.length > 1 && p.x < list.at(-1).x * 1.015 && p.x < list.at(-2).x * 1.03) list[list.length - 1] = p;
