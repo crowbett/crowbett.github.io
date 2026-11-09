@@ -150,6 +150,9 @@ Every live project page opens like the home stage: the demo frame sits in the da
 ### V20 Full-screen project panels on home · status: done 2026-11-09
 The work index and its monitor became a stack of full-screen dark panels, one per project, like the home stage: name, tagline, metric and "Run it live" beside a 16:10 screen playing the project's clip. Each panel pins and the next slides up over it while the covered one sinks (view timelines named by `web/assets/work.js`); buried panels are not drawn; focus brings its panel up. Group pills on the work sheet jump to each group. e2e `workCheck` walks the reel by focus (home tabs emulate a focused page) and checks the panel covers the screen, plays alone and buries the right panels; `refusedCheck` moved to the panels.
 
+### V27 Lit panel edges · status: done 2026-11-09
+Under a mouse, the edge of the panel the pointer is over lights where the pointer is: the evidence box, the demo frame, the project info box and index previews. feel.js sets `--hx/--hy` and `data-rim`. A masked 1.5 px ring fades in, and the panel keeps its own border. Touch gets none of it.
+
 ### V26 Theme switch · status: done 2026-11-09
 A sun/moon key in the header (also `t`, and the palette) switches light and dark. The new theme opens as a circle from the key, using a view transition; it switches instantly with reduced motion or no view transitions. A choice that differs from the system's is kept in localStorage and applied by vt.js before first paint, and the theme-color metas follow. Choosing the system's theme clears the stored choice. Canvas demos redraw on a `themechange` event as well as on the system's change. The dark tokens are stated twice (system and chosen), and TestTokenContrast fails if the copies differ. The CSS budget went to 56 KiB (PLAN.md). Long titles (AnchorFlow) no longer break mid-word, and the header fits at 320 px. TestTheme covers the switch, a reload and switching back.
 
