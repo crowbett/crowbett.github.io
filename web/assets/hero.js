@@ -37,6 +37,9 @@ async function run(button, status) {
   button.textContent = "Downloading…";
   delete box.dataset.replayMatch;
   const shown = [box.querySelector("a"), box.closest(".replay").querySelector(".replay-stamp")];
+  const meter = box.closest(".replay").querySelector(".k-run");
+  delete meter.dataset.lit;
+  meter.querySelector("dd").textContent = "-- ms";
   for (const n of shown) n.hidden = true;
   let demo;
   try {
@@ -52,6 +55,8 @@ async function run(button, status) {
     if (same(got, JSON.parse(result))) {
       status.textContent = `Your browser ran it in ${ms} ms and got this chart, bar for bar.`;
       box.dataset.replayMatch = "";
+      meter.querySelector("dd").textContent = `${ms} ms`;
+      meter.dataset.lit = "";
       for (const n of shown) n.hidden = false;
       for (const a of box.closest(".replay").getAnimations({ subtree: true })) { a.cancel(); a.play(); }
       tick(got.series[0]);
