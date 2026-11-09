@@ -222,8 +222,11 @@ func tabOrder(t *testing.T, ctx context.Context) {
 		document.body.tabIndex = -1;
 		document.body.focus();
 		document.body.removeAttribute("tabindex");
-		window.__tab = [...document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]')]
-			.filter((el) => !el.disabled && el.tabIndex >= 0 && el.getClientRects().length > 0);
+		// A details element's first summary is focusable without a tabindex, and
+		// the rest of a closed one is skipped content: it has boxes, but Tab
+		// passes it by, and only checkVisibility() says so.
+		window.__tab = [...document.querySelectorAll('a[href], button, input, select, textarea, details > summary:first-of-type, [tabindex]')]
+			.filter((el) => !el.disabled && el.tabIndex >= 0 && el.getClientRects().length > 0 && el.checkVisibility());
 		return window.__tab.length;
 	})()`))
 	if err != nil {

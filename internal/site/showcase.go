@@ -27,6 +27,22 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".bt-map", Pad: 8, WideFocus: ".bt-map", WidePad: 8, Seconds: 7,
 	},
+	// The basket changes in place, never adding a line, so the crop holds still:
+	// more supplement bottles beside the shaker, then the shaker counted as a
+	// plain rigid item. Each change asks the fit engine again.
+	"anchorflow": {
+		Play: `(async () => {
+			const w = (ms) => new Promise((r) => setTimeout(r, ms));
+			const lines = () => document.querySelectorAll(".af-basket > li");
+			const qty = (li, v) => { const i = li.querySelector("input[name=qty]"); i.value = v; i.dispatchEvent(new Event("input")); };
+			const cls = (li, v) => { const s = li.querySelector("select[name=class]"); s.value = v; s.dispatchEvent(new Event("change")); };
+			await w(900); qty(lines()[1], "4");
+			await w(1700); qty(lines()[1], "8");
+			await w(1700); cls(lines()[0], "");
+			await w(1700); cls(lines()[0], "SHAKER"); qty(lines()[1], "2");
+		})()`,
+		Focus: ".af-answer-box", Pad: 8, WideFocus: ".af-answer-box", WidePad: 130, Seconds: 8,
+	},
 	// Walk the call graph from run to a callee, its callee, and back to run.
 	"codegraph": {
 		Play: `(async () => {
