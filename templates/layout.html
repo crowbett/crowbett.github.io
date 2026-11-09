@@ -30,6 +30,9 @@
 <link rel="preload" href="/assets/fonts/martian-mono.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/doto-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css">
+{{if eq .Path "/"}}<link rel="stylesheet" href="/assets/home.css">
+{{else if .Project}}<link rel="stylesheet" href="/assets/project.css">
+{{end}}
 <script src="/assets/vt.js"></script>
 </head>
 <body>
@@ -52,16 +55,4 @@
 <script type="module" src="/assets/nav.js"></script>
 </body>
 </html>
-{{end}}
-
-{{define "row"}}
-  <a href="/projects/{{.Slug}}/{{if .Live}}#demo{{end}}">
-    <span class="row-n" aria-hidden="true">{{rank .Slug}}</span>
-    <div class="row-fig" aria-hidden="true">{{template "dmask" .Slug}}</div>
-    <h4 class="row-name"><span>{{.Title}}</span></h4>
-    <span class="row-lang">{{.Lang}}</span>
-    <p class="row-tag">{{.Tagline}}</p>
-    <p class="metric">{{if .Metric}}{{bind .Metric}}{{end}}</p>
-    <div class="row-act">{{if .Live}}<span class="led">Live demo</span><span class="key">Run it</span>{{else}}<span class="led off">Source on {{if .Private}}request{{else}}GitHub{{end}}</span><span class="key">Details</span>{{end}}</div>
-  </a>
 {{end}}

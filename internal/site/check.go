@@ -19,7 +19,7 @@ import (
 // recorded in PLAN.md, never a quick fix to get the gate green.
 var Budgets = struct {
 	PageHTML    int // bytes, per HTML file
-	CSS         int // bytes, the CSS one page loads: site CSS plus the largest demo ui.css
+	CSS         int // bytes, the CSS one page loads: its stylesheets plus its demo's ui.css
 	JSPerDemo   int // bytes, one demo's ui.js
 	WASMGzipped int // bytes, one demo's .wasm after gzip -9
 	Fonts       int // bytes, all .woff2 together
@@ -49,6 +49,8 @@ var (
 	cssUse  = regexp.MustCompile(`var\((--[\w-]+)`)
 	cssDef  = regexp.MustCompile(`(--[\w-]+)\s*:`)
 	cssURL  = regexp.MustCompile(`url\("?(/[^)"]+)`)
+	cssLink = regexp.MustCompile(`<link rel="stylesheet" href="(/[^"]+)"`)
+	demoUI  = regexp.MustCompile(`data-ui="(/[^"]+/)ui\.js"`)
 	scaleFn = regexp.MustCompile(`\bscale(?:X|Y|Z|3d)?\(([^)]*)\)|(?:^|[\s;{"'])scale\s*:\s*([^;}"']*)`)
 )
 
@@ -75,7 +77,9 @@ func zeroScales(b []byte) []string {
 func Check(out string) error {
 	var problems []string
 	add := func(format string, a ...any) { problems = append(problems, fmt.Sprintf(format, a...)) }
-	css, fonts, demoCSS, heaviest := 0, 0, 0, ""
+	fonts := 0
+	cssSize := map[string]int{}
+	pageCSS := map[string][]string{}
 	var wasmRel []string
 	var wasm [][]byte
 	err := filepath.WalkDir(out, func(p string, d fs.DirEntry, err error) error {
@@ -102,6 +106,12 @@ func Check(out string) error {
 				if !bytes.Contains(b, []byte(need)) {
 					add("%s: missing %s", rel, need)
 				}
+			}
+			for _, m := range cssLink.FindAllSubmatch(b, -1) {
+				pageCSS[rel] = append(pageCSS[rel], string(m[1]))
+			}
+			for _, m := range demoUI.FindAllSubmatch(b, -1) {
+				pageCSS[rel] = append(pageCSS[rel], string(m[1])+"ui.css")
 			}
 			for _, m := range ogImage.FindAllSubmatch(b, -1) {
 				if _, err := os.Stat(filepath.Join(out, filepath.FromSlash(string(m[1])))); err != nil {
@@ -135,12 +145,8 @@ func Check(out string) error {
 					add("%s: url %s does not exist", rel, m[1])
 				}
 			}
-			if !strings.HasPrefix(rel, "/demos/") {
-				css += len(b)
-			} else {
-				if len(b) > demoCSS {
-					demoCSS, heaviest = len(b), rel
-				}
+			cssSize[rel] = len(b)
+			if strings.HasPrefix(rel, "/demos/") {
 				own := map[string]bool{}
 				for _, m := range cssDef.FindAllSubmatch(b, -1) {
 					own[string(m[1])] = true
@@ -171,8 +177,14 @@ func Check(out string) error {
 			add("%s: %d bytes gzipped, budget %d", wasmRel[i], n, Budgets.WASMGzipped)
 		}
 	}
-	if css+demoCSS > Budgets.CSS {
-		add("CSS totals %d bytes on the heaviest page (site CSS + %s), budget %d", css+demoCSS, heaviest, Budgets.CSS)
+	for page, sheets := range pageCSS {
+		n := 0
+		for _, s := range sheets {
+			n += cssSize[s]
+		}
+		if n > Budgets.CSS {
+			add("%s: CSS totals %d bytes (%s), budget %d", page, n, strings.Join(sheets, " + "), Budgets.CSS)
+		}
 	}
 	if fonts > Budgets.Fonts {
 		add("fonts total %d bytes, budget %d", fonts, Budgets.Fonts)

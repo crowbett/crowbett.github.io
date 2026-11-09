@@ -144,21 +144,36 @@ func TestBuildRejectsLiveDemoWithoutBinary(t *testing.T) {
 
 func TestCheckCountsCSSPerPage(t *testing.T) {
 	out := t.TempDir()
-	write := func(name string, n int) {
-		if err := writeFile(filepath.Join(out, name), []byte(strings.Repeat("a", n))); err != nil {
+	write := func(name, s string) {
+		if err := writeFile(filepath.Join(out, name), []byte(s)); err != nil {
 			t.Fatal(err)
 		}
 	}
-	write("index.html", 0)
-	write("assets/site.css", Budgets.CSS/2)
-	write("demos/a/ui.css", Budgets.CSS/2)
-	write("demos/b/ui.css", Budgets.CSS/2)
-	if err := Check(out); err != nil && strings.Contains(err.Error(), "CSS totals") {
-		t.Fatalf("demo stylesheets on different pages were summed:\n%v", err)
+	page := func(sheets ...string) string {
+		var b strings.Builder
+		for _, s := range sheets {
+			fmt.Fprintf(&b, `<link rel="stylesheet" href="%s">`, s)
+		}
+		return b.String()
 	}
-	write("demos/c/ui.css", Budgets.CSS/2+1)
-	if err := Check(out); err == nil || !strings.Contains(err.Error(), "site CSS + /demos/c/ui.css") {
-		t.Fatalf("want the heaviest page over budget, got %v", err)
+	half := strings.Repeat("a", Budgets.CSS/2)
+	write("assets/site.css", half)
+	write("assets/home.css", half)
+	write("assets/project.css", strings.Repeat("a", Budgets.CSS/4))
+	write("demos/a/ui.css", strings.Repeat("a", Budgets.CSS/4))
+	write("demos/b/ui.css", strings.Repeat("a", Budgets.CSS/4+1))
+	write("index.html", page("/assets/site.css", "/assets/home.css"))
+	write("a/index.html", page("/assets/site.css", "/assets/project.css")+`<section data-ui="/demos/a/ui.js">`)
+	if err := Check(out); err != nil && strings.Contains(err.Error(), "CSS totals") {
+		t.Fatalf("stylesheets on different pages were summed:\n%v", err)
+	}
+	write("b/index.html", page("/assets/site.css", "/assets/project.css")+`<section data-ui="/demos/b/ui.js">`)
+	err := Check(out)
+	if err == nil || !strings.Contains(err.Error(), "/b/index.html: CSS totals") || !strings.Contains(err.Error(), "/demos/b/ui.css") {
+		t.Fatalf("want the page with demo b over budget, got %v", err)
+	}
+	if strings.Contains(err.Error(), "/a/index.html: CSS") || strings.Contains(err.Error(), "/index.html: CSS totals "+fmt.Sprint(Budgets.CSS)) {
+		t.Fatalf("a page within budget was reported:\n%v", err)
 	}
 }
 
@@ -169,7 +184,7 @@ func TestCheckFindsProblems(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	write("index.html", `<html lang="en"><title>t</title><meta name="viewport"><a href="/missing/">x</a><a href="https://example.com/">ok</a>`)
+	write("index.html", `<html lang="en"><title>t</title><meta name="viewport"><a href="/missing/">x</a><a href="https://example.com/">ok</a><link rel="stylesheet" href="/big.css">`)
 	write("big.css", strings.Repeat("a", Budgets.CSS+1))
 	write("big.woff2", strings.Repeat("a", Budgets.Fonts+1))
 	write("og/big.png", strings.Repeat("a", Budgets.ShareImage+1))
