@@ -18,6 +18,9 @@ if (head) {
   fit();
   addEventListener("resize", fit);
   new ResizeObserver(fit).observe(head);
+  // The header names the project once its title has scrolled under it.
+  const bar = document.querySelector(".top");
+  new IntersectionObserver(([e]) => bar.toggleAttribute("data-past", !e.isIntersecting && e.boundingClientRect.top < bar.offsetHeight), { rootMargin: `-${bar.offsetHeight}px 0px 0px` }).observe(head.querySelector("h1"));
   let seen = false;
   let covered = false;
   const shown = () => seen && !covered && !document.hidden;
