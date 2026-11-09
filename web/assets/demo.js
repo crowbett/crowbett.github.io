@@ -1,4 +1,5 @@
-// Starts a project's live demo on request. A Web Worker runs the project's
+// Starts a project's live demo, on request or, in a project head, on its own
+// once it is on screen (see autostart). A Web Worker runs the project's
 // real code (Go or Rust compiled to WebAssembly) and answers JSON RPC calls; the
 // project's ui.js renders the controls. Contract: docs/demo-contract.md.
 
@@ -108,7 +109,7 @@ function keyboardScroll(mountEl) {
   check();
 }
 
-async function start(section) {
+async function start(section, { auto = false } = {}) {
   const button = section.querySelector("[data-demo-start]");
   const status = section.querySelector("[data-demo-status]");
   const mountEl = section.querySelector("[data-demo-mount]");
@@ -128,12 +129,17 @@ async function start(section) {
     keyboardScroll(mountEl);
     status.textContent = "";
     progress.row.remove();
+    const screen = section.querySelector(".ph-screen");
+    screen?.querySelector("video")?.pause();
+    screen?.remove();
     section.dataset.demoReady = "";
+    section.dispatchEvent(new Event("demoready", { bubbles: true }));
     stamp(section, performance.now() - t0);
     // The mount, not its first control: focusing a text input raised a ring
     // that read as an error and can open a phone's keyboard (V8 round 7).
+    // A demo that started on its own leaves focus where the visitor has it.
     mountEl.tabIndex = -1;
-    mountEl.focus();
+    if (!auto) mountEl.focus();
   } catch (err) {
     console.error(err);
     progress.row.remove();
@@ -142,7 +148,7 @@ async function start(section) {
     connecting.then((d) => d.close(), () => {});
     button.textContent = "Try again";
     button.disabled = false;
-    button.focus();
+    if (!auto) button.focus();
   }
 }
 
@@ -171,9 +177,32 @@ function fullScreen(section) {
   });
 }
 
+// autostart runs a project head's demo once the page has loaded and the frame
+// is on screen, like the home stage: not with reduced motion, Save-Data, a
+// 2g/3g link or fewer than 4 cores, where the recording and the key stay.
+function autostart(section) {
+  const net = navigator.connection;
+  const lean = net?.saveData || /(^|-)(2g|3g)$/.test(net?.effectiveType || "") || (navigator.hardwareConcurrency || 4) < 4;
+  if (!("autostart" in section.dataset) || lean || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const button = section.querySelector("[data-demo-start]");
+  const note = section.querySelector("[data-demo-note]");
+  if (note) note.textContent = "Above: a recording. The live build starts on its own while this is on screen.";
+  const arm = () => {
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      io.disconnect();
+      if (!button.disabled && !("demoReady" in section.dataset) && !("demoError" in section.dataset)) start(section, { auto: true });
+    }, { threshold: 0.25 });
+    io.observe(section);
+  };
+  if (document.readyState === "complete") arm();
+  else addEventListener("load", arm, { once: true });
+}
+
 for (const section of document.querySelectorAll("[data-demo]")) {
   const button = section.querySelector("[data-demo-start]");
   button.addEventListener("click", () => start(section));
+  autostart(section);
   // "Run it live" in the page head jumps to the frame and starts it.
   document.querySelector("[data-demo-go]")?.addEventListener("click", () => {
     if (!button.disabled && !("demoReady" in section.dataset)) start(section);

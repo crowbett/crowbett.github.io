@@ -1,7 +1,8 @@
 // A project page's head: a dark band that pins under the header while the
-// sheet slides over it, with the demo's recorded clip on a screen that casts
-// a glow sampled from its frames. The clip plays only while the screen is in
-// view and not covered; with reduced motion or Save-Data the poster stays.
+// sheet slides over it, with the live demo whose recorded clip holds its
+// screen until the build runs (demo.js). The glow is sampled from the clip,
+// then from the running demo's canvas. The clip plays only while the screen
+// is in view and not covered; with reduced motion or Save-Data the poster stays.
 import { play, pause } from "/assets/play.js";
 const head = document.querySelector(".project-head");
 if (head) {
@@ -19,12 +20,17 @@ if (head) {
   };
   fit();
   addEventListener("resize", fit);
+  new ResizeObserver(fit).observe(head);
+  let seen = false;
+  let covered = false;
+  const shown = () => seen && !covered && !document.hidden;
 
   const img = screen.querySelector("img");
   if (img) {
     if (img.complete) tint(img);
     else img.addEventListener("load", () => tint(img), { once: true });
   }
+  let update = () => {};
   if (screen.dataset.clip && !still) {
     const v = document.createElement("video");
     Object.assign(v, { muted: true, loop: true, playsInline: true, preload: "none", poster: img.src, src: screen.dataset.clip, disablePictureInPicture: true });
@@ -36,18 +42,23 @@ if (head) {
     };
     v.addEventListener("playing", () => { v.dataset.on = ""; if (!tick) paint(); });
     screen.prepend(v);
-    let seen = false;
-    let covered = false;
-    const update = () => {
-      if (seen && !covered && !document.hidden) {
+    update = () => {
+      if (!v.isConnected) return;
+      if (shown()) {
         v.preload = "auto";
         play(v);
       } else pause(v);
     };
-    new IntersectionObserver(([e]) => { seen = e.isIntersecting; update(); }, { threshold: 0.2 }).observe(screen);
-    if (sheet) new IntersectionObserver(([e]) => { covered = e.isIntersecting; update(); }, { rootMargin: "0px 0px -55% 0px" }).observe(sheet);
-    document.addEventListener("visibilitychange", update);
   }
+  new IntersectionObserver(([e]) => { seen = e.isIntersecting; update(); }, { threshold: 0.2 }).observe(head.querySelector(".ph-fig"));
+  if (sheet) new IntersectionObserver(([e]) => { covered = e.isIntersecting; update(); }, { rootMargin: "0px 0px -55% 0px" }).observe(sheet);
+  document.addEventListener("visibilitychange", () => update());
+  // Once the demo runs, its largest canvas (if it draws one) lights the glow.
+  head.addEventListener("demoready", (e) => {
+    const c = [...e.target.querySelectorAll("[data-demo-mount] canvas")].sort((a, b) => b.width * b.height - a.width * a.height)[0];
+    if (!c) return;
+    setInterval(() => { if (shown()) tint(c); }, 500);
+  });
 }
 
 // The pager cards light where the pointer is.
