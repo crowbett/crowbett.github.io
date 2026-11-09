@@ -791,6 +791,42 @@ const codeCheck = `(async () => {
 const traceCheck = `until(() => {
 	if (!location.pathname.startsWith("/projects/")) return true;
 	const l = document.querySelector("[data-code-link]");
-	return !l.hidden && Number(l.querySelector("[data-code-total]").textContent.replace(/k$/, "e3")) > 0 &&
+	return !l.hidden && parseFloat(l.querySelector("[data-code-total]").textContent) > 0 &&
 		[...document.querySelectorAll("[data-ran]")].some((r) => r.textContent !== "") === (document.querySelector('[role="tab"]') !== null);
 })`
+
+// timelineCheck: the demo's calls are on the timeline, and the keys step to
+// the oldest call and show it.
+const timelineCheck = `until(() => {
+	if (!location.pathname.startsWith("/projects/")) return true;
+	const tl = document.querySelector("[data-timeline]");
+	if (!tl || tl.hidden) return false;
+	const c = tl.querySelector("canvas");
+	if (!(Number(c.getAttribute("aria-valuemax")) > 0)) return false;
+	const key = (k) => c.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true }));
+	key("Home");
+	const ok = c.getAttribute("aria-valuenow") === "1" && /^#\d+ \S/.test(tl.querySelector(".tl-dh b").textContent) &&
+		tl.querySelector(".tl-d dd code") !== null && /^call \d+: /.test(c.getAttribute("aria-valuetext"));
+	key("Escape");
+	return ok && /^[\d,]+ calls? · median (<)?[\d.]+ m?s in the binary · \d+\/s/.test(tl.querySelector("[data-tl-sum]").textContent);
+})`
+
+// xrayCheck: X opens the X-ray panel with the lock's numbers and live ones,
+// and outlines what runs on the page.
+const xrayCheck = `(async () => {
+	document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "x", bubbles: true }));
+	const d = document.querySelector("[data-demo]");
+	return until(() => {
+		const x = document.querySelector(".xr");
+		if (!x || x.hidden || !document.documentElement.hasAttribute("data-xray")) return false;
+		const t = x.textContent;
+		return /pageHTML [\d.]+ KB/.test(t) && document.querySelectorAll(".xr-box").length > 0 &&
+			(!d || (t.includes(Number(d.dataset.bytes).toLocaleString("en-US") + " B") && t.includes("workerrunning") && /memory[\d.]+ MB of linear memory/.test(t)));
+	});
+})()`
+
+// xrayClose: Escape closes it and takes the outlines away.
+const xrayClose = `(() => {
+	document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+	return until(() => document.querySelector(".xr").hidden && !document.documentElement.hasAttribute("data-xray") && document.querySelectorAll(".xr-box").length === 0);
+})()`
