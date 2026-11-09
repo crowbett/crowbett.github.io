@@ -103,6 +103,9 @@ if (section && acts) {
     showBtn.setAttribute("aria-pressed", "true");
     const t = kit(stop.signal);
     const steps = mod.steps;
+    // A demo mostly below the fold pauses itself, so the tour brings it up.
+    const r = mount.getBoundingClientRect();
+    if (r.top > innerHeight / 3 || r.bottom < innerHeight / 2) section.scrollIntoView({ block: "start", behavior: reduce.matches ? "instant" : "smooth" });
     // The visitor's own press or key takes the demo back.
     const own = (e) => { if (e.isTrusted && !showBtn.contains(e.target)) stop.abort(); };
     mount.addEventListener("pointerdown", own, true);
