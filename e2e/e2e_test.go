@@ -533,6 +533,29 @@ func visitTab(t *testing.T, d time.Duration) (ctx context.Context, release func(
 	}
 }
 
+// cores sets the navigator.hardwareConcurrency the tab reports.
+func cores(n int64) chromedp.Action[chromedp.Void] {
+	return chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
+		_, err := cdp.Call(ctx, t, emulation.SetHardwareConcurrencyOverride, emulation.SetHardwareConcurrencyOverrideParams{HardwareConcurrency: n})
+		return err
+	})
+}
+
+// clsJS sums the page's layout shifts so far, leaving out shifts that
+// followed input, and names what moved.
+const clsJS = `new Promise((resolve) => {
+		const out = { Sum: 0, Moved: [] };
+		const box = (r) => [r.x, r.y, r.width, r.height].map(Math.round).join(",");
+		new PerformanceObserver((l) => {
+			for (const e of l.getEntries()) {
+				if (e.hadRecentInput) continue;
+				out.Sum += e.value;
+				for (const s of e.sources) out.Moved.push((s.node?.outerHTML ?? "#text").slice(0, 80) + " " + box(s.previousRect) + " -> " + box(s.currentRect) + " at " + Math.round(e.startTime) + " ms");
+			}
+		}).observe({ type: "layout-shift", buffered: true });
+		setTimeout(() => resolve(out), 50);
+	})`
+
 func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot string) {
 	tab, release := visitTab(t, 90*time.Second)
 	defer func() { release(!t.Failed()) }()
@@ -557,7 +580,17 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 		}
 	}()
 
+	// A project head starts its demo on its own on 4+ cores. Desktop light
+	// checks that path; every other tab reports 2 cores so its demo waits
+	// for the key (phone) or never starts (layout tabs), keeping CI's CPU for
+	// the checks.
+	auto := w >= 1000 && !layoutOnly && scheme == "light"
+	n := int64(2)
+	if auto || !strings.Contains(url, "/projects/") {
+		n = 8
+	}
 	err := chromedp.Do(ctx,
+		cores(n),
 		chromedp.EmulateViewport(w, h, touch(w)...),
 		chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
 			_, err := cdp.Call(ctx, t, emulation.SetEmulatedMedia, emulation.SetEmulatedMediaParams{
@@ -571,24 +604,13 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Layout shift is measured before any demo starts: a demo grows its frame
-	// when the visitor runs it, which is content they asked for.
+	// Layout shift is measured before any demo starts, and again on desktop
+	// light once the head's demo has started on its own.
 	type shift struct {
 		Sum   float64
 		Moved []string
 	}
-	cls, err := chromedp.Run(ctx, chromedp.Evaluate[shift](`new Promise((resolve) => {
-		const out = { Sum: 0, Moved: [] };
-		const box = (r) => [r.x, r.y, r.width, r.height].map(Math.round).join(",");
-		new PerformanceObserver((l) => {
-			for (const e of l.getEntries()) {
-				if (e.hadRecentInput) continue;
-				out.Sum += e.value;
-				for (const s of e.sources) out.Moved.push((s.node?.outerHTML ?? "#text").slice(0, 80) + " " + box(s.previousRect) + " -> " + box(s.currentRect) + " at " + Math.round(e.startTime) + " ms");
-			}
-		}).observe({ type: "layout-shift", buffered: true });
-		setTimeout(() => resolve(out), 50);
-	})`, chromedp.EvalAwaitPromise))
+	cls, err := chromedp.Run(ctx, chromedp.Evaluate[shift](clsJS, chromedp.EvalAwaitPromise))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -603,20 +625,37 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 	// contrast; desktop dark shares the light layout. Tablet starts it only
 	// for local screenshots, so a running demo is seen at iPad width.
 	if hasDemo && (!layoutOnly || keepShots) && (scheme == "light" || w < 1000) {
-		// Desktop starts from the head: its clip plays, then "Run it live"
-		// jumps to the frame and starts it. Phone uses the frame's own key.
-		start := "[data-demo-start]"
-		head, _ := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector("[data-demo-go]") !== null`))
-		if head && w >= 1000 && !layoutOnly {
-			start = "[data-demo-go]"
-			if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(`(() => { const v = document.querySelector(".ph-screen video"); return until(() => v && !v.paused && "on" in v.dataset); })()`), chromedp.EvalAwaitPromise)); err != nil || !ok {
-				t.Errorf("project head clip did not play (err %v)", err)
-			}
-		}
-		err := chromedp.Do(ctx, chromedp.Click(chromedp.CSS(start)))
-		if err == nil {
+		// Desktop light waits for the head's demo to start on its own, with no
+		// shift and focus left alone. Phone checks the recording plays in the
+		// frame, then uses the frame's own key.
+		var err error
+		head, _ := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector("[data-autostart]") !== null`))
+		if auto && head {
 			_, err = chromedp.Run(ctx, chromedp.Poll[bool](`document.querySelector("[data-demo-ready],[data-demo-error]") !== null`,
 				chromedp.WithPollingTimeout(60*time.Second)))
+			if err == nil {
+				after, err2 := chromedp.Run(ctx, chromedp.Evaluate[shift](clsJS, chromedp.EvalAwaitPromise))
+				if err2 != nil {
+					t.Fatal(err2)
+				}
+				if after.Sum != 0 {
+					t.Errorf("layout shift %.4f once the demo started on its own, want 0; moved: %s", after.Sum, strings.Join(after.Moved, "; "))
+				}
+				if f, _ := chromedp.Run(ctx, chromedp.Evaluate[string](`document.activeElement.tagName + (document.querySelector(".ph-screen") ? " screen kept" : "")`)); f != "BODY" {
+					t.Errorf("after starting on its own: focus %q, want BODY and the recording removed", f)
+				}
+			}
+		} else {
+			if head && w < 1000 && !layoutOnly && scheme == "light" {
+				if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(`(() => { const v = document.querySelector(".ph-screen video"); return until(() => v && !v.paused && "on" in v.dataset); })()`), chromedp.EvalAwaitPromise)); err != nil || !ok {
+					t.Errorf("recording in the demo frame did not play (err %v)", err)
+				}
+			}
+			err = chromedp.Do(ctx, chromedp.Click(chromedp.CSS("[data-demo-start]")))
+			if err == nil {
+				_, err = chromedp.Run(ctx, chromedp.Poll[bool](`document.querySelector("[data-demo-ready],[data-demo-error]") !== null`,
+					chromedp.WithPollingTimeout(60*time.Second)))
+			}
 		}
 		if err != nil {
 			t.Fatalf("demo did not start: %v", err)

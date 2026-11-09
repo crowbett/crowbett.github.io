@@ -25,7 +25,8 @@ func TestPalette(t *testing.T) {
 		{"finds", `(async () => { const i = document.querySelector(".pal input"); i.value = "rlim"; i.dispatchEvent(new Event("input")); return until(() => document.querySelector(".pal [aria-selected] b")?.textContent === "ratelimitd" && i.getAttribute("aria-activedescendant") === document.querySelector(".pal [aria-selected]").id); })()`},
 		{"opens the project", `(async () => { document.querySelector(".pal input").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); return true; })()`},
 	}
-	err := chromedp.Do(ctx, chromedp.EmulateViewport(390, 844, chromedp.EmulateTouch), chromedp.Navigate(srv.URL+"/projects/keel/"), chromedp.WaitReady(chromedp.CSS("body")))
+	// Two cores: the demo waits for the key, so the palette offers it.
+	err := chromedp.Do(ctx, cores(2), chromedp.EmulateViewport(390, 844, chromedp.EmulateTouch), chromedp.Navigate(srv.URL+"/projects/keel/"), chromedp.WaitReady(chromedp.CSS("body")))
 	if err != nil {
 		t.Fatal(err)
 	}
