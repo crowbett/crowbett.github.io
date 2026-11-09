@@ -40,6 +40,7 @@
 .crumb a { color: var(--text-2); }
 .project-head .crumb { color: var(--screen-dim); }
 .project-head .crumb a { color: var(--screen-ink); }
+.project-head h1.long { font-size: calc(var(--t-h1) * 0.84); }
 .project-head h1 { padding-block: var(--sp-2) var(--sp-3); font-size: var(--t-h1); line-height: 0.88; letter-spacing: -0.05em; text-indent: -0.04em; overflow-wrap: anywhere; color: var(--screen-ink); text-shadow: 0 0 48px color-mix(in oklab, var(--accent) 45%, transparent); }
 .ph-text { display: grid; gap: var(--sp-5); align-content: start; }
 .ph-text > * { margin: 0; }

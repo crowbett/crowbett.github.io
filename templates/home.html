@@ -41,7 +41,7 @@
       <div class="it-in">
         <div class="it-text">
           {{if eq $i 0}}<h3 class="it-g" id="g-{{$g.Key}}">{{$g.Name}}</h3>{{else}}<p class="it-g">{{$g.Name}}</p>{{end}}
-          <h4><a href="/projects/{{.Slug}}/"><span class="it-n">{{rank .Slug}}</span> <span class="it-name">{{.Title}}</span></a></h4>
+          <h4{{if gt (len .Title) 9}} class="long"{{end}}><a href="/projects/{{.Slug}}/"><span class="it-n">{{rank .Slug}}</span> <span class="it-name">{{.Title}}</span></a></h4>
           <p class="it-tag">{{.Tagline}}</p>
           {{if .Metric}}<p class="it-metric"><span class="metric">{{bind .Metric}}</span></p>{{end}}
           <p class="it-act">{{if .Live}}<a class="key" href="/projects/{{.Slug}}/#demo">Run it live</a>{{else}}<span class="led off">Source on {{if .Private}}request{{else}}GitHub{{end}}</span>{{end}}<span class="it-lang">{{.Lang}}</span></p>

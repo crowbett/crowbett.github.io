@@ -6,6 +6,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"maps"
 	"math"
 	"net/http"
 	"net/http/httptest"
@@ -76,13 +77,13 @@ var (
 )
 
 // themeTokens reads the first :root block (light) and the :root inside the
-// prefers-color-scheme: dark query; dark inherits what it does not override,
+// prefers-color-scheme: dark query, which :root[data-theme=dark] repeats; dark inherits what it does not override,
 // and an alias (--attack: var(--accent-tint)) takes its target's value in each scheme.
 func themeTokens(t *testing.T, css string) (light, dark map[string]string) {
-	block := func(s string) string {
-		i := strings.Index(s, ":root {")
+	block := func(s, head string) string {
+		i := strings.Index(s, head)
 		if i < 0 {
-			t.Fatal("site.css: no :root block")
+			t.Fatalf("site.css: no %s block", head)
 		}
 		return s[i : i+strings.Index(s[i:], "}")]
 	}
@@ -102,7 +103,7 @@ func themeTokens(t *testing.T, css string) (light, dark map[string]string) {
 	}
 	light, dark = map[string]string{}, map[string]string{}
 	la, da := map[string]string{}, map[string]string{}
-	read(block(css), light, la)
+	read(block(css, ":root {"), light, la)
 	i := strings.Index(css, "@media (prefers-color-scheme: dark)")
 	if i < 0 {
 		t.Fatal("site.css: no dark scheme")
@@ -113,7 +114,14 @@ func themeTokens(t *testing.T, css string) (light, dark map[string]string) {
 	for k, v := range la {
 		da[k] = v
 	}
-	read(block(css[i:]), dark, da)
+	read(block(css[i:], ":root:not([data-theme=light]) {"), dark, da)
+	// The switch's copy of the dark tokens (:root[data-theme=dark]) must match.
+	sys, chosen := map[string]string{}, map[string]string{}
+	read(block(css[i:], ":root:not([data-theme=light]) {"), sys, map[string]string{})
+	read(block(css, ":root[data-theme=dark] {"), chosen, map[string]string{})
+	if !maps.Equal(sys, chosen) {
+		t.Errorf("site.css: :root[data-theme=dark] tokens %v differ from the prefers-color-scheme ones %v", chosen, sys)
+	}
 	resolve(light, la)
 	resolve(dark, da)
 	return light, dark
