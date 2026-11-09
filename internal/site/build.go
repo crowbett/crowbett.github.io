@@ -132,6 +132,10 @@ func prepare(cfg Config) (*prepared, error) {
 			}
 			return "/demos/" + slug + "/tour.js"
 		},
+		"tourShares": func(slug string) bool {
+			b, err := fs.ReadFile(cfg.Src, "web/demos/"+slug+"/tour.js")
+			return err == nil && bytes.Contains(b, []byte("export const share"))
+		},
 		"bind":    bindNumbers,
 		"figures": figures,
 		"pg": func(rel, label string, p *Project) pagerLink {

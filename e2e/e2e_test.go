@@ -678,7 +678,7 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 		}
 		// Demos pause off screen, and on a phone the swap from recording to
 		// live build can leave the demo just below the fold.
-		if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`(document.querySelector("[data-demo-mount]").scrollIntoView({ block: "start" }), true)`)); err != nil {
+		if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`(async () => { document.querySelector("[data-demo-mount]").scrollIntoView({ block: "start" }); for (let i = 0; i < 2; i++) await new Promise(requestAnimationFrame); return true; })()`, chromedp.EvalAwaitPromise)); err != nil {
 			t.Fatal(err)
 		}
 		checks := demoChecks[slug]
@@ -694,9 +694,6 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 			}
 		}
 		if scheme == "light" && !layoutOnly {
-			if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(traceCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
-				t.Errorf("demo %q: its calls lit no code in the code panel (err %v)", slug, err)
-			}
 			if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(timelineCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
 				t.Errorf("demo %q: call timeline check failed (err %v)", slug, err)
 			}
@@ -723,8 +720,8 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 		tabOrder(t, ctx)
 	}
 	if isProject, _ := chromedp.Run(ctx, chromedp.Evaluate[bool](`location.pathname.startsWith("/projects/")`)); isProject && !layoutOnly && scheme == "light" {
-		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(codeCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
-			t.Errorf("code panel check failed (err %v)", err)
+		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(stageCheckProject), chromedp.EvalAwaitPromise)); err != nil || !ok {
+			t.Errorf("project layout check failed (err %v)", err)
 		}
 	}
 	if isHome, _ := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector(".work") !== null`)); isHome && !layoutOnly && scheme == "light" {

@@ -41,34 +41,34 @@
 .project-head .crumb { color: var(--screen-dim); }
 .project-head .crumb a { color: var(--screen-ink); }
 .project-head h1.long { font-size: calc(var(--t-h1) * 0.84); }
-.project-head h1 { padding-block: var(--sp-2) var(--sp-3); font-size: var(--t-h1); line-height: 0.88; letter-spacing: -0.05em; text-indent: -0.04em; overflow-wrap: anywhere; color: var(--screen-ink); text-shadow: 0 0 48px color-mix(in oklab, var(--accent) 45%, transparent); }
+.project-head h1 { padding-block: var(--sp-2) var(--sp-3); font-size: var(--t-h1); line-height: 0.88; letter-spacing: -0.05em; text-indent: -0.04em; overflow-wrap: anywhere; color: var(--screen-ink); }
 .ph-text { display: grid; gap: var(--sp-5); align-content: start; }
 .ph-text > * { margin: 0; }
 .project-head .lede { max-width: 32em; font-size: var(--t-lede); line-height: 1.4; color: var(--screen-dim); text-wrap: balance; }
-.result { display: grid; gap: var(--sp-2); justify-items: start; margin: 0; padding: var(--sp-4); border-radius: var(--r-2); background: oklch(1 0 0 / 0.04); box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.1); }
-.result-label { margin: 0; padding: 2px var(--sp-2); font-family: var(--mono); font-size: var(--t-label); background: var(--block); color: var(--on-block); }
-.result .metric { margin: 0; font: 400 clamp(1rem, 0.9rem + 0.4vw, 1.25rem)/1.5 var(--mono); color: var(--screen-ink); }
-.result .source { font: 400 var(--t-label)/1.6 var(--mono); color: var(--screen-dim); }
+.result { display: grid; gap: var(--sp-2); justify-items: start; margin: 0; padding-left: var(--sp-4); border-left: 2px solid var(--screen-signal); }
+.result .metric { margin: 0; max-width: 28em; font: 500 clamp(1.05rem, 0.95rem + 0.45vw, 1.35rem)/1.35 var(--sans); color: var(--screen-ink); text-wrap: pretty; }
+.result .source { font-size: var(--t-small); line-height: 1.5; color: var(--screen-dim); }
 .ph-go { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-5); }
 .project-head .key { border-color: var(--block); background: var(--block); color: var(--on-block); font-size: var(--t-small); padding: var(--sp-2) var(--sp-4); }
 .project-head .key:hover { background: var(--block-hover); border-color: var(--block-hover); }
-.ph-src { color: var(--screen-ink); font: 400 var(--t-label)/1.5 var(--mono); }
+.ph-src, .ph-src:hover { color: var(--screen-ink); font: 400 var(--t-small)/1.5 var(--sans); }
 .ph-fig { position: relative; margin: 0; }
-.ph-fig .glow { left: -12%; top: -18%; width: 124%; height: 136%; opacity: 0.7; }
-/* Beside a live demo the glow hangs from the top at a fixed shape: the frame grows as fonts land and the demo mounts, and a glow sized by it would shift */
-.ph-fig:has(.demo) .glow { top: -5rem; height: auto; aspect-ratio: 1; }
 .ph-dm { position: absolute; inset: 0; display: grid; place-items: center; }
 .project-head .led.off { color: var(--screen-dim); }
 .sheet-in { display: grid; gap: var(--sp-6); padding-bottom: var(--sp-6); }
-#demo, #code { scroll-margin-top: calc(var(--top-h) + var(--sp-4)); }
+#demo { scroll-margin-top: calc(var(--top-h) + var(--sp-4)); }
 .demo { box-shadow: var(--lift); }
 .project-head .demo { color: var(--text); }
 .demo > .ph-screen { padding: 0; border-radius: 0; box-shadow: none; background: var(--screen); }
+/* Wide: the title, then the claim and its measured result side by side, then the demo across the full width */
 @media (min-width: 64rem) {
-  .ph-in { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); padding-block: var(--sp-6) calc(var(--sp-8) + 36px); }
-  .ph-in > :is(.crumb, h1) { grid-column: 1 / -1; }
-  .ph-fig { grid-row: 3; grid-column: 2; }
-  .ph-text { grid-row: 3; grid-column: 1; }
+  .ph-in { padding-block: var(--sp-6) calc(var(--sp-8) + 36px); }
+  .ph-text { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--sp-4) var(--sp-7); align-items: end; }
+  .ph-text .lede { grid-column: 1; grid-row: 1; }
+  .ph-text .ph-go { grid-column: 1; grid-row: 2; }
+  .ph-text .result { grid-column: 2; grid-row: 1 / span 2; }
+  .ph-fig { margin-top: var(--sp-5); }
+  .ph-fig:not(:has(.demo)) .ph-screen { aspect-ratio: 16 / 5; }
 }
 @media (min-width: 48rem) { .project-info { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); } }
 .body { padding: var(--sp-5) var(--sp-4); }
@@ -94,21 +94,25 @@
 }
 
 /* Plates: blue blocks that name a module */
-.demo-head > * { font-family: var(--mono); font-size: var(--t-label); background: var(--block); color: var(--on-block); }
+.demo-head > * { font-family: var(--mono); font-size: var(--t-label); background: var(--surface); color: var(--text-3); }
 
 /* Demo frame (class names shared with demos: docs/demo-contract.md) */
 .demo { display: flex; flex-direction: column; margin: 0; }
 .demo > * { padding: var(--sp-4); }
 .demo > :empty { display: none; }
-.demo-head { order: -2; grid-template-columns: auto minmax(0, 1fr) auto; padding: 0; }
+/* The head is the demo's toolbar, pinned while the demo scrolls: name, build, the tour and link keys (shown once the demo runs, in the same row so nothing moves), full screen, and the tour's caption under them */
+.demo-head { order: -2; position: sticky; z-index: 3; top: var(--top-h); display: flex; flex-wrap: wrap; padding: 0; }
+.demo:fullscreen .demo-head { top: 0; }
 .demo-head > * { display: flex; align-items: center; padding: var(--sp-2) var(--sp-4); }
+.demo-acts { display: contents; }
+.demo .demo-head button { padding: var(--sp-2) var(--sp-4); border: 0; font-size: var(--t-label); background: var(--surface); color: var(--text-2); }
+.demo .demo-head button:hover { background: var(--sunken); color: var(--text); }
+.demo .demo-head [data-tour-go] { color: var(--accent); }
 .demo-head h2 { gap: var(--sp-2); font-weight: 400; letter-spacing: 0; }
-.demo-head h2::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--screen-ok); box-shadow: 0 0 0 2px var(--on-block); }
-.demo .demo-spec { display: block; align-content: center; overflow: hidden; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; text-overflow: ellipsis; }
+.demo .demo-spec { display: block; flex: 1 1 0; min-width: 0; align-content: center; overflow: hidden; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; text-overflow: ellipsis; }
 @media (width < 40rem) { .demo[data-demo-ready] .demo-kind { display: none; } }
-.demo .demo-full { border: 0; font-size: var(--t-label); }
 .demo .demo-full:not([data-on]) { visibility: hidden; }
-@media (width < 40rem) { .demo .demo-full { display: none; } }
+@media (width < 40rem) { .demo .demo-full { display: none; } .demo-head:has(.demo-acts) .demo-spec { display: none; } .demo-head h2 { flex: 1; } }
 .demo:fullscreen { overflow-y: auto; border: 0; background: var(--bg); }
 .demo:fullscreen > :not(.demo-head) { width: min(90rem, 100%); margin-inline: auto; }
 .demo-try { order: -1; margin: 0; color: var(--text); }
@@ -170,49 +174,7 @@
 /* Touch */
 @media (pointer: coarse) { .demo-mount input, .demo-mount select, .demo-mount textarea { font-size: max(16px, 1rem); } }
 
-/* The code: excerpts of the real source on a dark screen. A demo call that runs one sweeps a beam down it and counts on its tab */
-.code { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; border: 1px solid var(--line-strong); border-radius: var(--r-2); overflow: clip; background: radial-gradient(120% 90% at 85% 0%, color-mix(in oklab, var(--accent) 10%, transparent), transparent 60%), var(--screen); color: var(--screen-ink); box-shadow: var(--lift); }
-.code-head { display: grid; gap: var(--sp-2) var(--sp-5); align-items: baseline; padding: var(--sp-5) var(--sp-4) var(--sp-4); }
-.code-head > *, .code-ex { margin: 0; }
-.code h2 { font-size: clamp(1.5rem, 1.2rem + 1.3vw, 2.25rem); }
-.code-src, .cx-why { max-width: var(--measure); color: var(--screen-dim); font-size: var(--t-small); }
-.sha, .cx-t { font-family: var(--mono); color: var(--screen-ink); }
-.code-trace, .code-ex figcaption, .code-tabs [role=tab], .demo-code { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-3); align-items: baseline; font: 400 var(--t-label)/1.5 var(--mono); color: var(--screen-dim); }
-.code .led { color: var(--screen-ok); }
-.code .led.off { color: var(--screen-dim); }
-.code-tabs { display: flex; gap: var(--sp-1); padding: 0 var(--sp-4); overflow-x: auto; border-bottom: 1px solid oklch(1 0 0 / .1); }
-.code-tabs [role=tab] { position: relative; flex-wrap: nowrap; align-items: center; min-height: 44px; padding: var(--sp-2) var(--sp-3); border: 0; border-radius: 6px 6px 0 0; background: none; white-space: nowrap; transition: color var(--d-base), background-color var(--d-base); }
-.code-tabs [role=tab]:hover, .code-tabs [aria-selected=true] { color: var(--screen-ink); background: oklch(1 0 0 / .06); }
-.code-tabs [role=tab]::after { content: ""; position: absolute; inset: auto var(--sp-3) -1px; height: 2px; background: linear-gradient(90deg, var(--accent), var(--screen-signal)); scale: .001 1; opacity: 0; transition: scale var(--d-spring) var(--ease-in), opacity var(--d-base); }
-.code-tabs [aria-selected=true]::after { scale: 1; opacity: 1; }
-.ran:empty, .demo-code[hidden] { display: none; }
-.ran { padding: 0 var(--sp-2); border-radius: 999px; background: color-mix(in oklab, var(--screen-ok) 18%, transparent); color: var(--screen-ok); font-variant-numeric: tabular-nums; }
-.code-ex figcaption { padding: var(--sp-3) var(--sp-4); }
-.cx-t { font-weight: 700; }
-.cx-path { overflow-wrap: anywhere; }
-.cx-calls code { background: none; color: var(--screen-ok); }
-.cx-why { flex-basis: 100%; font-family: var(--sans); }
-.cx-scroll { margin: 0; padding: var(--sp-2) 0 var(--sp-4); font: 400 clamp(.72rem, .68rem + .2vw, .8125rem)/1.7 var(--mono); tab-size: 4; background: linear-gradient(transparent, color-mix(in oklab, var(--accent) 28%, transparent) 50%, transparent) no-repeat 0 -6rem / 100% 6rem; }
-.cx-scroll:focus-visible { outline-offset: -2px; }
-.cx-scroll code { display: block; min-width: max-content; font: inherit; }
-.l { display: block; padding-inline: var(--sp-2) var(--sp-4); }
-.l:hover { background: oklch(1 0 0 / .05); }
-.l.hit { background: oklch(1 0 0 / .1); box-shadow: inset 3px 0 var(--screen-signal); }
 .found { outline: 2px solid var(--accent); outline-offset: 6px; border-radius: 2px; }
-.ln { display: inline-block; width: 4.5ch; margin-right: var(--sp-3); padding-right: var(--sp-2); text-align: right; color: oklch(1 0 0 / .3); user-select: none; }
-.tk { color: oklch(.78 .13 305); } .tt { color: oklch(.82 .1 205); } .ts { color: oklch(.81 .12 145); } .tn { color: oklch(.83 .12 70); } .tf { color: oklch(.85 .09 255); } .ta { color: oklch(.78 .12 25); } .tc { color: oklch(.63 .03 255); }
-.demo-code .led { color: inherit; }
-.demo-code { justify-content: space-between; padding: var(--sp-2) var(--sp-4); background: var(--surface); color: var(--text-2); text-decoration: none; }
-@media (min-width: 48rem) { .code-head { grid-template-columns: auto 1fr; } .code-trace { grid-column: 1 / -1; } .code-head, .code-ex figcaption, .code-tabs { padding-inline: var(--sp-5); } }
-@keyframes beam { to { background-position: 0 calc(100% + 6rem); } }
-@keyframes ping { 50% { box-shadow: inset 0 -2px var(--accent); } }
-.hot .cx-scroll { animation: beam 700ms var(--ease-in); }
-.ping { animation: ping 600ms var(--ease-in); }
-@media (prefers-reduced-motion: no-preference) {
-  .cue .l { transition: opacity 420ms var(--ease-in) calc(var(--i) * 14ms), translate 520ms var(--ease-in) calc(var(--i) * 14ms); }
-  .cue:not(.seen) .l { opacity: 0; translate: -0.75rem 0; }
-}
-@media (prefers-reduced-motion: reduce) { .hot .cx-scroll { animation-duration: 1ms; } }
 
 /* Call timeline */
 .tl { display: grid; gap: var(--sp-2); }
@@ -247,13 +209,12 @@
 @media (width < 40rem) { .xr { inset: auto 0 0; width: auto; border-radius: var(--r-2) var(--r-2) 0 0; } }
 
 /* Autopilot tours and share links */
-.demo-acts { position: sticky; z-index: 3; top: var(--top-h); display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); align-items: center; }
-.demo .demo-acts button.secondary { background: var(--bg); color: var(--text); border-color: var(--rule); }
-.demo .demo-acts button.secondary:hover { background: var(--block); border-color: var(--block); color: var(--on-block); }
-.tour-cap { display: flex; flex-basis: 100%; gap: var(--sp-3); margin: 0; padding: var(--sp-2) var(--sp-3); border-left: 3px solid var(--signal); background: var(--sunken); font-size: var(--t-small); animation: rise var(--d-spring) var(--spring-soft); }
-.demo-acts[hidden], .tour-cap[hidden] { display: none; }
+.tour-cap { display: flex; flex-basis: 100%; gap: var(--sp-3); margin: 0; padding: var(--sp-2) var(--sp-4); font-family: var(--sans); color: var(--text); border-left: 3px solid var(--signal); background: var(--sunken); font-size: var(--t-small); animation: rise var(--d-spring) var(--spring-soft); }
+.tour-cap[hidden] { display: none; }
+/* The keys keep their room until the live build is ready, so the head never reflows. */
+.demo-acts[hidden] { display: contents; }
+.demo-acts[hidden] > * { visibility: hidden; }
 .tour-n { flex: none; font: 400 var(--t-label)/1.6 var(--mono); color: var(--text-3); font-variant-numeric: tabular-nums; }
 .tour-cursor { position: fixed; z-index: 9; top: 0; left: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; border: 2px solid var(--signal); border-radius: 50%; background: color-mix(in oklab, var(--signal) 25%, transparent); box-shadow: 0 0 0 6px color-mix(in oklab, var(--signal) 15%, transparent); pointer-events: none; transition: translate 480ms var(--spring-snappy); }
 .tour-on { outline: 2px solid var(--signal); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .tour-cursor { transition: none; } }
-@media (width < 40rem) { .demo-acts { padding-block: var(--sp-2); gap: var(--sp-2); } .demo .demo-acts button { padding: var(--sp-1) var(--sp-2); font-size: var(--t-label); } .tour-cap { padding-block: var(--sp-1); } }
