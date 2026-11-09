@@ -1,0 +1,98 @@
+.lj-controls { display: grid; gap: 10px; margin-bottom: 12px; }
+.lj-acts, .lj-attacks { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; }
+.lj-acts button, .lj-acts select { height: 2.25rem; box-sizing: border-box; }
+.lj-attacks { align-items: center; gap: 8px; margin-top: 10px; }
+.lj-attacks .demo-label { flex-basis: 100%; }
+.lj-attacks button { flex: 1 1 auto; height: 2rem; padding-inline: 0.6rem; font-size: 0.8125rem; }
+.lj-check input { width: 1.25rem; height: 1.25rem; margin: 8px 0; }
+
+.lj-pair { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0 0 12px; padding: 0; list-style: none; font: 400 var(--t-label)/1.5 var(--mono); color: var(--text-2); }
+.lj-pair li { display: flex; gap: 6px; }
+.lj-pk { color: var(--text-3); }
+.lj-pv { color: var(--text); }
+.lj-pv.lj-bad { color: var(--danger); }
+
+.lj-wrap { container-type: inline-size; }
+.lj-stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "mac phone" "relay relay"; gap: 1px; background: var(--line-strong); border: 1px solid var(--line-strong); }
+.lj-mac { grid-area: mac; }
+.lj-relay { grid-area: relay; }
+.lj-phone { grid-area: phone; }
+.lj-relay .lj-log { height: auto; min-height: 0; max-height: 11rem; }
+@container (min-width: 900px) {
+  .lj-stage { grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.78fr) minmax(0, 1fr); grid-template-areas: "mac relay phone"; }
+  .lj-relay .lj-log { flex: 1 1 0; height: 0; min-height: 12rem; max-height: none; }
+}
+@container (max-width: 520px) {
+  .lj-stage { grid-template-columns: minmax(0, 1fr); grid-template-areas: "mac" "phone" "relay"; }
+}
+.lj-pane { display: flex; flex-direction: column; min-width: 0; background: var(--sunken); padding: 10px; }
+.lj-head { display: flex; gap: 8px; align-items: baseline; margin: 0 0 8px; font: 400 var(--t-label)/1.4 var(--mono); color: var(--text-3); }
+.lj-head b { font-weight: 600; color: var(--text); }
+.lj-head span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.lj-term { padding: 8px; background: var(--surface); border: 1px solid var(--line); font-family: var(--mono); font-size: 11px; line-height: 1.45; color: var(--text); overflow: hidden; }
+.lj-row { white-space: pre; overflow: hidden; }
+.lj-row.lj-hl { color: var(--accent); font-weight: 600; }
+.lj-mac .lj-term { flex: 1; transition: border-color 200ms; }
+
+.lj-gate { position: relative; margin-top: 8px; height: 1.6rem; background: var(--surface); border: 1px solid var(--line); overflow: hidden; }
+.lj-gate-bar { position: absolute; inset: 0; background: color-mix(in srgb, var(--signal) 22%, transparent); transform-origin: 0 50%; transform: scaleX(0.001); transition: transform 200ms linear; }
+.lj-gate[data-on="1"] .lj-gate-bar { background: color-mix(in srgb, var(--live) 28%, transparent); }
+.lj-gate-text { position: relative; display: block; padding: 0 8px; font: 400 var(--t-label)/1.6rem var(--mono); color: var(--text-2); font-variant-numeric: tabular-nums; }
+
+.lj-lane { position: relative; height: 22px; margin-bottom: 8px; border-block: 1px dashed var(--line-strong); }
+.lj-end { position: absolute; top: 50%; left: 0; transform: translateY(-50%); font: 400 var(--t-label)/1 var(--mono); color: var(--text-3); }
+.lj-end-r { left: auto; right: 0; }
+.lj-pkt { position: absolute; top: 6px; left: 0; height: 8px; background: var(--text); }
+.lj-pkt-d2m { background: var(--accent); }
+.lj-pkt-push { background: transparent; border: 1px solid var(--signal); height: 6px; }
+.lj-pkt-bad { background: var(--danger); }
+
+.lj-log { margin: 0; padding: 0; list-style: none; overflow-y: auto; }
+.lj-ev { padding: 5px 0 5px 8px; border-left: 2px solid var(--text); margin-bottom: 4px; background: var(--surface); font: 400 var(--t-label)/1.45 var(--mono); }
+.lj-ev[data-kind="d2m"] { border-color: var(--accent); }
+.lj-ev[data-kind="push"] { border-color: var(--signal); }
+.lj-ev[data-kind="bad"] { border-color: var(--danger); }
+.lj-ev p { margin: 0; padding-right: 6px; overflow-wrap: anywhere; }
+.lj-ev-head { display: flex; gap: 8px; color: var(--text-3); }
+.lj-ev-route { color: var(--text); }
+.lj-ev-size { margin-left: auto; color: var(--text); font-variant-numeric: tabular-nums; }
+.lj-ev-body { color: var(--text-2); }
+.lj-ev[data-kind="push"] .lj-ev-body { color: var(--text); }
+.lj-ev-note { color: var(--text-2); }
+.lj-ev[data-kind="bad"] .lj-ev-note { color: var(--danger); }
+.lj-in { animation: lj-in 240ms ease-out; }
+@keyframes lj-in { from { opacity: 0; transform: translateY(-6px); } }
+
+.lj-card { margin-bottom: 8px; padding: 9px 10px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 12px; min-height: 5.2rem; transition: border-color 200ms, box-shadow 200ms; }
+.lj-card[data-state="waiting"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-tint); }
+.lj-card p { margin: 0; }
+.lj-card-top { display: flex; justify-content: space-between; gap: 8px; font: 400 var(--t-label)/1.4 var(--mono); color: var(--text-3); }
+.lj-card-cmd { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lj-card-status { flex: none; color: var(--text-2); }
+.lj-card[data-state="waiting"] .lj-card-status { color: var(--accent); font-weight: 600; }
+.lj-card-text { margin: 4px 0 6px !important; font-size: 0.875rem; line-height: 1.35; color: var(--text); overflow-wrap: anywhere; }
+.lj-card-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.lj-card-btns button { flex: 1 1 auto; min-height: 2.25rem; padding-inline: 0.6rem; border-radius: 8px; font-size: 0.8125rem; }
+.lj-card-btns button:disabled { cursor: not-allowed; opacity: 1; background: transparent; border: 1px dashed var(--danger); color: var(--danger); }
+.lj-card-hint { font: 400 var(--t-label)/1.5 var(--mono); color: var(--text-2); }
+
+.lj-term-phone { font-size: 9px; }
+.lj-type { display: flex; gap: 8px; align-items: flex-end; margin-top: 8px; }
+.lj-line { flex: 1; min-width: 0; }
+.lj-line input { width: 100%; height: 2.25rem; box-sizing: border-box; font-family: var(--mono); }
+.lj-type button { height: 2.25rem; }
+
+.lj-legend { margin: 8px 0 0; }
+.lj-key { display: inline-flex; align-items: center; gap: 0.5em; }
+.lj-key::before { content: ""; flex: none; width: 0.75em; height: 0.75em; background: var(--text); }
+.lj-key[data-kind="d2m"]::before { background: var(--accent); }
+.lj-key[data-kind="push"]::before { background: transparent; border: 1px solid var(--signal); box-sizing: border-box; }
+.lj-key[data-kind="bad"]::before { background: var(--danger); }
+.lj-cells { margin-top: 12px; }
+.lj-cells li { min-width: 5.5rem; }
+.lj-v { font-size: 0.8125rem; color: var(--text); }
+.lj-status { margin: 8px 0 0; min-height: 1.4em; font-size: 0.8125rem; color: var(--text-2); }
+.lj-out { margin-top: 12px; }
+@media (prefers-reduced-motion: reduce) { .lj-in { animation: none; } .lj-gate-bar, .lj-card { transition: none; } }
+@media (pointer: coarse) { .lj-attacks button { height: 44px; } }
