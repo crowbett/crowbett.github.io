@@ -13,8 +13,8 @@ const ReelSums = "web/reel/.sums"
 // Showcase is what a home reel clip shows once the demo is running. Setup
 // runs before recording starts and Play while it records; both are JS
 // expressions that may return a promise and drive the demo only as a visitor
-// would. The clip is a 16:10 crop whose top edge and width are Focus's box
-// (the demo mount when empty) grown by Pad CSS px on each side.
+// would. The clip is a 16:10 crop as wide as the demo mount whose top edge is
+// Pad CSS px above Focus (the mount when empty).
 type Showcase struct {
 	Setup, Play, Focus string
 	Pad                int
