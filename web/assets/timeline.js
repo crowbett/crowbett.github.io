@@ -1,7 +1,7 @@
 // The call timeline under a live demo: one bar per call to the binary, as tall
 // as the time the worker measured inside it (log scale), coloured by method,
 // red when it failed. Point at or step to a bar to read the call: its params,
-// result, JSON sizes and the excerpts of the code panel it ran.
+// result and JSON sizes.
 const root = document.querySelector("[data-timeline]");
 const KEEP = 400; // calls kept
 const RESULTS = 40; // newest calls whose result is kept for reading
@@ -95,7 +95,6 @@ if (root) {
   const queue = () => { if (!raf) raf = requestAnimationFrame(draw); };
   new ResizeObserver(queue).observe(canvas);
 
-  const titles = [...document.querySelectorAll(".code-ex .cx-t")].map((t) => t.textContent);
   function show(i) {
     const c = calls[i];
     if (!c) return;
@@ -108,15 +107,6 @@ if (root) {
     if (c.error) row("error", el("code", "tl-bad", c.error));
     else row("result", el("code", null, "result" in c ? cap(brief(c.result)) : "not kept: only the newest calls keep theirs"));
     if (c.inB !== undefined) row("JSON", `${bytes(c.inB)} in · ${bytes(c.outB)} out`);
-    const ran = c.ran || [];
-    if (ran.length) row("ran", ...ran.flatMap((j, k) => {
-      const a = el("a", null, titles[j]);
-      a.href = "#code";
-      // In the Tab order only while a call is held: following, the links are replaced as calls arrive.
-      a.tabIndex = pinned ? 0 : -1;
-      a.addEventListener("click", () => document.getElementById(`ct-${j}`)?.click());
-      return k ? [", ", a] : [a];
-    }));
     detail.replaceChildren(head, dl);
     canvas.setAttribute("aria-valuenow", String(i + 1));
     canvas.setAttribute("aria-valuetext", `call ${c.n}: ${c.method}${c.error ? ", failed" : ""}, ${ms(c.ms ?? c.rtt)}`);
@@ -143,8 +133,6 @@ if (root) {
     if (d.slug !== slug) return;
     n++;
     const c = { ...d, n, error };
-    // Keep the event's own object for "ran", which the code panel fills in after us.
-    Object.defineProperty(c, "ran", { get: () => d.ran });
     if (!methods.has(c.method)) methods.set(c.method, methods.size);
     calls.push(c);
     if (calls.length > KEEP) { calls.shift(); if (sel >= 0) sel--; }

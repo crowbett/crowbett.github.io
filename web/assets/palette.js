@@ -3,7 +3,7 @@
 // is a combobox over a listbox, so a screen reader hears the active option.
 // Loaded on first use by nav.js; /search.json is written by the site build.
 // A query of three letters or more also searches /find.json: every page's
-// write-up, measured result and code, fetched the first time it is needed.
+// write-up, measured result and demo prompt, fetched the first time it is needed.
 const data = fetch("/search.json").then((r) => r.json());
 let dlg, input, list, count, shown = [], active = 0, projects = [], docs = null, docsP = null;
 const FIND_MAX = 8;
@@ -110,7 +110,7 @@ function loadDocs() {
   }, () => { docsP = null; });
 }
 
-const KINDS = { m: "stat", d: "demo", w: "text", c: "code" };
+const KINDS = { m: "stat", d: "demo", w: "text" };
 // A passage short enough to show: the words around the first hit.
 function around(text, w, n = 96) {
   const i = Math.max(0, text.toLowerCase().indexOf(w));
@@ -125,18 +125,8 @@ const needle = (t) => t.length <= 60 ? t : t.slice(0, t.lastIndexOf(" ", 60));
 function finds(words) {
   if (!docs || words.join("").length < 3) return { hits: [], total: 0 };
   const bySlug = new Map(projects.map((p) => [p.slug, p]));
-  const all = docs.filter((d) => words.every((w) => d.hay.includes(w)));
-  const hits = all.slice(0, FIND_MAX).map((d) => {
-    const p = bySlug.get(d.s);
-    const base = `/projects/${d.s}/`;
-    if (d.k !== "c") return { doc: d.k, tag: KINDS[d.k], title: p?.title ?? d.s, text: around(d.t, words[0]), href: `${base}#find=${encodeURIComponent(needle(d.t))}` };
-    const lines = d.l || [];
-    const n = lines.findIndex((l) => words.some((w) => l.toLowerCase().includes(w)));
-    const x = d.x || 0;
-    if (n < 0) return { doc: "c", tag: "code", title: `${p?.title ?? d.s} · ${d.t}`, text: d.y || d.p, href: `${base}#code-${x}` };
-    const at = (d.f || 1) + n;
-    return { doc: "c", tag: "code", title: `${p?.title ?? d.s} · ${d.p.split("/").pop()}:${at}`, text: around(lines[n].trim(), words.find((w) => lines[n].toLowerCase().includes(w))), code: true, href: `${base}#code-${x}-L${at}` };
-  });
+  const all = docs.filter((d) => d.k !== "c" && words.every((w) => d.hay.includes(w)));
+  const hits = all.slice(0, FIND_MAX).map((d) => ({ doc: d.k, tag: KINDS[d.k], title: bySlug.get(d.s)?.title ?? d.s, text: around(d.t, words[0]), href: `/projects/${d.s}/#find=${encodeURIComponent(needle(d.t))}` }));
   return { hits, total: all.length };
 }
 
@@ -152,7 +142,7 @@ function render() {
   if (page.length) nodes.push(el("li", "pal-h", "This page"), ...page.map((a) => option(a, words)));
   if (hits.length) nodes.push(el("li", "pal-h", `Projects · ${hits.length}`), ...hits.map(([, p]) => option(p, words)));
   const found = finds(words);
-  if (found.hits.length) nodes.push(el("li", "pal-h", `In the write-ups and code · ${found.total > FIND_MAX ? `${FIND_MAX} of ${found.total}` : found.total}`), ...found.hits.map((d) => option(d, words)));
+  if (found.hits.length) nodes.push(el("li", "pal-h", `In the write-ups · ${found.total > FIND_MAX ? `${FIND_MAX} of ${found.total}` : found.total}`), ...found.hits.map((d) => option(d, words)));
   if (contact.length) nodes.push(el("li", "pal-h", "Contact"), ...contact.map((a) => option(a, words)));
   if (!nodes.length) nodes.push(el("li", "pal-h", "Nothing matches. Try a language or a topic."));
   for (const n of nodes) if (n.className === "pal-h") n.setAttribute("role", "presentation");
@@ -194,7 +184,7 @@ function build() {
   input = el("input");
   Object.assign(input, { type: "text", placeholder: "Project, topic, or any word on the site", autocomplete: "off", spellcheck: false, enterKeyHint: "go" });
   input.setAttribute("role", "combobox");
-  input.setAttribute("aria-label", "Search projects, write-ups, code and actions");
+  input.setAttribute("aria-label", "Search projects, write-ups and actions");
   input.setAttribute("aria-expanded", "true");
   input.setAttribute("aria-controls", "pal-list");
   input.setAttribute("aria-autocomplete", "list");
