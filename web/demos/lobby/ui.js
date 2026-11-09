@@ -65,16 +65,16 @@ export async function mount(root, demo) {
   const rate = el("input");
   Object.assign(rate, { type: "range", name: "rate", min: 0, max: RATES.length - 1, step: 1, value: RATES.indexOf(p.rate) });
   const rateOut = el("output", "lb-out", `${p.rate} /s`);
-  const rateField = field("Arrivals", rate, "lb-range");
+  const rateField = field("arrivals", rate, "lb-range");
   rateField.querySelector(".demo-label").append(" ", rateOut);
   const sigma = select("sigma", SIGMAS, p.sigma);
   const drop = select("drop", DROPS, p.drop);
   const refill = el("input");
   Object.assign(refill, { type: "checkbox", name: "refill", checked: p.refill });
   const speed = select("speed", SPEEDS.map((s) => [s, `${s}×`]), 2);
-  const squadOnly = [field("Walk-outs", drop), field("Squad refill", refill, "lb-check")];
+  const squadOnly = [field("walk-outs", drop), field("squad refill", refill, "lb-check")];
   const knobs = el("div", "lb-knobs");
-  knobs.append(field("Mode", mode), rateField, field("Skill", sigma), ...squadOnly, field("Speed", speed));
+  knobs.append(field("mode", mode), rateField, field("skill", sigma), ...squadOnly, field("speed", speed));
 
   const play = button("Pause");
   const step = button("Step 1 s", "secondary");
@@ -84,14 +84,14 @@ export async function mount(root, demo) {
   skill.inputMode = "numeric";
   const join = button("Queue me");
   const acts = el("div", "lb-acts");
-  acts.append(play, step, reset, field("Your skill", skill, "lb-skill"), join);
+  acts.append(play, step, reset, field("your skill", skill, "lb-skill"), join);
   const form = el("form", "lb-controls");
   form.addEventListener("submit", (e) => e.preventDefault());
   form.append(knobs, acts);
 
   const canvas = el("canvas", "lb-canvas");
   canvas.setAttribute("role", "img");
-  const legend = el("p", "lb-legend");
+  const legend = el("p", "demo-legend lb-legend");
   for (const [k, t] of [["player", "waiting player"], ["band", "window, match.Window(wait)"], ["you", "you"], ["unit", "refill unit"]]) {
     const s = el("span", "lb-key", t);
     s.dataset.kind = k;
@@ -102,7 +102,7 @@ export async function mount(root, demo) {
   const youTick = el("span", "lb-you-tick");
   const status = el("p", "lb-status");
   status.setAttribute("aria-live", "polite");
-  const cells = el("ul", "cells lb-cells");
+  const cells = el("ul", "cells stack lb-cells");
   const cell = {};
   const CELLS = [["t", "sim"], ["queue", "queue"], ["rooms", "rooms"], ["p50", "wait p50"], ["p95", "wait p95"], ["spread", "spread p50"],
     ["expired", "expired"], ["walkouts", "walk-outs"], ["short", "short-handed"], ["refills", "refills"]];
@@ -161,7 +161,7 @@ export async function mount(root, demo) {
     colors = {
       bg: v("--sunken"), surface: v("--surface"), line: v("--line"), strong: v("--line-strong"), text: v("--text"),
       text2: v("--text-2"), text3: v("--text-3"), accent: v("--accent"), tint: v("--accent-tint"), live: v("--live"),
-      band: v("--lb-band"), cone: v("--lb-cone"), mono: v("--mono") || "monospace",
+      band: v("--signal"), cone: v("--text"), mono: v("--mono") || "monospace",
     };
   }
 

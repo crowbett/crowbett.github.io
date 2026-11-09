@@ -82,7 +82,7 @@ export async function mount(root, demo) {
   const scene = select("scene", SCENES, "cornell");
   const right = select("right", [["nee", "NEE + MIS"], ["mixture", "Mixture (book 3)"]], "nee");
   const width = select("width", WIDTHS.map((w) => [w, `${w} px wide`]), 300);
-  form.append(play, step, field("Scene", scene), field("Right half", right), field("Resolution", width));
+  form.append(play, step, field("scene", scene), field("right half", right), field("resolution", width));
 
   const wrap = el("div", "rt");
   const screen = el("figure", "rt-screen");
@@ -125,7 +125,7 @@ export async function mount(root, demo) {
   screen.append(tags, view, foot);
 
   const side = el("div", "rt-side");
-  const cells = el("ul", "cells rt-cells");
+  const cells = el("ul", "cells stack rt-cells");
   const [sppCell, spp] = cell("spp, each half");
   const [rateCell, rate] = cell("samples/s, your browser");
   const [errCellL, errLv] = cell("est. RMSE, left");

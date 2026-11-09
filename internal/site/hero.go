@@ -47,6 +47,7 @@ type heroChart struct {
 	// Attack window (buckets offered over twice the limit).
 	AttackX, AttackW, AttackMid float64
 	Burst1X, Burst1Y            float64 // label anchor for the first attack bucket, which spends the burst
+	BurstRight                  bool    // label starts right of that bar, clear of the "allowed" label
 	// Fade-in step (1-5) for each label, so it appears once the wipe has passed it.
 	AttackStep, BurstStep int
 }
@@ -150,6 +151,10 @@ func loadHeroTrace(src fs.FS) (*heroTrace, error) {
 			c.AttackStep = heroStep(c.AttackMid+3*g.label, g.w)
 			if float64(s.Allowed[first]) > limit {
 				c.Burst1X, c.Burst1Y = round(c.AttackX-4), c.Bars[first].AY-4
+				// Martian Mono advances ~0.7em; "allowed" sits at x=0 on LaneY.
+				if c.Burst1Y-c.LaneY < g.label+2 && c.Burst1X-5*0.7*g.label < 7*0.7*g.label+g.label {
+					c.Burst1X, c.BurstRight = round(c.AttackX+col*0.875+4), true
+				}
 				c.BurstStep = heroStep(c.AttackX+col, g.w)
 			}
 		}

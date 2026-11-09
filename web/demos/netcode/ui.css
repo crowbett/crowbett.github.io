@@ -1,5 +1,3 @@
-.demo-mount { --nc-flash: oklch(0.62 0.16 65); }
-@media (prefers-color-scheme: dark) { .demo-mount { --nc-flash: oklch(0.80 0.15 75); } }
 .nc-controls { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; margin-bottom: 12px; }
 .nc-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .nc-actions button { min-width: 6.5rem; }
@@ -20,17 +18,17 @@
 .nc-world { margin-bottom: 12px; }
 .nc-readouts { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 12px 20px; }
 .nc-client-head { margin: 0 0 4px; font-family: var(--mono); font-size: 0.75rem; color: var(--text-3); }
-.nc-cells > li, .nc-world > li { display: flex; flex-direction: column; gap: 2px; min-width: 6rem; }
-.nc-k { color: var(--text-3); }
+.nc-cells > li, .nc-world > li { min-width: 6rem; }
 .nc-v { font-size: 0.875rem; color: var(--text); }
 .nc-out { margin-top: 12px; }
-.nc-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 12px 0 4px; font-family: var(--mono); font-size: 0.75rem; color: var(--text-2); }
-.nc-key::before { content: ""; display: inline-block; width: 0.7rem; height: 0.7rem; margin-right: 0.35rem; vertical-align: -0.05rem; border-radius: 50%; }
+.nc-legend { margin: 12px 0 4px; }
+.nc-key { display: inline-flex; align-items: center; gap: 0.5em; }
+.nc-key::before { content: ""; flex: none; width: 0.75em; height: 0.75em; box-sizing: border-box; }
 .nc-key[data-kind="me"]::before { background: var(--accent); }
-.nc-key[data-kind="ghost"]::before { border: 1.5px dashed var(--text); box-sizing: border-box; }
+.nc-key[data-kind="ghost"]::before { border: 1.5px dashed var(--text); }
 .nc-key[data-kind="other"]::before { background: var(--text-3); }
-.nc-key[data-kind="roll"]::before { height: 2px; border-radius: 0; vertical-align: 0.2rem; background: var(--nc-flash); }
-.nc-key[data-kind="up"]::before { width: 0.4rem; height: 0.4rem; border-radius: 0; background: var(--accent); vertical-align: 0.1rem; }
-.nc-key[data-kind="down"]::before { width: 0.4rem; height: 0.4rem; background: var(--text); vertical-align: 0.1rem; }
-.nc-hint, .nc-status { margin: 4px 0 0; font-size: 0.8125rem; color: var(--text-2); }
-.nc-status { font-family: var(--mono); font-size: 0.75rem; color: var(--text-3); }
+.nc-key[data-kind="roll"]::before { background: var(--signal); }
+.nc-key[data-kind="up"]::before { background: var(--accent); }
+.nc-key[data-kind="down"]::before { background: var(--text); }
+.nc-hint { margin: 4px 0 0; font-size: 0.8125rem; color: var(--text-2); }
+.nc-status { margin-top: 4px; }

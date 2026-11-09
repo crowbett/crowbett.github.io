@@ -16,8 +16,7 @@
 .kv-live { fill: var(--accent); }
 .kv-dead { fill: var(--line-strong); }
 .kv-cells { margin: 8px 0 0; }
-.kv-cells li { display: flex; flex-direction: column; gap: 2px; min-width: 6rem; }
-.kv-k { color: var(--text-3); }
+.kv-cells li { min-width: 6rem; }
 .kv-v { font-size: 0.875rem; }
 .kv-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px 24px; }
 @media (min-width: 900px) { .kv-body { grid-template-columns: minmax(0, 1fr) 15rem; } }

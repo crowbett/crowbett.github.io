@@ -131,9 +131,12 @@ function build() {
   dlg = el("dialog", "pal");
   dlg.setAttribute("aria-label", "Go to a project or action");
   dlg.setAttribute("closedby", "any");
-  const plate = el("p", "pal-p");
-  plate.setAttribute("aria-hidden", "true");
-  plate.append(el("span", null, "Go to"), el("kbd", null, "esc"));
+  const plate = el("div", "pal-p");
+  const shut = el("button", "pal-x", "close");
+  shut.type = "button";
+  shut.tabIndex = -1;
+  shut.addEventListener("click", () => dlg.close());
+  plate.append(el("span", null, "Go to"), shut);
   const bar = el("div", "pal-in");
   input = el("input");
   Object.assign(input, { type: "text", placeholder: "Project, language or topic", autocomplete: "off", spellcheck: false, enterKeyHint: "go" });

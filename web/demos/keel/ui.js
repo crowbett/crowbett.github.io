@@ -95,7 +95,7 @@ function timeline(r) {
   axis.append(el("span", null, "0 s"),
     el("span", null, lastHeal ? `faults healed at ${secs(lastHeal.t_ns)}` : ""),
     el("span", null, secs(end)));
-  const legend = el("p", "kl-legend");
+  const legend = el("p", "demo-legend kl-legend");
   for (const [k, t] of [["down", "crashed"], ["paused", "paused"], ["cut", "partitioned"], ["skew", "clock skew"]]) {
     const s = el("span", "kl-key", t);
     s.dataset.kind = k;
@@ -126,7 +126,7 @@ function schedule(events) {
 }
 
 function totals(r) {
-  const ul = el("ul", "cells kl-cells");
+  const ul = el("ul", "cells stack kl-cells");
   const add = (k, v, cls) => {
     const li = el("li", cls);
     li.append(el("span", "kl-k", k), el("span", "kl-v", v));
@@ -156,7 +156,7 @@ export async function mount(root, demo) {
   Object.assign(seed, { type: "number", name: "seed", min: 0, max: MAX_SEED, step: 1, value: 7, required: true });
   seed.inputMode = "numeric";
   const field = el("label", "demo-field kl-field");
-  field.append(el("span", "demo-label", "Seed"), seed);
+  field.append(el("span", "demo-label", "seed"), seed);
   const run = el("button", null, "Run");
   run.type = "submit";
   const again = el("button", "secondary", "Run again");

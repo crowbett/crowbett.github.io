@@ -10,9 +10,9 @@ const KEYS = {
   ArrowLeft: LEFT, KeyA: LEFT, ArrowRight: RIGHT, KeyD: RIGHT, Space: DASH,
 };
 const LAG = [
-  ["latency_ms", "Latency", 0, 300, 10, 100, "ms"],
-  ["jitter_ms", "Jitter", 0, 100, 5, 20, "ms"],
-  ["loss_pct", "Loss", 0, 20, 1, 2, "%"],
+  ["latency_ms", "latency", 0, 300, 10, 100, "ms"],
+  ["jitter_ms", "jitter", 0, 100, 5, 20, "ms"],
+  ["loss_pct", "loss", 0, 20, 1, 2, "%"],
 ];
 const DEAD = 14;
 const FLASH = 18;
@@ -36,7 +36,7 @@ function button(text, cls) {
 function cells(label, keys) {
   const wrap = el("div", "nc-client");
   const head = el("p", "nc-client-head", label);
-  const list = el("ul", "cells nc-cells");
+  const list = el("ul", "cells stack nc-cells");
   const out = {};
   for (const [k, name] of keys) {
     const li = el("li");
@@ -57,7 +57,7 @@ function colors(root) {
   return {
     sunken: v("--sunken"), line: v("--line"), strong: v("--line-strong"), text: v("--text"),
     text2: v("--text-2"), text3: v("--text-3"), accent: v("--accent"), live: v("--live"),
-    danger: v("--danger"), surface: v("--surface"), flash: v("--nc-flash"), mono: v("--mono"),
+    danger: v("--danger"), surface: v("--surface"), flash: v("--signal"), mono: v("--mono"),
   };
 }
 
@@ -118,7 +118,7 @@ export async function mount(root, demo) {
   const lampHash = el("code", "nc-lamp-hash");
   lamp.append(el("span", "nc-dot"), lampText, lampHash);
 
-  const world = el("ul", "cells nc-world");
+  const world = el("ul", "cells stack nc-world");
   const wv = {};
   for (const [k, name] of [["tick", "server tick"], ["time", "sim time"], ["checks", "hash checks"], ["desyncs", "desyncs"], ["late", "late inputs"]]) {
     const li = el("li");
@@ -132,11 +132,11 @@ export async function mount(root, demo) {
     ["rollbacks", "rollbacks"], ["resim", "frames resimulated"], ["depth", "max depth"],
     ["lead", "lead"], ["rtt", "rtt"], ["lost", "lost up/down"],
   ];
-  const clients = [cells("Client 1 · you", KEYSET), cells("Client 2 · bot 1", KEYSET)];
+  const clients = [cells("client 1 · you", KEYSET), cells("client 2 · bot 1", KEYSET)];
   const readouts = el("div", "nc-readouts");
   readouts.append(...clients.map((c) => c.wrap));
 
-  const legend = el("p", "nc-legend");
+  const legend = el("p", "demo-legend nc-legend");
   legend.id = "nc-legend";
   for (const [k, t] of [["me", "predicted (you)"], ["ghost", "server state"], ["other", "interpolated"], ["roll", "rollback correction"], ["up", "input packet"], ["down", "snapshot packet"]]) {
     const s = el("span", "nc-key", t);
@@ -144,7 +144,7 @@ export async function mount(root, demo) {
     legend.append(s);
   }
   const hint = el("p", "nc-hint", "Click the arena and steer with WASD or the arrow keys, Space to dash. On a touch screen, drag on the arena to steer and tap to dash.");
-  const status = el("p", "nc-status");
+  const status = el("p", "demo-note nc-status");
   status.setAttribute("aria-live", "polite");
 
   const receipt = el("p", "demo-out nc-out");
