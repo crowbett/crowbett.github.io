@@ -46,10 +46,37 @@
           {{if .Metric}}<p class="it-metric"><span class="metric">{{bind .Metric}}</span></p>{{end}}
           <p class="it-act">{{if .Live}}<a class="key" href="/projects/{{.Slug}}/#demo">Run it live</a>{{else}}<span class="led off">Source on {{if .Private}}request{{else}}GitHub{{end}}</span>{{end}}<span class="it-lang">{{.Lang}}</span></p>
         </div>
-        <a class="it-screen" href="/projects/{{.Slug}}/" tabindex="-1" aria-hidden="true"><canvas class="glow" width="16" height="10"></canvas><span class="it-glass">{{if .Live}}<picture><source media="{{reelWide}}" srcset="/reel/{{.Slug}}.webp" width="1408" height="880"><img src="/reel/{{.Slug}}-n.webp" width="1324" height="828" alt="" loading="lazy" decoding="async"></picture>{{else}}<span class="it-dm">{{template "dmask" .Slug}}</span>{{end}}</span><span class="it-go">Open</span><span class="it-of">{{rank .Slug}} / {{len $.Projects}}</span></a>
+        <a class="it-screen" href="/projects/{{.Slug}}/" tabindex="-1" aria-hidden="true"><canvas class="glow" width="16" height="10"></canvas><span class="it-glass">{{if .Live}}<picture><source media="{{reelWide}}" srcset="/reel/{{.Slug}}.webp" width="1408" height="880"><img src="/reel/{{.Slug}}-n.webp" width="1324" height="828" alt="" loading="lazy" decoding="async"></picture>{{else}}<span class="it-dm">{{template "dmask" .Slug}}</span>{{end}}</span><span class="it-go">Open</span></a>
       </div>
     </li>{{end}}{{end}}
+  <li id="all" class="fin" aria-labelledby="all-h">
+    <div class="work-in">
+      <header class="all-head">
+        <h3 id="all-h">All {{len .Projects}} projects</h3>
+        <div class="all-f" data-filters>
+          <p role="group" aria-label="Area"><button type="button" aria-pressed="true" data-f="g" data-v="">Everything</button>{{range .Groups}}<button type="button" aria-pressed="false" data-f="g" data-v="{{.Key}}">{{.Name}}</button>{{end}}</p>
+          <p role="group" aria-label="Language"><button type="button" aria-pressed="true" data-f="lang" data-v="">Any language</button>{{range langs}}<button type="button" aria-pressed="false" data-f="lang" data-v="{{.}}">{{.}}</button>{{end}}</p>
+        </div>
+        <p class="all-n" role="status" data-all-n>{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} run live{{end}}</p>
+      </header>
+      <ul class="all-grid">{{range $g := .Groups}}{{range .Projects}}
+        <li class="card" id="c-{{.Slug}}" data-g="{{$g.Key}}" data-lang="{{.Lang}}">
+          <a class="card-shot" href="/projects/{{.Slug}}/" tabindex="-1" aria-hidden="true">{{if .Live}}<img src="/reel/{{.Slug}}-n.webp" width="1324" height="828" alt="" loading="lazy" decoding="async">{{else}}<span class="card-dm">{{template "dmask" .Slug}}</span>{{end}}</a>
+          <h4><a href="/projects/{{.Slug}}/"><span class="card-n">{{rank .Slug}}</span> <span class="card-name">{{.Title}}</span></a></h4>
+          <p class="card-tag">{{.Tagline}}</p>
+          <p class="card-act">{{if .Live}}<a class="key" href="/projects/{{.Slug}}/#demo">Run it live</a>{{else}}<span class="led off">Source on {{if .Private}}request{{else}}GitHub{{end}}</span>{{end}}<span>{{.Lang}}</span></p>
+        </li>{{end}}{{end}}
+      </ul>
+    </div>
+  </li>
   </ol>
+  <nav class="dock" aria-hidden="true">
+    <span class="dock-ticks">{{range .Groups}}<span class="dock-g">{{range .Projects}}<a href="/projects/{{.Slug}}/" tabindex="-1" data-slug="{{.Slug}}" data-n="{{rank .Slug}}" data-name="{{.Title}}" data-tag="{{.Tagline}}"{{if .Live}} data-live{{end}}><i></i></a>{{end}}</span>{{end}}</span>
+    <span class="dock-now"><b data-dock-n>01</b><span data-dock-name></span></span>
+    <button type="button" class="dock-step" tabindex="-1" data-step="-1">Previous</button><button type="button" class="dock-step" tabindex="-1" data-step="1">Next</button>
+    <a class="dock-go" href="/" tabindex="-1" data-dock-go>Run it live</a>
+    <a class="dock-all" href="#all" tabindex="-1">All {{len .Projects}}</a>
+  </nav>
 </section>
 <script type="module" src="/assets/work.js"></script>
 {{template "foot" .}}{{end}}

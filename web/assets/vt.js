@@ -1,5 +1,5 @@
-// Cross-document view transitions: a project's title flies between its index
-// entry and its page, and title, diagram and screen between projects. Only
+// Cross-document view transitions: a project's title flies between its reel
+// panel or index card and its page, and title, diagram and screen between projects. Only
 // the elements of the project being opened or left get names, so nothing else lifts out of
 // the page. Classic and in the head: pagereveal fires before modules run.
 (() => {
@@ -11,6 +11,12 @@
   const parts = (slug) => {
     const q = (s) => document.querySelector(s);
     if (here) return { title: q(".project-head h1 span"), fig: q(".facts-fig .dm"), screen: q(".ph-screen") };
+    // From the index at the end of the reel, its card flies instead.
+    const card = q(`#c-${slug}`);
+    if (card && !q(".it[data-now]")) {
+      const r = card.getBoundingClientRect();
+      if (r.bottom > 0 && r.top < innerHeight) return { title: q(`#c-${slug} .card-name`), screen: q(`#c-${slug} .card-shot`) };
+    }
     return { title: q(`#p-${slug} .it-name`), screen: q(`#p-${slug}[data-now] .it-glass`) };
   };
   const name = (slug, vt) => {
