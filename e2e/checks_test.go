@@ -357,18 +357,43 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"keel": {
-		`[...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join() === "888b42107bc083ca,888b42107bc083ca" && document.querySelector(".kl-match") !== null`,
-		`[...document.querySelectorAll(".kl-cells .kl-v")].map((d) => d.textContent).join() === "477,0,6,7,linearizable"`,
-		`document.querySelectorAll(".kl-events li").length === 21 && document.querySelectorAll(".kl-timeline rect.kl-bar").length > 0`,
-		`/^Seed 2: 113,070 scheduler steps and 141,581 traced events over 35\.00 s of simulated time, run in [\d,]+ ms in your browser\.$/.test(document.querySelector(".kl-status").textContent)`,
+		`/^(Seed|Your seed) \d+ at [\d.]+ s of 3\d\.\d\d s simulated: .+; \d+ of \d+ fault events so far\. \d+ seeds checked, \d+ linearizable\.$/.test(document.querySelector(".kl-canvas").getAttribute("aria-label")) && (() => { const c = document.querySelector(".kl-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
+		`(async () => {
+			const click = (t) => [...document.querySelectorAll(".kl-controls button")].find((b) => b.textContent === t).click();
+			const v = (k) => document.querySelector(".kl-cells [data-k=" + k + "] .kl-v").textContent;
+			const digests = () => [...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join();
+			if (document.querySelector(".kl-acts button").textContent === "Pause") click("Pause");
+			click("Reset");
+			if (!await until(() => digests() === "888b42107bc083ca,888b42107bc083ca" && document.querySelector(".kl-match") !== null && v("seeds") === "24" && v("lin") === "24 / 24" &&
+				v("t") === "0.00 s" && v("faults") === "0 / 25" && v("ok") === "477" && v("fail") === "0" && v("info") === "6" && v("conf") === "7" && v("hist") === "linearizable")) return false;
+			click("Next fault");
+			if (!await until(() => v("t") === "0.25 s" && v("faults") === "1 / 25" && v("part") === "{5} | {1,2,3,4}" && v("faulty") === "none")) return false;
+			click("Next fault");
+			return await until(() => v("t") === "1.86 s" && v("faulty") === "n5 crashed" && v("part") === "{5} | {1,2,3,4}" &&
+				/^\d+ runs of keel's simulator: [\d,]+ scheduler steps and [\d,]+ traced events over [\d,.]+ s of simulated time, in [\d,]+ ms of calls, in your browser\.$/.test(document.querySelector(".kl-receipt").textContent));
+		})()`,
+		`(async () => {
+			const click = (t) => [...document.querySelectorAll(".kl-controls button")].find((b) => b.textContent === t).click();
+			const v = (k) => document.querySelector(".kl-cells [data-k=" + k + "] .kl-v").textContent;
+			const digests = () => [...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join();
+			if (document.querySelector(".kl-acts button").textContent === "Pause") click("Pause");
+			if (!await until(() => v("seeds") === "24")) return false;
+			document.querySelector("input[name=mine]").value = "1234";
+			click("Run my seed");
+			if (!await until(() => digests() === "75ca914818e02f3d,75ca914818e02f3d" && document.querySelector(".kl-match") !== null &&
+				v("ok") === "494" && v("info") === "3" && v("conf") === "14" && v("faults") === "0 / 13")) return false;
+			click("Replay");
+			if (!await until(() => digests() === "75ca914818e02f3d,75ca914818e02f3d" && document.querySelectorAll(".kl-which")[1].textContent === "replay")) return false;
+			for (let i = 0; i < 20 && v("t") !== "35.00 s"; i++) click("Next fault");
+			return await until(() => v("faults") === "13 / 13" && v("seeds") === "25" && v("lin") === "25 / 25");
+		})()`,
 		`(async () => {
 			const digests = () => [...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join();
-			document.querySelector("input[name=seed]").value = "8";
-			document.querySelector(".kl-controls").requestSubmit();
-			let ok = await until(() => digests() === "22e2ba986ec4d67e" && !document.querySelector(".kl-controls button.secondary").disabled);
-			document.querySelector(".kl-controls button.secondary").click();
-			ok = ok && await until(() => digests() === "22e2ba986ec4d67e,22e2ba986ec4d67e" && document.querySelector(".kl-match") !== null);
-			return ok && document.querySelectorAll(".kl-events li").length === 15;
+			const seed = document.querySelector("input[name=seed]");
+			seed.value = "8";
+			seed.dispatchEvent(new Event("input"));
+			return await until(() => digests() === "22e2ba986ec4d67e" && document.querySelector(".kl-out").textContent === "8" &&
+				document.querySelector(".kl-cells [data-k=ok] .kl-v").textContent === "526");
 		})()`,
 	},
 	"raytracer": {
