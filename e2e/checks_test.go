@@ -4,7 +4,8 @@ package e2e
 
 // workCheck scrolls the home index to a live project: it becomes current at
 // the reading line, the monitor names it and plays its recorded clip, and no
-// other clip plays; moving on to another project swaps the clip.
+// other clip plays; moving on to another project swaps the clip, and the
+// screen links to the project it shows.
 const workCheck = `(async () => {
 	const items = [...document.querySelectorAll(".it")];
 	const playing = () => [...document.querySelectorAll(".mon video")].filter((v) => !v.paused && v.isConnected);
@@ -14,7 +15,7 @@ const workCheck = `(async () => {
 		return until(() => "now" in it.dataset && document.querySelector(".mon-hud").textContent === slug + String(items.indexOf(it) + 1).padStart(2, "0") + " / " + items.length
 			&& playing().length === 1 && playing()[0].src.endsWith("/reel/" + slug + ".mp4") && playing()[0].dataset.on !== undefined);
 	};
-	return await at("netcode") && await at("keel");
+	return await at("netcode") && await at("keel") && document.querySelector(".mon-screen").pathname === "/projects/keel/";
 })()`
 
 // stageCheck waits for the home stage to render in this tab: the real path
