@@ -192,6 +192,8 @@ export async function mount(root, demo) {
   const wSum = el("p", "rc-sum");
   const wScroll = el("div", "rc-scroll");
   wScroll.setAttribute("aria-label", "BM25 score parts");
+  wScroll.setAttribute("role", "region");
+  wScroll.tabIndex = 0;
   const table = el("table", "rc-parts");
   wScroll.append(table);
   const wNote = el("p", "rc-path", `per term, Tantivy's BM25: boost × idf × (1 + k1) × tf, where idf = ln(1 + (N − n + 0.5) / (n + 0.5)), tf = freq / (freq + k1 · (1 − b + b · dl / avgdl)), k1 = 1.2, b = 0.75.`);

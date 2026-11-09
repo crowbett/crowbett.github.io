@@ -99,3 +99,5 @@
 .rc-v { font-size: 0.8125rem; color: var(--text); }
 .rc-out { margin-top: 12px; }
 @media (prefers-reduced-motion: reduce) { .rc-doc.is-new { animation: none; } .rc-doc, .rc-line, .rc-row rect.rc-box { transition: none; } }
+.rc-parts :is(th, td):last-child { position: sticky; right: 0; background: var(--surface); box-shadow: -8px 0 8px -8px var(--line-strong); }
+@media (max-width: 30rem) { .rc-parts :is(th, td) { padding: 2px 4px; } }
