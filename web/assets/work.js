@@ -1,9 +1,9 @@
 // The work reel: one full-screen panel per project, each pinned under the
 // header while the next slides up over it, and last the index of every
 // project. The panel covering the middle of the screen is current: its
-// recorded clip plays and lights its glow (poster only with reduced motion or
-// Save-Data). A covered panel sinks as the next one slides in (scroll-driven;
-// the timelines are named here), and panels buried two or more deep are not
+// recorded clip plays (poster only with reduced motion or Save-Data). A
+// covered panel sinks as the next one slides in (scroll-driven; the
+// timelines are named here), and panels buried two or more deep are not
 // drawn (opacity 0, which keeps their links focusable). Focus that lands in a
 // panel brings it up, so nothing focused sits under another. The dock mirrors
 // the reel for the pointer (keys have Tab and j/k): a tick per project jumps
@@ -21,7 +21,6 @@ if (reel) {
   let end = 0;
   let now = null;
   let video = null;
-  let tick = 0;
   let jumping = null;
   let shown;
 
@@ -35,21 +34,6 @@ if (reel) {
       covered.setProperty("animation-timeline", `--it${i}`);
     });
   }
-
-  const tint = (it, src) => {
-    const g = it.querySelector(".glow");
-    try { g.getContext("2d").drawImage(src, 0, 0, g.width, g.height); } catch {}
-  };
-  for (const it of items) {
-    const img = it.querySelector(".it-glass img");
-    if (!img) continue;
-    if (img.complete && img.naturalWidth) tint(it, img);
-    else img.addEventListener("load", () => tint(it, img), { once: true });
-  }
-  const paint = () => {
-    if (video && !video.paused) tint(now, video);
-    tick = video && !video.paused ? setTimeout(paint, 250) : 0;
-  };
 
   const dock = document.querySelector(".dock");
   const ticks = dock ? [...dock.querySelectorAll(".dock-ticks a")] : [];
@@ -103,7 +87,7 @@ if (reel) {
       const v = document.createElement("video");
       Object.assign(v, { muted: true, loop: true, playsInline: true, preload: "auto", poster: shot, src: shot.replace(/\.webp$/, ".mp4"), disablePictureInPicture: true });
       v.setAttribute("aria-hidden", "true");
-      v.addEventListener("playing", () => { v.dataset.on = ""; if (!tick) paint(); });
+      v.addEventListener("playing", () => { v.dataset.on = ""; });
       glass.append(v);
       video = v;
       if (!document.hidden) play(v);

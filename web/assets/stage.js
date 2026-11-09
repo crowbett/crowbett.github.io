@@ -21,11 +21,8 @@ if (fig) {
   const poster = view.querySelector("img");
   const [cr, cl] = [view.querySelector(".stage-r"), view.querySelector(".stage-l")];
   const [xr, xl] = [cr.getContext("2d"), cl.getContext("2d")];
-  const glow = fig.querySelector(".glow");
-  const gx = glow.getContext("2d", { willReadFrequently: false });
-  const scan = view.querySelector(".stage-scan");
   const split = view.querySelector(".stage-split");
-  const state = view.querySelector("[data-state]");
+  const state = fig.querySelector("[data-state]");
   const dial = (k) => fig.querySelector(`[data-k=${k}]`);
   const run = fig.querySelector("[data-run]");
   const status = fig.querySelector("[role=status]");
@@ -47,9 +44,6 @@ if (fig) {
   let wanted = !reduced && !lean;
   let queued = false;
 
-  const tint = (src) => { try { gx.drawImage(src, 0, 0, glow.width, glow.height); } catch {} };
-  if (poster.complete) tint(poster); else poster.addEventListener("load", () => tint(poster), { once: true });
-
   const set = (k, v) => { const d = dial(k); d.textContent = v; d.classList.toggle("nil", v === "--"); };
   function readouts() {
     queued = false;
@@ -63,7 +57,6 @@ if (fig) {
     }
     const r = errs[0] / errs[1];
     if (Number.isFinite(r)) set("ratio", `${r.toFixed(1)}×`);
-    scan.style.setProperty("--y", String(y / info.height));
   }
   const queue = () => { if (!queued) { queued = true; requestAnimationFrame(readouts); } };
 
@@ -93,7 +86,6 @@ if (fig) {
       y = 0;
       passes = got.nee.spp;
       errs = [got.material.rmse_estimate, got.nee.rmse_estimate];
-      tint(cr);
       state.textContent = `live, pass ${fmt(passes + 1)}`;
     }
     queue();
