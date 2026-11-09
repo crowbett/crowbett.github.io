@@ -2,6 +2,11 @@ name: ci
 
 on:
   pull_request:
+  # GitHub drops a cache after 7 days unused, and main's first push after that
+  # took 105 s cold (2026-11-08). Restoring main's caches every 3 days keeps
+  # them alive.
+  schedule:
+    - cron: "23 7 */3 * *"
 
 permissions:
   contents: read

@@ -183,6 +183,9 @@ func Build(cfg Config) error {
 	if err := render("notfound", "/404.html", "Not found", nil); err != nil {
 		return err
 	}
+	if err := writeSearch(filepath.Join(cfg.Out, "search.json"), base.Projects); err != nil {
+		return err
+	}
 	if err := copyTree(cfg.Src, "web", cfg.Out); err != nil {
 		return err
 	}
@@ -190,6 +193,35 @@ func Build(cfg Config) error {
 		return err
 	}
 	return writeSitemap(cfg, projects)
+}
+
+// writeSearch writes the command palette's index (web/assets/palette.js): every
+// project in home order.
+func writeSearch(file string, projects []Project) error {
+	type entry struct {
+		Slug    string   `json:"slug"`
+		Title   string   `json:"title"`
+		Tagline string   `json:"tagline"`
+		Lang    string   `json:"lang"`
+		Tags    []string `json:"tags"`
+		Group   string   `json:"group"`
+		Live    bool     `json:"live"`
+		N       int      `json:"n"`
+		Href    string   `json:"href"`
+	}
+	out := make([]entry, len(projects))
+	for i, p := range projects {
+		href := "/projects/" + p.Slug + "/"
+		if p.Live() {
+			href += "#demo"
+		}
+		out[i] = entry{p.Slug, p.Title, p.Tagline, p.Lang, p.Tags, p.Kind().Name, p.Live(), i + 1, href}
+	}
+	b, err := json.Marshal(out)
+	if err != nil {
+		return err
+	}
+	return writeFile(file, b)
 }
 
 type demoSize struct{ Raw, Gzip int }
