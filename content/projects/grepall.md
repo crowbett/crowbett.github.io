@@ -5,7 +5,7 @@ lang: Go
 tags: code search, trigram index, regexp, MCP
 repo:
 demo: live
-demo_try: Type a regexp and watch it become a trigram query, a candidate set and verified matches.
+demo_try: Watch the tour type a query, then type your own and see its trigrams' posting lists narrow 283 files to candidates on every keystroke.
 group: tools
 order: 11
 metric: Query latency p50 12.8 ms · p90 80 ms · p99 254 ms
@@ -18,4 +18,4 @@ metric_source: 82 repos / 62,339 files, Windows 11, 16 cores, README.md Numbers
 
 ## How the demo works
 
-grepall's own shard builder, query planner, posting lists and matcher, compiled to WebAssembly. On start it indexes 283 files from 34 packages of the Go 1.27.3 standard library (BSD licence), one shard per package, in your browser. Each keystroke then runs three timed calls: plan the query, read candidates from the posting lists, and verify them with the real matcher.
+grepall's own shard builder, query planner, posting lists and matcher, compiled to WebAssembly. On arrival it indexes 283 files from 34 packages of the Go 1.27.3 standard library (BSD licence), one shard per package, and draws each shard as it lands. A tour then types queries one key at a time. Every keystroke plans the query, reads each trigram's posting list from the index, takes the candidates and verifies them with the real matcher, and the board shows each list, the candidates and the matches over all 283 files. Pause it and type your own query or regexp.
