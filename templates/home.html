@@ -44,9 +44,9 @@
           <h4{{if gt (len .Title) 9}} class="long"{{end}}><a href="/projects/{{.Slug}}/"><span class="it-n">{{rank .Slug}}</span> <span class="it-name">{{.Title}}</span></a></h4>
           <p class="it-tag">{{.Tagline}}</p>
           {{if .Metric}}<p class="it-metric"><span class="metric">{{bind .Metric}}</span></p>{{end}}
-          <p class="it-act">{{if .Live}}<a class="key" href="/projects/{{.Slug}}/#demo">Run it live</a>{{else}}<span class="led off">Source on {{if .Private}}request{{else}}GitHub{{end}}</span>{{end}}<span class="it-lang">{{.Lang}}</span></p>
+          <p class="it-act">{{if .Live}}<a class="key" href="/projects/{{.Slug}}/#demo">Run it live</a>{{else}}<span class="led off">Source on {{if .Private}}request{{else}}GitHub{{end}}</span>{{end}}{{if .Code}}<button class="it-peek" type="button" aria-pressed="false" aria-controls="pk-{{.Slug}}" data-peek="{{.Slug}}">Code</button>{{end}}<span class="it-lang">{{.Lang}}</span></p>
         </div>
-        <a class="it-screen" href="/projects/{{.Slug}}/" tabindex="-1" aria-hidden="true"><canvas class="glow" width="16" height="10"></canvas><span class="it-glass">{{if .Live}}<picture><source media="{{reelWide}}" srcset="/reel/{{.Slug}}.webp" width="1408" height="880"><img src="/reel/{{.Slug}}-n.webp" width="1324" height="828" alt="" loading="lazy" decoding="async"></picture>{{else}}<span class="it-dm">{{template "dmask" .Slug}}</span>{{end}}</span><span class="it-go">Open</span></a>
+        <div class="it-view"><a class="it-screen" href="/projects/{{.Slug}}/" tabindex="-1" aria-hidden="true"><canvas class="glow" width="16" height="10"></canvas><span class="it-glass">{{if .Live}}<picture><source media="{{reelWide}}" srcset="/reel/{{.Slug}}.webp" width="1408" height="880"><img src="/reel/{{.Slug}}-n.webp" width="1324" height="828" alt="" loading="lazy" decoding="async"></picture>{{else}}<span class="it-dm">{{template "dmask" .Slug}}</span>{{end}}</span><span class="it-go">Open</span></a>{{if .Code}}<section class="it-face" id="pk-{{.Slug}}" aria-label="{{.Title}}: its real source" hidden></section>{{end}}</div>
       </div>
     </li>{{end}}{{end}}
   <li id="all" class="fin" aria-labelledby="all-h">
@@ -79,4 +79,5 @@
   </nav>
 </section>
 <script type="module" src="/assets/work.js"></script>
+<script type="module" src="/assets/peek.js"></script>
 {{template "foot" .}}{{end}}
