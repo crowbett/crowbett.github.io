@@ -728,6 +728,7 @@ export async function mount(root, demo) {
   function takeOver() {
     if (!pilot) return;
     pilot = false;
+    lastB = -1;
     setHint();
   }
 
