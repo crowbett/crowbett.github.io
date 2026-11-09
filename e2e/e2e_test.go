@@ -500,11 +500,20 @@ func TestSite(t *testing.T) {
 		return n
 	}
 	slices.SortStableFunc(tabs, func(a, b tab) int { return cost(b) - cost(a) })
+	// CI splits the tabs across runners: E2E_SHARD=i/n keeps every nth tab.
+	shard, shards := 0, 1
+	if s := os.Getenv("E2E_SHARD"); s != "" {
+		if _, err := fmt.Sscanf(s, "%d/%d", &shard, &shards); err != nil || shard < 0 || shard >= shards {
+			t.Fatalf("E2E_SHARD=%q, want i/n with 0 <= i < n", s)
+		}
+	}
 	// Twelve workers take tabs in that order; t.Parallel starts them in no
 	// particular order.
 	queue := make(chan tab, len(tabs))
-	for _, x := range tabs {
-		queue <- x
+	for i, x := range tabs {
+		if i%shards == shard {
+			queue <- x
+		}
 	}
 	close(queue)
 	t.Run("pages", func(t *testing.T) {
@@ -660,41 +669,44 @@ func TestReducedMotion(t *testing.T) {
 	t.Parallel()
 	for _, page := range []string{"/", "/projects/quorum/", "/demos/smoke/"} {
 		for _, motion := range []string{"no-preference", "reduce"} {
-			ctx, cancel := newTab(t, 60*time.Second)
-			err := chromedp.Do(ctx,
-				chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
-					_, err := cdp.Call(ctx, t, emulation.SetEmulatedMedia, emulation.SetEmulatedMediaParams{
-						Features: []*emulation.MediaFeature{{Name: "prefers-reduced-motion", Value: motion}},
-					})
-					return err
-				}),
-				chromedp.Navigate(srv.URL+page),
-				chromedp.WaitReady(chromedp.CSS("body")),
-			)
-			if err != nil {
-				t.Fatal(err)
-			}
-			n, err := chromedp.Run(ctx, chromedp.Evaluate[int](`(async () => {
-				const s = document.querySelector("[data-demo]");
-				if (s) {
-					s.querySelector("[data-demo-start]").click();
-					await new Promise((r) => { const t = setInterval(() => { if ("demoReady" in s.dataset) { clearInterval(t); r(); } }, 10); });
-				} else {
-					document.querySelector(".row .dm, .facts .dm")?.scrollIntoView({ block: "center" });
-					await new Promise((r) => setTimeout(r, 400));
+			t.Run(name(page)+"/"+motion, func(t *testing.T) {
+				t.Parallel()
+				ctx, cancel := newTab(t, 60*time.Second)
+				err := chromedp.Do(ctx,
+					chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
+						_, err := cdp.Call(ctx, t, emulation.SetEmulatedMedia, emulation.SetEmulatedMediaParams{
+							Features: []*emulation.MediaFeature{{Name: "prefers-reduced-motion", Value: motion}},
+						})
+						return err
+					}),
+					chromedp.Navigate(srv.URL+page),
+					chromedp.WaitReady(chromedp.CSS("body")),
+				)
+				if err != nil {
+					t.Fatal(err)
 				}
-				return document.getAnimations().length;
-			})()`, chromedp.EvalAwaitPromise))
-			cancel()
-			if err != nil {
-				t.Fatal(err)
-			}
-			if motion == "reduce" && n != 0 {
-				t.Errorf("%s: %d animations run with reduced motion", page, n)
-			}
-			if motion != "reduce" && n == 0 {
-				t.Errorf("%s: nothing animates with motion allowed, so the reduced-motion check proves nothing", page)
-			}
+				n, err := chromedp.Run(ctx, chromedp.Evaluate[int](`(async () => {
+					const s = document.querySelector("[data-demo]");
+					if (s) {
+						s.querySelector("[data-demo-start]").click();
+						await new Promise((r) => { const t = setInterval(() => { if ("demoReady" in s.dataset) { clearInterval(t); r(); } }, 10); });
+					} else {
+						document.querySelector(".row .dm, .facts .dm")?.scrollIntoView({ block: "center" });
+						await new Promise((r) => setTimeout(r, 400));
+					}
+					return document.getAnimations().length;
+				})()`, chromedp.EvalAwaitPromise))
+				cancel()
+				if err != nil {
+					t.Fatal(err)
+				}
+				if motion == "reduce" && n != 0 {
+					t.Errorf("%s: %d animations run with reduced motion", page, n)
+				}
+				if motion != "reduce" && n == 0 {
+					t.Errorf("%s: nothing animates with motion allowed, so the reduced-motion check proves nothing", page)
+				}
+			})
 		}
 	}
 }
