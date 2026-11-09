@@ -138,6 +138,17 @@
       "sha256": "3d475b6a5fc33ad89af48590441de1b3fd81244c67f514544b66b8769203e025",
       "bytes": 216604,
       "gzip_bytes": 91677
+    },
+    {
+      "slug": "stash",
+      "kind": "rust",
+      "repo": "stash",
+      "ref": "35f7189f4205be711b72f758fc06bef7ca7ed316",
+      "pkg": "./crates/webdemo",
+      "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+      "sha256": "6693d11c40cd23ab6a7c6b3da8e2bfe36cee4f8c527b8c2c7dcd253f692b0398",
+      "bytes": 919943,
+      "gzip_bytes": 255315
     }
   ]
 }

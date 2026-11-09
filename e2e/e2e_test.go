@@ -238,6 +238,34 @@ var demoChecks = map[string][]string{
 			return ok && await until(() => counts() === "283,158,23" && !document.querySelector(".ga-err"));
 		})()`,
 	},
+	"stash": {
+		`[...document.querySelectorAll(".sh-sum")].map((d) => d.textContent).join("|") === "11 chunks: 3 new, 8 reused · 3,513 B → 944 B stored|10 chunks: 10 new, 0 reused · 3,333 B → 3,179 B stored" && [...document.querySelectorAll(".sh-totals .sh-v")].map((d) => d.textContent).join() === "2,6,846 B,4,123 B,1.66×,13,2"`,
+		`document.querySelector(".sh-live").textContent === "No unsaved changes: all 11 chunks of 3,513 B are already in the repository." && document.querySelectorAll(".sh-mirror .sh-c").length === 11 && document.querySelectorAll(".sh-verify .sh-ok").length === 5 && document.querySelector(".sh-kdf").textContent.startsWith("argon2id: 8 MiB, 1 pass, 1 lane, salt c792bc6ffb050e1b67714c1e4814c1e3")`,
+		`(async () => {
+			const q = (s) => document.querySelector(s);
+			const btn = (t) => [...document.querySelectorAll(".sh-panel button")].find((b) => b.textContent === t);
+			btn("Unlock").click();
+			let ok = await until(() => /^Refused in [\d,]+ ms: with that passphrase/.test(q(".sh-result").textContent));
+			q("input[name=try]").value = "correct horse battery staple";
+			btn("Unlock").click();
+			return ok && await until(() => /^Unlocked in [\d,]+ ms: master key 97f0bf7b, the key that sealed every pack below\.$/.test(q(".sh-result").textContent));
+		})()`,
+		`(async () => {
+			const q = (s) => document.querySelector(s);
+			const btn = (t) => [...document.querySelectorAll(".sh-panel button")].find((b) => b.textContent === t);
+			btn("Delete a line").click();
+			let ok = await until(() => q(".sh-live").textContent === "Unsaved: 1 of 10 chunks (489 B) are new; a backup now stores only those.");
+			btn("Back up").click();
+			ok = ok && await until(() => document.querySelectorAll(".sh-row").length === 3 && q(".sh-sum").textContent === "10 chunks: 1 new, 9 reused · 3,379 B → 447 B stored");
+			ok = ok && await until(() => !btn("Flip one bit").disabled && q(".sh-byte").textContent.startsWith("byte 181 of 447: ciphertext of chunk 54c8efa2"));
+			btn("Flip one bit").click();
+			ok = ok && await until(() => q(".sh-verify .sh-bad .sh-why")?.textContent === "integrity error: blob 54c8efa2: authentication failed (MAC mismatch)");
+			q(".sh-row button").click();
+			ok = ok && await until(() => q(".sh-restore").textContent === "Restore refused at chunk 7 (pack 3): integrity error: blob 54c8efa2: authentication failed (MAC mismatch)");
+			btn("Flip it back").click();
+			return ok && await until(() => !document.querySelector(".sh-verify .sh-bad") && /^Restored 3,379 B from 10 chunks; .* identical to what was backed up\.$/.test(q(".sh-restore").textContent));
+		})()`,
+	},
 	"keel": {
 		`[...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join() === "24f2fb94354d9d25,24f2fb94354d9d25" && document.querySelector(".kl-match") !== null`,
 		`[...document.querySelectorAll(".kl-totals dd")].map((d) => d.textContent).join() === "535,0,6,14,linearizable"`,
