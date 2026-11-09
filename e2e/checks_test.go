@@ -518,20 +518,25 @@ var demoChecks = map[string][]string{
 		})()`,
 		`(async () => {
 			const c = document.querySelector(".nc-canvas");
+			const tick = () => document.querySelector(".nc-cells [data-k=tick] .nc-v").textContent;
+			const echo = () => document.querySelector(".nc-echo").textContent;
 			const key = (type, code) => c.dispatchEvent(new KeyboardEvent(type, { code, bubbles: true, cancelable: true }));
+			if (document.querySelector(".nc-play").textContent === "Pause") document.querySelector(".nc-play").click();
 			key("keydown", "KeyD");
-			if (document.querySelector(".nc-play").textContent === "Play") document.querySelector(".nc-play").click();
-			const ok = await until(() => document.querySelector(".nc-hint").textContent.startsWith("You are steering player 0") &&
-				/^Your input for tick [\d,]+: on your screen at once, run by the server [\d,]+ ms later, on bot 1's screen [\d,]+ ms later \(simulated time\)\.$/.test(document.querySelector(".nc-echo").textContent));
+			for (let i = 0; i < 120 && !echo().startsWith("Your input"); i++) { const t = tick(); document.querySelector(".nc-step").click(); for (let k = 0; k < 400 && tick() === t; k++) await new Promise((r) => setTimeout(r, 5)); }
 			key("keyup", "KeyD");
-			return ok;
+			return document.querySelector(".nc-hint").textContent.startsWith("You are steering player 0") &&
+				/^Your input for tick [\d,]+: on your screen at once, run by the server [\d,]+ ms later, on bot 1's screen [\d,]+ ms later \(simulated time\)\.$/.test(echo());
 		})()`,
 		`(async () => {
 			const s = document.querySelector("select[name=network]");
-			s.value = "mobile"; s.dispatchEvent(new Event("change"));
+			const tick = () => document.querySelector(".nc-cells [data-k=tick] .nc-v").textContent;
 			const rtt = () => parseFloat(document.querySelector(".nc-cells [data-k=rtt] .nc-v").textContent);
-			return await until(() => document.querySelector(".nc-status").textContent === "Link set to mobile: 180 ms latency, 60 ms jitter, 4 % loss, each way." &&
-				document.querySelector("input[name=latency_ms]").value === "180" && rtt() > 300);
+			s.value = "mobile"; s.dispatchEvent(new Event("change"));
+			if (!await until(() => document.querySelector(".nc-status").textContent === "Link set to mobile: 180 ms latency, 60 ms jitter, 4 % loss, each way." &&
+				document.querySelector("input[name=latency_ms]").value === "180")) return false;
+			for (let i = 0; i < 400 && rtt() <= 300; i++) { const t = tick(); document.querySelector(".nc-step").click(); for (let k = 0; k < 400 && tick() === t; k++) await new Promise((r) => setTimeout(r, 5)); }
+			return rtt() > 300;
 		})()`,
 	},
 }
