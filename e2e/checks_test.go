@@ -101,6 +101,59 @@ const sceneCheck = `(async () => {
 // at least one check that proves it rendered real output from its binary.
 var demoChecks = map[string][]string{
 	"smoke": {`document.querySelector(".demo-out").textContent.includes("answered: hello from the page")`},
+	"recall": {
+		`until(() => document.querySelector(".rc-cells [data-k=docs] .rc-v").textContent === "42" && document.querySelector(".rc-cells [data-k=sources] .rc-v").textContent === "4 of 5" &&
+			document.querySelectorAll(".rc-index .rc-doc").length === 42 && document.querySelectorAll(".rc-index .rc-doc.is-red").length === 3 &&
+			document.querySelectorAll(".rc-row.is-sel").length > 0 && document.querySelectorAll(".rc-line").length > 0 &&
+			/^42 documents from 4 sources indexed in [\d.]+ ms, \d+ quer(y|ies) ranked in [\d.]+ ms, by recall's engine in your browser\.$/.test(document.querySelector(".rc-out").textContent))`,
+		`(async () => {
+			const play = document.querySelector(".rc-acts button");
+			if (play.textContent === "Pause") play.click();
+			document.querySelector("input[name=q]").value = "graceful shutdown";
+			document.querySelector(".rc-find button").click();
+			const first = () => document.querySelector(".rc-row.is-sel[aria-label^='Result 1:']")?.getAttribute("aria-label") || "";
+			const foot = () => document.querySelector(".rc-parts tfoot td:last-child")?.textContent || "";
+			return until(() => first() === "Result 1: Graceful shutdown checklist, notes, fused score 0.0328, bm25 rank #1, vector rank #1" &&
+				document.querySelector(".rc-why h3").textContent === "Graceful shutdown checklist" && foot() === "16.949" &&
+				[...document.querySelectorAll(".rc-parts tbody td:nth-child(2)")].some((td) => td.textContent === "grace") &&
+				document.querySelector(".rc-status").textContent === "8 results: 7 found by both lanes, 0 by bm25 alone, 1 by the vector lane alone.");
+		})()`,
+		`(async () => {
+			const play = document.querySelector(".rc-acts button");
+			if (play.textContent === "Pause") play.click();
+			for (const b of document.querySelectorAll(".rc-chip")) if ((b.textContent === "git") !== (b.getAttribute("aria-pressed") === "true")) b.click();
+			document.querySelector("input[name=q]").value = "backoff jitter";
+			document.querySelector(".rc-find button").click();
+			const fused = () => [...document.querySelectorAll(".rc-row[aria-label^='Result']")];
+			let ok = await until(() => document.querySelector(".rc-cells [data-k=cands] .rc-v").textContent === "1 · 13" && fused().length === 8 &&
+				fused().every((g) => g.getAttribute("aria-label").includes(", git, ")) && document.querySelectorAll(".rc-doc.is-off").length === 29 &&
+				document.querySelector(".rc-plan").textContent.startsWith("query backoff jitter src:git → terms"));
+			for (const b of document.querySelectorAll(".rc-chip")) if (b.getAttribute("aria-pressed") !== "true") b.click();
+			document.querySelector("input[name=q]").value = "postgres password";
+			document.querySelector(".rc-find button").click();
+			ok = ok && await until(() => document.querySelector(".rc-status").textContent.includes("pool.go, ferry.toml, ") && document.querySelector(".rc-why h3").textContent === "pool.go" &&
+				document.querySelector(".rc-snip .rc-red")?.textContent.startsWith("[REDACTED:") && document.querySelectorAll(".rc-doc.is-off").length === 0);
+			document.querySelector("input[name=q]").value = "stop workers mid-flight without dropping jobs";
+			document.querySelector(".rc-find button").click();
+			return ok && await until(() => document.querySelector(".rc-plan").textContent.endsWith("no document has every term, so any term counts (OR).") &&
+				document.querySelector(".rc-cells [data-k=cands] .rc-v").textContent === "32 · 42");
+		})()`,
+		`(async () => {
+			const play = document.querySelector(".rc-acts button");
+			if (play.textContent === "Pause") play.click();
+			const mode = document.querySelector("select[name=mode]");
+			mode.value = "bm25"; mode.dispatchEvent(new Event("change"));
+			document.querySelector("input[name=q]").value = "duplicate jobs lease";
+			document.querySelector(".rc-find button").click();
+			let ok = await until(() => document.querySelector(".rc-cells [data-k=cands] .rc-v").textContent === "3 · off" && document.querySelectorAll(".rc-row[aria-label^='vector']").length === 0 &&
+				document.querySelector(".rc-status").textContent === "3 results from bm25 alone; the vector lane is off.");
+			mode.value = "hybrid"; mode.dispatchEvent(new Event("change"));
+			document.querySelector(".rc-mine button").click();
+			return ok && await until(() => document.querySelector(".rc-cells [data-k=docs] .rc-v").textContent === "43" && document.querySelectorAll(".rc-doc.is-you").length === 1 &&
+				document.querySelector(".rc-row.is-you[aria-label^='Result 2: yours-1']") !== null && document.querySelector(".rc-why h3").textContent === "yours-1" &&
+				document.querySelector(".rc-status").textContent.startsWith("your note is /work/notes/yours-1.md, document 43; it is in the ranking above."));
+		})()`,
+	},
 	"codegraph": {
 		`until(() => document.querySelectorAll(".cg-node").length === 17 && document.querySelectorAll(".cg-e:not(.cg-via)").length === 19 && document.querySelectorAll(".cg-likely.cg-e").length === 1 &&
 			[...document.querySelectorAll(".cg-cells .cg-v")].slice(0, 3).map((v) => v.textContent).join() === "26,17,99" &&
