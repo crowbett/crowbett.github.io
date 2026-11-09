@@ -259,22 +259,27 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"jobrun": {
-		`document.querySelectorAll(".jr-run").length === 10 && document.querySelector(".jr-run .jr-mono").textContent === "Sat 2026-03-07 02:30"`,
-		`[...document.querySelectorAll(".jr-table tbody tr")].length === 8 && document.querySelector(".jr-dead td").textContent === "8"`,
-		`document.querySelectorAll(".jr-chart line.jr-dot").length === 7 * 20`,
+		`Number(document.querySelector(".jr-cells [data-k=fires] .jr-v").textContent) >= 20 && /^Scheduler timeline at \d\d:\d\d:\d\d UTC: \d+ fires, \d+ runs, \d+ retries/.test(document.querySelector(".jr-canvas").getAttribute("aria-label"))`,
+		`(() => { const c = document.querySelector(".jr-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
 		`(async () => {
-			const s = document.querySelector("select[name=cronPreset]");
-			const runs = () => [...document.querySelectorAll(".jr-run .jr-mono")].map((r) => r.textContent).slice(0, 2).join();
-			for (let i = 0; i < 100 && runs() !== "Sat 2026-03-07 02:30,Mon 2026-03-09 02:30"; i++) await new Promise((r) => setTimeout(r, 50));
-			const note = () => document.querySelector(".jr-note").textContent;
-			let ok = runs() === "Sat 2026-03-07 02:30,Mon 2026-03-09 02:30" && note().includes("8 March");
-			const z = document.querySelector("select[name=tz]");
-			z.value = "UTC"; z.dispatchEvent(new Event("change"));
-			for (let i = 0; i < 100 && runs() !== "Sat 2026-03-07 02:30,Sun 2026-03-08 02:30"; i++) await new Promise((r) => setTimeout(r, 50));
-			ok = ok && runs() === "Sat 2026-03-07 02:30,Sun 2026-03-08 02:30" && note() === "";
-			s.value = "0"; s.dispatchEvent(new Event("change"));
-			for (let i = 0; i < 100 && runs() !== "Thu 2026-01-01 09:00,Thu 2026-01-01 09:15"; i++) await new Promise((r) => setTimeout(r, 50));
-			return ok && runs() === "Thu 2026-01-01 09:00,Thu 2026-01-01 09:15" && z.value === "Europe/London";
+			const click = (t) => [...document.querySelectorAll(".jr-acts button")].find((b) => b.textContent === t).click();
+			const v = (k) => document.querySelector(".jr-cells [data-k=" + k + "] .jr-v").textContent;
+			if ([...document.querySelectorAll(".jr-acts button")].some((b) => b.textContent === "Pause")) click("Pause");
+			click("Reset");
+			let ok = await until(() => v("t") === "08:59:30 UTC" && v("fires") === "20" && v("runs") === "48" && v("retries") === "27" && v("ok") === "17" && v("maxwait") === "49 s" &&
+				document.querySelector(".jr-runs li").textContent === "Mon 2026-11-09 09:00UTCin 30 s");
+			click("Enqueue flaky job");
+			ok = ok && await until(() => document.querySelector(".jr-you").textContent.startsWith("Your flaky job #36 is queued at priority 1"));
+			for (let i = 0; i < 4; i++) { click("Step 1 min"); await new Promise((r) => setTimeout(r, 150)); }
+			return ok && await until(() => document.querySelector(".jr-you").textContent === "Your flaky job #36 succeeded on attempt 4 after 3 retries and 1 m 57 s of backoff.");
+		})()`,
+		`(async () => {
+			const e = document.querySelector("input[name=expr]");
+			e.value = "61 * * * *"; e.dispatchEvent(new Event("input"));
+			let ok = await until(() => document.querySelector(".jr-status").textContent === "yours: cronx: invalid expression: minute: 61 out of range 0-59");
+			const x = document.querySelector("select[name=example]");
+			x.value = "0 0 29 2 *"; x.dispatchEvent(new Event("change"));
+			return ok && await until(() => document.querySelector(".jr-runs li .jr-mono")?.textContent === "Tue 2028-02-29 00:00" && document.querySelector(".jr-status").textContent === "yours: cronx reads it as 0 0 29 2 *, in UTC.");
 		})()`,
 	},
 	"kvlite": {
