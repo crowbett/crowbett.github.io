@@ -26,7 +26,7 @@
 .rt-view { --rt-ar: 1; position: relative; width: min(100%, calc(68svh * var(--rt-ar))); aspect-ratio: var(--rt-ar); margin: 0 auto; background: #000; overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: ew-resize; }
 .rt[data-split="off"] .rt-view { cursor: default; }
 .rt-canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; image-rendering: pixelated; }
-.rt-scan { position: absolute; left: 0; right: 0; top: 0; height: 0; pointer-events: none; }
+.rt-scan { position: absolute; inset: 0; pointer-events: none; }
 .rt-scan::before, .rt-scan::after { content: ""; position: absolute; top: -1px; width: 10px; border-top: 2px solid var(--rt-signal); }
 .rt-scan::before { left: 0; }
 .rt-scan::after { right: 0; }

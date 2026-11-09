@@ -41,9 +41,10 @@ A C++ demo is a directory of sources (e.g. `webdemo/`) built for `wasm32-wasip1`
 
 ## Frame (site-owned: `templates/project.html`, `web/assets/demo.js`)
 - The site renders the frame: title bar, start button, size, download progress, error state and retry. `ui.js` never builds its own loader or error box.
+- On a project page the frame sits in the dark head and may start on its own (`data-autostart`, gated like the home stage), so `mount` must not assume a click: no `autofocus`, no scrolling the page, no sound. Until ready the frame shows the recorded clip (`.ph-screen`), which is removed on ready.
 - `mount` runs only after the binary is ready. If it throws, the frame shows the message and a "Try again" button that clears the mount and starts a fresh worker, so `mount` must cope with being called again on an empty `el`.
 - A box that scrolls sideways (wide table or chart) needs keyboard access: after `mount` the frame gives any overflowing `overflow-x: auto|scroll` element in the mount `tabindex="0"`, `role="region"` if it has no role, and `aria-label="Scrollable area"` if it has no label. Give the box your own `aria-label` naming what scrolls (e.g. "Request log"); e2e runs axe on every demo.
-- After `mount` resolves, focus moves to the mount itself (`tabindex="-1"`), so the next Tab reaches the first control: put the main control first. Never `autofocus` a field: a focused text input can raise a phone's keyboard.
+- After `mount` resolves from a click, focus moves to the mount itself (`tabindex="-1"`), so the next Tab reaches the first control: put the main control first. Never `autofocus` a field: a focused text input can raise a phone's keyboard.
 - Hooks for tests: the section carries `data-demo-ready` or `data-demo-error`, and `data-demo-loaded` with the decompressed bytes received; project pages also carry `data-bytes` (the raw size from the lock).
 
 ## Lock and page

@@ -14,35 +14,34 @@
         </figure>{{end}}
         <p class="ph-go">{{if .Live}}<a class="key" href="#demo" data-demo-go>Run it live</a>{{end}}{{if .Private}}<a class="ph-src" href="mailto:{{$.Owner.Email}}?subject={{.Title}}%20source">Source on request</a>{{else}}<a class="ph-src" href="{{.Repo}}">Source on GitHub</a>{{end}}</p>
       </div>
-      <figure class="ph-fig">
+      {{if .Live}}<div class="ph-fig">
         <canvas class="glow" width="16" height="10" aria-hidden="true"></canvas>
-        <div class="ph-screen"{{if .Live}} data-clip="/reel/{{.Slug}}.mp4"{{end}}>
-          {{if .Live}}<img src="/reel/{{.Slug}}.webp" width="882" height="552" alt="The {{.Title}} demo running, recorded from its WebAssembly build." fetchpriority="high">{{else}}<span class="ph-dm" aria-hidden="true">{{template "dmask" .Slug}}</span>{{end}}
-        </div>
-        <p class="ph-hud" aria-hidden="true"><span class="led{{if not .Live}} off{{end}}">{{.Slug}}</span><span>{{if .Live}}recorded from the live demo{{else}}diagram{{end}}</span></p>
-      </figure>
+        <section class="demo" id="demo" data-demo="{{.Slug}}" data-ui="{{demoAsset .Slug}}" data-bytes="{{demoBytes .Slug}}" data-autostart aria-labelledby="demo-title">
+          <div class="demo-head">
+            <h2 id="demo-title">Live demo</h2>
+            <span class="demo-spec"><span class="demo-kind">WebAssembly, </span>~{{demoKB .Slug}} KB</span>
+            <button type="button" class="demo-full" data-demo-full>Full screen</button>
+          </div>
+          <p class="demo-try">{{.DemoTry}}</p>
+          <div class="ph-screen" data-clip="/reel/{{.Slug}}.mp4"><img src="/reel/{{.Slug}}.webp" width="882" height="552" alt="The {{.Title}} demo running, recorded from its WebAssembly build." fetchpriority="high"></div>
+          <div class="demo-bar">
+            <button type="button" data-demo-start>Run the live demo</button>
+            <span class="demo-note" data-demo-note>Above: a recording. Runs live in your browser; nothing downloads until you start.</span>
+          </div>
+          <div class="demo-mount" data-demo-mount></div>
+          <p class="demo-status" data-demo-status role="status" aria-live="polite"></p>
+        </section>
+      </div>
+      <script type="module" src="/assets/demo.js"></script>{{else}}<figure class="ph-fig">
+        <canvas class="glow" width="16" height="10" aria-hidden="true"></canvas>
+        <div class="ph-screen"><span class="ph-dm" aria-hidden="true">{{template "dmask" .Slug}}</span></div>
+        <p class="ph-hud" aria-hidden="true"><span class="led off">{{.Slug}}</span><span>diagram</span></p>
+      </figure>{{end}}
     </div>
   </header>
 
   <div class="sheet">
   <div class="sheet-in">
-  {{if .Live}}
-  <section class="demo" id="demo" data-demo="{{.Slug}}" data-ui="{{demoAsset .Slug}}" data-bytes="{{demoBytes .Slug}}" aria-labelledby="demo-title">
-    <div class="demo-head">
-      <h2 id="demo-title">Live demo</h2>
-      <span class="demo-spec"><span class="demo-kind">WebAssembly, </span>~{{demoKB .Slug}} KB</span>
-      <button type="button" class="demo-full" data-demo-full>Full screen</button>
-    </div>
-    <p class="demo-try">{{.DemoTry}}</p>
-    <div class="demo-bar">
-      <button type="button" data-demo-start>Run the live demo</button>
-      <span class="demo-note">Runs in your browser. Nothing downloads until you start.</span>
-    </div>
-    <div class="demo-mount" data-demo-mount></div>
-    <p class="demo-status" data-demo-status role="status" aria-live="polite"></p>
-  </section>
-  <script type="module" src="/assets/demo.js"></script>
-  {{end}}
 
   <div class="project-info">
     <div class="body">{{.Body}}</div>

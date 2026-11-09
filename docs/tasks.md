@@ -141,8 +141,11 @@ The grouped work table became a scroll reel: one panel per project with a loopin
 ### V17 Stage, index and layers · status: done 2026-11-09
 Home opens on the raytracer rendering live on a pinned dark stage (`internal/site/stage.go`, `web/assets/stage.js`, poster by `cmd/stage`), with measured dials and a draggable material / NEE + MIS split; the reel became a type-led index on a sheet sliding over the stage beside one sticky monitor (`web/assets/work.js`); paper grid, glass header, sampled glow, closing footer. Demos open on their clearest state (ratelimitd burst, jobrun DST jump, keel seed 2, lobby squad, netcode 150 ms / 40 / 5%), clips re-recorded at 480 px CSS. `e2e` `stageCheck` and `workCheck` cover both. Closed in V18: lobby flights pass behind the room header strip and the newest room draws over sliding ones; clips iOS refuses (Low Power Mode) start on the next tap or key (`web/assets/play.js`, e2e `refusedCheck`); monitor and head chips sit under the screen instead of over the clip.
 
-### V18 Per-page CSS and stage scenes · status: in progress 2026-11-09
-site.css split into site.css (every page), home.css and project.css; the CSS budget measures what each page links (PLAN.md). The stage switches between three light-sampled scenes. Next layers: monitor evidence caption, clickable monitor screen into the project page.
+### V18 Per-page CSS and stage scenes · status: done 2026-11-09
+site.css split into site.css (every page), home.css and project.css; the CSS budget measures what each page links (PLAN.md). The stage switches between three light-sampled scenes. The monitor screen opens its project. Dropped: a monitor evidence caption, since each index entry beside it already shows its metric.
+
+### V19 Live project heads · status: done 2026-11-09
+Every live project page opens like the home stage: the demo frame sits in the dark head (beside the text from 64rem, below it on narrower screens) and starts on its own once the page has loaded and the frame is on screen, under the stage's rules (not with reduced motion, Save-Data, 2g/3g or fewer than 4 cores). Until it runs, the recorded clip plays in the frame. Heads with a demo no longer pin, so nothing scrolled to inside one lands under the sheet; the head sinks as the sheet comes up (a view timeline), not with page scroll. The glow follows the running demo's canvas. e2e: desktop light waits for the autostart, then checks for zero layout shift, focus left alone and the recording removed; every other project tab reports 2 cores and clicks to start.
 
 ## Owner only
 
