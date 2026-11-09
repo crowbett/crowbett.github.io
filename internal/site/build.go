@@ -229,6 +229,7 @@ func writeSearch(file string, projects []Project) error {
 		Live    bool     `json:"live"`
 		N       int      `json:"n"`
 		Href    string   `json:"href"`
+		Try     []string `json:"try,omitempty"`
 	}
 	out := make([]entry, len(projects))
 	for i, p := range projects {
@@ -236,7 +237,7 @@ func writeSearch(file string, projects []Project) error {
 		if p.Live() {
 			href += "#demo"
 		}
-		out[i] = entry{p.Slug, p.Title, p.Tagline, p.Lang, p.Tags, p.Kind().Name, p.Live(), i + 1, href}
+		out[i] = entry{p.Slug, p.Title, p.Tagline, p.Lang, p.Tags, p.Kind().Name, p.Live(), i + 1, href, ShellTries[p.Slug]}
 	}
 	b, err := json.Marshal(out)
 	if err != nil {

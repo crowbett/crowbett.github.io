@@ -108,3 +108,44 @@ func TestPointerFeel(t *testing.T) {
 	}
 	feelCheck(t, ctx)
 }
+
+// TestShell opens the terminal with the ` key and runs the real binaries
+// through it: kvlite's tries end on a measured receipt, trace draws a
+// rendered image, an unknown command is refused, and Escape closes it. axe
+// runs with it open.
+func TestShell(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := newTab(t, 60*time.Second)
+	defer cancel()
+	if err := chromedp.Do(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(srv.URL+"/projects/stash/"), chromedp.WaitReady(chromedp.CSS("body"))); err != nil {
+		t.Fatal(err)
+	}
+	run := `const run = (c) => { const i = document.querySelector("#tty-i"); i.value = c; i.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })); };
+		const text = () => document.querySelector(".tty-out").textContent;
+		const idle = () => !("busy" in document.querySelector(".tty").dataset);`
+	steps := []struct{ name, js string }{
+		{"opens", `(async () => { document.dispatchEvent(new KeyboardEvent("keydown", { key: "` + "`" + `", bubbles: true, cancelable: true }));
+			return until(() => document.querySelector(".tty[open]") && document.activeElement?.id === "tty-i" && document.querySelector(".tty-out").textContent.includes("projects run here")); })()`},
+		{"runs kvlite's tries", `(async () => { ` + run + ` run("try kvlite");
+			return until(() => idle() && /kvlite\.state: \d+ B of JSON from the real binary in [\d.]+ m?s/.test(text()) && text().includes('"carol"') && document.querySelector(".tty-p").textContent.endsWith("~/kvlite$")); })()`},
+		{"traces an image", `(async () => { ` + run + ` run("trace cornell 2");
+			await until(() => idle() && /cornell: 2 passes, [\d,]+ samples/.test(text()));
+			const c = document.querySelector(".tty-img"), d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
+			let lit = 0; for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 60) lit++;
+			return lit > c.width * c.height / 4; })()`},
+		{"refuses a typo", `(async () => { ` + run + ` run("cd ..");
+			await until(() => idle() && document.querySelector(".tty-p").textContent.endsWith("~$")); run("lss");
+			return until(() => idle() && text().includes("lss: no such command")); })()`},
+	}
+	for _, s := range steps {
+		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(s.js), chromedp.EvalAwaitPromise)); err != nil || !ok {
+			t.Fatalf("shell %s: %v", s.name, err)
+		}
+	}
+	pageQuality(t, ctx)
+	closed := `(async () => { document.querySelector("#tty-i").dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+		document.querySelector(".tty").close(); return until(() => !document.querySelector(".tty[open]")); })()`
+	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(closed), chromedp.EvalAwaitPromise)); err != nil || !ok {
+		t.Fatalf("shell did not close: %v", err)
+	}
+}
