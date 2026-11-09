@@ -203,6 +203,7 @@ func record(browser context.Context, base, slug string, show site.Showcase, v va
 	rect, err := chromedp.Run(ctx, chromedp.Evaluate[box](fmt.Sprintf(`((sel, pad) => {
 		const m = document.querySelector(sel);
 		document.activeElement?.blur();
+		document.querySelector("[data-acts]")?.style.setProperty("display", "none", "important");
 		for (const e of document.querySelectorAll("body *")) {
 			const p = getComputedStyle(e).position;
 			if ((p === "fixed" || p === "sticky") && !e.closest("[data-demo]")) e.style.setProperty("visibility", "hidden", "important");
