@@ -2,6 +2,7 @@ package site
 
 import (
 	"encoding/json"
+	"fmt"
 	"html"
 	"path/filepath"
 	"regexp"
@@ -68,7 +69,8 @@ func writeFind(file string, projects []Project) error {
 }
 
 // writePeek writes /code/<slug>.json for each project with code: its first
-// excerpt, highlighted, which a home panel flips to on request.
+// excerpt, highlighted, which a home panel flips to on request, and for a
+// public repository the file's lines on GitHub at the pinned commit.
 func writePeek(dir string, projects []Project) error {
 	type peek struct {
 		Title string   `json:"t"`
@@ -76,14 +78,18 @@ func writePeek(dir string, projects []Project) error {
 		From  int      `json:"f"`
 		Why   string   `json:"y"`
 		Lines []string `json:"l"`
-		Of    int      `json:"n"`
+		URL   string   `json:"u,omitempty"`
 	}
 	for _, p := range projects {
 		if p.Code == nil || len(p.Code.Excerpts) == 0 {
 			continue
 		}
 		e := p.Code.Excerpts[0]
-		b, err := json.Marshal(peek{e.Title, e.Path, e.From, e.Why, e.Lines, len(p.Code.Excerpts)})
+		var url string
+		if !p.Private() && p.Code.Ref != "" {
+			url = fmt.Sprintf("%s/blob/%s/%s#L%d-L%d", p.Repo, p.Code.Ref, e.Path, e.From, e.To)
+		}
+		b, err := json.Marshal(peek{e.Title, e.Path, e.From, e.Why, e.Lines, url})
 		if err != nil {
 			return err
 		}

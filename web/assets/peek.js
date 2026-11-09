@@ -39,9 +39,12 @@ for (const b of document.querySelectorAll("[data-peek]")) {
       code.append(l);
     });
     pre.append(code);
-    const more = el("a", "pk-more", x.n > 1 ? `All ${x.n} excerpts on its page` : "On its page");
-    more.href = `/projects/${slug}/#code-0`;
-    face.replaceChildren(head, el("p", "pk-y", x.y), pre, more);
+    face.replaceChildren(head, el("p", "pk-y", x.y), pre);
+    if (x.u) {
+      const more = el("a", "pk-more", "On GitHub");
+      more.href = x.u;
+      face.append(more);
+    }
   }
 
   b.addEventListener("click", async () => {
