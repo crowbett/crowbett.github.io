@@ -364,6 +364,11 @@ var viewports = []struct {
 // dark machine would never shoot the light theme.
 var schemes = []string{"light", "dark"}
 
+// keepShots is false on CI, which keeps no screenshots: it skips taking them,
+// and skips dark tabs at desktop and tablet, whose layout matches light and
+// whose demo and axe checks run elsewhere (phone dark, desktop light).
+var keepShots = os.Getenv("CI") == "" && os.Getenv("E2E_NOSHOTS") == ""
+
 // The package builds the site once and starts one Chrome for every test:
 // each extra Chrome cost a cold start on CI (F2 in docs/tasks.md).
 var (
@@ -467,6 +472,9 @@ func TestSite(t *testing.T) {
 		for _, page := range pages {
 			for _, vp := range viewports {
 				for _, scheme := range schemes {
+					if !keepShots && scheme == "dark" && vp.name != "phone" {
+						continue
+					}
 					shot := name(page) + "-" + vp.name + "-" + scheme
 					t.Run(name(page)+"/"+vp.name+"/"+scheme, func(t *testing.T) {
 						t.Parallel()
@@ -875,8 +883,7 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 	if overflow {
 		t.Errorf("page scrolls horizontally at %dpx", w)
 	}
-	// CI keeps no screenshots, so it skips taking them.
-	if os.Getenv("CI") == "" {
+	if keepShots {
 		screenshot(t, ctx, w, shot)
 	}
 	cancel()
