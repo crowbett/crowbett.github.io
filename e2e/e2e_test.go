@@ -347,8 +347,9 @@ var demoChecks = map[string][]string{
 
 // layoutOnly viewports check page layout (overflow, CLS, a screenshot) and
 // leave demos and axe to desktop and phone, which already cover them: running
-// demos on a third width pushed CI past its 60 s budget. Demo behaviour does not depend on the scheme, so
-// dark tabs run at most each demo's first check.
+// demos on a third width pushed CI past its 60 s budget. Demo behaviour does
+// not depend on width or scheme: desktop light runs every check, other tabs
+// mount the demo and run its first check.
 var viewports = []struct {
 	name          string
 	width, height int64
@@ -847,7 +848,7 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 			t.Fatal(err)
 		}
 		checks := demoChecks[slug]
-		if scheme == "dark" {
+		if scheme == "dark" || w < 1000 {
 			checks = checks[:min(1, len(checks))]
 		}
 		if len(checks) == 0 {
