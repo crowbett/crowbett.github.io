@@ -410,8 +410,8 @@ var demoChecks = map[string][]string{
 	},
 }
 
-// feelCheck moves a real mouse onto an index card where the page has a fine
-// pointer: its preview tilts under a glare and plays its clip, and leaving
+// feelCheck moves a real mouse onto an index card (the tab must have a fine
+// pointer): its preview tilts under a glare and starts its clip, and leaving
 // the card settles it and drops the clip. The page may still be settling a
 // scroll, so the mouse is re-aimed until it lands on the card.
 func feelCheck(t *testing.T, ctx context.Context) {
@@ -432,7 +432,7 @@ func feelCheck(t *testing.T, ctx context.Context) {
 	in := `(() => {
 		const s = document.querySelector(".card:not([hidden]) .card-shot:has(img)");
 		return "feel" in s.dataset && parseFloat(s.style.getPropertyValue("--ry")) > 0
-			&& !!s.querySelector("video[data-on]") && !s.querySelector("video").paused;
+			&& !!s.querySelector("video[src$='-n.mp4']") && !s.querySelector("video").paused;
 	})()`
 	ok := false
 	for end := time.Now().Add(15 * time.Second); !ok && time.Now().Before(end); {
@@ -441,7 +441,7 @@ func feelCheck(t *testing.T, ctx context.Context) {
 			t.Fatal(err)
 		}
 		if at.X < 0 {
-			return
+			t.Fatal("the tab has no fine pointer, so feel.js stays off")
 		}
 		move(at.X-20, at.Y)
 		move(at.X, at.Y)
