@@ -191,10 +191,10 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"adfactory": {
-		`/^planned 9 deliverables in [\d.]+ ms: 9 anchors from 60 detector samples, 427 crop windows, 65 caption lines, 7 loudness plans\. [\d,]+ plan calls? so far, [\d,]+ ms in total, all in your browser\.$/.test(document.querySelector("p.demo-out").textContent)
+		`until(() => /^planned 9 deliverables in [\d.]+ ms: 9 anchors from 60 detector samples, 427 crop windows, 65 caption lines, 7 loudness plans\. [\d,]+ plan calls? so far, [\d,]+ ms in total, all in your browser\.$/.test(document.querySelector("p.demo-out").textContent)
 			&& [...document.querySelectorAll(".adf-tile")].map((t) => t.dataset.key + ":" + t.dataset.state).join() === "reels:ready,tiktok:ready,shorts:advisory,feed_4x5:ready,feed_4x5_still:ready,youtube:ready,broadcast_1080i:ready,feed_1x1:ready,feed_1x1_still:ready"
-			&& document.querySelector(".adf-cells [data-k=ready] .adf-v").textContent === "8"`,
-		`(() => { const c = document.querySelector(".adf-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
+			&& document.querySelector(".adf-cells [data-k=ready] .adf-v").textContent === "8")`,
+		`until(() => ((() => { const c = document.querySelector(".adf-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,
 		`(async () => {
 			const tile = (k) => document.querySelector(".adf-tile[data-key=" + k + "]");
 			const pick = (sel, v) => { const s = document.querySelector("select[name=" + sel + "]"); s.value = v; s.dispatchEvent(new Event("change")); };
