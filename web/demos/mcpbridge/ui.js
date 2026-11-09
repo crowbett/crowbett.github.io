@@ -177,7 +177,7 @@ export async function mount(root, demo) {
   const stepB = btn("Step", "secondary");
   const addB = btn("Add frame", "secondary");
   const bar = el("div", "mb-bar");
-  bar.append(field("Direction", dirSel), field("Scenario", scnSel), play, stepB, addB);
+  bar.append(field("direction", dirSel), field("scenario", scnSel), play, stepB, addB);
   const note = el("p", "mb-note");
   const from = el("p", "mb-from");
 
@@ -197,7 +197,7 @@ export async function mount(root, demo) {
   list.setAttribute("aria-label", "Captured frames, in wire order");
   flow.append(canvas, list);
   scroller.append(flow);
-  const legend = el("p", "mb-legend");
+  const legend = el("p", "demo-legend mb-legend");
   for (const [k, t] of [["you", "your frame"], ["add", "added or rewritten by the bridge"], ["del", "removed by the bridge"], ["bad", "refused as unsupported"], ["lane", "inside mcpbridge"]]) {
     legend.append(el("span", "mb-key mb-key-" + k, t));
   }
@@ -218,7 +218,7 @@ export async function mount(root, demo) {
   main.append(timeline, insp);
   const status = el("p", "mb-status");
   status.setAttribute("aria-live", "polite");
-  const cells = el("ul", "cells mb-cells");
+  const cells = el("ul", "cells stack mb-cells");
   cells.setAttribute("aria-label", "Bridge state");
   const nonceNote = el("p", "mb-fine");
   const receipt = el("p", "demo-out mb-out");
@@ -250,7 +250,7 @@ export async function mount(root, demo) {
   const readColors = () => {
     const cs = getComputedStyle(root);
     const v = (n) => cs.getPropertyValue(n).trim();
-    colors = { accent: v("--accent"), tint: v("--accent-tint"), sig: v("--mb-sig"), text: v("--text"), dim: v("--text-3"), danger: v("--danger"), line: v("--line-strong") };
+    colors = { accent: v("--accent"), tint: v("--accent-tint"), sig: v("--signal"), text: v("--text"), dim: v("--text-3"), danger: v("--danger"), line: v("--line-strong") };
   };
 
   // Per-event derived data: parsed frame, diff against its source.
@@ -533,7 +533,7 @@ export async function mount(root, demo) {
     ta.setAttribute("autocomplete", "off");
     ta.value = script[idx];
     wrap.append(hl, ta);
-    const f = field(`Frame ${step} of ${script.length}, JSON-RPC`, wrap);
+    const f = field(`frame ${step} of ${script.length}, JSON-RPC`, wrap);
     f.classList.add("mb-edf");
     const valid = el("p", "mb-valid");
     valid.setAttribute("aria-live", "polite");

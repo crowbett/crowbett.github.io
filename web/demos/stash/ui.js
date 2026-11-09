@@ -81,7 +81,7 @@ function button(text, secondary) {
   return b;
 }
 function cells(pairs) {
-  const ul = el("ul", "cells sh-cells");
+  const ul = el("ul", "cells stack sh-cells");
   for (const [k, v, cls] of pairs) {
     const li = el("li", cls);
     li.append(el("span", "sh-k", k), el("span", "sh-v", v));
@@ -110,10 +110,16 @@ function slices(text, chunks) {
 
 // Theme colours for canvases, read from ui.css custom properties.
 function palette(node) {
-  const s = getComputedStyle(node);
-  const v = (n) => s.getPropertyValue(n).trim();
-  return { new: v("--sh-new"), reused: v("--sh-reused"), dup: v("--sh-dup"), ground: v("--sh-ground"), nonce: v("--accent"),
+  const probe = el("span");
+  node.append(probe);
+  const v = (n) => {
+    probe.style.color = `var(${n})`;
+    return getComputedStyle(probe).color;
+  };
+  const out = { new: v("--sh-new"), reused: v("--sh-reused"), dup: v("--sh-dup"), ground: v("--sh-ground"), nonce: v("--accent"),
     ct: v("--text-2"), tag: v("--sh-tag"), hdr: v("--sh-hdr"), sel: v("--text") };
+  probe.remove();
+  return out;
 }
 
 function sizeCanvas(c, w, h) {
@@ -188,7 +194,7 @@ export async function mount(root, demo) {
   const filePick = el("label", "sh-pick");
   filePick.append(file, el("span", null, "Open a text file"));
   const fname = el("span", "sh-fname", "stays in this tab");
-  controls.append(backupBtn, insertBtn, deleteBtn, field("Document", preset), field("Average chunk", avg), filePick, fname);
+  controls.append(backupBtn, insertBtn, deleteBtn, field("document", preset), field("average chunk", avg), filePick, fname);
 
   const ta = el("textarea");
   ta.name = "text";
@@ -201,11 +207,11 @@ export async function mount(root, demo) {
   ed.append(mirror, ta);
   const edBox = el("div", "sh-edbox");
   edBox.append(ed);
-  const edField = field("Edit anywhere, then back up. Each band is one FastCDC chunk; vermilion bands are new since the last backup.", edBox, "sh-edfield");
+  const edField = field("edit anywhere, then back up. Each band is one FastCDC chunk; vermilion bands are new since the last backup.", edBox, "sh-edfield");
 
   const live = el("p", "sh-live");
   live.setAttribute("aria-live", "polite");
-  const legend = el("p", "sh-legend");
+  const legend = el("p", "demo-legend sh-legend");
   for (const [k, t] of [["new", "new: sealed and stored"], ["reused", "reused: already in the repository"], ["dup", "repeat within the document"]]) {
     const s = el("span", "sh-key", t);
     s.dataset.s = k;
@@ -236,9 +242,9 @@ export async function mount(root, demo) {
   const unlockOut = el("p", "sh-result");
   unlockOut.setAttribute("aria-live", "polite");
   const slotRow1 = el("div", "sh-controls");
-  slotRow1.append(field("Passphrase", pass, "sh-grow"), sealBtn);
+  slotRow1.append(field("passphrase", pass, "sh-grow"), sealBtn);
   const slotRow2 = el("div", "sh-controls");
-  slotRow2.append(field("Try a passphrase", tryPass, "sh-grow"), unlockBtn);
+  slotRow2.append(field("try a passphrase", tryPass, "sh-grow"), unlockBtn);
 
   const packSel = el("select");
   packSel.name = "pack";
@@ -247,12 +253,12 @@ export async function mount(root, demo) {
   offset.inputMode = "numeric";
   const flipBtn = button("Flip one bit", true);
   const packRow = el("div", "sh-controls");
-  packRow.append(field("Pack", packSel), field("Byte", offset, "sh-num"), flipBtn);
+  packRow.append(field("pack", packSel), field("byte", offset, "sh-num"), flipBtn);
   const mapBox = el("div", "sh-mapbox");
   const map = el("canvas", "sh-map");
   map.setAttribute("role", "img");
   mapBox.append(map);
-  const plegend = el("p", "sh-legend");
+  const plegend = el("p", "demo-legend sh-legend");
   for (const [k, t] of [["nonce", "nonce (24 B)"], ["ct", "ciphertext"], ["tag", "Poly1305 tag (16 B)"], ["hdr", "sealed header + length"], ["bad", "flipped"]]) {
     const s = el("span", "sh-key", t);
     s.dataset.s = k;

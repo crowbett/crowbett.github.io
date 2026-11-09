@@ -8,8 +8,9 @@
 .ec-origin-fields .ec-field { justify-content: flex-end; }
 .ec-origin-fields .ec-wide { grid-column: 1 / -1; }
 .ec-origin-fields .ec-wide input { max-width: 32rem; }
-.ec-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-family: var(--mono); font-size: 0.75rem; color: var(--text-2); margin: 0 0 8px; }
-.ec-key::before { content: ""; display: inline-block; width: 0.8rem; height: 0.8rem; margin-right: 0.35rem; vertical-align: -0.1rem; border-radius: 2px; background: var(--ec-c); }
+.ec-legend { margin: 0 0 8px; }
+.ec-key { display: inline-flex; align-items: center; gap: 0.5em; }
+.ec-key::before { content: ""; flex: none; width: 0.75em; height: 0.75em; background: var(--ec-c); }
 .ec-timeline { margin: 0 0 12px; }
 .ec-timeline svg { display: block; width: 100%; height: 2.5rem; background: var(--sunken); border-radius: var(--r-1); }
 .ec-track { stroke: var(--line-strong); stroke-width: 1; }
