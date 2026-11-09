@@ -98,7 +98,6 @@ Left open in done tasks; each needs the owner, another repo, or is outside this 
 - F5: Chrome warm-up on CI still depends on runner disk speed; deploy-pages takes 7-14 s and sometimes queues ~40 s in GitHub's `deployment_queued` (F2).
 - D7 (codegraph repo): the bench accuracy A/B was not run on the six local-only corpus repos or zustand (`npm install` failed).
 - D8 (keel repo): clippy on keel's main fails on `clippy::unused_async_trait_impl`, a lint unknown to clippy 1.96, 1.98.1 and 1.99; keel-web's PR ran with `-A unknown_lints`.
-- V8 polish (demo track): the edgecache, jobrun and kvlite notes keep their own `max-width: 40rem` inside the wider frame.
 - V11 review (owner call): Doto for the evidence lines too; Doto is a numerals face here and metrics are sentences.
 - Wave 2 (owner calls): grepall and stash LICENSE files name the surname; lobby, netcode and raytracer have no LICENSE. mcpbridge's docs/demo.gif predates its 101 / 289/291 numbers. btrv's 2,483,585 rows/s was measured under load (load average ~30); an idle rerun would replace it. stash's `crates/webdemo/.cargo/config.toml` names Homebrew's llvm-ar, so its wasm builds only on this Mac.
 
@@ -149,6 +148,11 @@ Every live project page opens like the home stage: the demo frame sits in the da
 
 ### V20 Full-screen project panels on home · status: done 2026-11-09
 The work index and its monitor became a stack of full-screen dark panels, one per project, like the home stage: name, tagline, metric and "Run it live" beside a 16:10 screen playing the project's clip. Each panel pins and the next slides up over it while the covered one sinks (view timelines named by `web/assets/work.js`); buried panels are not drawn; focus brings its panel up. Group pills on the work sheet jump to each group. e2e `workCheck` walks the reel by focus (home tabs emulate a focused page) and checks the panel covers the screen, plays alone and buries the right panels; `refusedCheck` moved to the panels.
+
+### V29 Scroll depth · status: done 2026-11-09
+As a panel slides in on any device, its glow rises from far behind and its name slides in ahead of the text; all settle flat when it pins. Timed on the panel's own view timeline. The home `depth` check scrolls it halfway in, then to where it pins.
+### V28 Depth layers · status: done 2026-11-09
+Owner: "enhance our features and overall layers, i like the hover and the card moves". Under a mouse with motion allowed, a tilted screen now moves its layers by depth. The glow behind drifts with the pointer, the picture slides against the tilt inside its frame (within the hover zoom, so no edge shows) and the Open chip floats in front. feel.js sets `--dx/--dy` on the screen's parent. In the index, the other cards step back to half opacity while one is under the pointer. e2e `feelCheck` asserts the shift and the dimming (checked by mutation). Dropped: a JS panel sink, since V20's scroll-driven `sink` already does it.
 
 ### V27 Lit panel edges · status: done 2026-11-09
 Under a mouse, the edge of the panel the pointer is over lights where the pointer is: the evidence box, the demo frame, the project info box and index previews. feel.js sets `--hx/--hy` and `data-rim`. A masked 1.5 px ring fades in, and the panel keeps its own border. Touch gets none of it.

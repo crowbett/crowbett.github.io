@@ -2,30 +2,34 @@ package site
 
 // Showcases drive each live demo for its home reel clip (cmd/reel).
 var Showcases = map[string]Showcase{
-	// The cursor walks down the page map to a data page and damages it: the
-	// read stops at that red cell; undoing the damage lets the map fill again.
+	// The map fills page by page and the reader walks the data pages; then a
+	// header byte of a data page is flipped and the read stops at that red page.
 	"btrv": {
 		Setup: `(async () => {
-			const done = () => [...document.querySelectorAll(".bt-facts .bt-k")].some((k) => k.textContent === "rows read");
-			for (let i = 0; i < 400 && !done(); i++) await new Promise((r) => setTimeout(r, 50));
+			const w = (ms) => new Promise((r) => setTimeout(r, ms));
+			const play = document.querySelector(".bt-acts button");
+			for (let i = 0; i < 400 && play.textContent !== "Replay"; i++) await w(50);
+			const sp = document.querySelector("select[name=speed]");
+			sp.value = "5"; sp.dispatchEvent(new Event("change"));
+			const reset = [...document.querySelectorAll(".bt-acts button")].find((b) => b.textContent === "Reset");
+			play.click();
+			for (let i = 0; i < 100 && (play.disabled || play.textContent !== "Pause"); i++) await w(50);
+			play.click();
+			reset.click();
+			for (let i = 0; i < 100 && reset.disabled; i++) await w(50);
+			await w(300);
 		})()`,
 		Play: `(async () => {
 			const w = (ms) => new Promise((r) => setTimeout(r, ms));
-			const map = document.querySelector(".bt-map");
-			const dmg = document.querySelector(".bt-damage");
-			const key = (k) => map.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true }));
-			const idle = async () => { await w(100); for (let i = 0; i < 200 && dmg.disabled; i++) await w(50); };
+			const play = document.querySelector(".bt-acts button");
+			const cor = document.querySelector(".bt-corrupt");
+			await w(300);
+			play.click();
+			for (let i = 0; i < 200 && play.textContent !== "Replay"; i++) await w(50);
 			await w(600);
-			for (let i = 0; i < 7; i++) { key("ArrowDown"); await w(160); }
-			for (let i = 0; i < 40 && dmg.hidden; i++) { key("ArrowRight"); await w(120); }
-			await w(500);
-			dmg.click();
-			await idle();
-			await w(1600);
-			dmg.click();
-			await idle();
+			cor.click();
 		})()`,
-		Focus: ".bt-map", Pad: 8, WideFocus: ".bt-map", WidePad: 8, Seconds: 7,
+		Focus: ".bt-map", Pad: 8, WideFocus: ".bt-map", WidePad: 8, Seconds: 8,
 	},
 	// The presenter walks and every crop window follows; you drag the
 	// presenter left and the anchors are proposed again, then the source
@@ -90,17 +94,18 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".ec-canvas", Pad: 4, WideFocus: ".ec-canvas", WidePad: 4, Seconds: 8,
 	},
-	// Each query narrows 283 files to candidates by trigram, then to matches.
+	// The index builds shard by shard, the tour types Kelvin and its posting
+	// lists intersect; then you type your own query and the board re-runs.
 	"grepall": {
 		Play: `(async () => {
 			const w = (ms) => new Promise((r) => setTimeout(r, ms));
-			const preset = (q) => [...document.querySelectorAll(".ga-presets button")].find((b) => b.querySelector("code").textContent === q).click();
-			await w(800); preset("Kelvin");
-			await w(1600); preset(":=.*<-");
-			await w(1600); preset("TODO|FIXME");
-			await w(1600); preset("func\\s+New\\w+\\(");
+			await w(4600);
+			const q = document.querySelector("input[name=q]");
+			q.value = "";
+			for (const ch of "Mutex") { q.value += ch; q.dispatchEvent(new Event("input")); await w(180); }
+			await w(1600);
 		})()`,
-		Focus: ".ga-status", Pad: 8, WideFocus: ".ga-funnel", WidePad: 8, Seconds: 8,
+		Focus: ".ga-canvas", Pad: 4, WideFocus: ".ga-canvas", WidePad: 4, Seconds: 8,
 	},
 	// The scheduler runs after an outage; a flaky job retries, then a second outage hits.
 	"jobrun": {
@@ -132,19 +137,20 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".kv-canvas", Pad: -96, WideFocus: ".kv-canvas", WidePad: 4, Seconds: 7,
 	},
-	// Play sends each client frame through the bridge; packets cross the lanes
-	// and the bridge's translations light up as the conversation builds.
+	// The tour plays on its own: frames cross the lanes and change shape at the
+	// bridge; you send your own tools/call and it crosses in the accent colour.
 	"mcpbridge": {
 		Setup: `(async () => {
-			const d = document.querySelector("select[name=direction]");
-			d.value = "reverse"; d.dispatchEvent(new Event("change"));
-			for (let i = 0; i < 100 && !/^4 client frames, 17 frames/.test(document.querySelector(".mb-status").textContent); i++) await new Promise((r) => setTimeout(r, 50));
+			const v = () => Number(document.querySelector(".mb-cells [data-k=messages] .mb-v").textContent);
+			const s = document.querySelector("select[name=speed]");
+			s.value = "2"; s.dispatchEvent(new Event("change"));
+			for (let i = 0; i < 200 && !(v() >= 1); i++) await new Promise((r) => setTimeout(r, 50));
 		})()`,
 		Play: `(async () => {
-			await new Promise((r) => setTimeout(r, 600));
-			[...document.querySelectorAll(".mb-bar button")].find((b) => b.textContent === "Play").click();
+			await new Promise((r) => setTimeout(r, 2600));
+			[...document.querySelectorAll(".mb-controls button")].find((b) => b.textContent === "Send mine").click();
 		})()`,
-		Focus: ".mb-head", Pad: 8, Seconds: 7.5,
+		Focus: ".mb-canvas", Pad: 4, WideFocus: ".mb-canvas", WidePad: 8, Seconds: 7,
 	},
 	// keel: a new seed every 1.2 s; the digest, fault timeline and totals change.
 	// keel: seed 2's whole fault schedule plays at 10×, from the first partition
@@ -186,7 +192,8 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".lb-canvas", Pad: 4, Seconds: 8,
 	},
-	// netcode: you steer player 0 in a loop and dash while bots move.
+	// netcode: you take over player 0 from the autopilot and dash around while
+	// the link turns into a mobile one and the rollbacks rewind deeper.
 	"netcode": {
 		Play: `(async () => {
 			const c = document.querySelector(".nc-canvas");
@@ -194,13 +201,15 @@ var Showcases = map[string]Showcase{
 			const key = (type, code) => c.dispatchEvent(new KeyboardEvent(type, { code, bubbles: true, cancelable: true }));
 			const hold = async (code, ms) => { key("keydown", code); await wait(ms); key("keyup", code); };
 			const run = async (code, ms) => { key("keydown", code); await wait(ms / 2); await hold("Space", 80); await wait(ms / 2 - 80); key("keyup", code); };
+			const net = document.querySelector("select[name=network]");
 			await wait(500);
-			await run("KeyD", 1600);
-			await hold("KeyS", 600);
+			await run("KeyD", 1400);
+			net.value = "mobile"; net.dispatchEvent(new Event("change"));
+			await hold("KeyS", 700);
 			await run("KeyA", 1600);
-			await hold("KeyW", 600);
+			await hold("KeyW", 900);
 		})()`,
-		Focus: ".nc-canvas", Pad: -140, Seconds: 7,
+		Focus: ".nc-canvas", Pad: 8, WideFocus: ".nc-canvas", WidePad: 8, Seconds: 8,
 	},
 	// ratelimitd: calm traffic flows through all three gates; you launch the
 	// attack and the flood piles up red at each gate while the limit holds.
@@ -211,70 +220,67 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".rl-canvas", Pad: 4, Seconds: 7,
 	},
-	// raytracer: the marble scene, held at its third pass, renders on, then the split sweeps.
+	// raytracer: the Cornell box, held at its sixth pass, renders on; you tap
+	// the noisy ceiling and those rows clear, then the split sweeps.
 	"raytracer": {
 		Setup: `(async () => {
-			const s = document.querySelector("select[name=scene]");
-			s.value = "light"; s.dispatchEvent(new Event("change"));
-			for (let i = 0; i < 400 && !document.querySelector(".rt-info").textContent.startsWith("Marble"); i++) await new Promise((r) => setTimeout(r, 10));
-			// Held at its third pass, so the clip opens noisy and clears.
-			s.dispatchEvent(new Event("change"));
+			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 			const pass = () => Number(/pass (\d+)/.exec(document.querySelector(".rt-screen").textContent)?.[1] ?? 0);
-			for (let i = 0; i < 400 && pass() >= 3; i++) await new Promise((r) => setTimeout(r, 5));
-			for (let i = 0; i < 400 && pass() < 3; i++) await new Promise((r) => setTimeout(r, 5));
 			const play = document.querySelector(".rt-play");
+			for (let i = 0; i < 2000 && pass() < 6; i++) await wait(5);
 			if (play.textContent === "Pause") play.click();
-			for (let i = 0; i < 400 && play.textContent !== "Resume"; i++) await new Promise((r) => setTimeout(r, 5));
+			for (let i = 0; i < 400 && play.textContent !== "Resume"; i++) await wait(5);
 			if (play.textContent !== "Resume") throw new Error("raytracer not held: " + play.textContent + " at pass " + pass());
 		})()`,
 		Play: `(async () => {
-			const g = document.querySelector(".rt-grip");
 			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+			const g = document.querySelector(".rt-grip");
 			const sweep = async (key, n) => { for (let i = 0; i < n; i++) { g.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true })); await wait(40); } };
 			await wait(300);
 			document.querySelector(".rt-play").click();
-			await wait(1000);
-			document.querySelector(".rt-play").click();
+			await wait(700);
+			const v = document.querySelector(".rt-view");
+			const r = v.getBoundingClientRect();
+			v.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: r.left + r.width * 0.3, clientY: r.top + r.height * 0.2 }));
+			await wait(1500);
+			await sweep("ArrowRight", 12);
 			await wait(400);
-			await sweep("ArrowRight", 20);
-			await wait(500);
-			await sweep("ArrowLeft", 40);
-			await wait(500);
-			await sweep("ArrowRight", 20);
+			await sweep("ArrowLeft", 24);
+			await wait(400);
+			await sweep("ArrowRight", 12);
 		})()`,
-		Focus: ".rt-screen", WideFocus: ".rt-screen", WidePad: 8, Seconds: 6.3,
+		Focus: ".rt-screen", WideFocus: ".rt-screen", WidePad: 8, Seconds: 5.5,
 	},
-	// stash: edit, back up, repeat; new chunks show vermilion in the text and the strips.
+	// stash: snapshots run on their own; your line goes into the notes file, only the
+	// chunks around it fly into the repository, then snapshot restore lights what it reads.
 	"stash": {
 		Play: `(async () => {
 			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-			const btn = (t) => [...document.querySelectorAll(".sh-panel button")].find((b) => b.textContent === t);
-			for (const edit of ["Insert a paragraph", "Delete a line", "Insert a paragraph"]) {
-				await wait(700);
-				btn(edit).click();
-				await wait(1000);
-				btn("Back up").click();
-			}
+			const btn = (t) => [...document.querySelectorAll(".demo-mount button")].find((b) => b.textContent === t);
+			await wait(2400);
+			btn("Insert and back up").click();
+			await wait(2600);
+			btn("Restore").click();
 		})()`,
-		Focus: ".sh-live", Pad: 8, Seconds: 8,
+		Focus: ".sh-canvas", Pad: 4, WideFocus: ".sh-canvas", WidePad: 8, Seconds: 8,
 	},
-	// strata: the layer slider climbs from layer 2 to the top: solid floor,
-	// sparse infill (scrubbed quickly, it repeats), solid roof, top surface.
+	// strata: the temperature tower is drawn layer by layer and its stack
+	// rises; then the layer height drops to 0.12 mm and it is re-sliced.
 	"strata": {
 		Setup: `(async () => {
-			const l = document.querySelector("input[name=layer]");
-			l.value = "1"; l.dispatchEvent(new Event("input"));
-			for (let i = 0; i < 200 && !document.querySelector(".st-where").textContent.startsWith("2 of "); i++) await new Promise((r) => setTimeout(r, 25));
+			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+			const set = (sel, v) => { const e = document.querySelector(sel); e.value = v; e.dispatchEvent(new Event("change")); };
+			set("select[name=model]", "tower");
+			set("select[name=speed]", "20");
+			for (let i = 0; i < 400 && !/^200 layers, .* fetched in /.test(document.querySelector(".st-out").textContent); i++) await wait(25);
+			[...document.querySelectorAll(".st-acts button")].find((b) => b.textContent === "Restart").click();
 		})()`,
 		Play: `(async () => {
-			const l = document.querySelector("input[name=layer]");
 			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-			const to = (i) => { l.value = String(i); l.dispatchEvent(new Event("input")); };
-			await wait(800);
-			for (const i of [2, 3]) { to(i); await wait(700); }
-			for (let i = 4; i <= 20; i++) { to(i); await wait(110); }
-			for (let i = 21; i <= 24; i++) { await wait(700); to(i); }
+			await wait(5200);
+			const h = document.querySelector("select[name=layerHeight]");
+			h.value = "0.12"; h.dispatchEvent(new Event("change"));
 		})()`,
-		Focus: ".st-canvas", Pad: -45, WideFocus: ".st-scrub", WidePad: -16, Seconds: 8,
+		Focus: ".st-canvas", Pad: -46, WideFocus: ".st-canvas", WidePad: 4, Seconds: 8,
 	},
 }

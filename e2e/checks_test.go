@@ -31,6 +31,19 @@ const workCheck = `(async () => {
 	return await at("netcode") && await at("keel");
 })()`
 
+// depthCheck scrolls a panel halfway in, where its glow still trails far
+// behind and its name leads the text, then to where it pins, where both
+// settle flat (the scroll-depth layers in home.css).
+const depthCheck = `(async () => {
+	const it = document.querySelector("#p-stash"), m = (s) => new DOMMatrix(getComputedStyle(it.querySelector(s)).transform);
+	scrollTo(0, 0);
+	const top = it.getBoundingClientRect().top + scrollY;
+	scrollTo(0, top - innerHeight * 0.5);
+	if (!await until(() => m(".it-screen .glow").f > 1 && m(".it-screen .glow").a < 1 && m("h4").e > 1)) return false;
+	scrollTo(0, top);
+	return until(() => m(".it-screen .glow").isIdentity && m("h4").isIdentity);
+})()`
+
 // indexCheck uses the dock and the index at the end of the reel: "All"
 // reaches the index and hides the dock, an area and a language narrow the
 // cards and say how many are left, and a tick jumps to its panel pinned under
@@ -152,8 +165,8 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"lobby": {
-		`Number(document.querySelector(".lb-cells [data-k=rooms] .lb-v").textContent) > 0 && /^Matchmaking floor at [\d.]+ s of simulated time: \d+ waiting, \d+ rooms started/.test(document.querySelector(".lb-canvas").getAttribute("aria-label"))`,
-		`(() => { const c = document.querySelector(".lb-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
+		`until(() => (Number(document.querySelector(".lb-cells [data-k=rooms] .lb-v").textContent) > 0 && /^Matchmaking floor at [\d.]+ s of simulated time: \d+ waiting, \d+ rooms started/.test(document.querySelector(".lb-canvas").getAttribute("aria-label"))))`,
+		`until(() => ((() => { const c = document.querySelector(".lb-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,
 		`(async () => {
 			const click = (t) => [...document.querySelectorAll(".lb-acts button")].find((b) => b.textContent === t).click();
 			const v = (k) => document.querySelector(".lb-cells [data-k=" + k + "] .lb-v").textContent;
@@ -198,38 +211,36 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"mcpbridge": {
-		`document.querySelector('.mb-row[data-leg="b2s"] .mb-method').textContent === "server/discover"`,
-		`document.querySelector(".mb-ihead").textContent === "16 · bridge to server · tools/list" && [...document.querySelectorAll(".mb-json .mb-add .mb-k")].some((k) => k.textContent === '"io.modelcontextprotocol/protocolVersion"')`,
-		`document.querySelector(".mb-refused .mb-badge").textContent === "unsupported" && document.querySelector(".mb-status").textContent.startsWith("7 client frames, 26 frames on the wire: 4 translated, 4 made by the bridge, 1 refused")`,
+		`until(() => [...document.querySelectorAll(".mb-c-r .mb-k")].some((k) => k.textContent === '"io.modelcontextprotocol/protocolVersion"') &&
+			Number(document.querySelector(".mb-cells [data-k=messages] .mb-v").textContent) >= 4 && Number(document.querySelector(".mb-cells [data-k=made] .mb-v").textContent) >= 1 &&
+			document.querySelector(".mb-status").textContent.startsWith("session 1 · legacy client, modern server · engine xlate.New"))`,
+		`until(() => ((() => { const c = document.querySelector(".mb-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,
 		`(async () => {
-			const st = () => document.querySelector(".mb-status").textContent;
-			const settled = () => !document.querySelector(".mb-pending");
-			const click = (t) => [...document.querySelectorAll(".mb-bar button")].find((b) => b.textContent.startsWith(t)).click();
-			click("Step");
-			let ok = await until(() => st().startsWith("1 client frame, 6 frames on the wire") && settled());
+			const q = (s) => document.querySelector(s);
+			const v = (k) => q(".mb-cells [data-k=" + k + "] .mb-v").textContent;
+			const st = () => q(".mb-status").textContent;
+			const set = (n, val) => { const e = q("select[name=" + n + "]"); e.value = val; e.dispatchEvent(new Event("change")); };
+			const click = (t) => [...document.querySelectorAll(".mb-controls button")].find((b) => b.textContent === t).click();
+			if (q(".mb-acts button").textContent === "Pause") click("Pause");
+			set("speed", "8");
+			set("scenario", "stateless");
+			let ok = await until(() => v("sessions") === "1" && v("messages") === "0");
+			for (let i = 0; i < 150 && !st().includes("finished"); i++) { click("Step"); await new Promise((r) => setTimeout(r, 60)); }
+			ok = ok && await until(() => st() === "session 1 · modern client, legacy server · engine xlate.NewReverse · finished: 4 client frames, session open" &&
+				["messages", "translated", "passed", "made", "dropped", "refused"].map(v).join() === "17,4,0,4,0,1");
+			set("request", "call");
+			click("Send mine");
+			ok = ok && await until(() => q(".mb-you p").textContent === "Your tools/call reached the server rewritten, 213 B to 100 B (−params._meta); a result came back rewritten, 118 B to 252 B." &&
+				q(".mb-ihead").textContent === "frame 23 · bridge to server · tools/call" && [...document.querySelectorAll(".mb-c-l.mb-del .mb-k")].some((k) => k.textContent === '"_meta"'));
+			set("scenario", "tour");
+			set("server", "legacy");
 			click("Play");
-			ok = ok && await until(() => document.querySelector(".mb-bar button").textContent === "Playing…");
-			ok = ok && await until(() => /^[2-6] client frames/.test(st()));
-			click("Step");
-			return ok && await until(() => /^[3-7] client frames/.test(st()) && settled() && document.querySelector(".mb-bar button").textContent === "Play");
-		})()`,
-		`(async () => {
-			const methods = (leg) => [...document.querySelectorAll('.mb-row[data-leg="' + leg + '"] .mb-method')].map((m) => m.textContent);
-			const d = document.querySelector("select[name=direction]");
-			d.value = "reverse"; d.dispatchEvent(new Event("change"));
-			let ok = await until(() => methods("b2s").includes("initialize") && methods("b2c").includes("prompts/list error -32602"));
-			document.querySelectorAll('.mb-row[data-leg="c2b"] .mb-pkt')[3].click();
-			const ta = document.querySelector(".mb-ed textarea");
-			ta.value = JSON.stringify({ jsonrpc: "2.0", id: 4, method: "prompts/list", params: { _meta: { "io.modelcontextprotocol/protocolVersion": "2026-07-28", "io.modelcontextprotocol/clientCapabilities": {} } } });
-			ta.dispatchEvent(new Event("input"));
-			ok = ok && await until(() => methods("b2c").includes("prompts/list result") && methods("b2s").includes("prompts/list"));
-			d.value = "forward"; d.dispatchEvent(new Event("change"));
-			return ok && await until(() => methods("b2s")[0] === "server/discover" && document.querySelector(".mb-ihead").textContent.startsWith("16 "));
+			return ok && await until(() => st().startsWith("session 1 · legacy client, legacy server · engine passthrough"));
 		})()`,
 	},
 	"ratelimitd": {
-		`/^Traffic floor at [\d.]+ s of run \d+: [\d,]+ requests offered; gcra allowed [\d,]+, denied [\d,]+; token bucket allowed [\d,]+, denied [\d,]+; sliding window allowed/.test(document.querySelector(".rl-canvas").getAttribute("aria-label")) && document.querySelector(".rl-cells [data-k=emit] .rl-v").textContent === "100 ms"`,
-		`(() => { const c = document.querySelector(".rl-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
+		`until(() => (/^Traffic floor at [\d.]+ s of run \d+: [\d,]+ requests offered; gcra allowed [\d,]+, denied [\d,]+; token bucket allowed [\d,]+, denied [\d,]+; sliding window allowed/.test(document.querySelector(".rl-canvas").getAttribute("aria-label")) && document.querySelector(".rl-cells [data-k=emit] .rl-v").textContent === "100 ms"))`,
+		`until(() => ((() => { const c = document.querySelector(".rl-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,
 		`(async () => {
 			const click = (t) => [...document.querySelectorAll(".rl-acts button")].find((b) => b.textContent === t).click();
 			const v = (k) => document.querySelector(".rl-cells [data-k=" + k + "] .rl-v").textContent;
@@ -255,8 +266,8 @@ var demoChecks = map[string][]string{
 	// orders; the fourth (a dropper bottle) goes in a box by rule, your cap
 	// order too, and taking its box off the shelf re-judges the shift.
 	"anchorflow": {
-		`Number(document.querySelector(".af-cells [data-k=orders] .af-v").textContent) >= 3 && /^Packing floor at [\d:]+ of floor time: \d+ orders packed, \d+ in boxes and \d+ in mailers, latest #\d{3} in /.test(document.querySelector(".af-canvas").getAttribute("aria-label")) && /^\d+ orders packed by AnchorFlow's fit engine: \d+ calls judged [\d,]+ packages in [\d,]+ ms, in your browser\.$/.test(document.querySelector(".af-out").textContent)`,
-		`(() => { const c = document.querySelector(".af-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
+		`until(() => (Number(document.querySelector(".af-cells [data-k=orders] .af-v").textContent) >= 3 && /^Packing floor at [\d:]+ of floor time: \d+ orders packed, \d+ in boxes and \d+ in mailers, latest #\d{3} in /.test(document.querySelector(".af-canvas").getAttribute("aria-label")) && /^\d+ orders packed by AnchorFlow's fit engine: \d+ calls judged [\d,]+ packages in [\d,]+ ms, in your browser\.$/.test(document.querySelector(".af-out").textContent)))`,
+		`until(() => ((() => { const c = document.querySelector(".af-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,
 		`(async () => {
 			const click = (t) => [...document.querySelectorAll(".af-controls button, .af-shelfhead button")].find((b) => b.textContent === t).click();
 			const label = () => document.querySelector(".af-canvas").getAttribute("aria-label");
@@ -275,31 +286,49 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"btrv": {
-		`[...document.querySelectorAll(".bt-key")].map((k) => k.dataset.kind + ":" + k.querySelector(".bt-count").textContent).filter((t) => /^(fcr|pat|free|unreferenced):/.test(t)).join() === "fcr:2,pat:2,free:5,unreferenced:4"`,
+		`until(() => [...document.querySelectorAll(".bt-key:not([hidden])")].map((k) => k.dataset.kind + ":" + k.querySelector(".bt-count").textContent).filter((t) => /^(fcr|pat|data|free|unreferenced):/.test(t)).join() === "fcr:2,pat:2,data:250,free:5,unreferenced:4")`,
 		`(async () => {
-			const fact = (k) => [...document.querySelectorAll(".bt-facts > li")].find((d) => d.querySelector(".bt-k").textContent === k)?.querySelector(".bt-v").textContent;
-			const cells = () => [...(document.querySelector(".bt-rows tbody tr:not(.bt-spacer)")?.querySelectorAll("td") || [])].map((td) => td.textContent).slice(0, 3).join();
-			let ok = await until(() => fact("rows read") === "2,919" && fact("column errors") === "0" && cells() === "1,1,Ann");
-			const seg = (t) => [...document.querySelectorAll(".bt-seg button")].find((b) => b.textContent === t);
-			seg("Inferred").click();
-			ok = ok && await until(() => document.querySelector(".bt-pair .bt-sub").textContent === "inferred by btrv from the first 1,000 records" && fact("rows read") === "2,919" && !seg("Dictionary").disabled);
-			seg("Dictionary").click();
-			ok = ok && await until(() => document.querySelector(".bt-pair .bt-sub").textContent.startsWith("from the DDF dictionary") && fact("rows read") === "2,919" && !seg("Inferred").disabled);
+			await until(() => document.querySelector(".bt-cells [data-k=records] .bt-v").textContent.endsWith("/ 2,919"));
+			const c = document.querySelector(".bt-map"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set();
+			for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]);
+			return set.size > 6;
+		})()`,
+		`(async () => {
+			const v = (k) => document.querySelector(".bt-cells [data-k=" + k + "] .bt-v").textContent;
+			const play = document.querySelector(".bt-acts button");
+			const cor = document.querySelector(".bt-corrupt");
+			const status = () => document.querySelector(".bt-status").textContent;
+			const feed = () => [...(document.querySelector(".bt-feed tbody tr")?.querySelectorAll("td") || [])].map((td) => td.textContent).slice(0, 3).join();
+			const sp = document.querySelector("select[name=speed]");
+			sp.value = "10"; sp.dispatchEvent(new Event("change"));
+			let ok = await until(() => play.textContent === "Replay" && v("records") === "2,919 / 2,919" && feed() === "2,919,3000,Harriet" &&
+				status() === "Every record the header counts was read and decoded: 2,919 of 2,919 rows, 0 column errors." && /^401 pages mapped and 2,919 rows decoded by btrv in \d+ ms of calls, in your browser\.$/.test(document.querySelector(".demo-out").textContent));
+			ok = ok && await until(() => [...document.querySelectorAll(".bt-insp tbody tr")].map((tr) => tr.firstChild.textContent + "=" + tr.lastChild.textContent).includes("Birth=1950-01-25"));
+			ok = ok && cor.textContent === "Corrupt page 164";
+			cor.click();
+			ok = ok && await until(() => play.textContent === "Replay" && !cor.disabled && v("bad") === "1" && cor.textContent === "Repair page 164" &&
+				status().startsWith("The read stopped at physical page 164 (logical 160) after 1,168 of 2,919 rows rather than skip a page: source error after 1168 rows"));
+			cor.click();
+			ok = ok && await until(() => play.textContent === "Replay" && !cor.disabled && v("bad") === "0" && v("records") === "2,919 / 2,919");
 			const map = document.querySelector(".bt-map");
-			for (let i = 0; i <= 40; i++) map.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
-			const dmg = document.querySelector(".bt-damage");
-			ok = ok && !dmg.hidden && dmg.textContent === "Damage page 40";
-			dmg.click();
-			ok = ok && await until(() => document.querySelector(".bt-key-bad .bt-count")?.textContent === "1" && /^Stopped: /m.test(document.querySelector(".bt-lines").innerText) && !dmg.disabled);
-			dmg.click();
-			ok = ok && await until(() => fact("rows read") === "2,919" && !document.querySelector(".bt-key-bad") && !dmg.disabled);
+			const key = (k) => map.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true }));
+			key("Home"); for (let i = 0; i < 6; i++) key("ArrowRight");
+			ok = ok && cor.textContent === "Corrupt page 6";
+			cor.click();
+			ok = ok && await until(() => play.textContent === "Replay" && !cor.disabled && v("records") === "2,919 / 2,919" &&
+				status() === "Page 6 is flagged: the PAT says index page 3 of key 0, the header says otherwise. The record walk did not need it: 2,919 of 2,919 rows, 0 column errors.");
+			cor.click();
+			ok = ok && await until(() => play.textContent === "Replay" && !cor.disabled && v("bad") === "0");
+			const sc = document.querySelector("select[name=schema]");
+			sc.value = "infer"; sc.dispatchEvent(new Event("change"));
+			ok = ok && await until(() => play.textContent === "Replay" && v("records") === "2,919 / 2,919" && document.querySelector(".bt-feed thead th:nth-child(2)").textContent === "col01");
 			document.querySelector(".bt-export button").click();
 			return ok && await until(() => document.querySelector(".bt-expstatus").textContent.startsWith("PERSON.csv: 2,919 rows written, 0 with column errors"));
 		})()`,
 	},
 	"jobrun": {
-		`Number(document.querySelector(".jr-cells [data-k=fires] .jr-v").textContent) >= 20 && /^Scheduler timeline at \d\d:\d\d:\d\d UTC: \d+ fires, \d+ runs, \d+ retries/.test(document.querySelector(".jr-canvas").getAttribute("aria-label"))`,
-		`(() => { const c = document.querySelector(".jr-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
+		`until(() => (Number(document.querySelector(".jr-cells [data-k=fires] .jr-v").textContent) >= 20 && /^Scheduler timeline at \d\d:\d\d:\d\d UTC: \d+ fires, \d+ runs, \d+ retries/.test(document.querySelector(".jr-canvas").getAttribute("aria-label"))))`,
+		`until(() => ((() => { const c = document.querySelector(".jr-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,
 		`(async () => {
 			const click = (t) => [...document.querySelectorAll(".jr-acts button")].find((b) => b.textContent === t).click();
 			const v = (k) => document.querySelector(".jr-cells [data-k=" + k + "] .jr-v").textContent;
@@ -322,8 +351,8 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"kvlite": {
-		`(() => { const m = /drawn (\d+) live records? \(([\d,]+ B)\)/.exec(document.querySelector(".kv-canvas").getAttribute("aria-label")); return !!m && Number(m[1]) > 0 && m[2] === document.querySelector(".kv-cells [data-k=live] .kv-v").textContent; })()`,
-		`(() => { const c = document.querySelector(".kv-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
+		`until(() => ((() => { const m = /drawn (\d+) live records? \(([\d,]+ B)\)/.exec(document.querySelector(".kv-canvas").getAttribute("aria-label")); return !!m && Number(m[1]) > 0 && m[2] === document.querySelector(".kv-cells [data-k=live] .kv-v").textContent; })()))`,
+		`until(() => ((() => { const c = document.querySelector(".kv-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,
 		`(async () => {
 			const click = (t) => [...document.querySelectorAll(".kv-controls button")].find((b) => b.textContent === t).click();
 			const v = (k) => document.querySelector(".kv-cells [data-k=" + k + "] .kv-v").textContent;
@@ -350,8 +379,8 @@ var demoChecks = map[string][]string{
 	},
 	"edgecache": {
 		`until(() => { const v = (k) => document.querySelector(".ec-cells [data-k=" + k + "] .ec-v").textContent; return Number(v("requests")) > 0 && ["MISS", "HIT", "STALE", "REVALIDATED"].includes(document.querySelector(".ec-table .ec-badge").textContent) && /^Edge at \d+ s of simulated time: \d+ requests, \d+ served from cache, \d+ sent to the origin/.test(document.querySelector(".ec-canvas").getAttribute("aria-label")); })`,
-		`(() => { const c = document.querySelector(".ec-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
-		`(() => { const b = document.querySelector(".ec-scroll"); return b.getAttribute("aria-label") === "Response log" && (b.tabIndex < 0 || b.getAttribute("role") === "region"); })()`,
+		`until(() => ((() => { const c = document.querySelector(".ec-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,
+		`until(() => ((() => { const b = document.querySelector(".ec-scroll"); return b.getAttribute("aria-label") === "Response log" && (b.tabIndex < 0 || b.getAttribute("role") === "region"); })()))`,
 		`(async () => {
 			const click = (t) => [...document.querySelectorAll(".ec-acts button")].find((b) => b.textContent === t).click();
 			const v = (k) => document.querySelector(".ec-cells [data-k=" + k + "] .ec-v").textContent;
@@ -374,93 +403,116 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"strata": {
-		`/^XY test piece: 272 triangles, 20 × 20 × 5 mm\. Sliced into 25 layers of 1,033 toolpaths, 10\.79 m in all, in \d[\d,]* ms in your browser\.$/.test(document.querySelector(".st-summary").textContent)`,
-		`document.querySelector(".st-where").textContent === "11 of 25 · z 2.2 mm"`,
-		`[...document.querySelectorAll(".st-key")].map((k) => k.dataset.kind).join() === "OuterWall,InnerWall,SparseInfill"`,
-		`(() => { const c = document.querySelector(".st-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n > 2000; })()`,
+		`until(() => (/^25 layers, 1,033 toolpaths and 10\.79 m of extrusion sliced by strata's engine in [\d.,]+ ms; 25 layers fetched in [\d.,]+ ms, in your browser\.$/.test(document.querySelector(".st-out").textContent) && document.querySelector(".st-summary").textContent === "XY test piece: 272 triangles, 20 × 20 × 5 mm." && document.querySelector(".st-canvas").getAttribute("aria-label").startsWith("XY test piece sliced into 25 layers; toolpaths drawn up to layer ")))`,
+		`until(() => ((() => { const c = document.querySelector(".st-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,
+		`(async () => {
+			const text = (sel) => document.querySelector(sel).textContent;
+			const v = (k) => text(".st-cells [data-k=" + k + "] .st-v");
+			const click = (t) => [...document.querySelectorAll(".st-acts button")].find((b) => b.textContent === t).click();
+			const set = (sel, val, ev) => { const e = document.querySelector(sel); e.value = val; e.dispatchEvent(new Event(ev)); };
+			let ok = await until(() => /^[\d.]+ m$/.test(v("drawn")));
+			if (text(".st-acts button") === "Pause") click("Pause");
+			set("input[name=layer]", "10", "input");
+			ok = ok && await until(() => text(".st-where") === "11 of 25 · z 2.2 mm" && v("layer") === "11 / 25" && v("z") === "2.2 mm" &&
+				[...document.querySelectorAll(".st-key")].map((k) => k.dataset.kind).join() === "OuterWall,InnerWall,SparseInfill,nozzle");
+			set("input[name=layer]", "24", "input");
+			ok = ok && await until(() => v("drawn") === "10.79 m" && text(".st-acts button") === "Replay");
+			set("input[name=layer]", "0", "input");
+			ok = ok && await until(() => text(".st-where") === "1 of 25 · z 0.2 mm" && !!document.querySelector(".st-key[data-kind=Skirt]"));
+			click("Next layer");
+			ok = ok && await until(() => text(".st-where") === "2 of 25 · z 0.4 mm");
+			click("Restart");
+			ok = ok && await until(() => text(".st-acts button") === "Pause");
+			click("Pause");
+			return ok;
+		})()`,
 		`(async () => {
 			const text = (sel) => document.querySelector(sel).textContent;
 			const set = (sel, v, ev) => { const e = document.querySelector(sel); e.value = v; e.dispatchEvent(new Event(ev)); };
-			set("input[name=layer]", "0", "input");
-			let ok = await until(() => text(".st-where") === "1 of 25 · z 0.2 mm" && !!document.querySelector(".st-key[data-kind=Skirt]"));
+			if (text(".st-acts button") === "Pause") [...document.querySelectorAll(".st-acts button")][0].click();
+			set("input[name=layer]", "10", "input");
+			let ok = await until(() => text(".st-where") === "11 of 25 · z 2.2 mm");
 			set("select[name=layerHeight]", "0.12", "change");
-			ok = ok && await until(() => text(".st-summary").includes("Sliced into 41 layers") && text(".st-where") === "1 of 41 · z 0.2 mm");
+			ok = ok && await until(() => text(".st-summary") === "XY test piece: 272 triangles, 20 × 20 × 5 mm. At 0.12 mm: 41 layers (25 at 0.2 mm), 1,329 toolpaths (1,033), 15.35 m (10.79 m)." &&
+				text(".st-where") === "18 of 41 · z 2.24 mm" && /^41 layers, 1,329 toolpaths and 15\.35 m of extrusion .* 41 layers fetched in/.test(text(".st-out")));
 			let stl = "solid t\n";
 			const v = [[0, 0, 0], [10, 0, 0], [0, 10, 0], [0, 0, 10]];
 			for (const f of [[0, 2, 1], [0, 1, 3], [0, 3, 2], [1, 2, 3]]) stl += "facet normal 0 0 0\nouter loop\n" + f.map((i) => "vertex " + v[i].join(" ") + "\n").join("") + "endloop\nendfacet\n";
-			const dt = new DataTransfer();
-			dt.items.add(new File([stl + "endsolid t\n"], "tetra.stl"));
 			const file = document.querySelector("input[name=file]");
-			file.files = dt.files;
-			file.dispatchEvent(new Event("change"));
-			const tetra = (n) => text(".st-summary").startsWith("tetra.stl: 4 triangles, 10 × 10 × 10 mm. Sliced into " + n + " layers");
-			ok = ok && await until(() => tetra(83) && document.querySelector("select[name=model]").selectedOptions[0].textContent === "tetra.stl");
 			const pickFile = (body, name) => { const t = new DataTransfer(); t.items.add(new File([body], name)); file.files = t.files; file.dispatchEvent(new Event("change")); };
 			const model = () => document.querySelector("select[name=model]").selectedOptions[0].textContent;
-			set("select[name=layerHeight]", "0.2", "change");
-			pickFile("AAAA", "bad.stl");
-			ok = ok && await until(() => text(".st-summary").startsWith("bad.stl: ") && model() === "tetra.stl" && / of 50 · /.test(text(".st-where")));
+			const layers = (n) => new RegExp("^" + n + " layers, ").test(text(".st-out"));
 			pickFile(stl + "endsolid t\n", "tetra.stl");
-			set("select[name=layerHeight]", "0.12", "change");
-			ok = ok && await until(() => tetra(83) && model() === "tetra.stl" && / of 83 · /.test(text(".st-where")));
+			ok = ok && await until(() => text(".st-summary") === "tetra.stl: 4 triangles, 10 × 10 × 10 mm." && layers(83) && model() === "tetra.stl");
 			set("select[name=layerHeight]", "0.2", "change");
-			ok = ok && await until(() => tetra(50));
+			ok = ok && await until(() => layers(50) && text(".st-summary").includes(" At 0.2 mm: 50 layers (83 at 0.12 mm), ") && / of 50 · /.test(text(".st-where")));
+			pickFile("AAAA", "bad.stl");
+			ok = ok && await until(() => text(".st-summary").startsWith("bad.stl: ") && model() === "tetra.stl" && layers(50));
 			set("select[name=model]", "xy", "change");
-			ok = ok && await until(() => text(".st-summary").startsWith("XY test piece: 272 triangles") && text(".st-summary").includes("Sliced into 25 layers") && !document.querySelector("option[value=file]"));
-			set("input[name=layer]", "10", "input");
-			return ok && await until(() => text(".st-where") === "11 of 25 · z 2.2 mm");
+			return ok && await until(() => text(".st-summary") === "XY test piece: 272 triangles, 20 × 20 × 5 mm." && layers(25) && !document.querySelector("option[value=file]"));
 		})()`,
 	},
 	"grepall": {
-		`[...document.querySelectorAll(".ga-fcount")].map((c) => c.textContent).join() === "283,158,23"`,
-		`[...document.querySelectorAll(".ga-chip code")].map((c) => c.textContent).slice(0, 3).join() === "fun,new,unc" && document.querySelector(".ga-ptree .ga-op").textContent === "Concat"`,
-		`document.querySelector(".ga-rh .ga-t").textContent === "34 lines in 23 files" && document.querySelectorAll(".ga-list mark").length > 0`,
-		`/^Index built here in [\d.,]+ ms: 283 files, 1\.84 MiB of source/.test(document.querySelector(".ga-built").textContent)`,
+		`until(() => [...document.querySelectorAll(".ga-cells .ga-v")].slice(0, 3).map((v) => v.textContent).join("|") === "283|1.84 MiB|143,027" && /^283 files indexed into 34 shards/.test(document.querySelector(".ga-out").textContent) && document.querySelector(".ga-canvas").getAttribute("aria-label").startsWith("Index board for "))`,
+		`until(() => ((() => { const c = document.querySelector(".ga-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,
 		`(async () => {
-			const counts = () => [...document.querySelectorAll(".ga-fcount")].map((c) => c.textContent).join();
+			const label = () => document.querySelector(".ga-canvas").getAttribute("aria-label");
+			const reset = [...document.querySelectorAll(".ga-acts button")].find((b) => b.textContent === "Reset");
+			reset.click();
+			return await until(() => label().startsWith("Index board for Kel: posting lists kel 14;") && document.querySelector(".ga-presets button[aria-pressed=true] code").textContent === "Kelvin") &&
+				await until(() => label() === "Index board for Kelvin: posting lists elv 12, kel 14, lvi 8, vin 42; 3 of 283 files are candidates, 1 matched." && document.querySelector(".ga-canvas").dataset.early === "2");
+		})()`,
+		`(async () => {
+			const play = document.querySelector(".ga-acts button");
+			if (play.textContent === "Pause") play.click();
+			const v = (k) => document.querySelector(".ga-cells [data-k=" + k + "] .ga-v").textContent;
+			const label = () => document.querySelector(".ga-canvas").getAttribute("aria-label");
 			const preset = (q) => [...document.querySelectorAll(".ga-presets button")].find((b) => b.querySelector("code").textContent === q).click();
-			preset("Kelvin");
-			let ok = await until(() => counts() === "283,3,1" && document.querySelector(".ga-list").textContent.includes("Kelvin"));
+			preset("func\\s+New\\w+\\(");
+			let ok = await until(() => v("cand") === "158 · 1.62 MiB" && v("hit") === "23 files · 34 lines" && v("tri") === "13" && document.querySelector(".ga-canvas").dataset.early === "16" &&
+				label().startsWith("Index board for func\\s+New\\w+\\(: posting lists fun 262, new 162, unc 265, nc\\t 0, nc\\n 19,") &&
+				document.querySelector(".ga-status").textContent.includes("16 candidates lacking a list got through") && document.querySelectorAll(".ga-list mark").length > 0);
 			preset(":=.*<-");
-			ok = ok && await until(() => counts() === "283,283,1" && document.querySelector(".ga-all") !== null);
+			ok = ok && await until(() => label() === "Index board for :=.*<-: no posting list narrows it; 283 of 283 files are candidates, 1 matched." && v("read") === "1.84 MiB · 100%");
+			preset("TODO|FIXME");
+			ok = ok && await until(() => label() === "Index board for TODO|FIXME: posting lists fix 78, ixm 1, xme 0, odo 26, tod 30; 25 of 283 files are candidates, 25 matched.");
 			const q = document.querySelector("input[name=q]");
 			q.value = "func(";
 			q.dispatchEvent(new Event("input"));
 			ok = ok && await until(() => document.querySelector(".ga-status").textContent.includes("missing closing )"));
-			preset("func\\s+New\\w+\\(");
-			return ok && await until(() => counts() === "283,158,23" && !document.querySelector(".ga-err"));
+			preset("Kelvin");
+			return ok && await until(() => document.querySelector(".ga-list").textContent.includes("Kelvin") && !document.querySelector(".ga-err"));
 		})()`,
 	},
 	"stash": {
-		`[...document.querySelectorAll(".sh-sum")].map((d) => d.textContent).join("|") === "11 chunks: 3 new, 8 reused · 3,513 B → 944 B stored|10 chunks: 10 new, 0 reused · 3,333 B → 3,179 B stored" && [...document.querySelectorAll(".sh-totals .sh-v")].map((d) => d.textContent).join() === "2,6,846 B,4,123 B,1.66×,13,2"`,
-		`document.querySelector(".sh-live").textContent === "No unsaved changes: all 11 chunks of 3,513 B are already in the repository." && document.querySelectorAll(".sh-mirror .sh-c").length === 11 && document.querySelectorAll(".sh-verify .sh-ok").length === 5 && document.querySelector(".sh-kdf").textContent.startsWith("argon2id: 8 MiB, 1 pass, 1 lane, salt c792bc6ffb050e1b67714c1e4814c1e3")`,
+		`until(() => (/^Snapshot \d+ of \d files: \d+ of \d+ chunks new \([\d,]+ B\), the rest reused\. Repository: \d+ unique chunks in \d+ packs/.test(document.querySelector(".sh-canvas").getAttribute("aria-label")) && (() => { const c = document.querySelector(".sh-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,
 		`(async () => {
 			const q = (s) => document.querySelector(s);
-			const btn = (t) => [...document.querySelectorAll(".sh-panel button")].find((b) => b.textContent === t);
-			btn("Unlock").click();
-			let ok = await until(() => /^Refused in [\d,]+ ms: with that passphrase/.test(q(".sh-result").textContent));
-			q("input[name=try]").value = "correct horse battery staple";
-			btn("Unlock").click();
-			return ok && await until(() => /^Unlocked in [\d,]+ ms: master key 97f0bf7b, the key that sealed every pack below\.$/.test(q(".sh-result").textContent));
+			const btn = (t) => [...document.querySelectorAll(".sh-controls button")].find((b) => b.textContent === t);
+			const cells = () => [...document.querySelectorAll(".sh-cells .sh-v")].map((d) => d.textContent).slice(0, 7).join("|");
+			if (btn("Pause")) btn("Pause").click();
+			btn("Reset").click();
+			let ok = await until(() => cells() === "3|5|33,357 B|13,383 B|2.49×|46|7" && q(".sh-day").textContent === "Snapshot 3, day 3: notes/harbour-log.md: a day appended at the end; 9 lines appended to logs/web-1.log; 2 stock counts changed.");
+			btn("Next snapshot").click();
+			return ok && await until(() => cells() === "4|6|48,965 B|15,026 B|3.26×|52|6" && q(".sh-day").textContent.startsWith("Snapshot 4, day 4: notes/harbour-log.md copied to archive/harbour-log-2026-10.md;"));
 		})()`,
 		`(async () => {
 			const q = (s) => document.querySelector(s);
-			const btn = (t) => [...document.querySelectorAll(".sh-panel button")].find((b) => b.textContent === t);
-			btn("Delete a line").click();
-			let ok = await until(() => q(".sh-live").textContent === "Unsaved: 1 of 10 chunks (488 B) are new; a backup now stores only those.");
-			btn("Back up").click();
-			ok = ok && await until(() => document.querySelectorAll(".sh-row").length === 3 && q(".sh-sum").textContent === "10 chunks: 1 new, 9 reused · 3,378 B → 446 B stored");
-			ok = ok && await until(() => !btn("Flip one bit").disabled && q(".sh-byte").textContent.startsWith("byte 180 of 446: ciphertext of chunk fdf73e7e"));
+			const btn = (t) => [...document.querySelectorAll(".demo-mount button")].find((b) => b.textContent === t);
+			if (btn("Pause")) btn("Pause").click();
+			btn("Reset").click();
+			let ok = await until(() => q(".sh-cells .sh-v").textContent === "3" && q("select[name=into]").value === "notes/harbour-log.md");
+			btn("Insert and back up").click();
+			ok = ok && await until(() => q(".sh-yours").textContent === "Your 28 B went into notes/harbour-log.md at byte 1,804. stash cut the file into 12 chunks: 2 new (bytes 1,748 to 2,251), 10 reused. Snapshot 4 stored 582 B for 11,739 B of files." && q("select[name=snapshot]").value === "4");
 			btn("Flip one bit").click();
-			ok = ok && await until(() => q(".sh-verify .sh-bad .sh-why")?.textContent === "integrity error: blob fdf73e7e: authentication failed (MAC mismatch)");
-			q(".sh-row button").click();
-			ok = ok && await until(() => q(".sh-restore").textContent === "Restore refused at chunk 7 (pack 3): integrity error: blob fdf73e7e: authentication failed (MAC mismatch)");
+			ok = ok && await until(() => q(".sh-fline").textContent === "Flipped one bit of byte 1,356 in pack 4, inside chunk e2886734: integrity error: blob e2886734: authentication failed (MAC mismatch). The pack's BLAKE3 name no longer matches its bytes." &&
+				q(".sh-res").textContent === "Snapshot 4 refused at notes/harbour-log.md, chunk 6 in pack 4: integrity error: blob e2886734: authentication failed (MAC mismatch).");
 			btn("Flip it back").click();
-			return ok && await until(() => !document.querySelector(".sh-verify .sh-bad") && /^Restored 3,378 B from 10 chunks; .* identical to what was backed up\.$/.test(q(".sh-restore").textContent));
+			return ok && await until(() => /^Snapshot 4 restored: 5 files, 11,739 B from 40 chunks in 11 packs\. Every chunk's tag verified and every file's BLAKE3 hash matches its backup, in [\d,]+ ms\.$/.test(q(".sh-res").textContent));
 		})()`,
 	},
 	"keel": {
-		`/^(Seed|Your seed) \d+ at [\d.]+ s of 3\d\.\d\d s simulated: .+; \d+ of \d+ fault events so far\. \d+ seeds checked, \d+ linearizable\.$/.test(document.querySelector(".kl-canvas").getAttribute("aria-label")) && (() => { const c = document.querySelector(".kl-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
+		`until(() => (/^(Seed|Your seed) \d+ at [\d.]+ s of 3\d\.\d\d s simulated: .+; \d+ of \d+ fault events so far\. \d+ seeds checked, \d+ linearizable\.$/.test(document.querySelector(".kl-canvas").getAttribute("aria-label")) && (() => { const c = document.querySelector(".kl-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,
 		`(async () => {
 			const click = (t) => [...document.querySelectorAll(".kl-controls button")].find((b) => b.textContent === t).click();
 			const v = (k) => document.querySelector(".kl-cells [data-k=" + k + "] .kl-v").textContent;
@@ -500,14 +552,31 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"raytracer": {
-		`document.querySelector(".rt-info").textContent === "Cornell box: 300 × 300 px, 8 top-level objects, 1 sampled light, SAH BVH of 9 nodes (depth 5), up to 50 bounces, seed 1."`,
-		`(() => { const lit = (sel) => { const c = document.querySelector(sel); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i + 3] === 255 && d[i] + d[i + 1] + d[i + 2] > 0) n++; return c.width === 300 && c.height === 300 ? n / (c.width * c.height) : 0; }; const m = lit(".rt-canvas-l"), n = lit(".rt-canvas:not(.rt-canvas-l)"); return m > 0.02 && n > 0.6 && n > 2 * m; })()`,
-		`(() => { const v = [...document.querySelectorAll(".rt-cells .rt-v")].map((n) => n.textContent); return Number(v[0]) >= 1 && Number(v[2]) > Number(v[3]) && /^\d+\.\d\d×$/.test(v[4]) && /^[\d,]+k$/.test(v[1]); })()`,
+		`until(() => (document.querySelector(".rt-info").textContent === "Cornell box: 300 × 300 px, 8 top-level objects, 1 sampled light, SAH BVH of 9 nodes (depth 5), up to 50 bounces, seed 1."))`,
+		`until(() => ((() => { const lit = (sel) => { const c = document.querySelector(sel); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i + 3] === 255 && d[i] + d[i + 1] + d[i + 2] > 0) n++; return c.width === 300 && c.height === 300 ? n / (c.width * c.height) : 0; }; const m = lit(".rt-canvas-l"), n = lit(".rt-canvas:not(.rt-canvas-l)"); return m > 0.02 && n > 0.6 && n > 2 * m; })()))`,
+		`until(() => ((() => { const v = [...document.querySelectorAll(".rt-cells .rt-v")].map((n) => n.textContent); return Number(v[0]) >= 2 && Number(v[1]) >= 2 && Number(v[2]) > Number(v[3]) && /^\d+\.\d\d×$/.test(v[4]) && /^\d+\.\d \/ \d+\.\d$/.test(v[5]) && /^[\d,]+k$/.test(v[6]) && /^\d+\.\d s$/.test(v[7]); })()))`,
+		`until(() => ((() => { const c = document.querySelector(".rt-chart"); if (!/^Estimated RMSE falling with samples per pixel: material only 0\.\d+, NEE \+ MIS 0\.\d+ at [\d,]+ spp\.$/.test(c.getAttribute("aria-label"))) return false; const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 16) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,
 		`(async () => {
+			const play = document.querySelector(".rt-play");
+			if (play.textContent === "Pause") play.click();
+			await until(() => play.textContent === "Resume" && /^Paused at \d+ spp: est\. RMSE /.test(document.querySelector(".rt-status").textContent));
+			const strip = document.querySelector(".rt-rows");
+			strip.dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true }));
+			const ok = strip.getAttribute("aria-valuenow") === "0" && /^rows 0 to 35 of 300, \d+ spp$/.test(strip.getAttribute("aria-valuetext"));
+			document.querySelector(".rt-you-btn").click();
+			const you = () => /^you \+32 spp on rows 0–35, now (\d+) spp there and (\d+) elsewhere\. NEE \+ MIS est\. RMSE over the whole image: 0\.\d+ → 0\.\d+\.$/.exec(document.querySelector(".rt-you").textContent);
+			await until(() => you());
+			const [, there, rest] = you().map(Number);
+			return ok && there >= rest + 32 && play.textContent === "Resume" && !document.querySelector(".rt-focus").classList.contains("is-on");
+		})()`,
+		`(async () => {
+			const time = [...document.querySelectorAll(".rt-seg button")].find((b) => b.textContent === "per second");
+			time.click();
+			let ok = time.getAttribute("aria-pressed") === "true" && document.querySelector(".rt-plot-title").textContent === "est. RMSE against each half's render time, log-log";
 			const grip = document.querySelector(".rt-grip");
 			const left = document.querySelector(".rt-canvas-l");
 			grip.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
-			let ok = grip.getAttribute("aria-valuenow") === "48" && left.style.clipPath === "inset(0px 52% 0px 0px)";
+			ok = ok && grip.getAttribute("aria-valuenow") === "48" && left.style.clipPath === "inset(0px 52% 0px 0px)";
 			grip.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true }));
 			ok = ok && grip.getAttribute("aria-valuenow") === "100";
 			for (const key of ["Home", "PageUp", "PageUp", "PageUp", "PageUp", "PageUp"]) grip.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
@@ -517,23 +586,46 @@ var demoChecks = map[string][]string{
 			const info = () => document.querySelector(".rt-info").textContent;
 			ok = ok && await until(() => info().startsWith("Book 1 cover (sky-lit): 300 × 168 px, 484 top-level objects, 0 sampled lights, SAH BVH of 581 nodes (depth 12)") && document.querySelector(".rt").dataset.split === "off");
 			s.value = "cornell"; s.dispatchEvent(new Event("change"));
-			return ok && await until(() => info().startsWith("Cornell box: ") && document.querySelector(".rt").dataset.split === "on" && /^Cornell box: [1-9]/.test(document.querySelector(".rt-status").textContent));
+			return ok && await until(() => info().startsWith("Cornell box: ") && document.querySelector(".rt").dataset.split === "on" && /^Cornell box: (sampling, )?[1-9]/.test(document.querySelector(".rt-status").textContent));
 		})()`,
 	},
 	"netcode": {
-		`document.querySelector(".nc-lamp").dataset.state === "ok" && /^State hashes match: client [1-6], tick [\d,]+$/.test(document.querySelector(".nc-lamp-text").textContent) && /^[0-9a-f]{16}$/.test(document.querySelector(".nc-lamp-hash").textContent)`,
-		`(() => { const v = [...document.querySelectorAll(".nc-world .nc-v")].map((n) => n.textContent); return v[3] === "0" && Number(v[2].replace(/,/g, "")) > 0; })()`,
-		`[...document.querySelectorAll(".nc-cells")].every((c) => /^[\d,]+$/.test(c.querySelector(".nc-v").textContent))`,
-		`(() => { const c = document.querySelector(".nc-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n > 20000; })()`,
+		`until(() => (document.querySelector(".nc-lamp").dataset.state === "ok" && /^State hashes match: client [0-5], tick [\d,]+$/.test(document.querySelector(".nc-lamp-text").textContent) && /^([0-9a-f]{16}) = \1$/.test(document.querySelector(".nc-lamp-hash").textContent)))`,
+		`until(() => ((() => { const v = (k) => document.querySelector(".nc-cells [data-k=" + k + "] .nc-v").textContent; return v("desyncs") === "0" && Number(v("checks").replace(/,/g, "")) > 0 && /^\d+\.\d ms$/.test(v("rtt")) && /^[\d,]+ of [\d,]+$/.test(v("lost")); })()))`,
+		`until(() => ((() => { const c = document.querySelector(".nc-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); let n = 0; for (let i = 0; i < d.length; i += 16) { if (d[i + 3]) n++; set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); } return n > 20000 && set.size > 20; })()))`,
 		`(async () => {
+			const v = (k) => document.querySelector(".nc-cells [data-k=" + k + "] .nc-v").textContent;
+			const lamp = () => document.querySelector(".nc-lamp").textContent;
 			const play = document.querySelector(".nc-play");
 			if (play.textContent === "Pause") play.click();
-			const tick = () => Number(document.querySelector(".nc-world .nc-v").textContent.replace(/,/g, ""));
-			await new Promise((r) => setTimeout(r, 100));
-			const before = tick();
+			document.querySelector(".nc-reset").click();
+			if (!await until(() => v("tick") === "180" && v("rollbacks") === "5" && v("resim") === "70" && v("checks") === "423" && v("late") === "87" &&
+				lamp() === "State hashes match: client 5, tick 168c611453593013c92 = c611453593013c92" &&
+				document.querySelector(".nc-echo").textContent === "Player 0's input for tick 145: on your screen at once, run by the server 133 ms later, on bot 1's screen 233 ms later (simulated time).")) return false;
 			document.querySelector(".nc-step").click();
-			await until(() => tick() === before + 60);
-			return /^Tick [\d,]+, [\d.]+ s simulated: you rolled back [\d,]+ times?, [\d,]+ frames? resimulated; [\d,]+ hash checks, 0 desyncs\.$/.test(document.querySelector(".nc-status").textContent);
+			return await until(() => v("tick") === "181" && v("checks") === "427" && lamp().endsWith("23c29a45c12306f5 = 23c29a45c12306f5"));
+		})()`,
+		`(async () => {
+			const c = document.querySelector(".nc-canvas");
+			const tick = () => document.querySelector(".nc-cells [data-k=tick] .nc-v").textContent;
+			const echo = () => document.querySelector(".nc-echo").textContent;
+			const key = (type, code) => c.dispatchEvent(new KeyboardEvent(type, { code, bubbles: true, cancelable: true }));
+			if (document.querySelector(".nc-play").textContent === "Pause") document.querySelector(".nc-play").click();
+			key("keydown", "KeyD");
+			for (let i = 0; i < 120 && !echo().startsWith("Your input"); i++) { const t = tick(); document.querySelector(".nc-step").click(); for (let k = 0; k < 400 && tick() === t; k++) await new Promise((r) => setTimeout(r, 5)); }
+			key("keyup", "KeyD");
+			return document.querySelector(".nc-hint").textContent.startsWith("You are steering player 0") &&
+				/^Your input for tick [\d,]+: on your screen at once, run by the server [\d,]+ ms later, on bot 1's screen [\d,]+ ms later \(simulated time\)\.$/.test(echo());
+		})()`,
+		`(async () => {
+			const s = document.querySelector("select[name=network]");
+			const tick = () => document.querySelector(".nc-cells [data-k=tick] .nc-v").textContent;
+			const rtt = () => parseFloat(document.querySelector(".nc-cells [data-k=rtt] .nc-v").textContent);
+			s.value = "mobile"; s.dispatchEvent(new Event("change"));
+			if (!await until(() => document.querySelector(".nc-status").textContent === "Link set to mobile: 180 ms latency, 60 ms jitter, 4 % loss, each way." &&
+				document.querySelector("input[name=latency_ms]").value === "180")) return false;
+			for (let i = 0; i < 400 && rtt() <= 300; i++) { const t = tick(); document.querySelector(".nc-step").click(); for (let k = 0; k < 400 && tick() === t; k++) await new Promise((r) => setTimeout(r, 5)); }
+			return rtt() > 300;
 		})()`,
 	},
 }
@@ -559,7 +651,10 @@ func feelCheck(t *testing.T, ctx context.Context) {
 	}
 	in := `(() => {
 		const s = document.querySelector(".card:not([hidden]) .card-shot:has(img)");
+		const c = s.closest(".card"), o = [...document.querySelectorAll(".card:not([hidden])")].find((x) => x !== c);
 		return "feel" in s.dataset && parseFloat(s.style.getPropertyValue("--ry")) > 0
+			&& parseFloat(c.style.getPropertyValue("--dx")) > 0 && getComputedStyle(s.querySelector("img")).translate !== "none"
+			&& parseFloat(getComputedStyle(o).opacity) < 0.8
 			&& !!s.querySelector("video[src$='-n.mp4']") && !s.querySelector("video").paused;
 	})()`
 	ok := false
@@ -581,13 +676,13 @@ func feelCheck(t *testing.T, ctx context.Context) {
 		}
 	}
 	if !ok {
-		t.Errorf("hovered card did not tilt and play its clip")
+		t.Errorf("hovered card did not tilt, shift its picture, dim the other cards and play its clip")
 		return
 	}
 	move(1, 1)
 	out := `(async () => {
 		const s = document.querySelector(".card:not([hidden]) .card-shot:has(img)");
-		return until(() => !("feel" in s.dataset) && !s.querySelector("video"));
+		return until(() => !("feel" in s.dataset) && !s.closest(".card").style.getPropertyValue("--dx") && !s.querySelector("video"));
 	})()`
 	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(out), chromedp.EvalAwaitPromise)); err != nil || !ok {
 		t.Errorf("card did not settle after the mouse left (err %v)", err)

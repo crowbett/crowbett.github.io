@@ -98,7 +98,7 @@
   .it-text { align-content: center; }
   .it-dm .dm { scale: 2.6; }
 }
-@media (pointer: coarse) { .stage-scenes button { min-height: 44px; } .work-toc a { display: inline-flex; align-items: center; min-height: 44px; } }
+@media (pointer: coarse) { .stage-scenes button { min-height: 44px; } .work-toc a { display: inline-flex; align-items: center; gap: 1ch; min-height: 44px; } }
 
 /* Home: the dock, a glass bar over the reel (work.js): one tick per project by area, the current one named, with steps, its demo and the index */
 .dock { position: fixed; z-index: 20; left: 50%; bottom: max(var(--sp-4), env(safe-area-inset-bottom)); display: flex; align-items: center; gap: var(--sp-3); padding: 6px 6px 6px var(--sp-4); border-radius: 999px; background: oklch(0.14 0.012 262 / 0.72); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: 0 16px 44px -8px oklch(0 0 0 / 0.6), inset 0 0 0 1px oklch(1 0 0 / 0.12); color: var(--screen-ink); font: 400 var(--t-label)/1 var(--mono); opacity: 0; visibility: hidden; translate: -50% 18px; transition: opacity var(--d-base) var(--ease-in), translate var(--d-spring) var(--spring-soft), visibility 0s var(--d-spring); }
@@ -179,3 +179,20 @@ html:not(.js) .all-f { display: none; }
 ::view-transition-group(.card) { animation-duration: var(--d-spring); animation-timing-function: var(--ease-in); }
 html:active-view-transition-type(filter)::view-transition-old(root), html:active-view-transition-type(filter)::view-transition-new(root) { animation: none; }
 
+/* Depth (feel.js): a tilted screen's layers move by depth, with the glow behind drifting with the pointer, the picture sliding against it and the Open chip floating in front; the other cards in the index step back from the one under the pointer. */
+@media (prefers-reduced-motion: no-preference) {
+  .it-screen .glow, .it-glass :is(img, video), .card-shot img[data-in], .card-shot video { transition: translate 600ms var(--spring-soft), scale var(--d-spring) var(--spring-soft), opacity var(--d-base) var(--ease-in); }
+  [data-feel].it-screen .glow { translate: calc(var(--dx) * 2.4rem) calc(var(--dy) * 1.6rem); transition: translate 120ms linear; }
+  [data-feel]:is(.it-screen, .card) :is(.it-glass, .card-shot) :is(img, img[data-in], video) { translate: calc(var(--dx) * -2.8%) calc(var(--dy) * -2.8%); transition: translate 120ms linear, scale var(--d-spring) var(--spring-soft), opacity var(--d-base) var(--ease-in); }
+  [data-feel].it-screen .it-go { translate: calc(var(--dx) * 1.1rem) calc(var(--dy) * 0.8rem); transition: opacity var(--d-base) var(--ease-in), translate 120ms linear; }
+  .card { transition: opacity var(--d-base) var(--ease-in); }
+  .all-grid:has(.card[data-feel]) .card:not([data-feel]) { opacity: 0.5; }
+}
+/* Scroll depth: a panel's layers arrive at their own speeds as it slides in (the glow from far behind, the name sliding in ahead of the text) and settle flat once it pins, so touch screens get the depth a mouse gets from tilt. Timed on the panel, not each layer; transform composes with the tilt's translate. */
+@supports (animation-timeline: view()) { @media (prefers-reduced-motion: no-preference) {
+  .js .it-in { view-timeline: --panel block; }
+  .js .it-screen .glow { animation: it-far linear both; animation-timeline: --panel; animation-range: entry 0% entry 100%; }
+  .js .it h4 { animation: it-lead linear both; animation-timeline: --panel; animation-range: entry 0% entry 85%; }
+} }
+@keyframes it-far { from { transform: translateY(30vh) scale(0.6); opacity: 0; } }
+@keyframes it-lead { from { transform: translateX(5vw); } }
