@@ -7,18 +7,23 @@ import (
 	"io/fs"
 )
 
+// ReelWide is where a screen is wide enough (about 560 CSS px or more) that
+// the desktop clip, at about 1:1, reads better than the phone one scaled up.
+const ReelWide = "(min-width: 38rem) and (max-width: 63.99rem), (min-width: 68rem)"
+
 // ReelSums is where cmd/reel records what each preview clip was made from.
 const ReelSums = "web/reel/.sums"
 
 // Showcase is what a home reel clip shows once the demo is running. Setup
 // runs before recording starts and Play while it records; both are JS
 // expressions that may return a promise and drive the demo only as a visitor
-// would. The clip is a 16:10 crop as wide as the demo mount whose top edge is
-// Pad CSS px above Focus (the mount when empty).
+// would. Each clip is a 16:10 crop as wide as the demo mount whose top edge
+// is Pad CSS px above Focus (the mount when empty): Focus and Pad frame the
+// phone-width clip, WideFocus and WidePad the desktop one.
 type Showcase struct {
-	Setup, Play, Focus string
-	Pad                int
-	Seconds            float64
+	Setup, Play, Focus, WideFocus string
+	Pad, WidePad                  int
+	Seconds                       float64
 }
 
 // ReelSources is, per live demo, what its clip was recorded from: the pinned
@@ -80,7 +85,7 @@ func checkReel(cfg Config) error {
 		return err
 	}
 	for slug := range items {
-		for _, ext := range []string{".mp4", ".webp"} {
+		for _, ext := range []string{".mp4", ".webp", "-n.mp4", "-n.webp"} {
 			if _, err := fs.Stat(cfg.Src, "web/reel/"+slug+ext); err != nil {
 				return fmt.Errorf("%s: no reel clip web/reel/%s%s: run `go run ./cmd/reel %s`", slug, slug, ext, slug)
 			}

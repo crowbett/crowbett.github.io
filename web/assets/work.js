@@ -6,7 +6,7 @@
 // buried two or more deep are not drawn (opacity 0, which keeps their links
 // focusable), since none of them shows. Focus that
 // lands in a panel brings it up, so nothing focused sits under another.
-import { play, pause } from "/assets/play.js";
+import { play, pause, poster } from "/assets/play.js";
 const reel = document.querySelector(".reel");
 if (reel) {
   const items = [...reel.querySelectorAll(".it")];
@@ -61,10 +61,10 @@ if (reel) {
     if (!it) return;
     it.dataset.now = "";
     const glass = it.querySelector(".it-glass");
-    if (it.dataset.clip && !still) {
-      const img = glass.querySelector("img");
+    if ("clip" in it.dataset && !still) {
+      const shot = poster(glass);
       const v = document.createElement("video");
-      Object.assign(v, { muted: true, loop: true, playsInline: true, preload: "auto", poster: img.currentSrc || img.src, src: it.dataset.clip, disablePictureInPicture: true });
+      Object.assign(v, { muted: true, loop: true, playsInline: true, preload: "auto", poster: shot, src: shot.replace(/\.webp$/, ".mp4"), disablePictureInPicture: true });
       v.setAttribute("aria-hidden", "true");
       v.addEventListener("playing", () => { v.dataset.on = ""; if (!tick) paint(); });
       glass.append(v);

@@ -23,7 +23,7 @@
             <button type="button" class="demo-full" data-demo-full>Full screen</button>
           </div>
           <p class="demo-try">{{.DemoTry}}</p>
-          <div class="ph-screen" data-clip="/reel/{{.Slug}}.mp4"><img src="/reel/{{.Slug}}.webp" width="1324" height="828" alt="The {{.Title}} demo running, recorded from its WebAssembly build." fetchpriority="high"></div>
+          <div class="ph-screen" data-clip><picture><source media="{{reelWide}}" srcset="/reel/{{.Slug}}.webp" width="1408" height="880"><img src="/reel/{{.Slug}}-n.webp" width="1324" height="828" alt="The {{.Title}} demo running, recorded from its WebAssembly build." fetchpriority="high"></picture></div>
           <div class="demo-bar">
             <button type="button" data-demo-start>Run the live demo</button>
             <span class="demo-note" data-demo-note><span>Above: a recording. Runs live in your browser; nothing downloads until you start.</span><span>Above: a recording. The live build starts on its own while this is on screen.</span></span>
@@ -61,4 +61,4 @@
 {{end}}
 <script type="module" src="/assets/project.js"></script>
 {{template "foot" .}}{{end}}
-{{define "pg"}}<a href="/projects/{{.P.Slug}}/" rel="{{.Rel}}"><span class="pg-shot" aria-hidden="true">{{if .P.Live}}<img src="/reel/{{.P.Slug}}.webp" width="1324" height="828" alt="" loading="lazy" decoding="async">{{else}}<span class="ph-dm">{{template "dmask" .P.Slug}}</span>{{end}}</span><span class="pg-k">{{.Label}}</span> <span class="pg-t">{{.P.Title}}</span></a>{{end}}
+{{define "pg"}}<a href="/projects/{{.P.Slug}}/" rel="{{.Rel}}"><span class="pg-shot" aria-hidden="true">{{if .P.Live}}<img src="/reel/{{.P.Slug}}-n.webp" width="1324" height="828" alt="" loading="lazy" decoding="async">{{else}}<span class="ph-dm">{{template "dmask" .P.Slug}}</span>{{end}}</span><span class="pg-k">{{.Label}}</span> <span class="pg-t">{{.P.Title}}</span></a>{{end}}
