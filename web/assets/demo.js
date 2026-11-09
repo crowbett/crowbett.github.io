@@ -20,18 +20,19 @@ export function connect(slug, { callTimeoutMs = CALL_TIMEOUT_MS, loadTimeoutMs =
     if (dead) return;
     dead = err;
     worker.terminate();
+    document.dispatchEvent(new CustomEvent("demo:stop", { detail: { slug, error: err.message } }));
     for (const p of pending.values()) { clearTimeout(p.timer); p.reject(err); }
     pending.clear();
   };
   worker.onerror = (e) => { e.preventDefault(); fail(new Error(e.message || "demo worker crashed")); };
   worker.onmessage = (e) => {
-    const { id, result, error, loaded } = e.data;
+    const { id, result, error, loaded, meta } = e.data;
     const p = pending.get(id);
     if (!p) return;
     if (loaded !== undefined) { if (onProgress) onProgress(loaded); return; }
     pending.delete(id);
     clearTimeout(p.timer);
-    if (error) p.reject(new Error(error)); else p.resolve(result);
+    if (error) p.reject(Object.assign(new Error(error), { meta })); else p.resolve({ result, meta });
   };
 
   const send = (msg, timeoutMs) => new Promise((resolve, reject) => {
@@ -46,11 +47,17 @@ export function connect(slug, { callTimeoutMs = CALL_TIMEOUT_MS, loadTimeoutMs =
 
   const client = {
     slug,
-    // Each answered call is announced, so the page's code panel can light the source it ran.
-    call: (method, params = {}) => send({ type: "call", method, params }, callTimeoutMs).then((r) => {
-      document.dispatchEvent(new CustomEvent("demo:call", { detail: { slug, method, params } }));
-      return r;
-    }),
+    // Each call is announced with what the worker measured: "demo:call" when
+    // it answers (the code panel lights the source it ran), "demo:fail" when not.
+    call: (method, params = {}) => {
+      const t = performance.now();
+      const tell = (type, meta, extra) => document.dispatchEvent(new CustomEvent(type, {
+        detail: { slug, method, params, t, rtt: performance.now() - t, ...meta, ...extra },
+      }));
+      return send({ type: "call", method, params }, callTimeoutMs).then(
+        ({ result, meta }) => { tell("demo:call", meta, { result }); return result; },
+        (err) => { tell("demo:fail", err.meta, { error: err.message }); throw err; });
+    },
     close: () => fail(new Error("demo closed")),
   };
   return send({ type: "load", slug }, loadTimeoutMs).then(() => client, (err) => { fail(err); throw err; });

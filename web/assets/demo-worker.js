@@ -1,6 +1,7 @@
 // Runs one demo binary. Messages in: {id, type: "load", slug} then
 // {id, type: "call", method, params}. Messages out: {id, result} or {id, error},
 // and during a load {id, loaded} with the bytes of the binary received so far.
+// A call's answer also carries meta: {ms, inB, outB, mem} (see call).
 // A Go binary sets globalThis.__demo(method, paramsJSON) -> resultJSON and then
 // calls globalThis.__demoReady(). A Rust or C++ binary imports nothing and
 // exports memory, demo_alloc, demo_call and demo_free, which rustBridge wraps
@@ -43,9 +44,13 @@ async function load(slug, onLoaded) {
   const mod = await WebAssembly.compile(await fetchBinary(`/wasm/${slug}.wasm`, onLoaded));
   if (WebAssembly.Module.imports(mod).some((i) => i.module === "gojs")) {
     const go = new Go();
-    go.run(await WebAssembly.instantiate(mod, go.importObject)).then(() => { globalThis.__demoExited = true; });
+    const inst = await WebAssembly.instantiate(mod, go.importObject);
+    memory = inst.exports.mem;
+    go.run(inst).then(() => { globalThis.__demoExited = true; });
   } else {
-    globalThis.__demo = rustBridge((await WebAssembly.instantiate(mod, {})).exports);
+    const x = (await WebAssembly.instantiate(mod, {})).exports;
+    memory = x.memory;
+    globalThis.__demo = rustBridge(x);
     reportReady();
   }
   // The clock starts after the download, so a slow link is not a failure.
@@ -53,6 +58,7 @@ async function load(slug, onLoaded) {
     setTimeout(() => reject(new Error("demo binary did not report ready")), READY_TIMEOUT_MS))]);
 }
 
+let memory = null;
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
@@ -87,9 +93,17 @@ function rustBridge(x) {
   };
 }
 
-function call(method, params) {
+// call also measures the call: its time inside the binary, the JSON in and
+// out, and the binary's linear memory after it, for the page's timeline.
+function call(method, params, meta) {
   if (globalThis.__demoExited) throw new Error("the demo stopped; reload the page to run it again");
-  const raw = globalThis.__demo(method, JSON.stringify(params));
+  const json = JSON.stringify(params);
+  const t0 = performance.now();
+  const raw = globalThis.__demo(method, json);
+  meta.ms = performance.now() - t0;
+  meta.inB = json.length;
+  meta.outB = typeof raw === "string" ? raw.length : 0;
+  meta.mem = memory?.buffer.byteLength ?? 0;
   if (typeof raw !== "string") {
     globalThis.__demoExited = true;
     throw new Error("the demo crashed; reload the page to run it again");
@@ -101,6 +115,7 @@ function call(method, params) {
 
 self.onmessage = async (e) => {
   const { id, type } = e.data;
+  const meta = {};
   try {
     let last = -Infinity;
     const onLoaded = (loaded, final) => {
@@ -109,9 +124,9 @@ self.onmessage = async (e) => {
       last = now;
       self.postMessage({ id, loaded });
     };
-    const result = type === "load" ? await load(e.data.slug, onLoaded) : call(e.data.method, e.data.params);
-    self.postMessage({ id, result: result ?? null });
+    const result = type === "load" ? await load(e.data.slug, onLoaded) : call(e.data.method, e.data.params, meta);
+    self.postMessage({ id, result: result ?? null, meta });
   } catch (err) {
-    self.postMessage({ id, error: String(err && err.message ? err.message : err) });
+    self.postMessage({ id, error: String(err && err.message ? err.message : err), meta });
   }
 };

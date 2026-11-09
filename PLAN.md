@@ -24,7 +24,7 @@ Status (2026-10-25): live at https://crowbett.github.io. Scaffold done. 8 projec
 | What | Limit |
 |---|---|
 | One HTML page | 60 KiB |
-| CSS one page loads (the stylesheets it links + its demo's `ui.css`) | 56 KiB |
+| CSS one page loads (the stylesheets it links + its demo's `ui.css`) | 72 KiB |
 | One demo's `ui.js` | 60 KiB |
 | One `.wasm`, gzip -9 | 2.25 MiB |
 | All `.woff2` fonts | 32 KiB |
@@ -50,3 +50,5 @@ Reel clip budget (added 2026-11-09, Reel): the home reel plays a 16:10 clip of e
 Fonts budget (added 2026-10-24, V2): 32 KiB of woff2. Since V12 (2026-10-26) `make fonts` (`scripts/fonts.sh`) builds four OFL subsets from google/fonts at a pinned commit, sha256-checked: Archivo Expanded 800 (7,752 B), Archivo 400 (7,704 B), Martian Mono 400-700 (9,076 B) and Doto 700 (2,376 B), 26,908 bytes in total (measured), 5,860 under the limit. Rationale in `docs/design.md` §Type.
 
 V12 decisions (2026-10-26, owner-approved): no animation library (CSS `linear()` springs; the libraries that inject `<style>` break the CSP); diagrams are 1-bit masks dithered with an 8×8 Bayer matrix (ordered, so the two motion poses do not crawl; blue noise skipped as a third tool for 112 px drawings); Archivo 400 kept for prose. Details in `docs/design.md` (2026-10-26 V12).
+
+CSS budget raised from 56 KiB to 72 KiB (decision, 2026-11-09, V31): the owner picked eleven new features at once (call timeline, X-ray, autopilot tours, shareable runs, a numbers page, search over everything, terminal upgrades, a live wall, live home panels, code peek, an intro). The first two alone took project.css from 18,565 to 21,377 bytes, and the heaviest page, recall's, became 60,064 bytes (13,508 gzipped; all measured), over 56 KiB. 72 KiB leaves ~13.6 KB on the heaviest page for the rest of that queue; the gzipped weight, what crosses the wire, stays under 14 KB. The next raise is another recorded decision. Rejected: a lazily linked stylesheet for the panels, which the build would count the same and which would flash unstyled on first open.
