@@ -167,8 +167,16 @@ func pageQuality(t *testing.T, ctx context.Context) {
 		Nodes            []string
 	}
 	// Finish entrance animations first: mid-fade text fails contrast. Looping
-	// ones cannot finish and are left running.
-	if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.getAnimations().forEach((a) => { try { a.finish(); } catch {} }), true`)); err != nil {
+	// ones cannot finish and are left running; scroll-driven ones follow the
+	// scroll position, and finishing one would fade the page head. axe runs
+	// from the top: scrolled, the sheet covers the pinned head and axe would
+	// measure the head's text against the sheet.
+	if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`(async () => {
+		scrollTo({ top: 0, behavior: "instant" });
+		await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+		document.getAnimations().filter((a) => a.timeline === document.timeline).forEach((a) => { try { a.finish(); } catch {} });
+		return true;
+	})()`, chromedp.EvalAwaitPromise)); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](axeSource+";true")); err != nil {
@@ -272,8 +280,9 @@ func tabOrder(t *testing.T, ctx context.Context) {
 // mobile link (150 ms before the first byte, then 200 KB/s per response;
 // Chrome's network emulation leaves the navigation itself unthrottled): the
 // largest paint lands within 2.5 s and nothing shifts as fonts and styles arrive.
+// It runs alone, not in parallel: a visitor loads one page, and on a 4-vCPU
+// runner the page tabs' demos and clips pushed quorum's LCP past 2.5 s.
 func TestSlowConnection(t *testing.T) {
-	t.Parallel()
 	slow := httptest.NewServer(slowLink(srv.Config.Handler))
 	defer slow.Close()
 	for _, page := range []string{"/", "/projects/quorum/"} {
@@ -286,10 +295,13 @@ func TestSlowConnection(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		type vitals struct{ LCP, CLS, Nav float64 }
+		type vitals struct {
+			LCP, CLS, Nav float64
+			El            string
+		}
 		v, err := chromedp.Run(ctx, chromedp.Evaluate[vitals](`new Promise((resolve) => {
-			const out = { LCP: 0, CLS: 0, Nav: performance.getEntriesByType("navigation")[0].responseStart };
-			new PerformanceObserver((l) => { for (const e of l.getEntries()) out.LCP = e.startTime; })
+			const out = { El: "", LCP: 0, CLS: 0, Nav: performance.getEntriesByType("navigation")[0].responseStart };
+			new PerformanceObserver((l) => { for (const e of l.getEntries()) { out.LCP = e.startTime; out.El += "; " + Math.round(e.startTime) + " ms " + (e.element?.outerHTML?.slice(0, 60) ?? "") + (e.url ? " " + new URL(e.url).pathname : ""); } })
 				.observe({ type: "largest-contentful-paint", buffered: true });
 			new PerformanceObserver((l) => { for (const e of l.getEntries()) if (!e.hadRecentInput) out.CLS += e.value; })
 				.observe({ type: "layout-shift", buffered: true });
@@ -308,7 +320,7 @@ func TestSlowConnection(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		t.Logf("%s: LCP %.0f ms, CLS %.4f, first byte %.0f ms", page, v.LCP, v.CLS, v.Nav)
+		t.Logf("%s: LCP %.0f ms, CLS %.4f, first byte %.0f ms; candidates%s", page, v.LCP, v.CLS, v.Nav, v.El)
 		if v.Nav < 150 {
 			t.Errorf("%s: first byte at %.0f ms; the slow link is not in effect", page, v.Nav)
 		}

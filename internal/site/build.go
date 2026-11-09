@@ -58,6 +58,12 @@ type pageData struct {
 	Stage     *Stage
 }
 
+// pagerLink is one previous / next card at the foot of a project page.
+type pagerLink struct {
+	Rel, Label string
+	P          *Project
+}
+
 type groupView struct {
 	Group
 	Projects []Project
@@ -103,7 +109,10 @@ func prepare(cfg Config) (*prepared, error) {
 		"demoKB":    func(slug string) string { return thousands((sizes[slug].Gzip + 1023) / 1024) },
 		"demoBytes": func(slug string) int { return sizes[slug].Raw },
 		"bind":      bindNumbers,
-		"num":       thousands,
+		"pg": func(rel, label string, p *Project) pagerLink {
+			return pagerLink{Rel: rel, Label: label, P: p}
+		},
+		"num": thousands,
 		"search": func(p Project) string {
 			return strings.ToLower(strings.Join(append([]string{p.Slug, p.Title, p.Tagline, p.Lang}, p.Tags...), " "))
 		},
