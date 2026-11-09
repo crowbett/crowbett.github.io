@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 )
 
@@ -87,12 +89,21 @@ func TestIndexKeys(t *testing.T) {
 }
 
 // TestPointerFeel runs feelCheck on a desktop home tab of its own, so the
-// long chain of home checks in TestSite does not grow.
+// long chain of home checks in TestSite does not grow. Headless Chrome on a
+// CI runner has no pointing device, so the tab answers feel.js's media query
+// as a desktop with a mouse would.
 func TestPointerFeel(t *testing.T) {
 	t.Parallel()
 	ctx, cancel := newTab(t, 60*time.Second)
 	defer cancel()
-	if err := chromedp.Do(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(srv.URL+"/"), chromedp.WaitReady(chromedp.CSS("body"))); err != nil {
+	mouse := chromedp.Func(func(ctx context.Context, tg *chromedp.Target) error {
+		_, err := cdp.Call(ctx, tg, page.AddScriptToEvaluateOnNewDocument, page.AddScriptToEvaluateOnNewDocumentParams{Source: `{
+			const real = matchMedia.bind(window), q = "(hover: hover) and (pointer: fine)";
+			window.matchMedia = (m) => m === q ? { matches: true, media: q, addEventListener() {}, removeEventListener() {} } : real(m);
+		}`})
+		return err
+	})
+	if err := chromedp.Do(ctx, mouse, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(srv.URL+"/"), chromedp.WaitReady(chromedp.CSS("body"))); err != nil {
 		t.Fatal(err)
 	}
 	feelCheck(t, ctx)
