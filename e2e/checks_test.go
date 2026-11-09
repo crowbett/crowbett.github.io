@@ -31,17 +31,17 @@ const workCheck = `(async () => {
 	return await at("netcode") && await at("keel");
 })()`
 
-// depthCheck scrolls a panel halfway in, where its glow still trails far
-// behind and its name leads the text, then to where it pins, where both
-// settle flat (the scroll-depth layers in home.css).
+// depthCheck scrolls a panel halfway in, where its name leads the text, then
+// to where it pins, where the name settles flat (the scroll-depth layer in
+// home.css).
 const depthCheck = `(async () => {
 	const it = document.querySelector("#p-stash"), m = (s) => new DOMMatrix(getComputedStyle(it.querySelector(s)).transform);
 	scrollTo(0, 0);
 	const top = it.getBoundingClientRect().top + scrollY;
 	scrollTo(0, top - innerHeight * 0.5);
-	if (!await until(() => m(".it-screen .glow").f > 1 && m(".it-screen .glow").a < 1 && m("h4").e > 1)) return false;
+	if (!await until(() => m("h4").e > 1)) return false;
 	scrollTo(0, top);
-	return until(() => m(".it-screen .glow").isIdentity && m("h4").isIdentity);
+	return until(() => m("h4").isIdentity);
 })()`
 
 // indexCheck uses the dock and the index at the end of the reel: "All"
@@ -720,7 +720,7 @@ var demoChecks = map[string][]string{
 }
 
 // feelCheck moves a real mouse onto an index card (the tab must have a fine
-// pointer): its preview tilts under a glare and starts its clip, and leaving
+// pointer): its preview tilts and starts its clip, and leaving
 // the card settles it and drops the clip. The page may still be settling a
 // scroll, so the mouse is re-aimed until it lands on the card.
 func feelCheck(t *testing.T, ctx context.Context) {

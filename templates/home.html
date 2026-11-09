@@ -2,21 +2,19 @@
 <section class="stage" aria-labelledby="stage-h">
   <div class="stage-in">
     <div class="stage-text">
-      <h1 id="stage-h"><b>{{.Owner.Name}}</b> <span>builds databases, caches, queues, code search and game netcode in Go, Rust and C++, and tests them with simulation, fault injection and benchmarks.</span></h1>
-      <p class="stage-hook">{{if .LiveCount}}{{.LiveCount}} of the {{len .Projects}} projects below run in this tab: the real code, compiled to WebAssembly.{{end}}{{with .Stage}} The picture is one of them, a C++ path tracer ({{demoKB .Slug}} KB).{{end}}</p>
+      <h1 id="stage-h"><b>{{.Owner.Name}}</b> <span>builds databases, queues and game netcode, and tests them by breaking them on purpose.</span></h1>
+      <p class="stage-hook">{{with .Stage}}The picture is a C++ path tracer, {{demoKB .Slug}} KB of WebAssembly.{{end}}{{if .LiveCount}}{{if .Stage}} {{end}}{{.LiveCount}} of the {{len .Projects}} projects below run here the same way.{{end}}</p>
       <p class="stage-go"><a class="key" href="#work">See the work</a>{{with .Stage}}<a class="stage-link" href="/projects/{{.Slug}}/#demo">Open the full {{.Slug}} demo</a>{{end}}</p>
     </div>
     {{with .Stage}}<figure class="stage-fig" data-stage="{{.Slug}}" data-scene="{{.Scene}}" data-width="{{.Width}}" data-seed="{{.Seed}}" data-max="{{.MaxSpp}}" data-poster-spp="{{.PosterSpp}}">
-      <canvas class="glow" width="12" height="12" aria-hidden="true"></canvas>
+      <p class="stage-hud"><span>{{.Slug}}</span><span data-state>recorded, {{.PosterSpp}} spp</span></p>
       <div class="stage-view">
         <img src="/reel/stage.webp" width="{{.Width}}" height="{{.Width}}" alt="The {{.SceneLabel}} traced by the path tracer at {{.PosterSpp}} samples per pixel: grainy with {{.LeftLabel}} sampling on the left, cleaner with {{.RightLabel}} on the right." fetchpriority="high">
         <canvas class="stage-r" width="{{.Width}}" height="{{.Width}}" aria-hidden="true"></canvas>
         <canvas class="stage-l" width="{{.Width}}" height="{{.Width}}" aria-hidden="true"></canvas>
-        <i class="stage-scan" aria-hidden="true"></i>
         <div class="stage-split" aria-hidden="true"><b></b></div>
-        <p class="stage-hud"><span class="led">{{.Slug}}</span><span data-state>recorded, {{.PosterSpp}} spp</span></p>
-        <p class="stage-tag" aria-hidden="true"><span>{{.LeftLabel}}</span><span>{{.RightLabel}}</span></p>
       </div>
+      <p class="stage-tag" aria-hidden="true"><span>{{.LeftLabel}}</span><span>{{.RightLabel}}</span></p>
       <figcaption>
         <p class="stage-scenes" role="group" aria-label="Scene">{{range .Scenes}}<button type="button" data-scene-id="{{.ID}}" data-name="{{.Name}}" aria-pressed="{{eq .ID $.Stage.Scene}}">{{.Label}}</button>{{end}}</p>
         <dl class="stage-dials">
@@ -34,7 +32,7 @@
   <header class="work-head work-in">
     <h2 id="work-h">Work</h2>
     <p class="count">{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} with a live demo{{end}}</p>
-    <nav class="work-toc" aria-label="Groups">{{range .Groups}}<a href="#g-{{.Key}}">{{.Name}} <span>{{len .Projects}}</span></a>{{end}}</nav>
+    <nav class="work-toc" aria-label="Groups">{{range .Groups}}<span><a href="#g-{{.Key}}">{{.Name}}</a> {{len .Projects}}</span>{{end}}</nav>
   </header>
   <ol class="reel">{{range $g := .Groups}}{{range $i, $p := .Projects}}
     <li class="it" id="p-{{.Slug}}"{{if .Live}} data-clip{{end}}>
@@ -46,7 +44,7 @@
           {{if .Metric}}<p class="it-metric"><span class="metric">{{bind .Metric}}</span></p>{{end}}
           <p class="it-act">{{if .Live}}<a class="key" href="/projects/{{.Slug}}/#demo">Run it live</a>{{else}}<span class="led off">Source on {{if .Private}}request{{else}}GitHub{{end}}</span>{{end}}{{if .Code}}<button class="it-peek" type="button" aria-pressed="false" aria-controls="pk-{{.Slug}}" data-peek="{{.Slug}}">Code</button>{{end}}<span class="it-lang">{{.Lang}}</span></p>
         </div>
-        <div class="it-view"><a class="it-screen" href="/projects/{{.Slug}}/" tabindex="-1" aria-hidden="true"><canvas class="glow" width="16" height="10"></canvas><span class="it-glass">{{if .Live}}<picture><source media="{{reelWide}}" srcset="/reel/{{.Slug}}.webp" width="1408" height="880"><img src="/reel/{{.Slug}}-n.webp" width="1324" height="828" alt="" loading="lazy" decoding="async"></picture>{{else}}<span class="it-dm">{{template "dmask" .Slug}}</span>{{end}}</span><span class="it-go">Open</span></a>{{if .Code}}<section class="it-face" id="pk-{{.Slug}}" aria-label="{{.Title}}: its real source" hidden></section>{{end}}</div>
+        <div class="it-view"><a class="it-screen" href="/projects/{{.Slug}}/" tabindex="-1" aria-hidden="true"><span class="it-glass">{{if .Live}}<picture><source media="{{reelWide}}" srcset="/reel/{{.Slug}}.webp" width="1408" height="880"><img src="/reel/{{.Slug}}-n.webp" width="1324" height="828" alt="" loading="lazy" decoding="async"></picture>{{else}}<span class="it-dm">{{template "dmask" .Slug}}</span>{{end}}</span><span class="it-go">Open</span></a>{{if .Code}}<section class="it-face" id="pk-{{.Slug}}" aria-label="{{.Title}}: its real source" hidden></section>{{end}}</div>
       </div>
     </li>{{end}}{{end}}
   <li id="all" class="fin" aria-labelledby="all-h">

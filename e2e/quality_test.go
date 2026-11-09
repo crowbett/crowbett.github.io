@@ -47,6 +47,7 @@ var contrastPairs = []struct {
 	{"control-line", "bg", 3}, {"control-line", "surface", 3},
 	{"screen-ink", "screen", 4.5}, {"screen-dim", "screen", 4.5}, {"screen-signal", "screen", 4.5}, {"screen-signal", "attack", 4.5},
 	{"screen-ok", "screen", 3}, {"deny", "screen", 3}, {"deny", "attack", 3},
+	{"band-ink", "band", 4.5}, {"band-dim", "band", 4.5}, {"band-signal", "band", 4.5},
 }
 
 // TestTokenContrast re-measures every pair in both schemes from the tokens in
@@ -178,11 +179,16 @@ func pageQuality(t *testing.T, ctx context.Context) {
 	// ones cannot finish and are left running; scroll-driven ones follow the
 	// scroll position, and finishing one would fade the page head. axe runs
 	// from the top: scrolled, the sheet covers the pinned head and axe would
-	// measure the head's text against the sheet.
+	// measure the head's text against the sheet. A pinned head the sheet's
+	// edge already peeks under starts its sink a little at the top; axe cannot
+	// see the band's colour through that partly faded layer, so the sinks are
+	// held at their start until axe is done.
 	if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`(async () => {
 		scrollTo({ top: 0, behavior: "instant" });
 		await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 		document.getAnimations().filter((a) => a.timeline === document.timeline).forEach((a) => { try { a.finish(); } catch {} });
+		window.__held = document.getAnimations().filter((a) => a.animationName === "sink");
+		window.__held.forEach((a) => { try { a.pause(); a.currentTime = CSS.percent(0); } catch {} });
 		return true;
 	})()`, chromedp.EvalAwaitPromise)); err != nil {
 		t.Fatal(err)
@@ -196,7 +202,7 @@ func pageQuality(t *testing.T, ctx context.Context) {
 	}).then((r) => r.violations.map((v) => ({
 		ID: v.id, Impact: v.impact || "", Help: v.help,
 		Nodes: v.nodes.slice(0, 3).map((n) => n.target.join(" ")),
-	})))`, chromedp.EvalAwaitPromise))
+	}))).finally(() => window.__held.forEach((a) => { try { a.play(); } catch {} }))`, chromedp.EvalAwaitPromise))
 	if err != nil {
 		t.Fatalf("axe: %v", err)
 	}

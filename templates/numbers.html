@@ -5,23 +5,17 @@
       <p class="crumb"><a href="/">Home</a> <span aria-hidden="true">/</span> numbers</p>
       <h1>Numbers</h1>
       <p class="lede">Every number on this site, and where it was measured. Each project's evidence is quoted from its own repository; the binaries are the demos that run in this tab.</p>
-      <ul class="nums-tally" aria-label="On this page">
-        <li><b>{{len .Projects}}</b> projects</li>
-        <li><b>{{.LiveCount}}</b> live binaries</li>
-        <li><b>{{len .Groups}}</b> areas</li>
-      </ul>
     </div>
   </header>
   <div class="sheet">
     <div class="sheet-in">
       <section class="nb" aria-labelledby="nb-ev">
         <div class="nb-head">
-          <h2 id="nb-ev">Evidence</h2>
-          <p>One measured result per project, with the machine, file or test it came from.</p>
+          <h2 id="nb-ev">Results</h2>
         </div>
         {{range .Groups}}{{if .Projects}}<h3 class="nb-g" id="n-{{.Key}}">{{.Name}}</h3>
         <ul class="nb-grid">{{range .Projects}}{{if .Metric}}
-          <li><a class="nb-card" href="/projects/{{.Slug}}/"><span class="nb-p">{{.Title}}{{if .Live}} <span class="led">live</span>{{end}}</span><span class="nb-m">{{figures .Metric}}</span><span class="nb-s">{{.MetricSource}}</span></a></li>{{end}}{{end}}
+          <li><a class="nb-card" href="/projects/{{.Slug}}/"><span class="nb-p">{{.Title}}{{if not .Live}} <span class="nb-x">no demo</span>{{end}}</span><span class="nb-m">{{figures .Metric}}</span><span class="nb-s">{{.MetricSource}}</span></a></li>{{end}}{{end}}
         </ul>{{end}}{{end}}
       </section>
       <section class="nb" aria-labelledby="nb-bin">
