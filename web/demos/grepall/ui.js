@@ -27,10 +27,18 @@ const size = (b) => (b >= 1 << 20 ? `${(b / (1 << 20)).toFixed(2)} MiB` : `${fmt
 const showTri = (t) => t.replaceAll(" ", "␣");
 const ease = (x) => 1 - Math.pow(1 - x, 3);
 
-function hexRGB(s) {
-  const h = s.trim().replace("#", "");
-  const v = parseInt(h.length === 3 ? h.replace(/./g, "$&$&") : h, 16);
-  return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+// A custom property holding color-mix() stays unresolved in its computed value, so paint it and read the pixel back.
+function propRGB(root, name) {
+  const probe = el("span");
+  root.append(probe);
+  probe.style.color = `var(${name})`;
+  const px = el("canvas");
+  px.width = px.height = 1;
+  const g = px.getContext("2d", { willReadFrequently: true });
+  g.fillStyle = getComputedStyle(probe).color;
+  g.fillRect(0, 0, 1, 1);
+  probe.remove();
+  return Array.from(g.getImageData(0, 0, 1, 1).data.slice(0, 3));
 }
 const mix = (a, b, t) => `rgb(${a.map((x, i) => Math.round(x + (b[i] - x) * t)).join(",")})`;
 const rgb = (a) => `rgb(${a.join(",")})`;
@@ -83,7 +91,7 @@ function parseTree(node, more) {
   add(node, ul);
   const box = scrollBox("Parse tree");
   box.append(ul);
-  if (more) box.append(el("p", "ga-more", `+${plural(more, "node")} not shown`));
+  if (more) box.append(el("p", "demo-note ga-more", `+${plural(more, "node")} not shown`));
   return box;
 }
 
@@ -118,7 +126,7 @@ function queryTree(q, total, more) {
     return g;
   };
   box.append(group(q));
-  if (more) box.append(el("p", "ga-more", `+${plural(more, "trigram")} not shown`));
+  if (more) box.append(el("p", "demo-note ga-more", `+${plural(more, "trigram")} not shown`));
   return box;
 }
 
@@ -141,11 +149,11 @@ export async function mount(root, demo) {
   q.setAttribute("autocapitalize", "off");
   q.setAttribute("autocorrect", "off");
   const qField = el("label", "demo-field ga-qf");
-  qField.append(el("span", "demo-label", "Query (grepall syntax: repo:, file:, case: filters work)"), q);
+  qField.append(el("span", "demo-label", "query (grepall syntax: repo:, file:, case: filters work)"), q);
   const re = el("input");
   Object.assign(re, { type: "checkbox", name: "regex", checked: true });
   const reField = el("label", "demo-field ga-check");
-  reField.append(el("span", "demo-label", "Regexp"), re);
+  reField.append(el("span", "demo-label", "regexp"), re);
   const cs = el("select");
   cs.name = "case";
   for (const [v, t] of [["auto", "smart"], ["yes", "sensitive"], ["no", "insensitive"]]) {
@@ -154,7 +162,7 @@ export async function mount(root, demo) {
     cs.append(o);
   }
   const csField = el("label", "demo-field");
-  csField.append(el("span", "demo-label", "Case"), cs);
+  csField.append(el("span", "demo-label", "case"), cs);
   form.append(qField, reField, csField);
 
   const presets = el("div", "ga-presets");
@@ -210,7 +218,7 @@ export async function mount(root, demo) {
   const map = el("canvas", "ga-map");
   map.setAttribute("role", "img");
   const readout = el("p", "ga-readout", " ");
-  const legend = el("p", "ga-legend");
+  const legend = el("p", "demo-legend ga-legend");
   for (const [k, t] of [["off", "not a candidate"], ["cand", "candidate: has the trigrams"], ["hit", "verified match"]]) {
     const s = el("span", "ga-key", t);
     s.dataset.k = k;
@@ -230,7 +238,7 @@ export async function mount(root, demo) {
   const mobile = matchMedia("(max-width: 40rem)");
 
   const corpusNote = el("details", "ga-corpus");
-  const indexNote = el("p", "ga-built");
+  const indexNote = el("p", "demo-note ga-built");
   const receipt = el("p", "demo-out ga-out");
   root.replaceChildren(form, presets, status, stages, funnel, mapWrap, indexNote, resHead, list, corpusNote, receipt);
   await cssReady;
@@ -240,9 +248,8 @@ export async function mount(root, demo) {
   mobile.addEventListener("change", place);
 
   const colors = () => {
-    const s = getComputedStyle(root);
     const c = {};
-    for (const k of ["off", "cand", "hit", "idle", "tint", "base"]) c[k] = hexRGB(s.getPropertyValue(`--ga-${k}`) || "#888");
+    for (const k of ["off", "cand", "hit", "idle", "tint", "base"]) c[k] = propRGB(root, `--ga-${k}`);
     return c;
   };
   let C = colors();
@@ -480,7 +487,7 @@ export async function mount(root, demo) {
     const t1 = performance.now();
     status.classList.remove("ga-err");
     treeBox.replaceChildren(plan.tree ? parseTree(plan.tree, plan.tree_more)
-      : el("p", "ga-more", "No content pattern: only the filters select files."));
+      : el("p", "demo-note ga-more", "No content pattern: only the filters select files."));
     planBox.replaceChildren(queryTree(plan.query, N, plan.query_more));
     planTime.textContent = `${plural(plan.trigrams, "trigram")} · ${ms(t1 - t0)}`;
     if (want) return;

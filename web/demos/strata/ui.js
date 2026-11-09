@@ -2,17 +2,17 @@
 // Load a built-in calibration model or the visitor's own STL, OBJ or 3MF,
 // slice it with default settings, and scrub its layers' toolpaths on a canvas.
 const KINDS = {
-  Skirt: "Skirt",
-  OuterWall: "Outer wall",
-  InnerWall: "Inner wall",
-  TopSurface: "Top surface",
-  SolidInfill: "Solid infill",
-  SparseInfill: "Sparse infill",
-  GapFill: "Gap fill",
-  Bridge: "Bridge",
-  Support: "Support",
-  SupportInterface: "Support interface",
-  Ironing: "Ironing",
+  Skirt: "skirt",
+  OuterWall: "outer wall",
+  InnerWall: "inner wall",
+  TopSurface: "top surface",
+  SolidInfill: "solid infill",
+  SparseInfill: "sparse infill",
+  GapFill: "gap fill",
+  Bridge: "bridge",
+  Support: "support",
+  SupportInterface: "support interface",
+  Ironing: "ironing",
 };
 const FILE = "file";
 
@@ -69,7 +69,7 @@ export async function mount(root, demo) {
   const pick = el("button", "secondary", "Open your own model");
   pick.type = "button";
   pick.addEventListener("click", () => file.click());
-  form.append(field("Model", model), field("Layer height", height), pick, file);
+  form.append(field("model", model), field("layer height", height), pick, file);
 
   const summary = el("p", "st-summary");
   summary.setAttribute("aria-live", "polite");
@@ -79,7 +79,7 @@ export async function mount(root, demo) {
   scrub.id = "st-layer";
   const where = el("output", "st-where");
   where.htmlFor = scrub.id;
-  const scrubLabel = el("label", "demo-label", "Layer");
+  const scrubLabel = el("label", "demo-label", "layer");
   scrubLabel.htmlFor = scrub.id;
   const scrubHead = el("div", "st-scrub-h");
   scrubHead.append(scrubLabel, where);
@@ -88,7 +88,7 @@ export async function mount(root, demo) {
 
   const canvas = el("canvas", "st-canvas");
   canvas.setAttribute("role", "img");
-  const legend = el("p", "st-legend");
+  const legend = el("p", "demo-legend st-legend");
   const note = el("p", "st-note");
   const receipt = el("p", "demo-out st-out");
   let sliceMs = 0;
@@ -107,10 +107,16 @@ export async function mount(root, demo) {
   let mounted = false;
 
   const colors = () => {
-    const s = getComputedStyle(root);
+    const probe = el("span");
+    root.append(probe);
+    const paint = (name) => {
+      probe.style.color = `var(${name})`;
+      return getComputedStyle(probe).color;
+    };
     const c = {};
-    for (const k of Object.keys(KINDS)) c[k] = s.getPropertyValue(`--st-${k}`).trim();
-    c.open = s.getPropertyValue("--danger").trim();
+    for (const k of Object.keys(KINDS)) c[k] = paint(`--st-${k}`);
+    c.open = paint("--danger");
+    probe.remove();
     return c;
   };
 
@@ -168,7 +174,7 @@ export async function mount(root, demo) {
       return s;
     }));
     if (shown.open.length) {
-      const s = el("span", "st-key", `Open contour ${shown.open.length}`);
+      const s = el("span", "st-key", `open contour ${shown.open.length}`);
       s.dataset.kind = "open";
       s.style.setProperty("--st-c", "var(--danger)");
       legend.append(s);
