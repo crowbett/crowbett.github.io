@@ -58,20 +58,23 @@ jobs:
 
   e2e:
     name: e2e ${{ matrix.shard }}
-    # Three runners split the page tabs; the last also runs every other test.
+    # Three runners split the page tabs; a fourth runs every other test, so the
+    # slow-link and motion checks never share a runner with demo tabs.
     strategy:
       matrix:
         include:
           - shard: 0
-            run: ^TestSite$$  # make reads $$ as $
+            flags: -run ^TestSite$$  # make reads $$ as $
           - shard: 1
-            run: ^TestSite$$
+            flags: -run ^TestSite$$
           - shard: 2
-            run: .
+            flags: -run ^TestSite$$
+          - shard: 3
+            flags: -skip ^TestSite$$
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      E2E_SHARD: ${{ matrix.shard }}/3
+      E2E_SHARD: ${{ matrix.shard < 3 && format('{0}/3', matrix.shard) || '' }}
     steps:
       - name: Warm Chrome
         # Chrome's first start on a fresh runner took up to ~13 s inside e2e (F2);
@@ -108,7 +111,7 @@ jobs:
           restore-keys: |
             go-1.27.0-${{ github.job }}-
             go-1.27.0-
-      - run: make e2e E2E_FLAGS='-run ${{ matrix.run }}'
+      - run: make e2e E2E_FLAGS='${{ matrix.flags }}'
 
   deploy:
     needs: [gate, e2e]
