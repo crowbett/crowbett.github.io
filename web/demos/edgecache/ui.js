@@ -289,7 +289,7 @@ export async function mount(root, demo) {
   const tx = (t) => G.padL + (t / T_END) * G.plotW;
   const nodes = () => {
     const narrow = G.W < 480;
-    const bw = narrow ? 66 : Math.min(140, G.W * 0.24), ew = narrow ? 84 : bw, bh = 50, y = 14;
+    const bw = narrow ? 70 : Math.min(140, G.W * 0.24), ew = narrow ? 84 : bw, bh = 50, y = 14;
     const c = { x: 8, y, w: bw, h: bh }, o = { x: G.W - 8 - bw, y, w: bw, h: bh }, e = { x: (G.W - ew) / 2, y, w: ew, h: bh };
     return { c, e, o, up: y + 14, down: y + bh - 14 };
   };
@@ -308,7 +308,7 @@ export async function mount(root, demo) {
     if (up.length) {
       const bg = s.xCache === "STALE";
       const t1 = now + LEG_MS;
-      fly(er, or, N.up, t1, colors.text2, up[0].startsWith("conditional") ? "If-None-Match" : "GET");
+      fly(er, or, N.up, t1, colors.text2, up[0].startsWith("conditional") ? "conditional" : "GET");
       const code = up[0].slice(-3);
       fly(or, er, N.down, t1 + LEG_MS, code === "304" ? colors.text2 : colors.signal, code);
       flashes.push({ t0: t1 + LEG_MS, c: code === "304" ? colors.text2 : colors.signal, node: "o" });
@@ -342,10 +342,16 @@ export async function mount(root, demo) {
     youLine.textContent = `Your GET${Object.keys(r.headers).length ? ` (${describe(r.headers)})` : ""} at ${fmt(r.at)} s: ${s.xCache || s.status}${s.reason ? ` (${s.reason})` : ""}, status ${s.status}, ${age}, body "${s.body.trim()}". The origin saw ${up}.`;
   }
 
+  let logKey = "";
   function renderLog() {
+    const now = performance.now();
+    const shown = steps.map((_, i) => i).filter((i) => land[i] <= now);
+    const key = `${steps.length}:${shown.length}:${calls}`;
+    if (key === logKey) return;
+    logKey = key;
     const rows = [];
-    for (let i = steps.length - 1; i >= 0 && rows.length < 6; i--) {
-      const s = steps[i], r = reqs[i];
+    for (let k = shown.length - 1; k >= 0 && rows.length < 6; k--) {
+      const i = shown[k], s = steps[i], r = reqs[i];
       const tr = el("tr");
       if (r.you) tr.className = "ec-yours";
       const badge = el("span", "ec-badge", s.xCache || String(s.status));
@@ -381,6 +387,7 @@ export async function mount(root, demo) {
     const now = performance.now();
     if (!force && now - lastDom < 150) return;
     lastDom = now;
+    renderLog();
     const st = stats();
     cell.t.textContent = `${fmt(Math.floor(simT))} s`;
     cell.requests.textContent = fmt(st.n);
@@ -485,6 +492,7 @@ export async function mount(root, demo) {
     next = 0; reqs = []; steps = []; land = []; flights = []; flashes = [];
     simT = 0; calls = 0; replayed = 0; callMs = 0; busy = false; chain = Promise.resolve();
     youLine.textContent = "";
+    logKey = "";
     status.textContent = note();
     layout();
     if (reduce.matches && !playing) simT = T_END;
@@ -583,12 +591,22 @@ export async function mount(root, demo) {
         ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.arc(x, f.y, 9, 0, Math.PI * 2); ctx.stroke();
       }
-      if (f.label) {
-        ctx.font = font(10, 600);
-        ctx.textAlign = "center";
-        ctx.fillStyle = f.you && f.ring ? c.accent : f.c;
-        ctx.fillText(f.label, x, f.y < N.e.y + N.e.h / 2 ? f.y - 9 : f.y + 17);
-      }
+    }
+    // Labels, newest first, kept inside their wire's gap and never over one another.
+    const taken = [];
+    ctx.font = font(10, 600);
+    ctx.textAlign = "center";
+    for (let i = flights.length - 1; i >= 0; i--) {
+      const f = flights[i];
+      if (!f.label || f.t0 > now) continue;
+      const w = ctx.measureText(f.label).width, lo = Math.min(f.a, f.b) + 2, hi = Math.max(f.a, f.b) - 2;
+      if (hi - lo < w) continue;
+      const x = Math.min(hi - w / 2, Math.max(lo + w / 2, f.a + (f.b - f.a) * ease((now - f.t0) / LEG_MS)));
+      const y = f.y < N.e.y + N.e.h / 2 ? f.y - 9 : f.y + 17;
+      if (taken.some((r) => r.y === y && x - w / 2 < r.x1 + 4 && x + w / 2 > r.x0 - 4)) continue;
+      taken.push({ y, x0: x - w / 2, x1: x + w / 2 });
+      ctx.fillStyle = f.you && f.ring ? c.accent : f.c;
+      ctx.fillText(f.label, x, y);
     }
   }
 
