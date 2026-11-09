@@ -27,6 +27,7 @@ var ShellTries = map[string][]string{
 	"netcode":    {`new {"seed": 1, "players": 6}`, `step {"ticks": 60}`},
 	"raytracer":  {`load {"scene": "cornell", "width": 64, "seed": 1}`, `render {"sampling": "nee", "y0": 0, "rows": 8}`},
 	"strata":     {`models`, `load {"model": "xy"}`, `slice {"layerHeight": 0.2}`, `layer {"index": 10}`},
+	"recall":     {`corpus`, `ingest {"source": "notes"}`, `search {"q": "postmortem lease", "limit": 3, "top": 3}`},
 }
 
 // checkTries reports a live project without tries, a try for a project that

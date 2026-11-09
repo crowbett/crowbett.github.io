@@ -167,6 +167,17 @@
       "sha256": "92436ce080d5a05d55f6af46fe4a41970021192c8b8e4c00f16f1b57f2963332",
       "bytes": 5519388,
       "gzip_bytes": 1503234
+    },
+    {
+      "slug": "recall",
+      "kind": "rust",
+      "repo": "recall",
+      "ref": "4e03c0485018f435e75194d42b81d4f1c1e7a95e",
+      "pkg": "./crates/webdemo",
+      "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+      "sha256": "d7d68ba47d88eb94d3e25bc5838e785e8f61f3ec571255375a75b2ed2b433832",
+      "bytes": 4156486,
+      "gzip_bytes": 1313799
     }
   ]
 }
