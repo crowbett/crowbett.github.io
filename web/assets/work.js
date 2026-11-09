@@ -57,7 +57,9 @@ if (reel) {
     was = k;
     const go = dock.querySelector("[data-dock-go]");
     go.href = `/projects/${t.dataset.slug}/${"live" in t.dataset ? "#demo" : ""}`;
-    go.textContent = "live" in t.dataset ? "Run it live" : "Open";
+    const key = items[k].querySelector(".it-run");
+    go.toggleAttribute("data-run", !!key);
+    go.textContent = key?.textContent ?? ("live" in t.dataset ? "Run it live" : "Open");
     ticks.forEach((x, i) => { x.toggleAttribute("data-now", i === k); x.toggleAttribute("data-past", i < k); });
     steps[0].disabled = k === 0;
   };
@@ -68,31 +70,43 @@ if (reel) {
     if ((it || past) === shown) return;
     shown = it || past;
     if (now) delete now.dataset.now;
-    if (video) {
-      const v = video;
-      pause(v);
-      delete v.dataset.on;
-      setTimeout(() => v.remove(), 400);
-      video = null;
-    }
+    unclip();
     now = it;
     const k = it ? items.indexOf(it) : past ? items.length : -1;
     items.forEach((x, i) => x.toggleAttribute("data-gone", k > 0 && i < k - 1));
     showDock(k);
     if (!it) return;
     it.dataset.now = "";
-    const glass = it.querySelector(".it-glass");
-    if ("clip" in it.dataset && !still) {
-      const shot = poster(glass);
-      const v = document.createElement("video");
-      Object.assign(v, { muted: true, loop: true, playsInline: true, preload: "auto", poster: shot, src: shot.replace(/\.webp$/, ".mp4"), disablePictureInPicture: true });
-      v.setAttribute("aria-hidden", "true");
-      v.addEventListener("playing", () => { v.dataset.on = ""; });
-      glass.append(v);
-      video = v;
-      if (!document.hidden) play(v);
-    }
+    clip(it);
   }
+
+  // A panel running its live demo (panel.js) has no clip under it.
+  function clip(it) {
+    const glass = it.querySelector(".it-glass");
+    if (!("clip" in it.dataset) || still || video || "running" in it.dataset) return;
+    const shot = poster(glass);
+    const v = document.createElement("video");
+    Object.assign(v, { muted: true, loop: true, playsInline: true, preload: "auto", poster: shot, src: shot.replace(/\.webp$/, ".mp4"), disablePictureInPicture: true });
+    v.setAttribute("aria-hidden", "true");
+    v.addEventListener("playing", () => { v.dataset.on = ""; });
+    glass.append(v);
+    video = v;
+    if (!document.hidden) play(v);
+  }
+  function unclip() {
+    if (!video) return;
+    const v = video;
+    pause(v);
+    delete v.dataset.on;
+    setTimeout(() => v.remove(), 400);
+    video = null;
+  }
+  reel.addEventListener("panel:state", (e) => {
+    const it = e.target;
+    if (it !== now) return;
+    if ("running" in it.dataset) unclip(); else clip(it);
+    showDock(items.indexOf(it));
+  });
 
   // Panels are measured where they sit in the flow; pinned, they report
   // where they are stuck. One taller than the screen pins once its bottom
@@ -163,6 +177,11 @@ if (reel) {
     const plain = (e) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
     ticks.forEach((t, i) => t.addEventListener("click", (e) => { if (plain(e)) { e.preventDefault(); jump(i); } }));
     steps.forEach((b) => b.addEventListener("click", () => jump(items.indexOf(now) + Number(b.dataset.step))));
+    // "Run it live" runs the current panel's demo in place, as its own key does.
+    dock.querySelector("[data-dock-go]").addEventListener("click", (e) => {
+      const key = now?.querySelector(".it-run");
+      if (key && plain(e)) { e.preventDefault(); if (!key.disabled) key.click(); }
+    });
     dock.querySelector(".dock-all").addEventListener("click", (e) => {
       if (plain(e)) { e.preventDefault(); jump(items.length); }
     });

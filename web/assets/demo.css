@@ -1,0 +1,26 @@
+/* What a demo's ui.js draws with (docs/demo-contract.md): keys, fields, stat cells, the receipt and the download progress. Project pages link it; home panels and the live wall load it on first start. */
+.demo button, .demo-mount button { border-color: var(--block); background: var(--block); color: var(--on-block); font-size: var(--t-small); }
+.demo button:hover, .demo-mount button:hover { background: var(--block-hover); border-color: var(--block-hover); color: var(--on-block); }
+.cells { display: flex; flex-wrap: wrap; gap: 1px; margin: 0; padding: 0; background: var(--line-strong); border: 1px solid var(--line-strong); list-style: none; font-family: var(--mono); font-size: var(--t-label); font-variant-numeric: tabular-nums; }
+.cells > * { flex: 1 1 auto; padding: var(--sp-1) var(--sp-3); background: var(--sunken); color: var(--text); white-space: nowrap; }
+.cells.stack > * { display: flex; flex-direction: column; gap: 2px; }
+.cells.stack > * > :first-child { color: var(--text-3); }
+.demo-legend { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); margin: 0; padding: 0; list-style: none; font: 400 var(--t-label)/1.5 var(--mono); color: var(--text-2); }
+.demo-load { display: flex; align-items: center; gap: var(--sp-3); }
+.demo-progress { flex: 1; height: 8px; border: 1px solid var(--rule); background: var(--sunken); color: var(--block); accent-color: var(--block); appearance: none; overflow: hidden; }
+.demo-progress::-webkit-progress-bar { background: var(--sunken); }
+.demo-progress::-webkit-progress-value { background: var(--block); transition: inline-size var(--d-fast) linear; }
+.demo-progress::-moz-progress-bar { background: var(--block); }
+.demo-pct { min-width: 12ch; padding: var(--sp-1) var(--sp-2); text-align: right; font-family: var(--mono); font-size: var(--t-label); color: var(--text); background: var(--sunken); border: 1px solid var(--line-strong); font-variant-numeric: tabular-nums; }
+.demo-mount button { white-space: normal; text-align: center; }
+.demo-mount button.secondary { background: var(--bg); color: var(--text); border-color: var(--rule); }
+.demo-mount button.secondary:hover { background: var(--block); border-color: var(--block); color: var(--on-block); }
+.demo-mount input, .demo-mount select, .demo-mount textarea {
+  min-width: 0; font: inherit; font-family: var(--mono); font-size: var(--t-small); color: var(--text); background: var(--bg);
+  border: 1px solid var(--control-line); border-radius: 0; padding: var(--sp-1) var(--sp-2);
+}
+.demo-mount input[type="range"], .demo-mount input[type="checkbox"], .demo-mount input[type="radio"] { accent-color: var(--block); padding: 0; border: 0; }
+.demo-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.demo-label { font-family: var(--mono); font-size: var(--t-label); color: var(--text-3); }
+.demo-out { margin: 0; padding: var(--sp-2) var(--sp-3); border: 1px solid var(--line-strong); background: var(--sunken); font-family: var(--mono); font-size: var(--t-small); font-variant-numeric: tabular-nums; white-space: pre-wrap; overflow-x: auto; }
+@media (pointer: coarse) { .demo-mount input, .demo-mount select, .demo-mount textarea { font-size: max(16px, 1rem); } }

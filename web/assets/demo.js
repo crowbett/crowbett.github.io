@@ -2,6 +2,7 @@
 // once it is on screen (see autostart). A Web Worker runs the project's
 // real code (Go or Rust compiled to WebAssembly) and answers JSON RPC calls; the
 // project's ui.js renders the controls. Contract: docs/demo-contract.md.
+// Home panels (panel.js) and the live wall (wall.js) start demos through run.
 
 const CALL_TIMEOUT_MS = 30000;
 const LOAD_TIMEOUT_MS = 180000; // includes the download on a slow link
@@ -122,10 +123,14 @@ function keyboardScroll(mountEl) {
   check();
 }
 
-async function start(section, { auto = false } = {}) {
-  const button = section.querySelector("[data-demo-start]");
-  const status = section.querySelector("[data-demo-status]");
-  const mountEl = section.querySelector("[data-demo-mount]");
+// run starts a binary into p.mount: the key reads "Loading…", progress shows
+// where p.progressAt puts it, then the UI mounts and focus moves to it (not
+// when the demo started on its own). p.onReady(ms) runs just before the
+// section is marked ready. On failure the key becomes "Try again" and the
+// status shows why. Aborting p.signal stops a start in progress quietly.
+// Resolves to the demo client and the measured time, or null.
+export async function run(section, p) {
+  const { button, status, mount: mountEl, auto = false, signal } = p;
   const t0 = performance.now();
   button.disabled = true;
   button.textContent = "Loading…";
@@ -134,35 +139,89 @@ async function start(section, { auto = false } = {}) {
   delete section.dataset.demoLoaded;
   status.textContent = "Downloading the demo…";
   const progress = progressRow(section);
-  section.querySelector(".demo-bar").after(progress.row);
-  const connecting = connect(section.dataset.demo, { onProgress: progress.update });
+  p.progressAt(progress.row);
+  const connecting = connect(p.slug, { onProgress: progress.update });
+  const drop = () => connecting.then((d) => d.close(), () => {});
+  signal?.addEventListener("abort", drop, { once: true });
   try {
-    const [ui, demo] = await Promise.all([import(section.dataset.ui), connecting]);
+    const [ui, demo] = await Promise.all([import(p.ui), connecting, p.css && sheet(p.css)]);
+    if (signal?.aborted) throw signal.reason;
     await ui.mount(mountEl, demo);
+    if (signal?.aborted) throw signal.reason;
     keyboardScroll(mountEl);
     status.textContent = "";
     progress.row.remove();
-    const screen = section.querySelector(".ph-screen");
-    screen?.querySelector("video")?.pause();
-    screen?.remove();
+    const ms = performance.now() - t0;
+    p.onReady?.(ms);
     section.dataset.demoReady = "";
     section.dispatchEvent(new Event("demoready", { bubbles: true }));
-    stamp(section, performance.now() - t0);
     // The mount, not its first control: focusing a text input raised a ring
     // that read as an error and can open a phone's keyboard (V8 round 7).
     // A demo that started on its own leaves focus where the visitor has it.
     mountEl.tabIndex = -1;
-    if (!auto) mountEl.focus();
+    if (!auto) mountEl.focus({ preventScroll: !!p.preventScroll });
+    return { demo, ms };
   } catch (err) {
-    console.error(err);
     progress.row.remove();
+    drop();
+    if (signal?.aborted) return null;
+    console.error(err);
     status.replaceChildren(el("strong", null, "The demo failed to start."), " ", err.message);
     section.dataset.demoError = "";
-    connecting.then((d) => d.close(), () => {});
     button.textContent = "Try again";
     button.disabled = false;
     if (!auto) button.focus();
+    return null;
   }
+}
+
+// release takes a stopped demo off the page: its canvases give back their
+// pixels (a UI's leftover listeners can keep a detached one alive), the mount
+// empties and the demo's stylesheet goes until it runs again.
+export function release(slug, mountEl) {
+  for (const c of mountEl.querySelectorAll("canvas")) { c.width = 1; c.height = 1; }
+  mountEl.replaceChildren();
+  document.querySelector(`link[rel=stylesheet][href$="/demos/${slug}/ui.css"]`)?.remove();
+}
+
+// sheet links a stylesheet once and resolves when it has loaded (or failed).
+const sheets = new Map();
+export function sheet(href) {
+  if (!sheets.has(href)) {
+    const l = Object.assign(document.createElement("link"), { rel: "stylesheet", href });
+    sheets.set(href, new Promise((r) => { l.onload = r; l.onerror = r; }));
+    document.head.append(l);
+  }
+  return sheets.get(href);
+}
+
+// took formats a measured start time as the frame states it.
+export const took = (ms) => `ready in ${ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`}`;
+
+// calm and lean are the home stage's rules for starting on its own: not with
+// reduced motion, Save-Data, a 2g/3g link or fewer than 4 cores.
+export const calm = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+export function lean() {
+  const net = navigator.connection;
+  return !!(net?.saveData || /(^|-)(2g|3g)$/.test(net?.effectiveType || "") || (navigator.hardwareConcurrency || 4) < 4);
+}
+
+function start(section, { auto = false } = {}) {
+  const screen = section.querySelector(".ph-screen");
+  return run(section, {
+    slug: section.dataset.demo,
+    ui: section.dataset.ui,
+    button: section.querySelector("[data-demo-start]"),
+    status: section.querySelector("[data-demo-status]"),
+    mount: section.querySelector("[data-demo-mount]"),
+    progressAt: (row) => section.querySelector(".demo-bar").after(row),
+    auto,
+    onReady: (ms) => {
+      screen?.querySelector("video")?.pause();
+      screen?.remove();
+      stamp(section, ms);
+    },
+  });
 }
 
 // stamp puts the measured click-to-running time in the plate, left of the size
@@ -171,7 +230,7 @@ function stamp(section, ms) {
   const spec = section.querySelector(".demo-spec");
   if (!spec) return;
   spec.querySelector(".demo-took")?.remove();
-  spec.prepend(el("span", "demo-took", `ready in ${ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`} · `));
+  spec.prepend(el("span", "demo-took", `${took(ms)} · `));
 }
 
 // Full screen where the browser allows it on an element (not iPhone Safari):
@@ -194,9 +253,7 @@ function fullScreen(section) {
 // is on screen, like the home stage: not with reduced motion, Save-Data, a
 // 2g/3g link or fewer than 4 cores, where the recording and the key stay.
 function autostart(section) {
-  const net = navigator.connection;
-  const lean = net?.saveData || /(^|-)(2g|3g)$/.test(net?.effectiveType || "") || (navigator.hardwareConcurrency || 4) < 4;
-  if (!("autostart" in section.dataset) || lean || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (!("autostart" in section.dataset) || lean() || calm()) return;
   const button = section.querySelector("[data-demo-start]");
   const note = section.querySelector("[data-demo-note]");
   if (note) note.dataset.auto = "";

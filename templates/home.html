@@ -31,10 +31,10 @@
 <section id="work" class="work" aria-labelledby="work-h">
   <header class="work-head work-in">
     <h2 id="work-h">Work</h2>
-    <p class="count">{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} with a live demo{{end}}</p>
+    <p class="count">{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} with a live demo. <a href="/live/">Run them side by side</a>{{end}}</p>
     <nav class="work-toc" aria-label="Groups">{{range .Groups}}<span><a href="#g-{{.Key}}">{{.Name}}</a> {{len .Projects}}</span>{{end}}</nav>
   </header>
-  <ol class="reel">{{range $g := .Groups}}{{range $i, $p := .Projects}}
+  <ol class="reel" data-live-css="/assets/demo.css" data-live-cap="1">{{range $g := .Groups}}{{range $i, $p := .Projects}}
     <li class="it" id="p-{{.Slug}}"{{if .Live}} data-clip{{end}}>
       <div class="it-in">
         <div class="it-text">
@@ -42,7 +42,7 @@
           <h4{{if gt (len .Title) 9}} class="long"{{end}}><a href="/projects/{{.Slug}}/"><span class="it-n">{{rank .Slug}}</span> <span class="it-name">{{.Title}}</span></a></h4>
           <p class="it-tag">{{.Tagline}}</p>
           {{if .Metric}}<p class="it-metric"><span class="metric">{{bind .Metric}}</span></p>{{end}}
-          <p class="it-act">{{if .Live}}<a class="key" href="/projects/{{.Slug}}/#demo">Run it live</a>{{else}}<span class="led off">Source on {{if .Private}}request{{else}}GitHub{{end}}</span>{{end}}{{if .Code}}<button class="it-peek" type="button" aria-pressed="false" aria-controls="pk-{{.Slug}}" data-peek="{{.Slug}}">Code</button>{{end}}<span class="it-lang">{{.Lang}}</span></p>
+          <p class="it-act">{{if .Live}}<a class="key it-open" href="/projects/{{.Slug}}/#demo">Run it live</a><button type="button" class="key it-run" data-run="{{.Slug}}" data-bytes="{{demoBytes .Slug}}" data-kb="{{demoKB .Slug}}" data-focus="{{focus .Slug}}">Run it live</button>{{else}}<span class="led off">Source on {{if .Private}}request{{else}}GitHub{{end}}</span>{{end}}{{if .Code}}<button class="it-peek" type="button" aria-pressed="false" aria-controls="pk-{{.Slug}}" data-peek="{{.Slug}}">Code</button>{{end}}<span class="it-lang">{{.Lang}}</span></p>
         </div>
         <div class="it-view"><a class="it-screen" href="/projects/{{.Slug}}/" tabindex="-1" aria-hidden="true"><span class="it-glass">{{if .Live}}<picture><source media="{{reelWide}}" srcset="/reel/{{.Slug}}.webp" width="1408" height="880"><img src="/reel/{{.Slug}}-n.webp" width="1324" height="828" alt="" loading="lazy" decoding="async"></picture>{{else}}<span class="it-dm">{{template "dmask" .Slug}}</span>{{end}}</span><span class="it-go">Open</span></a>{{if .Code}}<section class="it-face" id="pk-{{.Slug}}" aria-label="{{.Title}}: its real source" hidden></section>{{end}}</div>
       </div>
@@ -78,4 +78,5 @@
 </section>
 <script type="module" src="/assets/work.js"></script>
 <script type="module" src="/assets/peek.js"></script>
+<script type="module" src="/assets/panel.js"></script>
 {{template "foot" .}}{{end}}

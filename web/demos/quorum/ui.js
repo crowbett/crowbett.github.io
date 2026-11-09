@@ -479,6 +479,7 @@ export async function mount(root, demo) {
   }
 
   function updateDom(force) {
+    if (!st) return;
     const now = performance.now();
     if (!force && now - lastDom < 150) return;
     lastDom = now;
