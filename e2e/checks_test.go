@@ -385,31 +385,30 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"stash": {
-		`[...document.querySelectorAll(".sh-sum")].map((d) => d.textContent).join("|") === "11 chunks: 3 new, 8 reused · 3,513 B → 944 B stored|10 chunks: 10 new, 0 reused · 3,333 B → 3,179 B stored" && [...document.querySelectorAll(".sh-totals .sh-v")].map((d) => d.textContent).join() === "2,6,846 B,4,123 B,1.66×,13,2"`,
-		`document.querySelector(".sh-live").textContent === "No unsaved changes: all 11 chunks of 3,513 B are already in the repository." && document.querySelectorAll(".sh-mirror .sh-c").length === 11 && document.querySelectorAll(".sh-verify .sh-ok").length === 5 && document.querySelector(".sh-kdf").textContent.startsWith("argon2id: 8 MiB, 1 pass, 1 lane, salt c792bc6ffb050e1b67714c1e4814c1e3")`,
+		`/^Snapshot \d+ of \d files: \d+ of \d+ chunks new \([\d,]+ B\), the rest reused\. Repository: \d+ unique chunks in \d+ packs/.test(document.querySelector(".sh-canvas").getAttribute("aria-label")) && (() => { const c = document.querySelector(".sh-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
 		`(async () => {
 			const q = (s) => document.querySelector(s);
-			const btn = (t) => [...document.querySelectorAll(".sh-panel button")].find((b) => b.textContent === t);
-			btn("Unlock").click();
-			let ok = await until(() => /^Refused in [\d,]+ ms: with that passphrase/.test(q(".sh-result").textContent));
-			q("input[name=try]").value = "correct horse battery staple";
-			btn("Unlock").click();
-			return ok && await until(() => /^Unlocked in [\d,]+ ms: master key 97f0bf7b, the key that sealed every pack below\.$/.test(q(".sh-result").textContent));
+			const btn = (t) => [...document.querySelectorAll(".sh-controls button")].find((b) => b.textContent === t);
+			const cells = () => [...document.querySelectorAll(".sh-cells .sh-v")].map((d) => d.textContent).slice(0, 7).join("|");
+			if (btn("Pause")) btn("Pause").click();
+			btn("Reset").click();
+			let ok = await until(() => cells() === "3|5|33,357 B|13,383 B|2.49×|46|7" && q(".sh-day").textContent === "Snapshot 3, day 3: notes/harbour-log.md: a day appended at the end; 9 lines appended to logs/web-1.log; 2 stock counts changed.");
+			btn("Next snapshot").click();
+			return ok && await until(() => cells() === "4|6|48,965 B|15,026 B|3.26×|52|6" && q(".sh-day").textContent.startsWith("Snapshot 4, day 4: notes/harbour-log.md copied to archive/harbour-log-2026-10.md;"));
 		})()`,
 		`(async () => {
 			const q = (s) => document.querySelector(s);
-			const btn = (t) => [...document.querySelectorAll(".sh-panel button")].find((b) => b.textContent === t);
-			btn("Delete a line").click();
-			let ok = await until(() => q(".sh-live").textContent === "Unsaved: 1 of 10 chunks (488 B) are new; a backup now stores only those.");
-			btn("Back up").click();
-			ok = ok && await until(() => document.querySelectorAll(".sh-row").length === 3 && q(".sh-sum").textContent === "10 chunks: 1 new, 9 reused · 3,378 B → 446 B stored");
-			ok = ok && await until(() => !btn("Flip one bit").disabled && q(".sh-byte").textContent.startsWith("byte 180 of 446: ciphertext of chunk fdf73e7e"));
+			const btn = (t) => [...document.querySelectorAll(".demo-mount button")].find((b) => b.textContent === t);
+			if (btn("Pause")) btn("Pause").click();
+			btn("Reset").click();
+			let ok = await until(() => q(".sh-cells .sh-v").textContent === "3" && q("select[name=into]").value === "notes/harbour-log.md");
+			btn("Insert and back up").click();
+			ok = ok && await until(() => q(".sh-yours").textContent === "Your 28 B went into notes/harbour-log.md at byte 1,804. stash cut the file into 12 chunks: 2 new (bytes 1,748 to 2,251), 10 reused. Snapshot 4 stored 582 B for 11,739 B of files." && q("select[name=snapshot]").value === "4");
 			btn("Flip one bit").click();
-			ok = ok && await until(() => q(".sh-verify .sh-bad .sh-why")?.textContent === "integrity error: blob fdf73e7e: authentication failed (MAC mismatch)");
-			q(".sh-row button").click();
-			ok = ok && await until(() => q(".sh-restore").textContent === "Restore refused at chunk 7 (pack 3): integrity error: blob fdf73e7e: authentication failed (MAC mismatch)");
+			ok = ok && await until(() => q(".sh-fline").textContent === "Flipped one bit of byte 1,356 in pack 4, inside chunk e2886734: integrity error: blob e2886734: authentication failed (MAC mismatch). The pack's BLAKE3 name no longer matches its bytes." &&
+				q(".sh-res").textContent === "Snapshot 4 refused at notes/harbour-log.md, chunk 6 in pack 4: integrity error: blob e2886734: authentication failed (MAC mismatch).");
 			btn("Flip it back").click();
-			return ok && await until(() => !document.querySelector(".sh-verify .sh-bad") && /^Restored 3,378 B from 10 chunks; .* identical to what was backed up\.$/.test(q(".sh-restore").textContent));
+			return ok && await until(() => /^Snapshot 4 restored: 5 files, 11,739 B from 40 chunks in 11 packs\. Every chunk's tag verified and every file's BLAKE3 hash matches its backup, in [\d,]+ ms\.$/.test(q(".sh-res").textContent));
 		})()`,
 	},
 	"keel": {

@@ -233,19 +233,18 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".rt-screen", WideFocus: ".rt-screen", WidePad: 8, Seconds: 6.3,
 	},
-	// stash: edit, back up, repeat; new chunks show vermilion in the text and the strips.
+	// stash: snapshots run on their own; your line goes into the notes file, only the
+	// chunks around it fly into the repository, then snapshot restore lights what it reads.
 	"stash": {
 		Play: `(async () => {
 			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-			const btn = (t) => [...document.querySelectorAll(".sh-panel button")].find((b) => b.textContent === t);
-			for (const edit of ["Insert a paragraph", "Delete a line", "Insert a paragraph"]) {
-				await wait(700);
-				btn(edit).click();
-				await wait(1000);
-				btn("Back up").click();
-			}
+			const btn = (t) => [...document.querySelectorAll(".demo-mount button")].find((b) => b.textContent === t);
+			await wait(2400);
+			btn("Insert and back up").click();
+			await wait(2600);
+			btn("Restore").click();
 		})()`,
-		Focus: ".sh-live", Pad: 8, Seconds: 8,
+		Focus: ".sh-canvas", Pad: 4, WideFocus: ".sh-canvas", WidePad: 8, Seconds: 8,
 	},
 	// strata: the layer slider climbs from layer 2 to the top: solid floor,
 	// sparse infill (scrubbed quickly, it repeats), solid roof, top surface.
