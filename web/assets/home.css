@@ -98,7 +98,7 @@
   .it-text { align-content: center; }
   .it-dm .dm { scale: 2.6; }
 }
-@media (pointer: coarse) { .stage-scenes button { min-height: 44px; } .work-toc a { display: inline-flex; align-items: center; min-height: 44px; } }
+@media (pointer: coarse) { .stage-scenes button { min-height: 44px; } .work-toc a { display: inline-flex; align-items: center; gap: 1ch; min-height: 44px; } }
 
 /* Home: the dock, a glass bar over the reel (work.js): one tick per project by area, the current one named, with steps, its demo and the index */
 .dock { position: fixed; z-index: 20; left: 50%; bottom: max(var(--sp-4), env(safe-area-inset-bottom)); display: flex; align-items: center; gap: var(--sp-3); padding: 6px 6px 6px var(--sp-4); border-radius: 999px; background: oklch(0.14 0.012 262 / 0.72); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: 0 16px 44px -8px oklch(0 0 0 / 0.6), inset 0 0 0 1px oklch(1 0 0 / 0.12); color: var(--screen-ink); font: 400 var(--t-label)/1 var(--mono); opacity: 0; visibility: hidden; translate: -50% 18px; transition: opacity var(--d-base) var(--ease-in), translate var(--d-spring) var(--spring-soft), visibility 0s var(--d-spring); }

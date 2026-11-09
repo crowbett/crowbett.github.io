@@ -98,7 +98,6 @@ Left open in done tasks; each needs the owner, another repo, or is outside this 
 - F5: Chrome warm-up on CI still depends on runner disk speed; deploy-pages takes 7-14 s and sometimes queues ~40 s in GitHub's `deployment_queued` (F2).
 - D7 (codegraph repo): the bench accuracy A/B was not run on the six local-only corpus repos or zustand (`npm install` failed).
 - D8 (keel repo): clippy on keel's main fails on `clippy::unused_async_trait_impl`, a lint unknown to clippy 1.96, 1.98.1 and 1.99; keel-web's PR ran with `-A unknown_lints`.
-- V8 polish (demo track): the edgecache, jobrun and kvlite notes keep their own `max-width: 40rem` inside the wider frame.
 - V11 review (owner call): Doto for the evidence lines too; Doto is a numerals face here and metrics are sentences.
 - Wave 2 (owner calls): grepall and stash LICENSE files name the surname; lobby, netcode and raytracer have no LICENSE. mcpbridge's docs/demo.gif predates its 101 / 289/291 numbers. btrv's 2,483,585 rows/s was measured under load (load average ~30); an idle rerun would replace it. stash's `crates/webdemo/.cargo/config.toml` names Homebrew's llvm-ar, so its wasm builds only on this Mac.
 
