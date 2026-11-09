@@ -212,7 +212,7 @@ export async function mount(root, demo) {
     }
     passLabel.textContent = `pass ${fmt(passes + 1)}`;
     passFill.style.transform = `scaleX(${Math.max(0.001, y / info.height)})`;
-    scan.style.top = `${(y / info.height) * 100}%`;
+    scan.style.transform = `translateY(${(y / info.height) * 100}%)`;
   }
   const queueReadouts = () => {
     if (!readoutQueued) {
