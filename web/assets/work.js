@@ -1,118 +1,120 @@
-// The work index and its monitor. The project at the reading line (the middle
-// of the screen, or of the part below the pinned monitor on narrow screens),
-// or under the pointer, is current: the monitor shows its recorded clip with a
-// glow taken from the picture. With reduced motion or Save-Data it shows the
-// poster only. The screen opens the project it shows (pointer only: the
-// index links are the keyboard and screen reader path).
+// The work reel: one full-screen panel per project, each pinned under the
+// header while the next slides up over it. The panel covering the middle of
+// the screen is current: its recorded clip plays and lights its glow (poster
+// only with reduced motion or Save-Data). A covered panel sinks as the next
+// one slides in (scroll-driven; the timelines are named here), and panels
+// buried two or more deep are not drawn (opacity 0, which keeps their links
+// focusable), since none of them shows. Focus that
+// lands in a panel brings it up, so nothing focused sits under another.
 import { play, pause } from "/assets/play.js";
-const work = document.querySelector(".work");
-if (work) {
-  const items = [...work.querySelectorAll(".it")];
-  const mon = work.querySelector(".mon");
-  const box = mon.querySelector(".mon-box");
-  const screen = mon.querySelector(".mon-screen");
-  const hud = mon.querySelector(".mon-hud");
-  const glow = mon.querySelector(".glow");
-  const gx = glow.getContext("2d");
-  const still = matchMedia("(prefers-reduced-motion: reduce)").matches || navigator.connection?.saveData;
-  const wide = matchMedia("(min-width: 48rem)");
+const reel = document.querySelector(".reel");
+if (reel) {
+  const items = [...reel.querySelectorAll(".it")];
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const still = reduced || navigator.connection?.saveData;
+  const header = document.querySelector(".top");
+  let tops = [];
+  let end = 0;
   let now = null;
-  let layer = null;
+  let video = null;
   let tick = 0;
-  let near = false;
 
-  const tint = (src) => { try { gx.drawImage(src, 0, 0, glow.width, glow.height); } catch {} };
-  const paint = () => {
-    const v = layer?.querySelector("video");
-    if (v && !v.paused) tint(v);
-    tick = v && !v.paused ? setTimeout(paint, 250) : 0;
-  };
-
-  function show(it) {
-    const old = layer;
-    if (it.dataset.poster) {
-      layer = document.createElement("div");
-      layer.className = "mon-l";
-      const img = new Image();
-      img.alt = "";
-      img.decoding = "async";
-      img.src = it.dataset.poster;
-      img.addEventListener("load", () => { if (layer?.contains(img)) tint(img); }, { once: true });
-      layer.append(img);
-      if (!still) {
-        const v = document.createElement("video");
-        Object.assign(v, { muted: true, loop: true, playsInline: true, preload: "auto", poster: it.dataset.poster, src: it.dataset.clip, disablePictureInPicture: true });
-        v.addEventListener("playing", () => { v.dataset.on = ""; if (!tick) paint(); });
-        layer.append(v);
-        play(v);
-      }
-      const l = layer;
-      screen.append(l);
-      requestAnimationFrame(() => requestAnimationFrame(() => { if (l === layer) l.dataset.on = ""; }));
-      delete screen.dataset.dm;
-    } else {
-      layer = null;
-      screen.dataset.dm = "";
-      gx.clearRect(0, 0, glow.width, glow.height);
-    }
-    if (old) {
-      const ov = old.querySelector("video");
-      if (ov) pause(ov);
-      delete old.dataset.on;
-      setTimeout(() => old.remove(), 400);
-    }
+  if (CSS.supports("animation-timeline: view()") && !reduced) {
+    reel.style.setProperty("timeline-scope", items.map((_, i) => `--it${i}`).join(", "));
+    items.forEach((it, i) => {
+      it.style.setProperty("view-timeline", `--it${i} block`);
+      if (i > 0) items[i - 1].querySelector(".it-in").style.setProperty("animation-timeline", `--it${i}`);
+    });
   }
+
+  const tint = (it, src) => {
+    const g = it.querySelector(".glow");
+    try { g.getContext("2d").drawImage(src, 0, 0, g.width, g.height); } catch {}
+  };
+  for (const it of items) {
+    const img = it.querySelector(".it-glass img");
+    if (!img) continue;
+    if (img.complete && img.naturalWidth) tint(it, img);
+    else img.addEventListener("load", () => tint(it, img), { once: true });
+  }
+  const paint = () => {
+    if (video && !video.paused) tint(now, video);
+    tick = video && !video.paused ? setTimeout(paint, 250) : 0;
+  };
 
   function select(it) {
     if (it === now) return;
     if (now) delete now.dataset.now;
+    if (video) {
+      const v = video;
+      pause(v);
+      delete v.dataset.on;
+      setTimeout(() => v.remove(), 400);
+      video = null;
+    }
     now = it;
+    const k = items.indexOf(it);
+    items.forEach((x, i) => x.toggleAttribute("data-gone", k > 0 && i < k - 1));
+    if (!it) return;
     it.dataset.now = "";
-    screen.href = it.querySelector("h4 a").href;
-    hud.querySelector("b").textContent = it.querySelector(".it-name").textContent;
-    hud.querySelector("span").textContent = `${it.querySelector(".it-n").textContent} / ${items.length}`;
-    show(it);
-    const next = items[items.indexOf(it) + 1];
-    if (next?.dataset.poster) new Image().src = next.dataset.poster;
+    const glass = it.querySelector(".it-glass");
+    if (it.dataset.clip && !still) {
+      const img = glass.querySelector("img");
+      const v = document.createElement("video");
+      Object.assign(v, { muted: true, loop: true, playsInline: true, preload: "auto", poster: img.currentSrc || img.src, src: it.dataset.clip, disablePictureInPicture: true });
+      v.setAttribute("aria-hidden", "true");
+      v.addEventListener("playing", () => { v.dataset.on = ""; if (!tick) paint(); });
+      glass.append(v);
+      video = v;
+      if (!document.hidden) play(v);
+    }
   }
 
-  // The reading line sits 40% of the way down what the pinned monitor leaves.
+  // Panels are measured where they sit in the flow; pinned, they report
+  // where they are stuck. One taller than the screen pins once its bottom
+  // edge is in view.
+  const measure = () => {
+    const h = header.offsetHeight;
+    let y = reel.getBoundingClientRect().top + scrollY;
+    tops = items.map((it) => {
+      it.style.setProperty("--pin", `${Math.min(h, innerHeight - it.offsetHeight)}px`);
+      const t = y;
+      y += it.offsetHeight;
+      return t;
+    });
+    end = y;
+  };
   let raf = 0;
   const pick = () => {
     raf = 0;
-    if (!near) return;
-    const top = wide.matches ? 0 : Math.max(0, box.getBoundingClientRect().bottom);
-    const line = top + (innerHeight - top) * 0.4;
-    let best = items[0];
-    for (const it of items) {
-      if (it.getBoundingClientRect().top <= line) best = it;
-      else break;
-    }
+    const mid = scrollY + innerHeight / 2;
+    let best = null;
+    if (mid < end) items.forEach((it, i) => { if (tops[i] <= mid) best = it; });
     select(best);
   };
-  addEventListener("scroll", () => { if (!raf) raf = requestAnimationFrame(pick); }, { passive: true });
-  // The stage stays pinned while the sheet slides over it; one taller than the
-  // screen pins once its bottom edge is in view.
+  const queue = () => { if (!raf) raf = requestAnimationFrame(pick); };
+  addEventListener("scroll", queue, { passive: true });
+
+  // The stage stays pinned while the work slides over it; one taller than
+  // the screen pins once its bottom edge is in view.
   const stage = document.querySelector(".stage");
   const fit = () => {
-    const top = document.querySelector(".top").offsetHeight;
-    stage?.style.setProperty("--stage-top", `${Math.min(top, innerHeight - stage.offsetHeight)}px`);
+    stage?.style.setProperty("--stage-top", `${Math.min(header.offsetHeight, innerHeight - stage.offsetHeight)}px`);
+    measure();
+    queue();
   };
   fit();
-  addEventListener("resize", () => { fit(); if (!raf) raf = requestAnimationFrame(pick); });
-  for (const it of items) {
-    it.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") select(it); });
-    it.addEventListener("focusin", () => select(it));
-  }
-  const resume = () => {
-    const v = layer?.querySelector("video");
-    if (!v) return;
-    if (document.hidden || !near) pause(v); else play(v);
-  };
-  document.addEventListener("visibilitychange", resume);
-  new IntersectionObserver(([e]) => {
-    near = e.isIntersecting;
-    if (near) pick();
-    resume();
-  }, { rootMargin: "50% 0px" }).observe(work);
+  addEventListener("resize", fit);
+  addEventListener("load", fit, { once: true });
+
+  reel.addEventListener("focusin", (e) => {
+    const it = e.target.closest(".it");
+    if (!it || it === now) return;
+    select(it);
+    scrollTo({ top: tops[items.indexOf(it)] - header.offsetHeight, behavior: reduced ? "instant" : "smooth" });
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (!video) return;
+    if (document.hidden) pause(video); else play(video);
+  });
 }
