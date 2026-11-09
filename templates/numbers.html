@@ -1,0 +1,40 @@
+{{define "numbers"}}{{template "head" .}}
+<article class="nums">
+  <header class="nums-head">
+    <div class="nums-in">
+      <p class="crumb"><a href="/">Home</a> <span aria-hidden="true">/</span> numbers</p>
+      <h1>Numbers</h1>
+      <p class="lede">Every number on this site, and where it was measured. Each project's evidence is quoted from its own repository; the binaries are the demos that run in this tab.</p>
+      <ul class="nums-tally" aria-label="On this page">
+        <li><b>{{len .Projects}}</b> projects</li>
+        <li><b>{{.LiveCount}}</b> live binaries</li>
+        <li><b>{{len .Groups}}</b> areas</li>
+      </ul>
+    </div>
+  </header>
+  <div class="sheet">
+    <div class="sheet-in">
+      <section class="nb" aria-labelledby="nb-ev">
+        <div class="nb-head">
+          <h2 id="nb-ev">Evidence</h2>
+          <p>One measured result per project, with the machine, file or test it came from.</p>
+        </div>
+        {{range .Groups}}{{if .Projects}}<h3 class="nb-g" id="n-{{.Key}}">{{.Name}}</h3>
+        <ul class="nb-grid">{{range .Projects}}{{if .Metric}}
+          <li><a class="nb-card" href="/projects/{{.Slug}}/"><span class="nb-p">{{.Title}}{{if .Live}} <span class="led">live</span>{{end}}</span><span class="nb-m">{{figures .Metric}}</span><span class="nb-s">{{.MetricSource}}</span></a></li>{{end}}{{end}}
+        </ul>{{end}}{{end}}
+      </section>
+      <section class="nb" aria-labelledby="nb-bin">
+        <div class="nb-head">
+          <h2 id="nb-bin">The binaries</h2>
+          <p>Each live demo is one WebAssembly binary, built from a pinned commit of its project. Sizes are from the build's lock file: each binary after gzip -9, and before.</p>
+        </div>
+        <p class="bin-key" aria-hidden="true"><span class="k-go">Go</span><span class="k-rust">Rust</span><span class="k-cpp">C++</span></p>
+        <ol class="bins">{{range .Bins}}
+          <li><a class="bin {{.Kind}}" href="/projects/{{.Slug}}/#demo"><span class="bin-n">{{.Title}}</span><svg class="bin-b" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><rect width="{{.Pct}}" height="10"/></svg><span class="bin-v">{{num .Gzip}} B <span class="bin-k">{{.Built}}</span></span><span class="bin-r">{{num .Raw}} B before gzip</span></a></li>{{end}}
+        </ol>
+      </section>
+    </div>
+  </div>
+</article>
+{{template "foot" .}}{{end}}
