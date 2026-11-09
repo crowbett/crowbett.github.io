@@ -48,7 +48,7 @@ export function connect(slug, { callTimeoutMs = CALL_TIMEOUT_MS, loadTimeoutMs =
   const client = {
     slug,
     // Each call is announced with what the worker measured: "demo:call" when
-    // it answers (the code panel lights the source it ran), "demo:fail" when not.
+    // it answers, "demo:fail" when not.
     call: (method, params = {}) => {
       const t = performance.now();
       const tell = (type, meta, extra) => document.dispatchEvent(new CustomEvent(type, {
@@ -216,9 +216,5 @@ for (const section of document.querySelectorAll("[data-demo]")) {
   const button = section.querySelector("[data-demo-start]");
   button.addEventListener("click", () => start(section));
   autostart(section);
-  // "Run it live" in the page head jumps to the frame and starts it.
-  document.querySelector("[data-demo-go]")?.addEventListener("click", () => {
-    if (!button.disabled && !("demoReady" in section.dataset)) start(section);
-  });
   fullScreen(section);
 }

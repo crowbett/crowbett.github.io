@@ -45,7 +45,7 @@ if (section && acts) {
   const sha = section.dataset.sha;
   const showBtn = acts.querySelector("[data-tour-go]");
   const linkBtn = acts.querySelector("[data-share]");
-  const cap = acts.querySelector("[data-tour-cap]");
+  const cap = section.querySelector("[data-tour-cap]");
   let mod = null, running = null, cursor = null;
 
   // The helpers a tour's steps get. Each throws once the tour is stopped.
@@ -164,8 +164,7 @@ if (section && acts) {
   section.addEventListener("demoready", async () => {
     try { mod = await import(section.dataset.tour); } catch (err) { console.error(err); return; }
     showBtn.addEventListener("click", tour);
-    if (mod.share) linkBtn.addEventListener("click", link);
-    else linkBtn.remove();
+    linkBtn?.addEventListener("click", link);
     acts.hidden = false;
     apply().catch((err) => console.error(err));
   });

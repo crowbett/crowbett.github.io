@@ -121,7 +121,6 @@ function toggle(on = !document.documentElement.hasAttribute("data-xray")) {
     if (slug) tag(".demo-mount", `ui.js${ui?.decodedBodySize ? ` · ${bytes(ui.decodedBodySize)}` : ""} · main thread · draws the demo`);
     if (slug) tag(".demo-head", `Web Worker · ${d.built} → WebAssembly · ${bytes(Number(d.bytes))}, ${bytes(Number(d.gz))} gzipped`);
     tag("[data-timeline]:not([hidden])", "timeline.js · each call timed in the worker");
-    tag("[data-code]", "code/" + (document.querySelector("[data-code]")?.dataset.code || "") + ".json · highlighted at build time");
     tag(".project-info .body", "Markdown, rendered to HTML at build time");
     paint();
     place();
