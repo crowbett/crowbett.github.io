@@ -5,7 +5,7 @@ lang: Rust
 tags: content-defined chunking, deduplication, authenticated encryption, backups
 repo:
 demo: live
-demo_try: Edit the harbour log in the middle and back up again; only the chunks around your edit are stored.
+demo_try: Press Insert and back up to put your line mid-file, and watch only the chunks around it fly into the repository.
 group: storage
 order: 12
 metric: 803.5 MiB backed up in 2.28 s, stored 2.33x smaller; an unchanged rerun takes 0.60 s
@@ -18,4 +18,6 @@ metric_source: README benchmark, Windows 11, 16 cores, local SSD, warm OS cache,
 
 ## How the demo works
 
-stash's own chunker, crypto and pack code, compiled from Rust to WebAssembly, keeps one repository in your tab: packs live in memory instead of a folder, and nonces, salts and the master key come from a seeded stream so every run is reproducible. Chunks average 256 B instead of 1 MiB so a page of text splits into many, Argon2id runs at the smallest cost stash accepts (8 MiB, 1 pass, 1 lane), and a backup here stores chunks only, without the tree and snapshot documents the real tool also writes.
+stash's own chunker, crypto and pack code, compiled from Rust to WebAssembly, keeps one repository in your tab. A small file tree changes day by day (log lines appended, a paragraph inserted, a file copied, renamed, deleted), and each snapshot sends every file through stash's backup, even unchanged ones, which the real tool skips by size and mtime. The strips are the chunk boundaries the binary drew; only chunks the repository has not seen are compressed, sealed and stored, and the rest are linked. Insert your own line into any file to see which chunks it touches, restore a snapshot to have every chunk authenticated and every file hash-checked, or flip one bit of a pack and watch the restore refuse it.
+
+Packs live in memory instead of a folder, nonces and keys come from a seeded stream so runs repeat, chunks average 256 B to 1 KiB instead of 1 MiB so small files split into many, each file's new chunks go into a pack of their own, and a snapshot here stores chunks only, without the tree and snapshot documents the real tool also writes.

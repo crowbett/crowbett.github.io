@@ -1,8 +1,19 @@
-// stash demo: stash's FastCDC chunker, keyed BLAKE3 ids, zstd + XChaCha20-Poly1305
-// packs and Argon2id key slots, compiled to WebAssembly. The text is chunked live as
-// you type; "Back up" seals only the chunks the repository has not seen.
-const MAX = 128 * 1024;
+// stash demo: stash's FastCDC chunker, keyed BLAKE3 ids and zstd + XChaCha20-Poly1305
+// packs, compiled to WebAssembly. A small file tree changes day by day; every file goes
+// through the binary's backup each snapshot, so the strips are its chunk boundaries, the
+// grid is the repository's unique chunks, and only new chunks fly in and get sealed.
+const SPEEDS = [1, 2, 4];
+const SNAP_MS = 1800;
+const FLY_MS = 300;
+const GROW_MS = 250;
+const WARM = 3;
+const SCRIPT_DAYS = 12;
+const MAX_DAYS = 36;
+const ROWS = 6;
+const NOTES = "notes/harbour-log.md", ARCH = "archive/harbour-log-2026-10.md", CONF = "config/stash.toml",
+  LOGF = "logs/web-1.log", CSV = "data/stock.csv";
 const enc = new TextEncoder();
+const blen = (s) => enc.encode(s).length;
 
 const PROSE = `Harbour log, kept at the north light.
 
@@ -47,17 +58,174 @@ Day 19. After the gale, the reef was white for an hour and then went quiet, as i
 Day 20. End of the month. Copied the log into the fair book for the board, page for page, so that the two agree to the letter.
 `;
 
-const LOG = Array.from({ length: 64 }, (_, i) => {
-  const t = `${String(8 + Math.floor(i / 6)).padStart(2, "0")}:${String((i * 7) % 60).padStart(2, "0")}:${String((i * 13) % 60).padStart(2, "0")}`;
-  const kinds = ["GET /api/orders 200 12ms", "GET /api/stock?sku=8811 200 4ms", "POST /api/orders 201 38ms", "GET /healthz 200 1ms", "PUT /api/orders/4417 409 9ms", "GET /api/users/me 200 6ms"];
-  return `2026-11-08T${t}Z web-${(i % 3) + 1} ${kinds[(i * 5) % kinds.length]} req=${(i * 2654435761 >>> 0).toString(16).padStart(8, "0")}\n`;
-}).join("");
+const CODE = `//! Beacon controller for the north light: one flash group every period,
+//! timed from the clockwork and logged for the board.
 
-const INSERTS = [
-  "Later the same week. A gull got into the store room and ate most of a loaf before anyone noticed. It left by the window it came in through, which was a window nobody knew opened.\n\n",
-  "Inserted note. The assistant was asked what the boot was for and said it was for the record.\n\n",
-  "Late entry. Barometer fell four millibars in two hours; secured the boat and the shutters.\n\n",
+/// Fl(2) W 10s: two white flashes every ten seconds.
+pub const PERIOD_MS: u32 = 10_000;
+pub const FLASH_MS: u32 = 500;
+pub const ECLIPSE_MS: u32 = 1_500;
+pub const FLASHES: u32 = 2;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Lamp { Lit, Dark }
+
+pub struct Beacon {
+    started_ms: u64,
+    fog: bool,
+    turns: u64,
+}
+
+impl Beacon {
+    pub fn new(started_ms: u64) -> Self {
+        Self { started_ms, fog: false, turns: 0 }
+    }
+
+    /// Where the lamp is in its period at \`now_ms\`.
+    pub fn lamp(&self, now_ms: u64) -> Lamp {
+        let t = ((now_ms - self.started_ms) % PERIOD_MS as u64) as u32;
+        for k in 0..FLASHES {
+            let on = k * (FLASH_MS + ECLIPSE_MS);
+            if t >= on && t < on + FLASH_MS {
+                return Lamp::Lit;
+            }
+        }
+        Lamp::Dark
+    }
+
+    /// Sounds the horn every ninety seconds while fog is set.
+    pub fn horn_due(&self, now_ms: u64) -> bool {
+        self.fog && (now_ms - self.started_ms) % 90_000 < 3_000
+    }
+
+    pub fn set_fog(&mut self, fog: bool) {
+        self.fog = fog;
+    }
+
+    pub fn tick(&mut self, now_ms: u64) {
+        if self.lamp(now_ms) == Lamp::Lit {
+            self.turns += 1;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn two_flashes_then_dark() {
+        let b = Beacon::new(0);
+        assert_eq!(b.lamp(0), Lamp::Lit);
+        assert_eq!(b.lamp(600), Lamp::Dark);
+        assert_eq!(b.lamp(2_100), Lamp::Lit);
+        assert_eq!(b.lamp(9_000), Lamp::Dark);
+    }
+}
+`;
+
+const METHOD = `
+    /// Turns of the lamp since it was lit, for the monthly return.
+    pub fn turns(&self) -> u64 {
+        self.turns
+    }
+`;
+
+const CONFIG = `# stash settings for the north light
+[repository]
+path = "/mnt/share/stash/northlight"
+compression = "zstd"
+level = 3
+
+[backup]
+paths = ["notes", "src", "config", "logs", "data"]
+exclude = ["*.tmp", "target/", ".cache/"]
+one_file_system = true
+
+[forget]
+keep_daily = 7
+keep_weekly = 4
+keep_monthly = 12
+`;
+
+const ENTRIES = [
+  "Wind backing south-west. Trimmed the wicks and topped up the reservoir before dusk.",
+  "Supply boat on time. Oil, flour and a parcel of newspapers three weeks old, read twice anyway.",
+  "Fog at dawn, clear by ten. Sounded the horn for two hours and logged every blast.",
+  "Gale warning at noon. Lashed the dinghy, filled every lamp and laid out dry socks by the stove.",
 ];
+const NOTE = "Note for the board. From this month the log is backed up nightly to the share on the mainland, so a lost book costs a day, not a season.\n\n";
+const ITEMS = ["lamp mantle", "wick 2in", "paraffin drum", "lens cloth", "brass polish", "flour coarse", "flour fine", "horn reed", "storm lantern", "rope 20m"];
+const REQS = ["GET /api/orders 200 12ms", "GET /api/stock?sku=8811 200 4ms", "POST /api/orders 201 38ms", "GET /healthz 200 1ms",
+  "PUT /api/orders/4417 409 9ms", "GET /api/users/me 200 6ms"];
+const hash = (a, b) => (Math.imul(a, 2654435761) ^ Math.imul(b + 7, 40503)) >>> 0;
+
+function logLines(w, n) {
+  let s = "";
+  for (let k = 0; k < n; k++, w.lines++) {
+    const i = w.lines;
+    const at = new Date(Date.UTC(2026, 9, 1) + i * 97000).toISOString().slice(0, 19);
+    s += `${at}Z web-${(i % 3) + 1} ${REQS[(i * 5) % REQS.length]} req=${hash(i, 1).toString(16).padStart(8, "0")}\n`;
+  }
+  return s;
+}
+const csv = (w) => "sku,item,qty,bin\n" + w.qty.map((q, i) => `NL-${1000 + i},${ITEMS[i % ITEMS.length]},${q},${"ABCD"[i % 4]}-${(i % 9) + 1}\n`).join("");
+
+function world() {
+  const w = { lines: 0, qty: Array.from({ length: 90 }, (_, i) => (i * 37) % 90 + 5), code: "src/beacon.rs", tree: new Map(), day: 0, entry: 0 };
+  w.tree.set(NOTES, PROSE);
+  w.tree.set(w.code, CODE);
+  w.tree.set(CONF, CONFIG);
+  w.tree.set(LOGF, logLines(w, 44));
+  w.tree.set(CSV, csv(w));
+  return w;
+}
+
+// One day of change to the tree; returns what changed, in words.
+function mutate(w) {
+  const d = ++w.day, t = w.tree, said = [];
+  if (d === 1) return "first snapshot: every chunk is new";
+  const edit = (path, f, what) => {
+    const a = t.get(path);
+    if (a === undefined) return;
+    const b = f(a);
+    if (b !== a) { t.set(path, b); said.push(what); }
+  };
+  const entry = () => edit(NOTES, (s) => `${s}\nDay ${21 + w.entry}. ${ENTRIES[w.entry++ % ENTRIES.length]}\n`, `${NOTES}: a day appended at the end`);
+  if (d === 3) entry();
+  if (d === 4) { t.set(ARCH, t.get(NOTES)); said.push(`${NOTES} copied to ${ARCH}`); }
+  if (d === 5) edit(w.code, (s) => s.replace("90_000", "60_000").replace("every ninety", "every sixty"), `${w.code}: the horn every 60 s, mid-file`);
+  if (d === 6) edit(CONF, (s) => s.replace("keep_daily = 7", "keep_daily = 14"), `${CONF}: keep_daily 7 to 14`);
+  if (d === 7) edit(NOTES, (s) => { const i = s.indexOf("\n\n") + 2; return s.slice(0, i) + NOTE + s.slice(i); }, `${NOTES}: a paragraph inserted at the top`);
+  if (d === 8) {
+    const s = t.get(w.code);
+    t.delete(w.code);
+    said.push(`${w.code} renamed to src/lamp.rs`);
+    w.code = "src/lamp.rs";
+    t.set(w.code, s);
+  }
+  if (d === 9 && t.delete(ARCH)) said.push(`${ARCH} deleted; its chunks stay until prune`);
+  if (d === 10) {
+    for (let k = 0; k < 12; k++) w.qty.push((hash(d, k) % 60) + 3);
+    said.push(`12 rows added to ${CSV}`);
+  }
+  if (d === 11) edit(NOTES, (s) => { const i = s.indexOf("Day 10."), j = s.indexOf("\n\n", i); return i < 0 || j < 0 ? s : s.slice(0, i) + s.slice(j + 2); }, `${NOTES}: Day 10 deleted from the middle`);
+  if (d === 12) edit(w.code, (s) => { const i = s.indexOf("\n", s.indexOf("pub fn set_fog") + 60); return s.slice(0, i + 1) + METHOD + s.slice(i + 1); }, `${w.code}: a method added mid-file`);
+  if (d > SCRIPT_DAYS && d % 4 === 1) entry();
+  if (d > SCRIPT_DAYS && d % 5 === 0) edit(CONF, (s) => s.replace(/keep_weekly = (\d)/, (_, n) => `keep_weekly = ${n === "4" ? 5 : 4}`), `${CONF}: keep_weekly changed`);
+  const n = 5 + ((d * 3) % 5);
+  let log = t.get(LOGF) + logLines(w, n);
+  said.push(`${n} lines appended to ${LOGF}`);
+  if (blen(log) > 9000) {
+    log = log.slice(log.indexOf("\n", log.length >> 1) + 1);
+    said.push(`${LOGF} rotated, older half dropped`);
+  }
+  t.set(LOGF, log);
+  for (let k = 1; k <= 2; k++) { const i = hash(d, k) % w.qty.length; w.qty[i] = (w.qty[i] + 7 + (hash(d, k + 2) % 40)) % 200; }
+  t.set(CSV, csv(w));
+  said.push("2 stock counts changed");
+  return said.join("; ");
+}
 
 const el = (tag, cls, text) => {
   const n = document.createElement(tag);
@@ -66,74 +234,41 @@ const el = (tag, cls, text) => {
   return n;
 };
 const fmt = (n) => n.toLocaleString("en-US");
-const bytes = (n) => `${fmt(n)} B`;
-const ratio = (a, b) => (b ? `${(a / b).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}×` : "–");
-const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+const B = (n) => `${fmt(n)} B`;
+const kib = (n) => (n >= 1024 ? `${(n / 1024).toLocaleString("en-US", { maximumFractionDigits: 1 })} KiB` : `${n} B`);
+const ease = (t) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
 
 function field(label, input, cls) {
   const f = el("label", `demo-field${cls ? ` ${cls}` : ""}`);
   f.append(el("span", "demo-label", label), input);
   return f;
 }
-function button(text, secondary) {
-  const b = el("button", secondary ? "secondary" : null, text);
+function select(name, options, value) {
+  const s = el("select");
+  s.name = name;
+  for (const [v, t] of options) {
+    const o = el("option", null, t);
+    o.value = String(v);
+    o.selected = v === value;
+    s.append(o);
+  }
+  return s;
+}
+function button(text, cls) {
+  const b = el("button", cls, text);
   b.type = "button";
   return b;
 }
-function cells(pairs) {
-  const ul = el("ul", "cells stack sh-cells");
-  for (const [k, v, cls] of pairs) {
-    const li = el("li", cls);
-    li.append(el("span", "sh-k", k), el("span", "sh-v", v));
-    ul.append(li);
+// The UTF-16 index where byte offset `b` of `s` falls.
+function indexAt(s, b) {
+  let i = 0, n = 0;
+  while (i < s.length && n < b) {
+    const cp = s.codePointAt(i);
+    n += cp < 0x80 ? 1 : cp < 0x800 ? 2 : cp < 0x10000 ? 3 : 4;
+    i += cp > 0xffff ? 2 : 1;
   }
-  return ul;
+  return i;
 }
-
-// Splits text into the UTF-16 slices covering each chunk's byte range (a boundary
-// inside a multi-byte character moves to that character's end).
-function slices(text, chunks) {
-  const out = [];
-  let i = 0, b = 0;
-  for (const c of chunks) {
-    const start = i, end = c.o + c.l;
-    while (i < text.length && b < end) {
-      const cp = text.codePointAt(i);
-      b += cp < 0x80 ? 1 : cp < 0x800 ? 2 : cp < 0x10000 ? 3 : 4;
-      i += cp > 0xffff ? 2 : 1;
-    }
-    out.push(text.slice(start, i));
-  }
-  if (i < text.length && out.length) out[out.length - 1] += text.slice(i);
-  return out;
-}
-
-// Theme colours for canvases, read from ui.css custom properties.
-function palette(node) {
-  const probe = el("span");
-  node.append(probe);
-  const v = (n) => {
-    probe.style.color = `var(${n})`;
-    return getComputedStyle(probe).color;
-  };
-  const out = { new: v("--sh-new"), reused: v("--sh-reused"), dup: v("--sh-dup"), ground: v("--sh-ground"), nonce: v("--accent"),
-    ct: v("--text-2"), tag: v("--sh-tag"), hdr: v("--sh-hdr"), sel: v("--text") };
-  probe.remove();
-  return out;
-}
-
-function sizeCanvas(c, w, h) {
-  const dpr = window.devicePixelRatio || 1;
-  c.width = Math.round(w * dpr);
-  c.height = Math.round(h * dpr);
-  c.style.height = `${h}px`;
-  const g = c.getContext("2d");
-  g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  return g;
-}
-
-const SWATCH = { nonce: "var(--accent)", ct: "var(--text-2)", bad: "var(--text)" };
-const STATUS = { new: "new, sealed and stored", reused: "reused from the repository", dup: "repeats an earlier chunk of this document" };
 
 export async function mount(root, demo) {
   const href = new URL("./ui.css", import.meta.url).href;
@@ -145,600 +280,558 @@ export async function mount(root, demo) {
     cssReady = new Promise((r) => { css.onload = r; css.onerror = r; });
     document.head.append(css);
   }
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)");
 
-  // Calls run one at a time, in order.
-  let chain = Promise.resolve();
+  // Controls.
+  const avg = select("avg", [[256, "256 B"], [512, "512 B"], [1024, "1 KiB"]], 256);
+  const key = select("key", [[1, "key 1"], [2, "key 2"], [3, "key 3"]], 1);
+  const speed = select("speed", SPEEDS.map((s) => [s, `${s}×`]), 1);
+  const knobs = el("div", "sh-knobs");
+  knobs.append(field("average chunk", avg), field("repository key", key), field("speed", speed));
+  const play = button("Pause");
+  const step = button("Next snapshot", "secondary");
+  const reset = button("Reset", "secondary");
+  const acts = el("div", "sh-acts");
+  acts.append(play, step, reset);
+  const mine = el("input");
+  Object.assign(mine, { type: "text", name: "mine", value: "Corbett was here, mid-file.", maxLength: 400 });
+  mine.setAttribute("autocomplete", "off");
+  const into = el("select");
+  into.name = "into";
+  const insert = button("Insert and back up");
+  const you = el("div", "sh-you");
+  you.append(field("your text", mine, "sh-grow"), field("into", into), insert);
+  const form = el("form", "sh-controls");
+  form.addEventListener("submit", (e) => e.preventDefault());
+  form.append(knobs, acts, you);
+
+  const day = el("p", "sh-day");
+  const canvas = el("canvas", "sh-canvas");
+  canvas.setAttribute("role", "img");
+  const legend = el("p", "demo-legend sh-legend");
+  for (const [k, t] of [["new", "new chunk, sealed into a pack"], ["reused", "reused: linked, not stored"], ["you", "your edit"], ["stored", "bytes stored"]]) {
+    const s = el("span", "sh-key", t);
+    s.dataset.k = k;
+    legend.append(s);
+  }
+  const youLine = el("p", "sh-yours");
+  youLine.setAttribute("aria-live", "polite");
+  const snapSel = el("select");
+  snapSel.name = "snapshot";
+  const restoreBtn = button("Restore", "secondary");
+  const flipBtn = button("Flip one bit", "secondary");
+  const rrow = el("div", "sh-rrow");
+  rrow.append(field("snapshot", snapSel), restoreBtn, flipBtn);
+  const fline = el("p", "sh-rline sh-fline");
+  fline.setAttribute("aria-live", "polite");
+  const rline = el("p", "sh-rline sh-res");
+  rline.setAttribute("aria-live", "polite");
+  const cells = el("ul", "cells stack sh-cells");
+  const cell = {};
+  for (const [k, t] of [["snaps", "snapshots"], ["files", "files"], ["logical", "logical"], ["stored", "stored"], ["ratio", "dedup"],
+    ["chunks", "unique chunks"], ["fresh", "new this snapshot"], ["ms", "backup time"]]) {
+    const li = el("li");
+    li.dataset.k = k;
+    const v = el("span", "sh-v", "–");
+    li.append(el("span", "sh-k", t), v);
+    cell[k] = v;
+    cells.append(li);
+  }
   const receipt = el("p", "demo-out sh-out");
-  let calls = 0;
-  let callMs = 0;
-  const call = (m, p) => {
+  root.replaceChildren(form, day, canvas, legend, youLine, rrow, fline, rline, cells, receipt);
+
+  // State.
+  let w = null, snaps = [], grid = [], cellOf = new Map(), repo = null, flights = [], restored = null, flipped = null, damaged = new Set();
+  let gen = 0, chain = Promise.resolve(), callMs = 0, cut = 0, sealed = 0, restores = 0, colors = null, G = null;
+  let playing = !reduce.matches, visible = true, pending = 0, last = 0, raf = 0, running = 0, hover = null, pinned = false, warming = false;
+
+  const exec = (method, params) => {
+    const g = gen;
     const run = chain.then(async () => {
+      if (g !== gen) throw new Error("stale");
       const t0 = performance.now();
       try {
-        return await demo.call(m, p);
+        return await demo.call(method, params);
       } finally {
-        calls++;
         callMs += performance.now() - t0;
-        receipt.textContent = `${fmt(calls)} calls to stash's engine, ${fmt(Math.round(callMs))} ms in total, in your browser.`;
       }
     });
     chain = run.catch(() => {});
-    return run;
+    return run.then((r) => { if (g !== gen) throw new Error("stale"); return r; });
   };
 
-  // ---- Backups panel ----
-  const backupBtn = button("Back up");
-  const insertBtn = button("Insert a paragraph", true);
-  const deleteBtn = button("Delete a line", true);
-  const preset = el("select");
-  preset.name = "preset";
-  for (const [v, t] of [["prose", "Harbour log (prose)"], ["log", "Server log"], ["file", "Your file"]]) {
-    const o = el("option", null, t);
-    o.value = v;
-    if (v === "file") o.hidden = o.disabled = true;
-    preset.append(o);
-  }
-  const avg = el("select");
-  avg.name = "avg";
-  for (const n of [256, 512, 1024]) {
-    const o = el("option", null, n < 1024 ? `${n} B` : "1 KiB");
-    o.value = String(n);
-    avg.append(o);
-  }
-  const file = el("input");
-  file.type = "file";
-  file.name = "file";
-  file.accept = "text/*,.txt,.md,.csv,.json,.log,.toml,.yaml,.yml,.go,.rs,.js,.ts,.py,.html,.css";
-  const controls = el("div", "sh-controls");
-  file.className = "vh";
-  const filePick = el("label", "sh-pick");
-  filePick.append(file, el("span", null, "Open a text file"));
-  const fname = el("span", "sh-fname", "stays in this tab");
-  controls.append(backupBtn, insertBtn, deleteBtn, field("document", preset), field("average chunk", avg), filePick, fname);
-
-  const ta = el("textarea");
-  ta.name = "text";
-  ta.spellcheck = false;
-  ta.setAttribute("autocomplete", "off");
-  ta.setAttribute("autocapitalize", "off");
-  const mirror = el("span", "sh-mirror");
-  mirror.setAttribute("aria-hidden", "true");
-  const ed = el("span", "sh-ed");
-  ed.append(mirror, ta);
-  const edBox = el("div", "sh-edbox");
-  edBox.append(ed);
-  const edField = field("edit anywhere, then back up. Each band is one FastCDC chunk; vermilion bands are new since the last backup.", edBox, "sh-edfield");
-
-  const live = el("p", "sh-live");
-  live.setAttribute("aria-live", "polite");
-  const legend = el("p", "demo-legend sh-legend");
-  for (const [k, t] of [["new", "new: sealed and stored"], ["reused", "reused: already in the repository"], ["dup", "repeat within the document"]]) {
-    const s = el("span", "sh-key", t);
-    s.dataset.s = k;
-    s.style.setProperty("--c", SWATCH[k] || `var(--sh-${k})`);
-    legend.append(s);
-  }
-  const rows = el("ol", "sh-rows");
-  rows.setAttribute("aria-label", "Backups");
-  const totals = el("div", "sh-totals");
-  totals.setAttribute("aria-live", "polite");
-
-  const dedup = el("section", "sh-panel");
-  dedup.append(el("h3", "sh-h", "Deduplicated backups"), controls, edField, live, legend, rows, totals);
-
-  // ---- Encryption panel ----
-  const pass = el("input");
-  Object.assign(pass, { type: "text", name: "passphrase", value: "correct horse battery staple" });
-  pass.setAttribute("autocomplete", "off");
-  const sealBtn = button("Seal the key slot");
-  const tryPass = el("input");
-  Object.assign(tryPass, { type: "text", name: "try", value: "correct horse battery stapler" });
-  tryPass.setAttribute("autocomplete", "off");
-  const unlockBtn = button("Unlock", true);
-  const kdf = el("p", "sh-kdf");
-  kdf.setAttribute("aria-live", "polite");
-  const slotHex = el("p", "sh-hex sh-slot");
-  slotHex.setAttribute("aria-label", "Sealed key slot bytes: nonce, ciphertext, tag");
-  const unlockOut = el("p", "sh-result");
-  unlockOut.setAttribute("aria-live", "polite");
-  const slotRow1 = el("div", "sh-controls");
-  slotRow1.append(field("passphrase", pass, "sh-grow"), sealBtn);
-  const slotRow2 = el("div", "sh-controls");
-  slotRow2.append(field("try a passphrase", tryPass, "sh-grow"), unlockBtn);
-
-  const packSel = el("select");
-  packSel.name = "pack";
-  const offset = el("input");
-  Object.assign(offset, { type: "number", name: "offset", min: 0, step: 1, value: 0 });
-  offset.inputMode = "numeric";
-  const flipBtn = button("Flip one bit", true);
-  const packRow = el("div", "sh-controls");
-  packRow.append(field("pack", packSel), field("byte", offset, "sh-num"), flipBtn);
-  const mapBox = el("div", "sh-mapbox");
-  const map = el("canvas", "sh-map");
-  map.setAttribute("role", "img");
-  mapBox.append(map);
-  const plegend = el("p", "demo-legend sh-legend");
-  for (const [k, t] of [["nonce", "nonce (24 B)"], ["ct", "ciphertext"], ["tag", "Poly1305 tag (16 B)"], ["hdr", "sealed header + length"], ["bad", "flipped"]]) {
-    const s = el("span", "sh-key", t);
-    s.dataset.s = k;
-    s.style.setProperty("--c", SWATCH[k] || `var(--sh-${k})`);
-    plegend.append(s);
-  }
-  const byteInfo = el("p", "sh-byte");
-  byteInfo.setAttribute("aria-live", "polite");
-  const verify = el("ul", "sh-verify");
-  verify.setAttribute("aria-label", "Pack verification");
-  verify.setAttribute("aria-live", "polite");
-
-  const crypt = el("section", "sh-panel");
-  crypt.append(el("h3", "sh-h", "Encryption"),
-    el("p", "sh-note", "The passphrase never encrypts data. Argon2id stretches it into a key that seals the repository's random master key in a key slot; chunks are sealed with keys derived from that master key."),
-    slotRow1, kdf, slotHex, slotRow2, unlockOut,
-    el("p", "sh-note", "Each new chunk is compressed with zstd and sealed with XChaCha20-Poly1305 into a pack. Pick a byte and flip one bit of it: the tag no longer verifies, so restore refuses that chunk."),
-    packRow, mapBox, plegend, byteInfo, verify);
-
-  root.replaceChildren(dedup, crypt, receipt);
-
-  // ---- State ----
-  let text = PROSE;
-  let backups = []; // {n, chunks, logical, stored, new, reused, dup, pack, restore?}
-  let repo = null;
-  let liveChunks = [];
-  let lastBackupChunks = new Set();
-  let pack = null; // last pack response
-  let sel = 0;
-  let animating = null;
-  let inserts = 0;
-  let reveal = false; // scroll the editor to the first changed chunk on the next paint
-
-  // ---- Editor ----
-  // Grows the textarea to its content (the box around it scrolls), keeping the box's scroll.
-  const fit = () => {
-    const top = edBox.scrollTop;
-    // Holding the box open while the textarea is measured keeps the page from reflowing.
-    ed.style.minHeight = `${ed.offsetHeight}px`;
-    ta.style.height = "auto";
-    ta.style.height = `${ta.scrollHeight}px`;
-    ed.style.minHeight = "";
-    edBox.scrollTop = top;
-  };
-  function paintMirror() {
-    const parts = slices(ta.value, liveChunks);
-    const frag = document.createDocumentFragment();
-    parts.forEach((s, i) => {
-      const c = liveChunks[i];
-      const span = el("span", `sh-c sh-${c.s}${i % 2 ? " sh-odd" : ""}`, s);
-      if (c.s !== "new" && lastBackupChunks.has(c.id)) span.classList.add("sh-last");
-      frag.append(span);
-    });
-    // A trailing newline needs a character after it to take up a line, as in the textarea.
-    frag.append(el("span", null, "​"));
-    mirror.replaceChildren(frag);
-    if (reveal) {
-      const hit = mirror.querySelector(".sh-new, .sh-last");
-      if (hit) { edBox.scrollTop = Math.max(0, hit.offsetTop - 48); reveal = false; }
-    }
-  }
-  function summarize() {
-    const n = liveChunks.length;
-    const fresh = liveChunks.filter((c) => c.s === "new");
-    const freshBytes = fresh.reduce((a, c) => a + c.l, 0);
-    const len = enc.encode(ta.value).length;
-    if (!backups.length) live.textContent = `${fmt(n)} chunks over ${bytes(len)}.`;
-    else if (!fresh.length) live.textContent = `No unsaved changes: all ${fmt(n)} chunks of ${bytes(len)} are already in the repository.`;
-    else live.textContent = `Unsaved: ${fmt(fresh.length)} of ${fmt(n)} chunks (${bytes(freshBytes)}) are new; a backup now stores only those.`;
+  function readColors() {
+    const s = getComputedStyle(root);
+    const v = (n) => s.getPropertyValue(n).trim();
+    colors = { bg: v("--sunken"), line: v("--line"), strong: v("--line-strong"), text: v("--text"), text2: v("--text-2"), text3: v("--text-3"),
+      accent: v("--accent"), signal: v("--signal"), danger: v("--danger"), mono: v("--mono") || "monospace" };
   }
 
-  let scanning = false, dirty = false;
-  async function scan() {
-    if (scanning) { dirty = true; return; }
-    scanning = true;
-    try {
-      do {
-        dirty = false;
-        const value = ta.value;
-        if (enc.encode(value).length > MAX) {
-          live.textContent = `The document is over ${fmt(MAX / 1024)} KiB, the most this demo chunks in one call. Shorten it to back up.`;
-          backupBtn.disabled = true;
-          continue;
-        }
-        const r = await call("scan", { text: value });
-        if (ta.value !== value) { dirty = true; continue; }
-        liveChunks = r.chunks;
-        backupBtn.disabled = false;
-        paintMirror();
-        summarize();
-      } while (dirty);
-    } finally {
-      scanning = false;
-    }
+  // Geometry, in CSS pixels.
+  function layout() {
+    const W = Math.max(280, canvas.clientWidth), pad = 12, wide = W >= 520;
+    const nameW = wide ? Math.min(190, Math.round(W * 0.3)) : 0;
+    const rowH = wide ? 24 : 30;
+    const filesTop = 28, repoTop = filesTop + ROWS * rowH + 30, repoH = wide ? 70 : 84;
+    const chartTop = repoTop + repoH + 34, chartH = wide ? 150 : 130, axisL = 44;
+    const H = chartTop + chartH + 30;
+    G = { W, H, pad, wide, nameW, rowH, filesTop, stripX: pad + nameW, stripW: W - 2 * pad - nameW, repoTop, repoH, chartTop, chartH, axisL };
+    canvas.style.height = `${H}px`;
+    const dpr = window.devicePixelRatio || 1;
+    const cw = Math.round(W * dpr), ch = Math.round(H * dpr);
+    if (canvas.width !== cw || canvas.height !== ch) Object.assign(canvas, { width: cw, height: ch });
   }
-  let raf = 0;
-  const rescan = () => {
-    fit();
-    if (!raf) raf = requestAnimationFrame(() => { raf = 0; scan().catch((e) => { live.textContent = e.message; }); });
-  };
-  ta.addEventListener("input", rescan);
-  window.addEventListener("resize", () => { fit(); drawRows(); drawMap(); });
-
-  function setText(t, show) {
-    reveal = !!show;
-    ta.value = t;
-    text = t;
-    rescan();
+  const cur = () => snaps[snaps.length - 1];
+  const scaleMax = () => Math.ceil(Math.max(4096, ...(cur()?.files.map((f) => f.r.logical) || [0])) / 2048) * 2048;
+  function stripRect(row, o, l) {
+    const k = G.stripW / scaleMax();
+    const y = G.filesTop + row * G.rowH + (G.wide ? 5 : 15);
+    return { x: G.stripX + o * k, y, w: Math.max(1, l * k - 1), h: G.wide ? 14 : 10 };
   }
-
-  // Inserts at the paragraph break nearest the middle; deletes the non-empty line there.
-  function middleBreak(t) {
-    const mid = t.length >> 1;
-    const after = t.indexOf("\n\n", mid), before = t.lastIndexOf("\n\n", mid);
-    const pick = after < 0 ? before : before < 0 ? after : (after - mid < mid - before ? after : before);
-    return pick < 0 ? t.lastIndexOf("\n", mid) + 1 : pick + 2;
+  function pitch() {
+    const span = G.W - 2 * G.pad;
+    for (let p = 22; p > 4; p--) if (Math.ceil(grid.length / Math.floor(span / p)) * p <= G.repoH) return p;
+    return 4;
   }
-  const insert = () => {
-    const t = ta.value, at = middleBreak(t);
-    setText(t.slice(0, at) + INSERTS[inserts++ % INSERTS.length] + t.slice(at), true);
-  };
-  insertBtn.addEventListener("click", insert);
-  deleteBtn.addEventListener("click", () => {
-    const t = ta.value;
-    const lines = t.split("\n");
-    let i = lines.length >> 1;
-    for (let d = 0; d < lines.length; d++) {
-      const j = (lines.length >> 1) + (d % 2 ? -(d + 1) / 2 : d / 2);
-      if (lines[j]?.trim()) { i = j; break; }
-    }
-    if (lines.length < 2) return;
-    lines.splice(i, 1);
-    if (!lines[i]?.trim() && (i === 0 || !lines[i - 1].trim())) lines.splice(i, 1);
-    setText(lines.join("\n"), true);
-  });
-  preset.addEventListener("change", () => {
-    if (preset.value === "prose") setText(PROSE);
-    else if (preset.value === "log") setText(LOG);
-  });
-
-  async function loadFile(f) {
-    if (!f) return;
-    if (f.size > MAX) {
-      live.textContent = `${f.name} is ${fmt(f.size)} bytes; this demo takes text files up to ${fmt(MAX)} bytes.`;
-      return;
-    }
-    let t;
-    try {
-      t = new TextDecoder("utf-8", { fatal: true }).decode(await f.arrayBuffer());
-    } catch {
-      live.textContent = `${f.name} is not UTF-8 text. The demo chunks what you can see and edit, so it takes text files only.`;
-      return;
-    }
-    const o = preset.querySelector("option[value=file]");
-    o.hidden = o.disabled = false;
-    o.textContent = f.name;
-    preset.value = "file";
-    fname.textContent = f.name;
-    setText(t);
+  function cellRect(i, p) {
+    const cols = Math.floor((G.W - 2 * G.pad) / p), s = p >= 8 ? p - 2 : p - 1;
+    return { x: G.pad + (i % cols) * p, y: G.repoTop + Math.floor(i / cols) * p, w: s, h: s };
   }
-  file.addEventListener("change", () => loadFile(file.files[0]));
-  ed.addEventListener("dragover", (e) => { e.preventDefault(); ed.classList.add("sh-drop"); });
-  ed.addEventListener("dragleave", () => ed.classList.remove("sh-drop"));
-  ed.addEventListener("drop", (e) => {
-    ed.classList.remove("sh-drop");
-    if (e.dataTransfer?.files?.length) { e.preventDefault(); loadFile(e.dataTransfer.files[0]); }
-  });
-
-  // ---- Backups ----
-  function rowFor(b) {
-    const li = el("li", "sh-row");
-    const head = el("div", "sh-rowhead");
-    head.append(el("span", "sh-n", `#${b.n + 1}`),
-      el("span", "sh-sum", `${fmt(b.chunks.length)} chunks: ${fmt(b.new)} new, ${fmt(b.reused)} reused${b.dup ? `, ${fmt(b.dup)} repeated` : ""} · `));
-    head.lastChild.append(el("span", "sh-nw", `${bytes(b.logical)} → ${bytes(b.stored)} stored`));
-    const restore = button("Restore", true);
-    restore.setAttribute("aria-label", `Restore backup ${b.n + 1}`);
-    restore.addEventListener("click", () => doRestore(b, li));
-    head.append(restore);
-    const c = el("canvas", "sh-strip");
-    c.setAttribute("role", "img");
-    c.setAttribute("aria-label", `Backup ${b.n + 1}: ${b.new} new chunks stored, ${b.reused} reused`);
-    const out = el("p", "sh-restore");
-    out.setAttribute("aria-live", "polite");
-    li.append(head, c, out);
-    b.canvas = c;
-    b.out = out;
-    return li;
+  function bars() {
+    const plotW = G.W - G.pad - G.axisL;
+    const n = Math.max(12, Math.min(snaps.length, Math.floor(plotW / 14)));
+    const vis = snaps.slice(-Math.floor(plotW / 14));
+    const slot = plotW / n;
+    return { vis, slot, bw: Math.max(6, Math.min(26, slot * 0.66)), x0: G.pad + G.axisL };
   }
 
-  function drawStrip(b, t) {
-    const c = b.canvas;
-    const W = c.clientWidth || c.parentElement.clientWidth;
-    if (!W) return;
-    const H = 22;
-    const g = sizeCanvas(c, W, H);
-    const p = palette(dedup);
-    const max = Math.max(...backups.map((x) => x.logical), 1);
-    g.fillStyle = p.ground;
-    g.fillRect(0, 0, (W * b.logical) / max, H);
-    const ease = 1 - (1 - t) ** 3;
-    for (const ch of b.chunks) {
-      const x = (ch.o / max) * W, w = Math.max(1, (ch.l / max) * W - 1);
-      if (x > ease * W + 1) break;
-      g.fillStyle = p[ch.s];
-      if (ch.s === "new") {
-        const rise = (1 - ease) * H;
-        g.fillRect(x, rise, w, H - rise);
+  function draw(now) {
+    if (!G || !colors) return;
+    const c = colors, dpr = window.devicePixelRatio || 1, ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = c.bg;
+    ctx.fillRect(0, 0, G.W, G.H);
+    const font = (px, wt = 400) => `${wt} ${px}px ${c.mono}`;
+    const s = cur();
+    const label = (t, x, y, align = "left", col = c.text3, wt = 400) => { ctx.font = font(10, wt); ctx.fillStyle = col; ctx.textAlign = align; ctx.fillText(t, x, y); };
+    if (!s) return;
+    const P = pitch();
+
+    // Files: the binary's chunks of each file in the latest snapshot.
+    label(`files in snapshot ${s.n}`, G.pad, 16, "left", c.text, 600);
+    label(G.wide ? "click a file to insert your text there" : "tap a file to insert", G.W - G.pad, 16, "right");
+    ctx.textBaseline = "alphabetic";
+    s.files.forEach((f, row) => {
+      const y0 = G.filesTop + row * G.rowH;
+      const name = f.path;
+      const fresh = f.r.new;
+      const tag = fresh ? `${fresh} new` : "all reused";
+      if (G.wide) {
+        ctx.font = font(10);
+        let shown = name;
+        while (shown.length > 4 && ctx.measureText(shown).width > G.nameW - 10) shown = "…" + shown.slice(2);
+        label(shown, G.pad, y0 + 15, "left", c.text2);
       } else {
-        g.globalAlpha = Math.min(1, ease * 1.5);
-        g.fillRect(x, 4, w, H - 8);
-        g.globalAlpha = 1;
+        label(name, G.pad, y0 + 11, "left", c.text2);
+        label(tag, G.W - G.pad, y0 + 11, "right", fresh ? (s.you ? c.accent : c.signal) : c.text3);
       }
-    }
-  }
-  function drawRows() {
-    for (const b of backups) if (b.canvas) drawStrip(b, b === animating?.b ? animating.t : 1);
-  }
-  function animate(b) {
-    if (reduced()) { drawStrip(b, 1); return; }
-    const t0 = performance.now();
-    animating = { b, t: 0 };
-    const step = (now) => {
-      const t = Math.min(1, (now - t0) / 300);
-      animating.t = t;
-      drawStrip(b, t);
-      if (t < 1) requestAnimationFrame(step); else animating = null;
-    };
-    requestAnimationFrame(step);
-  }
-
-  function renderTotals() {
-    if (!repo) return;
-    totals.replaceChildren(cells([
-      ["backups", fmt(repo.backups)],
-      ["logical", bytes(repo.logical)],
-      ["stored", bytes(repo.stored)],
-      ["logical ÷ stored", ratio(repo.logical, repo.stored), "sh-ratio"],
-      ["unique chunks", fmt(repo.blobs)],
-      ["packs", fmt(repo.packs)],
-    ]));
-  }
-
-  async function backup(animated) {
-    const value = ta.value;
-    const r = await call("backup", { text: value });
-    const b = { n: r.backup, chunks: r.chunks, logical: r.logical, stored: r.stored, new: r.new, reused: r.reused, dup: r.dup, pack: r.pack };
-    backups.push(b);
-    repo = r.repo;
-    lastBackupChunks = new Set(r.chunks.filter((c) => c.s === "new").map((c) => c.id));
-    rows.prepend(rowFor(b));
-    while (rows.children.length > 8) rows.lastChild.remove();
-    drawRows();
-    if (animated) animate(b); else drawStrip(b, 1);
-    renderTotals();
-    if (r.pack) await addPack(r.pack, b);
-    liveChunks = r.chunks.map((c) => ({ ...c, s: c.s === "new" ? "reused" : c.s }));
-    paintMirror();
-    flashNew();
-    summarize();
-    return r;
-  }
-  function flashNew() {
-    if (reduced()) return;
-    for (const s of mirror.querySelectorAll(".sh-c")) s.classList.remove("sh-flash");
-    const spans = mirror.querySelectorAll(".sh-c");
-    liveChunks.forEach((c, i) => { if (lastBackupChunks.has(c.id)) spans[i]?.classList.add("sh-flash"); });
-  }
-
-  async function doRestore(b, li) {
-    const r = await call("restore", { backup: b.n });
-    b.out.classList.toggle("sh-bad", !r.ok);
-    b.out.textContent = r.ok
-      ? `Restored ${bytes(r.bytes)} from ${fmt(r.chunks)} chunks; every tag and chunk id verified${r.identical ? ", identical to what was backed up" : ", but it differs from what was backed up"}.`
-      : `Restore refused at chunk ${fmt(r.chunk + 1)} (pack ${r.pack + 1}): ${r.problem}`;
-    li.classList.toggle("sh-damaged", !r.ok);
-  }
-
-  backupBtn.addEventListener("click", () => guard(() => backup(true)));
-  avg.addEventListener("change", () => guard(async () => {
-    await init();
-    await backup(true);
-  }));
-
-  // ---- Key slot ----
-  function showSlot(slot, ms) {
-    kdf.textContent = `${slot.algorithm}: ${fmt(slot.memory_kib / 1024)} MiB, ${slot.iterations} pass, ${slot.parallelism} lane, salt ${slot.salt}` +
-      (ms === undefined ? "" : ` · ${fmt(Math.max(1, Math.round(ms)))} ms in your browser`) +
-      ". The demo uses the smallest cost stash accepts; stash init defaults to 64 MiB, 3 passes, 4 lanes.";
-    const d = slot.data, n = slot.nonce * 2, t = slot.tag * 2;
-    const parts = [["sh-hn", d.slice(0, n)], ["sh-hc", d.slice(n, d.length - t)], ["sh-ht", d.slice(d.length - t)]];
-    slotHex.replaceChildren(...parts.map(([c, s]) => el("span", c, s)));
-  }
-  sealBtn.addEventListener("click", () => guard(async () => {
-    const t0 = performance.now();
-    const r = await call("seal", { passphrase: pass.value });
-    showSlot(r.slot, performance.now() - t0);
-    unlockOut.textContent = "Sealed a fresh slot: new salt, new nonce, same master key. The packs did not change.";
-    unlockOut.className = "sh-result";
-  }));
-  unlockBtn.addEventListener("click", () => guard(async () => {
-    const t0 = performance.now();
-    const r = await call("unlock", { passphrase: tryPass.value });
-    const ms = fmt(Math.max(1, Math.round(performance.now() - t0)));
-    unlockOut.className = `sh-result ${r.unlocked ? "sh-ok" : "sh-bad"}`;
-    unlockOut.textContent = r.unlocked
-      ? `Unlocked in ${ms} ms: master key ${r.master}${r.matches ? ", the key that sealed every pack below" : ""}.`
-      : `Refused in ${ms} ms: with that passphrase the slot's Poly1305 tag does not verify, so the master key stays sealed.`;
-  }));
-
-  // ---- Packs ----
-  function addPack(p, b) {
-    const o = el("option", null, `pack ${p.n + 1} · ${p.id} · from backup #${b.n + 1}`);
-    o.value = String(p.n);
-    packSel.append(o);
-    packSel.value = String(p.n);
-    return showPack(p.n, true);
-  }
-  const region = (o) => {
-    if (!pack) return null;
-    for (const b of pack.blobs) {
-      if (o >= b.o && o < b.o + b.l) {
-        const k = o - b.o;
-        return { kind: k < pack.nonce ? "nonce" : k >= b.l - pack.tag ? "tag" : "ct", blob: b };
+      if (hover?.row === row) {
+        ctx.fillStyle = c.accent;
+        ctx.globalAlpha = 0.12;
+        const r = stripRect(row, 0, f.r.logical);
+        ctx.fillRect(r.x - 2, r.y - 3, r.w + 5, r.h + 6);
+        ctx.globalAlpha = 1;
       }
-    }
-    return { kind: "hdr" };
-  };
-  // Cells sized so a pack fills about 160 px of height, between 5 and 20 px each.
-  let grid = { cs: 8, cols: 1 };
-  function drawMap() {
-    if (!pack) return;
-    const W = mapBox.clientWidth;
-    if (!W) return;
-    const n = pack.bytes.length;
-    const cs = Math.max(5, Math.min(20, Math.floor(Math.sqrt((W * 160) / n))));
-    const cols = Math.max(8, Math.floor(W / cs)), rowsN = Math.ceil(n / cols);
-    grid = { cs, cols };
-    const g = sizeCanvas(map, cols * cs, rowsN * cs);
-    map.style.width = `${cols * cs}px`;
-    const p = palette(dedup);
-    const flipped = new Set(pack.flipped);
-    g.fillStyle = p.ground;
-    g.fillRect(0, 0, cols * cs, rowsN * cs);
-    const kinds = new Array(n).fill("hdr");
-    for (const b of pack.blobs) for (let i = 0; i < b.l; i++) kinds[b.o + i] = i < pack.nonce ? "nonce" : i >= b.l - pack.tag ? "tag" : "ct";
-    for (let i = 0; i < n; i++) {
-      const x = (i % cols) * cs, y = Math.floor(i / cols) * cs;
-      if (flipped.has(i)) {
-        g.globalAlpha = 1;
-        g.fillStyle = p.sel;
-        g.fillRect(x, y, cs, cs);
-        g.fillStyle = p.ground;
-        const q = Math.max(2, Math.round(cs * 0.4));
-        g.fillRect(x + (cs - q) / 2, y + (cs - q) / 2, q, q);
+      let end = 0;
+      for (const ch of f.r.chunks) {
+        const r = stripRect(row, ch.o, ch.l);
+        const isNew = ch.s === "new";
+        ctx.fillStyle = isNew ? (s.you ? c.accent : c.signal) : c.text3;
+        ctx.globalAlpha = isNew ? 1 : 0.4;
+        if (damaged.has(ch.id)) { ctx.fillStyle = c.danger; ctx.globalAlpha = 1; }
+        ctx.fillRect(r.x, r.y, r.w, r.h);
+        end = r.x + r.w;
+      }
+      ctx.globalAlpha = 1;
+      if (G.wide) {
+        ctx.font = font(10);
+        if (end + 8 + ctx.measureText(tag).width < G.W - G.pad) label(tag, end + 8, y0 + 15, "left", fresh ? (s.you ? c.accent : c.signal) : c.text3);
+      }
+      if (hover?.row === row && hover.x != null) {
+        ctx.strokeStyle = c.accent;
+        ctx.lineWidth = 2;
+        const r = stripRect(row, 0, 1);
+        ctx.beginPath(); ctx.moveTo(hover.x, r.y - 4); ctx.lineTo(hover.x, r.y + r.h + 4); ctx.stroke();
+      }
+    });
+
+    // Repository: one cell per unique chunk, in the order the binary stored them.
+    const packs = repo ? repo.packs : 0;
+    label(`repository: ${fmt(grid.length)} sealed chunks in ${fmt(packs)} packs`, G.pad, G.repoTop - 10, "left", c.text, 600);
+    const landing = new Map();
+    for (const f of flights) if (f.kind === "new") landing.set(f.cell, f);
+    const lit = restored && restored.n <= s.n ? restored.ids : null;
+    grid.forEach((g, i) => {
+      const r = cellRect(i, P);
+      const fl = landing.get(i);
+      if (fl && now < fl.t0 + FLY_MS) return;
+      const isCur = g.snap === s.n;
+      if (damaged.has(g.id)) { ctx.fillStyle = c.danger; ctx.globalAlpha = 1; }
+      else if (isCur) { ctx.fillStyle = g.you ? c.accent : c.signal; ctx.globalAlpha = 1; }
+      else { ctx.fillStyle = c.text2; ctx.globalAlpha = 0.45; }
+      if (lit) {
+        // A restore lights the cells its snapshot reads, in file order; the rest dim.
+        const t = lit.has(g.id) ? ease((now - restored.t0 - restored.order.get(g.id) * restored.gap) / 200) : 0;
+        if (!isCur && !damaged.has(g.id)) { ctx.fillStyle = c.text; ctx.globalAlpha = 0.12 + 0.68 * t; }
+      }
+      ctx.fillRect(r.x, r.y, r.w, r.h);
+    });
+    ctx.globalAlpha = 1;
+    if (!grid.length) label("empty", G.pad, G.repoTop + 10);
+
+    // Flights: new chunks fly into their cell; reused chunks draw a link to theirs.
+    flights = flights.filter((f) => now < f.t0 + FLY_MS);
+    for (const f of flights) {
+      const t = (now - f.t0) / FLY_MS;
+      if (t < 0) continue;
+      const a = stripRect(f.row, f.o, f.l), b = cellRect(f.cell, P);
+      if (f.kind === "link") {
+        ctx.globalAlpha = 0.35 * (1 - t);
+        ctx.strokeStyle = c.text2;
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(a.x + a.w / 2, a.y + a.h); ctx.lineTo(b.x + b.w / 2, b.y); ctx.stroke();
         continue;
       }
-      g.fillStyle = p[kinds[i]];
-      g.globalAlpha = 0.3 + (0.7 * pack.bytes[i]) / 255;
-      const gap = cs > 9 ? 2 : 1;
-      g.fillRect(x + gap / 2, y + gap / 2, cs - gap, cs - gap);
+      const e = ease(t);
+      const x = a.x + (b.x - a.x) * e, y = a.y + (b.y - a.y) * e - Math.sin(e * Math.PI) * 14;
+      const wd = a.w + (b.w - a.w) * e, ht = a.h + (b.h - a.h) * e;
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = f.you ? c.accent : c.signal;
+      ctx.fillRect(x, y, wd, ht);
     }
-    g.globalAlpha = 1;
-    g.strokeStyle = p.sel;
-    g.lineWidth = 1.5;
-    g.strokeRect((sel % cols) * cs + 0.75, Math.floor(sel / cols) * cs + 0.75, cs - 1.5, cs - 1.5);
-    map.setAttribute("aria-label", `Pack ${pack.n + 1}: ${fmt(n)} bytes, ${pack.blobs.length} sealed chunks then the sealed header`);
-  }
-  function describeByte() {
-    if (!pack) return;
-    const r = region(sel);
-    const what = r.kind === "hdr" ? (sel >= pack.bytes.length - 4 ? "header length" : "sealed pack header")
-      : `${r.kind === "nonce" ? "nonce" : r.kind === "tag" ? "Poly1305 tag" : "ciphertext"} of chunk ${r.blob.id}`;
-    const from = Math.max(0, Math.min(sel - 7, pack.bytes.length - 16));
-    const hex = [];
-    for (let i = from; i < Math.min(from + 16, pack.bytes.length); i++) hex.push([i, pack.bytes[i].toString(16).padStart(2, "0")]);
-    const line = el("code", "sh-hexline");
-    for (const [i, h] of hex) line.append(el("span", i === sel ? "sh-hsel" : null, h), " ");
-    byteInfo.replaceChildren(el("span", null, `byte ${fmt(sel)} of ${fmt(pack.bytes.length)}: ${what}`), line);
-  }
-  function renderVerify() {
-    const items = [];
-    const add = (ok, label, detail) => {
-      const li = el("li", ok ? "sh-ok" : "sh-bad");
-      li.append(el("span", "sh-mark", ok ? "verified" : "rejected"), el("span", "sh-what", label));
-      if (detail) li.append(el("span", "sh-why", detail));
-      items.push(li);
-    };
-    for (const b of pack.blobs) add(!b.problem, `chunk ${b.id}: ${bytes(b.raw)} plain, ${bytes(b.l)} sealed`, b.problem);
-    add(!pack.header.problem, `pack header: ${pack.blobs.length} ${pack.blobs.length === 1 ? "entry" : "entries"}`, pack.header.problem);
-    add(pack.hash_ok, `pack name ${pack.id} = BLAKE3 of its bytes`, pack.hash_ok ? null : "the bytes no longer hash to the pack's name (stash check reports this without the key)");
-    verify.replaceChildren(...items);
-  }
-  async function showPack(n, resetSel) {
-    const r = await call("pack", { pack: n });
-    setPack(r, resetSel);
-  }
-  function setPack(r, resetSel) {
-    const hex = r.hex;
-    r.bytes = new Uint8Array(hex.length / 2);
-    for (let i = 0; i < r.bytes.length; i++) r.bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
-    pack = r;
-    offset.max = String(r.bytes.length - 1);
-    if (resetSel || sel >= r.bytes.length) {
-      const b = r.blobs[0];
-      sel = b ? b.o + r.nonce + Math.floor((b.l - r.nonce - r.tag) / 2) : 0;
-    }
-    offset.value = String(sel);
-    drawMap();
-    describeByte();
-    renderVerify();
-  }
-  packSel.addEventListener("change", () => guard(() => showPack(Number(packSel.value), true)));
-  const select = (i) => {
-    if (!pack) return;
-    sel = Math.max(0, Math.min(pack.bytes.length - 1, i));
-    offset.value = String(sel);
-    drawMap();
-    describeByte();
-  };
-  offset.addEventListener("input", () => { const v = Number(offset.value); if (Number.isInteger(v)) select(v); });
-  const pick = (e) => {
-    if (!pack) return;
-    const r = map.getBoundingClientRect(), { cs, cols } = grid;
-    const i = Math.floor((e.clientY - r.top) / cs) * cols + Math.floor((e.clientX - r.left) / cs);
-    if (i >= 0 && i < pack.bytes.length) select(i);
-  };
-  map.addEventListener("pointerdown", (e) => { map.setPointerCapture(e.pointerId); pick(e); });
-  map.addEventListener("pointermove", (e) => { if (e.buttons) pick(e); });
-  flipBtn.addEventListener("click", () => guard(async () => {
-    const r = await call("flip", { pack: pack.n, offset: sel });
-    setPack(r, false);
-    flipBtn.textContent = r.flipped.includes(sel) ? "Flip it back" : "Flip one bit";
-    for (const b of backups) if (b.out.textContent) await doRestore(b, b.out.parentElement);
-  }));
-  const syncFlip = () => { flipBtn.textContent = pack?.flipped.includes(sel) ? "Flip it back" : "Flip one bit"; };
-  offset.addEventListener("input", syncFlip);
-  map.addEventListener("pointerup", syncFlip);
+    ctx.globalAlpha = 1;
 
-  // ---- Lifecycle ----
-  let busy = false;
-  const all = [backupBtn, insertBtn, deleteBtn, sealBtn, unlockBtn, flipBtn];
-  async function guard(f, rethrow) {
-    if (busy) return;
-    busy = true;
-    all.forEach((b) => { b.disabled = true; });
-    try {
-      await f();
-    } catch (err) {
-      if (rethrow) throw err;
-      live.textContent = err.message;
-    } finally {
-      busy = false;
-      all.forEach((b) => { b.disabled = false; });
-    }
+    // Per snapshot: bytes of new chunks (stored) and reused chunks (linked); the tick is what the packs took.
+    const { vis, slot, bw, x0 } = bars();
+    const top = G.chartTop, base = G.chartTop + G.chartH;
+    label("bytes per snapshot", G.pad, top - 12, "left", c.text, 600);
+    const max = Math.max(1024, ...vis.map((v) => v.logical));
+    const stepB = [1024, 2048, 4096, 8192, 16384].find((q) => max / q <= 5) || 32768;
+    const yMax = Math.ceil((max * 1.12) / stepB) * stepB;
+    const sy = (v) => base - (v / yMax) * G.chartH;
+    ctx.strokeStyle = c.line;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let v = 0; v <= yMax; v += stepB) { const y = Math.round(sy(v)) + 0.5; ctx.moveTo(x0, y); ctx.lineTo(G.W - G.pad, y); }
+    ctx.stroke();
+    ctx.textBaseline = "middle";
+    for (let v = 0; v <= yMax; v += stepB) label(v ? kib(v) : "0", x0 - 6, sy(v), "right");
+    ctx.textBaseline = "alphabetic";
+    const every = Math.ceil(24 / slot);
+    vis.forEach((v, i) => {
+      const x = x0 + slot * i + (slot - bw) / 2;
+      const grow = v.t0 ? ease((now - v.t0 - FLY_MS * 0.6) / GROW_MS) : 1;
+      const yN = sy(v.nb * grow), yL = sy((v.nb + v.rb) * grow);
+      ctx.fillStyle = c.text3;
+      ctx.globalAlpha = 0.4;
+      ctx.fillRect(x, yL, bw, yN - yL);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = v.you ? c.accent : c.signal;
+      ctx.fillRect(x, yN, bw, base - yN);
+      if (v.stored && grow >= 1) {
+        ctx.strokeStyle = c.text;
+        ctx.lineWidth = 2;
+        const y = Math.round(sy(v.stored));
+        ctx.beginPath(); ctx.moveTo(x - 3, y); ctx.lineTo(x + bw + 3, y); ctx.stroke();
+      }
+      if (restored?.n === v.n || hover?.bar === v.n) {
+        ctx.strokeStyle = restored?.n === v.n ? (restored.ok === false ? c.danger : c.text) : c.accent;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(x - 3.5, yL - 3.5, bw + 7, base - yL + 7);
+      }
+      const latest = i === vis.length - 1;
+      ctx.globalAlpha = grow;
+      if (v.you || latest) label(`${v.you ? "you " : ""}${latest ? `+${kib(v.nb)}` : ""}`.trim(), x + bw / 2, yL - 7, latest && x + bw / 2 > G.W - 40 ? "right" : "center", v.you ? c.accent : c.signal, 600);
+      ctx.globalAlpha = 1;
+      if ((vis.length - 1 - i) % every === 0) label(String(v.n), x + bw / 2, base + 14, "center");
+    });
+    label("snapshot", x0, base + 27, "left");
+    label(G.wide ? "click a bar to restore it" : "tap a bar to restore", G.W - G.pad, base + 27, "right");
   }
 
-  async function init() {
-    const r = await call("init", { seed: 1, avg: Number(avg.value) });
-    backups = [];
-    repo = null;
-    rows.replaceChildren();
-    totals.replaceChildren();
-    packSel.replaceChildren();
-    pack = null;
-    lastBackupChunks = new Set();
-    showSlot(r.slot);
-    unlockOut.textContent = "";
-    return r;
+  function setCells() {
+    const s = cur();
+    if (!s || !repo) return;
+    cell.snaps.textContent = fmt(snaps.length);
+    cell.files.textContent = fmt(s.files.length);
+    cell.logical.textContent = B(repo.logical);
+    cell.stored.textContent = B(repo.stored);
+    cell.ratio.textContent = repo.stored ? `${(repo.logical / repo.stored).toFixed(2)}×` : "–";
+    cell.chunks.textContent = fmt(repo.blobs);
+    cell.fresh.textContent = fmt(s.nc);
+    cell.ms.textContent = `${s.ms.toFixed(1)} ms`;
+    receipt.textContent = `${fmt(snaps.length)} snapshots, ${fmt(repo.backups)} file versions: stash cut ${fmt(cut)} chunks and sealed ${fmt(sealed)} new ones with XChaCha20-Poly1305` +
+      `${restores ? `, ${fmt(restores)} files restored` : ""}, in ${fmt(Math.round(callMs))} ms of calls, in your browser.`;
+    day.textContent = `Snapshot ${s.n}${s.day ? `, day ${s.day}` : ""}: ${s.label}.`;
+    canvas.setAttribute("aria-label", `Snapshot ${s.n} of ${s.files.length} files: ${s.nc} of ${s.chunks} chunks new (${B(s.nb)}), the rest reused. ` +
+      `Repository: ${repo.blobs} unique chunks in ${repo.packs} packs, ${B(repo.stored)} stored for ${B(repo.logical)} backed up.`);
   }
+  function syncSelects() {
+    const paths = cur().files.map((f) => f.path);
+    const was = into.value;
+    into.replaceChildren(...paths.map((p) => { const o = el("option", null, p); o.value = p; return o; }));
+    into.value = paths.includes(was) ? was : (paths.includes(NOTES) ? NOTES : paths[0]);
+    const keep = snapSel.value;
+    snapSel.replaceChildren(...snaps.map((s) => { const o = el("option", null, `${s.n}${s.you ? " (you)" : ""}`); o.value = String(s.n); return o; }));
+    snapSel.value = pinned && snaps.some((s) => String(s.n) === keep) ? keep : String(snaps.length);
+  }
+
+  // One snapshot: every file in the tree through the binary's backup.
+  async function snapshot(label, yours, animate) {
+    const g = gen;
+    const paths = [...w.tree.keys()].sort();
+    const files = [];
+    const t0 = performance.now();
+    for (const path of paths) {
+      const text = w.tree.get(path);
+      files.push({ path, text, r: await exec("backup", { text }) });
+    }
+    const ms = performance.now() - t0;
+    if (g !== gen) throw new Error("stale");
+    const n = snaps.length + 1, now = performance.now();
+    const s = { n, day: yours ? 0 : w.day, label, you: !!yours, files, ms, nb: 0, rb: 0, nc: 0, chunks: 0, stored: 0, logical: 0, t0: animate ? now : 0 };
+    let k = 0;
+    files.forEach((f, row) => {
+      const r = f.r;
+      s.stored += r.stored;
+      s.logical += r.logical;
+      s.nc += r.new;
+      s.chunks += r.chunks.length;
+      cut += r.chunks.length;
+      sealed += r.new;
+      repo = r.repo;
+      for (const ch of r.chunks) {
+        if (ch.s === "new") {
+          s.nb += ch.l;
+          cellOf.set(ch.id, grid.length);
+          grid.push({ id: ch.id, snap: n, you: !!yours });
+        } else s.rb += ch.l;
+        if (animate && row < ROWS) {
+          const delay = Math.min(220, k++ * 6);
+          flights.push({ kind: ch.s === "new" ? "new" : "link", row, o: ch.o, l: ch.l, cell: cellOf.get(ch.id), t0: now + delay, you: !!yours });
+        }
+      }
+    });
+    snaps.push(s);
+    syncSelects();
+    setCells();
+    return s;
+  }
+
+  async function nextDay(animate) {
+    const label = mutate(w);
+    return snapshot(label, null, animate);
+  }
+
+  // Serialises snapshots so autoplay, Step and your edits never overlap.
+  let tail = Promise.resolve();
+  function run(f) {
+    running++;
+    const p = tail.then(() => f());
+    const done = () => { running--; };
+    tail = p.then(done, done);
+    return p;
+  }
+
+  async function warm() {
+    gen++;
+    const g = gen;
+    w = world();
+    snaps = []; grid = []; cellOf = new Map(); repo = null; flights = []; restored = null; flipped = null; damaged = new Set();
+    callMs = 0; cut = 0; sealed = 0; restores = 0; pending = 0; pinned = false;
+    youLine.textContent = "";
+    rline.textContent = "";
+    fline.textContent = "";
+    flipBtn.textContent = "Flip one bit";
+    await exec("init", { seed: Number(key.value), avg: Number(avg.value) });
+    const n = reduce.matches ? SCRIPT_DAYS : WARM;
+    for (let d = 0; d < n && g === gen; d++) await nextDay(false);
+    draw(performance.now());
+  }
+  let restarting = Promise.resolve();
+  const restart = () => {
+    warming = true;
+    restarting = run(warm).finally(() => { warming = false; });
+    return restarting;
+  };
+
+  const fail = (err) => { if (err.message !== "stale") day.textContent = err.message; };
+
+  function frame(ts) {
+    raf = 0;
+    const dt = last ? Math.min(100, ts - last) : 16;
+    last = ts;
+    if (playing && !warming && !running) {
+      pending += dt * Number(speed.value);
+      if (pending >= SNAP_MS) {
+        pending = 0;
+        if (w.day >= MAX_DAYS) {
+          setPlaying(false);
+          day.textContent = `${fmt(w.day)} days backed up; Reset to run them again.`;
+        } else run(() => nextDay(!reduce.matches)).catch(fail);
+      }
+    }
+    draw(ts);
+    const busy = flights.length || snaps.some((s) => s.t0 && ts - s.t0 < FLY_MS + GROW_MS) || (restored && ts - restored.t0 < 600);
+    if ((playing || busy) && visible && !document.hidden) raf = requestAnimationFrame(frame);
+    else last = 0;
+  }
+  const kick = () => { if (!raf && visible && !document.hidden) raf = requestAnimationFrame(frame); };
+  function setPlaying(v) {
+    playing = v;
+    play.textContent = v ? "Pause" : "Play";
+    play.setAttribute("aria-pressed", String(v));
+    if (v) kick();
+  }
+
+  // Your edit: your text goes in as a line at a line start, then the tree is backed up.
+  async function insertMine(path, at) {
+    const text = mine.value.replace(/\r?\n/g, " ");
+    if (!text.trim()) { youLine.textContent = "Type some text to insert first."; return; }
+    await restarting;
+    await run(async () => {
+      const s = w.tree.get(path);
+      if (s === undefined) return;
+      let i = at == null ? s.indexOf("\n", s.length >> 1) + 1 : s.lastIndexOf("\n", Math.max(0, at - 1)) + 1;
+      if (i <= 0 && at == null) i = s.length;
+      const add = `${text}\n`;
+      w.tree.set(path, s.slice(0, i) + add + s.slice(i));
+      const byte = blen(s.slice(0, i));
+      const snap = await snapshot(`your ${B(blen(add))} inserted into ${path}`, true, !reduce.matches);
+      const f = snap.files.find((x) => x.path === path);
+      const fresh = f.r.chunks.filter((c) => c.s === "new");
+      const lo = fresh.length ? fresh[0].o : 0, hi = fresh.length ? fresh[fresh.length - 1].o + fresh[fresh.length - 1].l : 0;
+      youLine.textContent = `Your ${B(blen(add))} went into ${path} at byte ${fmt(byte)}. stash cut the file into ${fmt(f.r.chunks.length)} ${f.r.chunks.length === 1 ? "chunk" : "chunks"}: ` +
+        (fresh.length ? `${fmt(fresh.length)} new (bytes ${fmt(lo)} to ${fmt(hi)}), ${fmt(f.r.chunks.length - fresh.length)} reused` : "none new") +
+        `. Snapshot ${snap.n} stored ${B(snap.stored)} for ${B(snap.logical)} of files.`;
+      pending = -SNAP_MS;
+    });
+    draw(performance.now());
+    kick();
+  }
+
+  // Restore: every file of the snapshot read back through the index, its chunks opened and checked.
+  async function restore(n) {
+    const s = snaps[n - 1];
+    if (!s) return;
+    await restarting;
+    await run(async () => {
+      const t0 = performance.now();
+      let bytes = 0, chunks = 0, bad = null, same = true;
+      const packs = new Set(), ids = new Set(), order = new Map();
+      for (const f of s.files) {
+        for (const c of f.r.chunks) { packs.add(c.p); ids.add(c.id); if (!order.has(c.id)) order.set(c.id, order.size); }
+        const r = await exec("restore", { backup: f.r.backup });
+        restores++;
+        if (!r.ok) { bad = bad || { path: f.path, ...r }; continue; }
+        bytes += r.bytes;
+        chunks += r.chunks;
+        same = same && r.identical;
+      }
+      const ms = performance.now() - t0;
+      restored = { n, ids, order, t0: reduce.matches ? -1e9 : performance.now(), gap: Math.min(4, 250 / Math.max(1, order.size)), ok: !bad };
+      rline.className = `sh-rline sh-res ${bad ? "sh-bad" : "sh-ok"}`;
+      rline.textContent = bad
+        ? `Snapshot ${n} refused at ${bad.path}, chunk ${fmt(bad.chunk + 1)} in pack ${fmt(bad.pack + 1)}: ${bad.problem}.`
+        : `Snapshot ${n} restored: ${fmt(s.files.length)} files, ${B(bytes)} from ${fmt(chunks)} chunks in ${fmt(packs.size)} packs. ` +
+          `Every chunk's tag verified and ${same ? "every file's BLAKE3 hash matches its backup" : "a file differs from its backup"}, in ${fmt(Math.max(1, Math.round(ms)))} ms.`;
+      setCells();
+    });
+    draw(performance.now());
+    kick();
+  }
+
+  // Flip: one bit in the middle of a chunk of snapshot 1's notes pack, so later snapshots that reuse it fail.
+  async function flip() {
+    await restarting;
+    let target = 0;
+    await run(async () => {
+      if (!flipped) {
+        const f = snaps[0].files.find((x) => x.path === NOTES);
+        const pk = await exec("pack", { pack: f.r.pack.n });
+        const b = pk.blobs[pk.blobs.length >> 1];
+        flipped = { pack: pk.n, off: b.o + pk.nonce + ((b.l - pk.nonce - pk.tag) >> 1), id: b.id };
+      }
+      const r = await exec("flip", { pack: flipped.pack, offset: flipped.off });
+      const on = r.flipped.includes(flipped.off);
+      damaged = on ? new Set([flipped.id]) : new Set();
+      flipBtn.textContent = on ? "Flip it back" : "Flip one bit";
+      const hit = [...snaps].reverse().find((s) => s.files.some((f) => f.r.chunks.some((c) => c.id === flipped.id)));
+      target = on && hit ? hit.n : Number(snapSel.value);
+      const blob = r.blobs.find((x) => x.id === flipped.id);
+      fline.textContent = on
+        ? `Flipped one bit of byte ${fmt(flipped.off)} in pack ${fmt(flipped.pack + 1)}, inside chunk ${flipped.id}: ${blob?.problem || "verified"}. ` +
+          `The pack's BLAKE3 name ${r.hash_ok ? "still matches" : "no longer matches its bytes"}.`
+        : `Flipped it back: pack ${fmt(flipped.pack + 1)} verifies again${r.hash_ok ? " and matches its BLAKE3 name" : ""}.`;
+    });
+    if (target) { snapSel.value = String(target); pinned = true; await restore(target); }
+  }
+
+  // Inputs.
+  play.addEventListener("click", () => setPlaying(!playing));
+  step.addEventListener("click", () => {
+    setPlaying(false);
+    restarting.then(() => run(() => nextDay(!reduce.matches))).then(() => { draw(performance.now()); kick(); }).catch(fail);
+  });
+  reset.addEventListener("click", () => restart().then(() => kick()).catch(fail));
+  for (const s of [avg, key]) s.addEventListener("change", () => restart().then(() => kick()).catch(fail));
+  insert.addEventListener("click", () => insertMine(into.value, null).catch(fail));
+  mine.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); insertMine(into.value, null).catch(fail); } });
+  snapSel.addEventListener("change", () => { pinned = true; });
+  restoreBtn.addEventListener("click", () => restore(Number(snapSel.value)).catch(fail));
+  flipBtn.addEventListener("click", () => flip().catch(fail));
+
+  function hit(e) {
+    const b = canvas.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top, s = cur();
+    if (!G || !s) return null;
+    const row = Math.floor((y - G.filesTop) / G.rowH);
+    if (row >= 0 && row < s.files.length && x >= G.stripX - 4) {
+      const f = s.files[row], r = stripRect(row, 0, f.r.logical);
+      if (x <= r.x + r.w + 4) {
+        const byte = Math.round(((Math.min(Math.max(x, r.x), r.x + r.w) - G.stripX) / G.stripW) * scaleMax());
+        return { row, x: Math.min(Math.max(x, r.x), r.x + r.w), path: f.path, at: indexAt(f.text, byte) };
+      }
+    }
+    if (y >= G.chartTop - 4 && y <= G.chartTop + G.chartH + 18) {
+      const { vis, slot, x0 } = bars();
+      const i = Math.floor((x - x0) / slot);
+      if (i >= 0 && i < vis.length) return { bar: vis[i].n };
+    }
+    return null;
+  }
+  canvas.addEventListener("pointermove", (e) => {
+    hover = e.pointerType === "touch" ? null : hit(e);
+    canvas.classList.toggle("sh-aim", !!hover);
+    if (!raf) draw(performance.now());
+  });
+  canvas.addEventListener("pointerleave", () => { hover = null; if (!raf) draw(performance.now()); });
+  canvas.addEventListener("click", (e) => {
+    const h = hit(e);
+    if (h?.path) { into.value = h.path; insertMine(h.path, h.at).catch(fail); }
+    else if (h?.bar) { snapSel.value = String(h.bar); pinned = true; restore(h.bar).catch(fail); }
+  });
+
+  const redraw = () => { readColors(); draw(performance.now()); };
+  new ResizeObserver(() => { if (!root.isConnected) return; layout(); redraw(); }).observe(canvas);
+  new IntersectionObserver(([en]) => { visible = en.isIntersecting; kick(); }).observe(canvas);
+  document.addEventListener("visibilitychange", kick);
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redraw);
+  addEventListener("themechange", redraw);
+  reduce.addEventListener("change", () => setPlaying(playing && !reduce.matches));
 
   await cssReady;
-  ta.value = text;
-  fit();
-  await guard(async () => {
-    await init();
-    await backup(false);
-    insert();
-    await scan();
-    await backup(false);
-    await scan();
-  }, true);
+  readColors();
+  layout();
+  await restart();
+  setPlaying(playing);
 }
