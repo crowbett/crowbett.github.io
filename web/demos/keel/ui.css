@@ -1,37 +1,32 @@
-.kl-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 12px; }
-.kl-field input { height: 2.25rem; box-sizing: border-box; width: 12rem; max-width: 100%; }
-.kl-controls button { height: 2.25rem; }
-.kl-replay { display: grid; gap: 4px; margin: 0 0 16px; padding: 8px 12px; background: var(--sunken); border-radius: var(--r-1); }
+.kl-controls { display: grid; gap: 12px; margin-bottom: 12px; }
+.kl-knobs, .kl-acts { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; }
+.kl-knobs select, .kl-knobs button, .kl-acts button, .kl-mine input { height: 2.25rem; box-sizing: border-box; max-width: 100%; }
+.kl-range input { margin: 0; width: 10rem; height: 2.25rem; }
+.kl-out { font-variant-numeric: tabular-nums; color: var(--text); }
+.kl-mine input { width: 8.5rem; font-variant-numeric: tabular-nums; }
+.kl-canvas { display: block; width: 100%; height: 520px; background: var(--sunken); border-radius: var(--r-1); touch-action: pan-y; }
+.kl-canvas.kl-aim { cursor: pointer; }
+.kl-legend { margin: 8px 0 0; }
+.kl-key { display: inline-flex; align-items: center; gap: 0.5em; }
+.kl-key::before { content: ""; flex: none; width: 0.75em; height: 0.75em; background: var(--kl-c); }
+[data-kind="down"] { --kl-c: var(--danger); }
+[data-kind="paused"] { --kl-c: var(--text-3); }
+[data-kind="cut"] { --kl-c: var(--signal); }
+[data-kind="skew"] { --kl-c: var(--text); }
+[data-kind="you"] { --kl-c: var(--accent); }
+[data-kind="lin"] { --kl-c: var(--live); }
+.kl-replay { display: grid; gap: 4px; margin: 12px 0 0; padding: 8px 12px; background: var(--sunken); border-radius: var(--r-1); }
 .kl-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
-.kl-which { flex: 0 0 7.5rem; font-family: var(--mono); font-size: var(--t-label); color: var(--text-3); }
+.kl-which { flex: 0 0 9rem; font-family: var(--mono); font-size: var(--t-label); color: var(--text-3); }
 @media (max-width: 600px) { .kl-which { flex-basis: 100%; } .kl-row + .kl-row { margin-top: 4px; } }
-.kl-digest { font-family: var(--mono); font-size: 1rem; color: var(--text); }
+.kl-digest { font-family: var(--mono); font-size: 0.9375rem; color: var(--text); }
+.kl-ms { font-family: var(--mono); font-size: 0.75rem; color: var(--text-3); }
 .kl-match, .kl-pass .kl-v { color: var(--live); font-weight: 600; }
 .kl-differ, .kl-fail .kl-v { color: var(--danger); font-weight: 600; }
 .kl-match, .kl-differ { font-size: 0.875rem; }
-.kl-timeline { margin: 0 0 16px; }
-.kl-legend { margin: 0 0 8px; }
-.kl-key { display: inline-flex; align-items: center; gap: 0.5em; }
-.kl-key::before { content: ""; flex: none; width: 0.75em; height: 0.75em; background: var(--kl-c); }
-.kl-chart { display: grid; grid-template-columns: auto 1fr; gap: 8px; background: var(--sunken); border-radius: var(--r-1); padding: 6px 8px; }
-.kl-lanes { list-style: none; margin: 0; padding: 0; font-family: var(--mono); font-size: 0.75rem; color: var(--text-2); }
-.kl-lanes li { height: 22px; line-height: 22px; white-space: nowrap; }
-.kl-chart svg { display: block; width: 100%; height: 132px; min-width: 0; }
-.kl-track { stroke: var(--line-strong); stroke-width: 1; }
-.kl-heal { stroke: var(--text-3); stroke-width: 1; stroke-dasharray: 3 3; }
-.kl-bar, .kl-skew, .kl-tick { fill: var(--kl-c); }
-.kl-down, [data-kind="down"] { --kl-c: var(--text); }
-.kl-paused, [data-kind="paused"] { --kl-c: var(--text-3); }
-.kl-cut, .kl-tick, [data-kind="cut"] { --kl-c: var(--accent); }
-.kl-tick { opacity: 0.9; }
-.kl-cut { opacity: 0.45; }
-.kl-skew, [data-kind="skew"] { --kl-c: var(--signal); }
-.kl-axis { display: flex; justify-content: space-between; gap: 8px; font-family: var(--mono); font-size: 0.75rem; color: var(--text-3); margin: 4px 0 0; }
-.kl-cells { margin: 0 0 16px; }
-.kl-cells li { min-width: 7rem; }
-.kl-v { font-size: 0.875rem; }
-.kl-events { margin: 0; padding: 0; list-style: none; font-size: 0.875rem; columns: 2 18rem; column-gap: 24px; }
-.kl-events li { display: flex; gap: 12px; padding: 2px 0; break-inside: avoid; }
-.kl-t { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text-3); min-width: 7ch; text-align: right; }
-.kl-ms { font-family: var(--mono); font-size: 0.75rem; color: var(--text-3); }
-.kl-status { margin-top: 12px; }
+.kl-cells { margin-top: 12px; }
+.kl-cells li { min-width: 5.5rem; }
+.kl-v { font-size: 0.8125rem; color: var(--text); font-variant-numeric: tabular-nums; }
+.kl-status { margin: 8px 0 0; font-size: 0.8125rem; color: var(--text-2); }
+.kl-receipt { margin-top: 12px; }
+@media (pointer: coarse) { .kl-range input { height: 44px; } }
