@@ -18,6 +18,7 @@
         <p class="stage-tag" aria-hidden="true"><span>{{.LeftLabel}}</span><span>{{.RightLabel}}</span></p>
       </div>
       <figcaption>
+        <p class="stage-scenes" role="group" aria-label="Scene">{{range .Scenes}}<button type="button" data-scene-id="{{.ID}}" data-name="{{.Name}}" aria-pressed="{{eq .ID $.Stage.Scene}}">{{.Label}}</button>{{end}}</p>
         <dl class="stage-dials">
           <div><dt>samples/pixel</dt><dd data-k="spp">{{.PosterSpp}}</dd></div>
           <div><dt>samples/s here</dt><dd data-k="rate" class="nil">--</dd></div>
