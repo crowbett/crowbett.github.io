@@ -197,6 +197,8 @@
 .cx-scroll code { display: block; min-width: max-content; font: inherit; }
 .l { display: block; padding-inline: var(--sp-2) var(--sp-4); }
 .l:hover { background: oklch(1 0 0 / .05); }
+.l.hit { background: oklch(1 0 0 / .1); box-shadow: inset 3px 0 var(--screen-signal); }
+.found { outline: 2px solid var(--accent); outline-offset: 6px; border-radius: 2px; }
 .ln { display: inline-block; width: 4.5ch; margin-right: var(--sp-3); padding-right: var(--sp-2); text-align: right; color: oklch(1 0 0 / .3); user-select: none; }
 .tk { color: oklch(.78 .13 305); } .tt { color: oklch(.82 .1 205); } .ts { color: oklch(.81 .12 145); } .tn { color: oklch(.83 .12 70); } .tf { color: oklch(.85 .09 255); } .ta { color: oklch(.78 .12 25); } .tc { color: oklch(.63 .03 255); }
 .demo-code .led { color: inherit; }
