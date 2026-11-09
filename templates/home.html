@@ -21,22 +21,31 @@
     </figure>
     <script type="module" src="/assets/hero.js"></script>{{end}}
 </section>
-<section id="work" class="index" aria-labelledby="work-h">
-  <div class="index-head"><h2 id="work-h">Work</h2><p class="count" aria-live="polite">{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} live{{end}}</p>
-    <div class="finder" hidden>
-      <label class="search"><span class="vh">Search projects</span><input type="search" name="q" placeholder="Name, language, topic" autocomplete="off" spellcheck="false" enterkeyhint="search"><kbd aria-hidden="true">/</kbd></label>
-      <div class="filter" role="group" aria-label="Show one group"><button type="button" data-g="" aria-pressed="true">All <span>{{len .Projects}}</span></button>{{range .Groups}}<button type="button" data-g="{{.Key}}" aria-pressed="false">{{.Short}} <span>{{len .Projects}}</span></button>{{end}}</div>
-    </div></div>
-  <div class="index-cols" aria-hidden="true"><span>#</span><span>mechanism</span><span>project</span><span>lang</span><span>what it is</span><span>evidence</span><span>demo</span></div>
-  {{range .Groups}}<section class="group" id="g-{{.Key}}" data-g="{{.Key}}" aria-labelledby="g-{{.Key}}-h">
-    <h3 class="group-h" id="g-{{.Key}}-h">{{.Name}} <span class="group-n">{{len .Projects}}</span></h3>
-    <ol class="rows">
-    {{range .Projects}}<li class="row" data-q="{{search .}}">{{template "row" .}}</li>
-    {{end}}</ol>
-  </section>
-  {{end}}<p class="nomatch" role="status" hidden>No project matches that. <button type="button">Show all</button></p>
+<section id="work" class="reel" aria-labelledby="work-h">
+  <header class="reel-head"><h2 id="work-h">Work</h2><p class="count">{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} with a live demo{{end}}</p></header>
+  <nav class="rail" aria-label="Projects"><div>{{range .Groups}}
+    <p class="rail-g">{{.Name}}</p>
+    <ol>{{range .Projects}}<li><a href="#p-{{.Slug}}"><span>{{rank .Slug}}</span>{{.Title}}</a></li>{{end}}</ol>{{end}}
+  </div></nav>
+  <p class="reel-now" aria-hidden="true"><b></b><span></span><i></i></p>
+  <div class="shots">{{range .Groups}}
+  <section class="chapter" id="g-{{.Key}}" aria-labelledby="g-{{.Key}}-h">
+    <h3 class="chapter-h" id="g-{{.Key}}-h">{{.Name}} <span>{{len .Projects}}</span></h3>
+    {{range .Projects}}<article class="shot" id="p-{{.Slug}}" aria-labelledby="p-{{.Slug}}-h">
+      <a class="shot-media" href="/projects/{{.Slug}}/{{if .Live}}#demo{{end}}" tabindex="-1" aria-hidden="true">{{if .Live}}<img src="/reel/{{.Slug}}.webp" alt="" width="16" height="10" loading="lazy" decoding="async" data-clip="/reel/{{.Slug}}.mp4">{{else}}{{template "dmask" .Slug}}{{end}}</a>
+      <div class="shot-text">
+        <p class="shot-n">{{rank .Slug}} <span>/ {{len $.Projects}}</span></p>
+        <h4 class="shot-name" id="p-{{.Slug}}-h"><a href="/projects/{{.Slug}}/"><span>{{.Title}}</span></a></h4>
+        <p class="shot-lang">{{.Lang}}</p>
+        <p class="shot-tag">{{.Tagline}}</p>
+        {{if .Metric}}<p class="metric">{{bind .Metric}}</p>{{end}}
+        <p class="shot-act">{{if .Live}}<a class="key" href="/projects/{{.Slug}}/#demo">Run it live</a><span class="led">Live demo</span>{{else}}<a class="key" href="/projects/{{.Slug}}/">Details</a><span class="led off">Source on {{if .Private}}request{{else}}GitHub{{end}}</span>{{end}}</p>
+      </div>
+    </article>
+    {{end}}</section>{{end}}
+  </div>
 </section>
-<script type="module" src="/assets/filter.js"></script>
+<script type="module" src="/assets/reel.js"></script>
 {{template "foot" .}}{{end}}
 {{define "replay-chart"}}<svg class="replay-chart {{.Class}}" viewBox="0 0 {{.W}} {{.H}}" role="img" aria-label="{{.Label}}">
 {{if .AttackW}}<rect class="rz" x="{{.AttackX}}" y="0" width="{{.AttackW}}" height="{{.H}}"/>{{end}}

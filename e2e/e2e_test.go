@@ -361,9 +361,10 @@ func TestDemoFrame(t *testing.T) {
 	}
 }
 
-// TestReducedMotion loads pages whose diagrams play on load, and the smoke
-// demo whose frame animates on ready: with motion allowed something animates,
-// with prefers-reduced-motion nothing does.
+// TestReducedMotion loads pages whose diagrams play on load (and home, whose
+// reel loads clips), and the smoke demo whose frame animates on ready: with
+// motion allowed something animates, with prefers-reduced-motion nothing does
+// and no clip loads.
 func TestReducedMotion(t *testing.T) {
 	t.Parallel()
 	for _, page := range []string{"/", "/projects/quorum/", "/demos/smoke/"} {
@@ -390,10 +391,12 @@ func TestReducedMotion(t *testing.T) {
 						s.querySelector("[data-demo-start]").click();
 						await new Promise((r) => { const t = setInterval(() => { if ("demoReady" in s.dataset) { clearInterval(t); r(); } }, 10); });
 					} else {
-						document.querySelector(".row .dm, .facts .dm")?.scrollIntoView({ block: "center" });
+						document.querySelector("#p-quorum .dm, .facts .dm")?.scrollIntoView({ block: "center" });
+						await new Promise((r) => setTimeout(r, 400));
+						document.querySelector("#p-netcode")?.scrollIntoView({ block: "center" });
 						await new Promise((r) => setTimeout(r, 400));
 					}
-					return document.getAnimations().length;
+					return document.getAnimations().length + document.querySelectorAll(".shot video").length;
 				})()`, chromedp.EvalAwaitPromise))
 				cancel()
 				if err != nil {
@@ -638,9 +641,9 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 		// for it to settle; desktop walks the same DOM order.
 		tabOrder(t, ctx)
 	}
-	if isHome, _ := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector(".finder") !== null`)); isHome && !layoutOnly && scheme == "light" {
-		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(finderCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
-			t.Errorf("home finder check failed (err %v)", err)
+	if isHome, _ := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector(".reel") !== null`)); isHome && !layoutOnly && scheme == "light" {
+		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(reelCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
+			t.Errorf("home reel check failed (err %v)", err)
 		}
 	}
 	overflow, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.documentElement.scrollWidth > document.documentElement.clientWidth`))

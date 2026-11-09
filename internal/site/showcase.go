@@ -1,0 +1,234 @@
+package site
+
+// Showcases drive each live demo for its home reel clip (cmd/reel).
+var Showcases = map[string]Showcase{
+	// The cursor walks down the page map to a data page and damages it: the
+	// read stops at that red cell; undoing the damage lets the map fill again.
+	"btrv": {
+		Setup: `(async () => {
+			const done = () => [...document.querySelectorAll(".bt-facts .bt-k")].some((k) => k.textContent === "rows read");
+			for (let i = 0; i < 400 && !done(); i++) await new Promise((r) => setTimeout(r, 50));
+		})()`,
+		Play: `(async () => {
+			const w = (ms) => new Promise((r) => setTimeout(r, ms));
+			const map = document.querySelector(".bt-map");
+			const dmg = document.querySelector(".bt-damage");
+			const key = (k) => map.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true }));
+			const idle = async () => { await w(100); for (let i = 0; i < 200 && dmg.disabled; i++) await w(50); };
+			await w(600);
+			for (let i = 0; i < 7; i++) { key("ArrowDown"); await w(160); }
+			await w(500);
+			dmg.click();
+			await idle();
+			await w(1600);
+			dmg.click();
+			await idle();
+		})()`,
+		Focus: ".bt-mapsec", Pad: 12, Seconds: 7,
+	},
+	// Walk the call graph from run to a callee, its callee, and back to run.
+	"codegraph": {
+		Play: `(async () => {
+			const w = (ms) => new Promise((r) => setTimeout(r, ms));
+			const s = document.querySelector("select[name=symbol]");
+			const pick = (v) => { s.value = v; s.dispatchEvent(new Event("change")); };
+			await w(900); pick("src/log.rs:24");
+			await w(1600); pick("src/log.rs:2");
+			await w(1600); pick("src/main.rs:32");
+		})()`,
+		Focus: ".cg-summary", Pad: 12, Seconds: 6.5,
+	},
+	// Requests are added one per line; each lands on the timeline with the
+	// cache's verdict: revalidated, bypassed by no-store, then a hit.
+	"edgecache": {
+		Play: `(async () => {
+			const w = (ms) => new Promise((r) => setTimeout(r, ms));
+			const t = document.querySelector("textarea[name=requests]");
+			const type = (v) => { t.value = v; t.setSelectionRange(v.length, v.length); t.scrollTop = t.scrollHeight; t.dispatchEvent(new Event("input")); };
+			t.focus();
+			await w(700); type("0\n30\n61\n90\n125");
+			await w(1300); type("0\n30\n61\n90\n125\n130 Cache-Control: no-store");
+			await w(1300); type("0\n30\n61\n90\n125\n130 Cache-Control: no-store\n140");
+		})()`,
+		Focus: ".ec-controls > label:last-child", Pad: 12, Seconds: 6,
+	},
+	// Each query narrows 283 files to candidates by trigram, then to matches.
+	"grepall": {
+		Play: `(async () => {
+			const w = (ms) => new Promise((r) => setTimeout(r, ms));
+			const preset = (q) => [...document.querySelectorAll(".ga-presets button")].find((b) => b.querySelector("code").textContent === q).click();
+			await w(800); preset("Kelvin");
+			await w(1600); preset(":=.*<-");
+			await w(1600); preset("TODO|FIXME");
+			await w(1600); preset("func\\s+New\\w+\\(");
+		})()`,
+		Focus: ".ga-funnel", Pad: 16, Seconds: 8,
+	},
+	// Fresh seeded draws, jitter off (every retry waits the full cap), more attempts.
+	"jobrun": {
+		Play: `(async () => {
+			const w = (ms) => new Promise((r) => setTimeout(r, ms));
+			const btn = [...document.querySelectorAll(".jr-panel button")].find((b) => b.textContent === "New draws");
+			const jit = document.querySelector("input[name=jitter]");
+			const att = document.querySelector("input[name=maxAttempts]");
+			const set = (v) => { att.value = v; att.dispatchEvent(new Event("input")); };
+			await w(700); btn.click();
+			await w(900); btn.click();
+			await w(1000); jit.click();
+			await w(1300); jit.click();
+			await w(1000); set("11");
+			await w(1500); set("8");
+		})()`,
+		Focus: ".jr-legend", Pad: 12, Seconds: 8,
+	},
+	// Overwriting 20 keys turns half the log dead; compaction reclaims it into a
+	// sealed segment, then a put and its tombstone land in the fresh one.
+	"kvlite": {
+		Setup: `(async () => {
+			[...document.querySelectorAll(".kv-controls button")].find((b) => b.textContent === "Write 20 keys").click();
+			const done = () => document.querySelector(".kv-status").textContent.startsWith("20 puts");
+			for (let i = 0; i < 200 && !done(); i++) await new Promise((r) => setTimeout(r, 50));
+		})()`,
+		Play: `(async () => {
+			const w = (ms) => new Promise((r) => setTimeout(r, ms));
+			const click = (t) => [...document.querySelectorAll(".kv-controls button")].find((b) => b.textContent === t).click();
+			await w(700); click("Write 20 keys");
+			await w(1500); click("Compact");
+			await w(1700); click("Put");
+			await w(1200); click("Delete");
+		})()`,
+		Focus: ".kv-stats", Pad: 12, Seconds: 7,
+	},
+	// Play sends each client frame through the bridge; packets cross the lanes
+	// and the bridge's translations light up as the conversation builds.
+	"mcpbridge": {
+		Setup: `(async () => {
+			const d = document.querySelector("select[name=direction]");
+			d.value = "reverse"; d.dispatchEvent(new Event("change"));
+			for (let i = 0; i < 100 && !/^4 client frames, 17 frames/.test(document.querySelector(".mb-status").textContent); i++) await new Promise((r) => setTimeout(r, 50));
+		})()`,
+		Play: `(async () => {
+			await new Promise((r) => setTimeout(r, 600));
+			[...document.querySelectorAll(".mb-bar button")].find((b) => b.textContent === "Play").click();
+		})()`,
+		Focus: ".mb-head", Pad: 12, Seconds: 7.5,
+	},
+	// keel: a new seed every 1.2 s; the digest, fault timeline and totals change.
+	"keel": {
+		Setup: `(async () => {
+			const seed = document.querySelector("input[name=seed]"), run = document.querySelector(".kl-controls button[type=submit]");
+			seed.value = "2"; run.click();
+			for (let i = 0; i < 200 && (document.querySelectorAll(".kl-digest").length !== 1 || run.disabled); i++) await new Promise((r) => setTimeout(r, 25));
+		})()`,
+		Play: `(async () => {
+			const seed = document.querySelector("input[name=seed]"), run = document.querySelector(".kl-controls button[type=submit]");
+			for (const s of [6, 14, 18, 22, 33]) {
+				await new Promise((r) => setTimeout(r, 1200));
+				seed.value = String(s); run.click();
+			}
+		})()`,
+		Focus: ".kl-replay", Pad: 12, Seconds: 7.2,
+	},
+	// lobby: you queue twice; players fill rooms on their own meanwhile.
+	"lobby": {
+		Setup: `(async () => {
+			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+			const set = (sel, v, ev) => { const e = document.querySelector(sel); e.value = v; e.dispatchEvent(new Event(ev)); };
+			set("input[name=rate]", "1", "input");
+			set("select[name=speed]", "5", "change");
+			await wait(1500);
+		})()`,
+		Play: `(async () => {
+			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+			const skill = document.querySelector("input[name=skill]");
+			const join = [...document.querySelectorAll(".lb-acts button")].find((b) => b.textContent === "Queue me");
+			await wait(700);
+			skill.value = "150"; join.click();
+			await wait(4000);
+			skill.value = "1900"; join.click();
+		})()`,
+		Focus: ".lb-acts", Pad: 8, Seconds: 8,
+	},
+	// netcode: you steer player 0 in a loop and dash while bots move.
+	"netcode": {
+		Play: `(async () => {
+			const c = document.querySelector(".nc-canvas");
+			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+			const key = (type, code) => c.dispatchEvent(new KeyboardEvent(type, { code, bubbles: true, cancelable: true }));
+			const hold = async (code, ms) => { key("keydown", code); await wait(ms); key("keyup", code); };
+			const run = async (code, ms) => { key("keydown", code); await wait(ms / 2); await hold("Space", 80); await wait(ms / 2 - 80); key("keyup", code); };
+			await wait(500);
+			await run("KeyD", 1600);
+			await hold("KeyS", 600);
+			await run("KeyA", 1600);
+			await hold("KeyW", 600);
+		})()`,
+		Focus: ".nc-canvas", Pad: 12, Seconds: 7,
+	},
+	// ratelimitd: the same traffic seed under each pattern, 2 s apiece.
+	"ratelimitd": {
+		Play: `(async () => {
+			const s = document.querySelector("select[name=pattern]");
+			for (const v of ["burst", "ramp", "attack"]) {
+				await new Promise((r) => setTimeout(r, 2000));
+				s.value = v; s.dispatchEvent(new Event("change"));
+			}
+		})()`,
+		Focus: ".rl-charts", Pad: 12, Seconds: 8,
+	},
+	// raytracer: the marble scene renders from its first pass, then the split sweeps.
+	"raytracer": {
+		Setup: `(async () => {
+			const s = document.querySelector("select[name=scene]");
+			s.value = "light"; s.dispatchEvent(new Event("change"));
+			for (let i = 0; i < 400 && !document.querySelector(".rt-info").textContent.startsWith("Marble"); i++) await new Promise((r) => setTimeout(r, 10));
+		})()`,
+		Play: `(async () => {
+			const g = document.querySelector(".rt-grip");
+			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+			const sweep = async (key, n) => { for (let i = 0; i < n; i++) { g.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true })); await wait(40); } };
+			await wait(1000);
+			document.querySelector(".rt-play").click();
+			await wait(400);
+			await sweep("ArrowRight", 20);
+			await wait(500);
+			await sweep("ArrowLeft", 40);
+			await wait(500);
+			await sweep("ArrowRight", 20);
+		})()`,
+		Focus: ".rt-screen", Seconds: 6.3,
+	},
+	// stash: edit, back up, repeat; new chunks show vermilion in the text and the strips.
+	"stash": {
+		Play: `(async () => {
+			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+			const btn = (t) => [...document.querySelectorAll(".sh-panel button")].find((b) => b.textContent === t);
+			for (const edit of ["Insert a paragraph", "Delete a line", "Insert a paragraph"]) {
+				await wait(800);
+				btn(edit).click();
+				await wait(1200);
+				btn("Back up").click();
+			}
+		})()`,
+		Focus: ".sh-edfield", Pad: 12, Seconds: 9,
+	},
+	// strata: the layer slider climbs from layer 2 to the top: solid floor,
+	// sparse infill (scrubbed quickly, it repeats), solid roof, top surface.
+	"strata": {
+		Setup: `(async () => {
+			const l = document.querySelector("input[name=layer]");
+			l.value = "1"; l.dispatchEvent(new Event("input"));
+			for (let i = 0; i < 200 && !document.querySelector(".st-where").textContent.startsWith("2 of "); i++) await new Promise((r) => setTimeout(r, 25));
+		})()`,
+		Play: `(async () => {
+			const l = document.querySelector("input[name=layer]");
+			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+			const to = (i) => { l.value = String(i); l.dispatchEvent(new Event("input")); };
+			await wait(800);
+			for (const i of [2, 3]) { to(i); await wait(700); }
+			for (let i = 4; i <= 20; i++) { to(i); await wait(110); }
+			for (let i = 21; i <= 24; i++) { await wait(700); to(i); }
+		})()`,
+		Focus: ".st-scrub", Pad: 8, Seconds: 8,
+	},
+}

@@ -24,6 +24,7 @@ var Budgets = struct {
 	WASMGzipped int // bytes, one demo's .wasm after gzip -9
 	Fonts       int // bytes, all .woff2 together
 	ShareImage  int // bytes, one og:image PNG
+	ReelClip    int // bytes, one home reel clip (.mp4) or its poster
 }{
 	PageHTML:    60 << 10,
 	CSS:         48 << 10,
@@ -31,6 +32,7 @@ var Budgets = struct {
 	WASMGzipped: 2304 << 10,
 	Fonts:       32 << 10,
 	ShareImage:  100 << 10,
+	ReelClip:    300 << 10,
 }
 
 // DemoTokens are the site.css properties a demo's ui.css may read
@@ -118,6 +120,10 @@ func Check(out string) error {
 				if _, err := os.Stat(target); err != nil {
 					add("%s: broken link %s", rel, ref)
 				}
+			}
+		case ".mp4", ".webp":
+			if strings.HasPrefix(rel, "/reel/") && len(b) > Budgets.ReelClip {
+				add("%s: %d bytes, budget %d", rel, len(b), Budgets.ReelClip)
 			}
 		case ".png":
 			if strings.HasPrefix(rel, "/og/") && len(b) > Budgets.ShareImage {
