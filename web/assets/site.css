@@ -188,7 +188,6 @@ main:has(> :is(.stage, .project, .nums)) { width: auto; }
 :is(.stage, .notfound, .it) .key { border-color: color-mix(in oklab, var(--band-ink) 45%, transparent); background: none; color: var(--band-ink); }
 :is(.stage, .notfound, .it) .key:hover { background: var(--block); border-color: var(--block); color: var(--on-block); }
 /* Project heads only (project.html); home has no glow. */
-.glow { position: absolute; z-index: -1; pointer-events: none; filter: blur(56px) saturate(1.7); opacity: 0.8; mask-image: radial-gradient(closest-side, #000 35%, transparent); }
 .ph-hud { margin: 0; padding: var(--sp-1) var(--sp-3); border-radius: 999px; background: oklch(0.1 0.01 262 / 0.55); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: var(--screen-ink); font: 400 var(--t-label)/1.5 var(--mono); }
 @supports (animation-timeline: scroll()) { @media (prefers-reduced-motion: no-preference) { .js .stage-in { animation: sink linear both; animation-timeline: scroll(root); animation-range: 0 100svh; } } }
 @keyframes sink { to { scale: 0.93; opacity: 0.25; } }
