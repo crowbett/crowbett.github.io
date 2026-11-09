@@ -22,6 +22,20 @@ var HomeStage = Stage{
 	SceneLabel: "Cornell box", LeftLabel: "material only", RightLabel: "NEE + MIS",
 }
 
+// StageScene is a scene the stage can switch to: square like the stage, and
+// lit by lights NEE samples, so the split still compares two strategies.
+// Name is the raytracer demo's own label for it.
+type StageScene struct{ ID, Label, Name string }
+
+var StageScenes = []StageScene{
+	{"cornell", "Cornell box", "Cornell box"},
+	{"final3", "Glass sphere", "Cornell box, glass sphere"},
+	{"smoke", "Smoke", "Cornell box, smoke volumes"},
+}
+
+// Scenes lists the stage's scenes; only HomeStage.Scene has a poster.
+func (Stage) Scenes() []StageScene { return StageScenes }
+
 const (
 	StagePoster = "web/reel/stage.webp"
 	StageSums   = "web/reel/.stage"

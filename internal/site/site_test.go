@@ -295,3 +295,20 @@ func TestReelStale(t *testing.T) {
 		t.Errorf("missing clip: got %v, want a missing reel clip", err)
 	}
 }
+
+// The stage's scenes are scenes the raytracer demo offers, under its labels,
+// and the first is the one the poster shows.
+func TestStageScenes(t *testing.T) {
+	ui, err := os.ReadFile("../../web/demos/raytracer/ui.js")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if StageScenes[0].ID != HomeStage.Scene {
+		t.Errorf("first stage scene %q, poster scene %q", StageScenes[0].ID, HomeStage.Scene)
+	}
+	for _, s := range StageScenes {
+		if want := fmt.Sprintf("[%q, %q]", s.ID, s.Name); !strings.Contains(string(ui), want) {
+			t.Errorf("raytracer ui.js has no %s", want)
+		}
+	}
+}

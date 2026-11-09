@@ -656,6 +656,9 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(stageCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
 			t.Errorf("home stage check failed (err %v)", err)
 		}
+		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(sceneCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
+			t.Errorf("home stage scene check failed (err %v)", err)
+		}
 		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(workCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
 			t.Errorf("home work index check failed (err %v)", err)
 		}
