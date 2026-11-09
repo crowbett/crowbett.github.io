@@ -4,6 +4,8 @@ package e2e
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -185,4 +187,64 @@ func TestTheme(t *testing.T) {
 			}
 		}
 	}
+}
+
+// TestFind searches the write-ups and code from the palette: a word from a
+// code excerpt opens that excerpt with the line marked, and words from a
+// write-up open its page with the passage marked.
+func TestFind(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := newTab(t, 60*time.Second)
+	defer cancel()
+	if err := chromedp.Do(ctx, cores(2), chromedp.EmulateViewport(1280, 900), chromedp.Navigate(srv.URL+"/"), chromedp.WaitReady(chromedp.CSS("body"))); err != nil {
+		t.Fatal(err)
+	}
+	// search types q, waits for a hit of kind tag with a marked word, and opens it.
+	search := func(q, tag string) {
+		js := `(async () => {
+			document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true, cancelable: true }));
+			await until(() => document.querySelector(".pal[open] input"));
+			const i = document.querySelector(".pal input");
+			i.value = ` + jsString(q) + `; i.dispatchEvent(new Event("input"));
+			const pick = () => [...document.querySelectorAll(".pal [role=option]")].find((o) => o.querySelector(".pal-i")?.textContent === ` + jsString(tag) + ` && o.querySelector("mark"));
+			if (!(await until(pick))) return false;
+			const o = pick();
+			o.click();
+			return true;
+		})()`
+		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(js), chromedp.EvalAwaitPromise)); err != nil || !ok {
+			t.Fatalf("search %q found no %s hit: %v", q, tag, err)
+		}
+	}
+	// A token from the first code line that has one of 6+ letters, and three
+	// words from the middle of the first write-up passage.
+	pick, err := chromedp.Run(ctx, chromedp.Evaluate[[]string](`fetch("/find.json").then((r) => r.json()).then((d) => {
+		let code = "";
+		for (const x of d) if (x.k === "c") for (const l of x.l) { const m = /[A-Za-z]{6,}/.exec(l); if (m && !code) code = m[0]; }
+		const w = d.find((x) => x.k === "w").t.split(" ");
+		return [code, w.slice(2, 5).join(" ")];
+	})`, chromedp.EvalAwaitPromise))
+	if err != nil || len(pick) != 2 || pick[0] == "" {
+		t.Fatalf("find.json: %v %v", pick, err)
+	}
+	search(pick[0], "code")
+	ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(`until(() => {
+		const m = /#code-(\d+)-L(\d+)$/.exec(location.hash);
+		const l = document.querySelector(".l.hit");
+		return m && l && !l.closest(".code-ex").hidden && l.querySelector(".ln").textContent === m[2] && l.textContent.toLowerCase().includes(`+jsString(strings.ToLower(pick[0]))+`);
+	})`), chromedp.EvalAwaitPromise))
+	if err != nil || !ok {
+		t.Fatalf("code hit for %q did not mark its line: %v", pick[0], err)
+	}
+	search(pick[1], "text")
+	ok, err = chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(`until(() => /#find=/.test(location.hash) && document.querySelector(".found")?.textContent.replace(/\s+/g, " ").includes(`+jsString(pick[1])+`))`), chromedp.EvalAwaitPromise))
+	if err != nil || !ok {
+		t.Fatalf("text hit for %q did not mark its passage: %v", pick[1], err)
+	}
+}
+
+// jsString quotes s as a JavaScript string literal.
+func jsString(s string) string {
+	b, _ := json.Marshal(s)
+	return string(b)
 }
