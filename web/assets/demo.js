@@ -79,6 +79,8 @@ function progressRow(section) {
       pct.textContent = `${Math.round(loaded / 1024).toLocaleString("en-US")} KB`;
     }
   };
+  // Labelled from the start, so the row never grows when the bytes arrive.
+  pct.textContent = total ? "0%" : "0 KB";
   return { row, update };
 }
 
@@ -186,7 +188,7 @@ function autostart(section) {
   if (!("autostart" in section.dataset) || lean || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const button = section.querySelector("[data-demo-start]");
   const note = section.querySelector("[data-demo-note]");
-  if (note) note.textContent = "Above: a recording. The live build starts on its own while this is on screen.";
+  if (note) note.dataset.auto = "";
   const arm = () => {
     const io = new IntersectionObserver(([e]) => {
       if (!e.isIntersecting) return;

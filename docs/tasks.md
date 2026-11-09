@@ -147,6 +147,9 @@ site.css split into site.css (every page), home.css and project.css; the CSS bud
 ### V19 Live project heads · status: done 2026-11-09
 Every live project page opens like the home stage: the demo frame sits in the dark head (beside the text from 64rem, below it on narrower screens) and starts on its own once the page has loaded and the frame is on screen, under the stage's rules (not with reduced motion, Save-Data, 2g/3g or fewer than 4 cores). Until it runs, the recorded clip plays in the frame. Heads with a demo no longer pin, so nothing scrolled to inside one lands under the sheet; the head sinks as the sheet comes up (a view timeline), not with page scroll. The glow follows the running demo's canvas. e2e: desktop light waits for the autostart, then checks for zero layout shift, focus left alone and the recording removed; every other project tab reports 2 cores and clicks to start.
 
+### V20 Full-screen project panels on home · status: done 2026-11-09
+The work index and its monitor became a stack of full-screen dark panels, one per project, like the home stage: name, tagline, metric and "Run it live" beside a 16:10 screen playing the project's clip. Each panel pins and the next slides up over it while the covered one sinks (view timelines named by `web/assets/work.js`); buried panels are not drawn; focus brings its panel up. Group pills on the work sheet jump to each group. e2e `workCheck` walks the reel by focus (home tabs emulate a focused page) and checks the panel covers the screen, plays alone and buries the right panels; `refusedCheck` moved to the panels.
+
 ## Owner only
 
 ### U1 Make more repos public · status: user

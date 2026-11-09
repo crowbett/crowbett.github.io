@@ -30,8 +30,8 @@ document.addEventListener("keydown", (e) => {
     if (!names.length) return;
     const i = names.indexOf(document.activeElement);
     const next = names[i < 0 ? 0 : Math.max(0, Math.min(names.length - 1, i + (e.key === "j" ? 1 : -1)))];
+    // The reel (work.js) brings a panel up when focus lands in it.
     next.focus({ preventScroll: true });
-    next.closest(".it").scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
     e.preventDefault();
   } else if (e.key === "[" || e.key === "]") {
     document.querySelector(`.pager [rel=${e.key === "[" ? "prev" : "next"}]`)?.click();

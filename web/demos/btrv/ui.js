@@ -97,7 +97,7 @@ export async function mount(root, demo) {
   const bar = el("progress", "demo-progress bt-progress");
   bar.max = 1;
   bar.value = 0;
-  bar.hidden = true;
+  bar.classList.add("bt-idle");
   const tabs = el("div", "bt-tabs");
   tabs.setAttribute("aria-label", "Files");
   tabs.setAttribute("role", "group");
@@ -177,7 +177,7 @@ export async function mount(root, demo) {
     } catch (err) {
       if (rethrow) throw err;
       status.textContent = err.message;
-      bar.hidden = true;
+      bar.classList.add("bt-idle");
     } finally {
       busy = false;
       setDisabled(false);
@@ -191,7 +191,7 @@ export async function mount(root, demo) {
     if (total > MAX_BYTES) throw new Error(`These files hold ${mib(total)}; the demo takes up to 32 MiB at once (the btrv command has no such limit).`);
     await rpc("reset");
     let sent = 0;
-    bar.hidden = false;
+    bar.classList.remove("bt-idle");
     for (const f of list) {
       await rpc("begin", { name: f.name, size: f.size });
       for (let off = 0; off < f.size; off += CHUNK) {
@@ -212,7 +212,7 @@ export async function mount(root, demo) {
     if (!opened.selected) {
       cur = null;
       status.textContent = "None of these files is a Btrieve file btrv can open.";
-      bar.hidden = true;
+      bar.classList.add("bt-idle");
       return;
     }
     await select(opened.selected);
@@ -276,7 +276,7 @@ export async function mount(root, demo) {
     markFirst();
     if (!c.table) {
       status.textContent = describe(sel.file) + (sel.schemaError ? ` No schema: ${sel.schemaError}` : "");
-      bar.hidden = true;
+      bar.classList.add("bt-idle");
       receipt.textContent = `${fmt(n)} pages mapped by btrv in ${Math.round(work)} ms, in your browser.`;
       return;
     }
@@ -291,7 +291,7 @@ export async function mount(root, demo) {
     const c = cur;
     const total = Math.max(1, c.sel.file.records);
     const step = still() ? 4000 : Math.max(120, Math.ceil(total / 90));
-    bar.hidden = false;
+    bar.classList.remove("bt-idle");
     for (;;) {
       const r = await rpc("scan", { n: step });
       if (g !== gen) return;
@@ -305,7 +305,7 @@ export async function mount(root, demo) {
       if (r.done) { c.done = true; c.scan = r; break; }
       if (!still()) await frame();
     }
-    bar.hidden = true;
+    bar.classList.add("bt-idle");
     renderSummary();
     initRows();
     receipt.textContent = `${fmt(c.n)} pages mapped and ${fmt(c.scan.report.rowsRead)} rows decoded by btrv in ${Math.round(work)} ms, in your browser.`;
@@ -758,5 +758,5 @@ export async function mount(root, demo) {
   await cssReady;
   const first = guard(() => load(null), true);
   await Promise.race([first, shown]);
-  first.catch((err) => { status.textContent = err.message; bar.hidden = true; });
+  first.catch((err) => { status.textContent = err.message; bar.classList.add("bt-idle"); });
 }
