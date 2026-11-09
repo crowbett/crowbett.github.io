@@ -18,6 +18,25 @@ const workCheck = `(async () => {
 	return await at("netcode") && await at("keel") && document.querySelector(".mon-screen").pathname === "/projects/keel/";
 })()`
 
+// refusedCheck plays the monitor as iOS Low Power Mode does: every play()
+// is refused, so the clip holds its poster, and the visitor's next tap
+// starts it.
+const refusedCheck = `(async () => {
+	const P = HTMLMediaElement.prototype, real = P.play;
+	const it = document.querySelector("#p-lobby");
+	const playing = () => [...document.querySelectorAll(".mon video")].some((v) => !v.paused && v.isConnected);
+	let held = false;
+	try {
+		P.play = () => Promise.reject(new DOMException("refused", "NotAllowedError"));
+		scrollBy(0, it.getBoundingClientRect().top - innerHeight * 0.3);
+		held = await until(() => "now" in it.dataset && document.querySelector(".mon video[src$='/reel/lobby.mp4']") && !playing());
+	} finally {
+		P.play = real;
+	}
+	document.body.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+	return held && await until(playing);
+})()`
+
 // stageCheck waits for the home stage to render in this tab: the real path
 // tracer finishes passes, the readouts fill with measured values and the
 // noise ratio shows the light-sampled half is the cleaner one. The stage is

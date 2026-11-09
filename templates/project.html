@@ -18,8 +18,8 @@
         <canvas class="glow" width="16" height="10" aria-hidden="true"></canvas>
         <div class="ph-screen"{{if .Live}} data-clip="/reel/{{.Slug}}.mp4"{{end}}>
           {{if .Live}}<img src="/reel/{{.Slug}}.webp" width="882" height="552" alt="The {{.Title}} demo running, recorded from its WebAssembly build." fetchpriority="high">{{else}}<span class="ph-dm" aria-hidden="true">{{template "dmask" .Slug}}</span>{{end}}
-          <p class="ph-hud" aria-hidden="true"><span class="led{{if not .Live}} off{{end}}">{{.Slug}}</span><span>{{if .Live}}recorded from the live demo{{else}}diagram{{end}}</span></p>
         </div>
+        <p class="ph-hud" aria-hidden="true"><span class="led{{if not .Live}} off{{end}}">{{.Slug}}</span><span>{{if .Live}}recorded from the live demo{{else}}diagram{{end}}</span></p>
       </figure>
     </div>
   </header>
