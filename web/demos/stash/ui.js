@@ -142,8 +142,20 @@ export async function mount(root, demo) {
 
   // Calls run one at a time, in order.
   let chain = Promise.resolve();
+  const receipt = el("p", "demo-out sh-out");
+  let calls = 0;
+  let callMs = 0;
   const call = (m, p) => {
-    const run = chain.then(() => demo.call(m, p));
+    const run = chain.then(async () => {
+      const t0 = performance.now();
+      try {
+        return await demo.call(m, p);
+      } finally {
+        calls++;
+        callMs += performance.now() - t0;
+        receipt.textContent = `${fmt(calls)} calls to stash's engine, ${fmt(Math.round(callMs))} ms in total, in your browser.`;
+      }
+    });
     chain = run.catch(() => {});
     return run;
   };
@@ -260,7 +272,7 @@ export async function mount(root, demo) {
     el("p", "sh-note", "Each new chunk is compressed with zstd and sealed with XChaCha20-Poly1305 into a pack. Pick a byte and flip one bit of it: the tag no longer verifies, so restore refuses that chunk."),
     packRow, mapBox, plegend, byteInfo, verify);
 
-  root.replaceChildren(dedup, crypt);
+  root.replaceChildren(dedup, crypt, receipt);
 
   // ---- State ----
   let text = PROSE;

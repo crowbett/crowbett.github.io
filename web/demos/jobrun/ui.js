@@ -72,13 +72,13 @@ function cronPanel(demo) {
   box.setAttribute("aria-labelledby", "jr-cron-h");
   const h = el("h3", "jr-h", "Cron schedule");
   h.id = "jr-cron-h";
-  const expr = input("expr", CRON_PRESETS[0][0], { className: "jr-mono" });
+  const expr = input("expr", CRON_PRESETS[0][0]);
   const zone = select("tz", ZONES.map((z) => [z, z]));
-  const start = input("start", CRON_PRESETS[0][2], { className: "jr-mono" });
+  const start = input("start", CRON_PRESETS[0][2]);
   const preset = select("cronPreset", CRON_PRESETS.map((p, i) => [String(i), p[3]]));
   const form = el("form", "jr-controls");
   form.addEventListener("submit", (e) => e.preventDefault());
-  form.append(field("Cron expression", expr, "jr-wide"), field("Time zone", zone), field("After (UTC, RFC 3339)", start), field("Example", preset));
+  form.append(field("Cron expression", expr, "jr-wide"), field("Time zone", zone), field("After (UTC, RFC 3339)", start, "jr-wide"), field("Example", preset));
   const note = el("p", "jr-note");
   const list = el("ol", "jr-runs");
   const status = el("p", "demo-out jr-status");
@@ -164,8 +164,8 @@ function backoffPanel(demo) {
   box.setAttribute("aria-labelledby", "jr-bo-h");
   const h = el("h3", "jr-h", "Retry backoff");
   h.id = "jr-bo-h";
-  const base = input("base", "1s", { className: "jr-mono" });
-  const max = input("max", "5m", { className: "jr-mono" });
+  const base = input("base", "1s");
+  const max = input("max", "5m");
   const factor = input("factor", "2", { type: "number", min: 1, max: 10, step: "any", inputMode: "decimal" });
   const attempts = input("maxAttempts", "8", { type: "number", min: 1, max: 50, step: 1, inputMode: "numeric" });
   const jitter = el("input");
@@ -227,7 +227,7 @@ function backoffPanel(demo) {
     else axis.replaceChildren();
     const t = el("table", "jr-table");
     const head = el("tr");
-    for (const c of ["Attempt fails", "Cap", "Shortest draw", "Longest draw"]) head.append(el("th", null, c));
+    for (const c of ["attempt fails", "cap", "shortest draw", "longest draw"]) head.append(el("th", null, c));
     const thead = el("thead");
     thead.append(head);
     const tbody = el("tbody");

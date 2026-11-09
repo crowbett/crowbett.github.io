@@ -22,4 +22,5 @@
 .cg-def { background: var(--accent-tint); color: var(--text); }
 .cg-site { border-left-color: var(--accent); }
 .cg-ln { display: inline-block; width: 3ch; margin-right: 12px; text-align: right; color: var(--text-3); user-select: none; }
+.cg-out { margin-top: 12px; }
 .cg-foot { margin: 12px 0 0; font-size: 0.8125rem; color: var(--text-2); }
