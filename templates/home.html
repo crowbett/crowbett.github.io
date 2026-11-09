@@ -26,7 +26,7 @@
 <section id="work" class="index" aria-labelledby="work-h">
   <div class="index-head"><h2 id="work-h">Work</h2><p class="count" aria-live="polite">{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} live{{end}}</p>
     <div class="finder" hidden>
-      <label class="search"><span class="vh">Search projects</span><input type="search" name="q" placeholder="Search name, language, topic" autocomplete="off" spellcheck="false" enterkeyhint="search"><kbd aria-hidden="true">/</kbd></label>
+      <label class="search"><span class="vh">Search projects</span><input type="search" name="q" placeholder="Name, language, topic" autocomplete="off" spellcheck="false" enterkeyhint="search"><kbd aria-hidden="true">/</kbd></label>
       <div class="filter" role="group" aria-label="Show one group"><button type="button" data-g="" aria-pressed="true">All <span>{{len .Projects}}</span></button>{{range .Groups}}<button type="button" data-g="{{.Key}}" aria-pressed="false">{{.Short}} <span>{{len .Projects}}</span></button>{{end}}</div>
     </div></div>
   <div class="index-cols" aria-hidden="true"><span>#</span><span>mechanism</span><span>project</span><span>lang</span><span>what it is</span><span>evidence</span><span>demo</span></div>

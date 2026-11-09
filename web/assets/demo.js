@@ -112,6 +112,7 @@ async function start(section) {
   const button = section.querySelector("[data-demo-start]");
   const status = section.querySelector("[data-demo-status]");
   const mountEl = section.querySelector("[data-demo-mount]");
+  const t0 = performance.now();
   button.disabled = true;
   button.textContent = "Loading…";
   mountEl.replaceChildren();
@@ -128,6 +129,7 @@ async function start(section) {
     status.textContent = "";
     progress.row.remove();
     section.dataset.demoReady = "";
+    stamp(section, performance.now() - t0);
     // The mount, not its first control: focusing a text input raised a ring
     // that read as an error and can open a phone's keyboard (V8 round 7).
     mountEl.tabIndex = -1;
@@ -142,6 +144,15 @@ async function start(section) {
     button.disabled = false;
     button.focus();
   }
+}
+
+// stamp puts the measured click-to-running time in the plate, left of the size
+// so nothing already shown moves.
+function stamp(section, ms) {
+  const spec = section.querySelector(".demo-spec");
+  if (!spec) return;
+  spec.querySelector(".demo-took")?.remove();
+  spec.prepend(el("span", "demo-took", `ready in ${ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`} · `));
 }
 
 // Full screen where the browser allows it on an element (not iPhone Safari):

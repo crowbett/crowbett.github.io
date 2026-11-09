@@ -2,7 +2,7 @@
   --sh-new: #bd330b; --sh-new-tint: #f7dcd1; --sh-band: #e2e6eb; --sh-last: #fbebe4;
   --sh-reused: #9aa1ab; --sh-dup: #5a606a; --sh-ground: var(--sunken);
   --sh-tag: var(--sh-new); --sh-hdr: var(--sh-reused);
-  display: grid; gap: 12px; min-width: 0;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0;
 }
 @media (prefers-color-scheme: dark) {
   .sh-panel { --sh-new: #fe7249; --sh-new-tint: #43200f; --sh-band: #1d2230; --sh-last: #2a1712; --sh-reused: #545c69; --sh-dup: #8f96a3; --sh-hdr: #4b5361; }
