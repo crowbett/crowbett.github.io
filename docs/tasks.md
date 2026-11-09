@@ -129,11 +129,11 @@ Project pages are bullets plus a demo note with evidence in the header; the home
 
 ### V14 Organized and interactive · status: done 2026-11-09 (e3479b5, fbd8729, f35ecbe, PR #13 merged as 9a84b58)
 Grouped home index with search (`/`), group chips and URL state; previous / next and a group crumb on project pages; command palette (⌘K), j/k and [ ] keys, prefetch on intent; title and diagram morph between pages; demo full screen. Fixes from a fresh-eyes review of the seven wave 2 demos: stale status lines (raytracer, netcode), btrv phone selection and palette, lobby card clipping, mcpbridge select and word breaks, grepall scrolling matches, styled file pickers (stash, btrv). e2e emulates touch on phone and tablet and shoots running demos at 820 px locally. CSS budget 48 KiB (PLAN.md).
-Open: one shared readout, control bar, status line and legend style across demos (review notes, 2026-11-08).
+Shared readout, legend and stat styles landed in V15.
 
-### V15 Review polish · status: doing 2026-11-09 (afd7fb1, b296e59)
+### V15 Review polish · status: done 2026-11-09 (afd7fb1, b296e59, b765ad6, 64cf058, ec9b814)
 Fixes from a fresh-eyes design review: the work table at 1024–1279 px (PR #14), facts overflow at 768–820, garbled diagram labels (labelled masks now 2x), palette house rules and phone layout, uppercase labels in four demos, raytracer readouts that disagreed mid-pass, mixed input faces, the inset jog, field bugs in kvlite, jobrun and edgecache, four stat block formats unified on `.cells`, off-palette legends, codegraph opening on an empty half, tag chips breaking, the 404 panel and hero alignment. Additions: a receipt line in every demo, measured start-up time in the plate, keypad hero keys, palette plate.
-Open: off-palette colours in strata (11 extrusion roles), netcode's flash, stash, lobby and mcpbridge locals; a shared `.cells.stack` rule to replace each demo's own.
+Then: every demo on `.cells stack` and `.demo-legend`, colours from demo tokens via `color-mix(in oklab)` (oklch swung orange through magenta on grepall), canvases read tokens through a probe, lowercase field labels; ui.css 54,058 → 50,603 B. Left: the raytracer screen palette mirrors `--screen*`; lobby's 300 ms seat flights cross card headers in flight (by design).
 
 ## Owner only
 
