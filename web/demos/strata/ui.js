@@ -104,6 +104,9 @@ export async function mount(root, demo) {
   let slices = 0;
   let files = 0;
   let busy = null;
+  // A failed load stays in the summary until the visitor acts again, even
+  // when a queued re-slice of the kept model finishes after it.
+  let failed = "";
   let mounted = false;
 
   const colors = () => {
@@ -204,7 +207,8 @@ export async function mount(root, demo) {
             desired = { key: engine.key, value: engine.value, label: engine.label };
             restoreSelect();
           }
-          summary.textContent = err.message;
+          failed = err.message;
+          summary.textContent = failed;
         }
         continue;
       }
@@ -236,7 +240,7 @@ export async function mount(root, demo) {
         scrub.value = String(want);
         const m = engine.meta;
         const [sx, sy, sz] = m.size;
-        summary.textContent =
+        summary.textContent = (failed ? `${failed} ` : "") +
           `${m.name}: ${fmt(m.triangles)} triangles, ${mm(sx)} × ${mm(sy)} × ${mm(sz)} mm. ` +
           `Sliced into ${fmt(s.layers)} layers of ${fmt(s.paths)} toolpaths, ${mm(s.extrusionM)} m in all, ` +
           `in ${fmt(Math.round(ms))} ms in your browser.`;
@@ -292,10 +296,14 @@ export async function mount(root, demo) {
     return { key: model.value, value: model.value, label: model.selectedOptions[0].textContent, params: { model: model.value } };
   };
   model.addEventListener("change", () => {
+    failed = "";
     desired = builtIn();
     go();
   });
-  height.addEventListener("change", go);
+  height.addEventListener("change", () => {
+    failed = "";
+    go();
+  });
   scrub.addEventListener("input", () => {
     want = Number(scrub.value);
     go();
@@ -304,6 +312,7 @@ export async function mount(root, demo) {
     const f = file.files[0];
     file.value = "";
     if (!f) return;
+    failed = "";
     if (f.size > info.maxFileBytes) {
       summary.textContent = `${f.name} is over ${info.maxFileBytes / 1048576} MiB.`;
       return;
