@@ -27,46 +27,49 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".bt-map", Pad: 8, WideFocus: ".bt-map", WidePad: 8, Seconds: 7,
 	},
-	// The basket changes in place, never adding a line, so the crop holds still:
-	// more supplement bottles beside the shaker, then the shaker counted as a
-	// plain rigid item. Each change asks the fit engine again.
+	// The floor packs orders on its own; you drop your cap order on the line,
+	// then take the top pick off the shelf and the shift is re-judged.
 	"anchorflow": {
 		Play: `(async () => {
 			const w = (ms) => new Promise((r) => setTimeout(r, ms));
-			const lines = () => document.querySelectorAll(".af-basket > li");
-			const qty = (li, v) => { const i = li.querySelector("input[name=qty]"); i.value = v; i.dispatchEvent(new Event("input")); };
-			const cls = (li, v) => { const s = li.querySelector("select[name=class]"); s.value = v; s.dispatchEvent(new Event("change")); };
-			await w(900); qty(lines()[1], "4");
-			await w(1700); qty(lines()[1], "8");
-			await w(1700); cls(lines()[0], "");
-			await w(1700); cls(lines()[0], "SHAKER"); qty(lines()[1], "2");
+			const click = (t) => [...document.querySelectorAll(".af-controls button, .af-shelfhead button")].find((b) => b.textContent === t).click();
+			await w(2600); click("Drop on the line");
+			await w(2600); click("Take top pick off");
 		})()`,
-		Focus: ".af-answer-box", Pad: 8, WideFocus: ".af-answer-box", WidePad: 130, Seconds: 8,
+		Focus: ".af-canvas", Pad: 4, WideFocus: ".af-canvas", WidePad: 8, Seconds: 8,
 	},
-	// Walk the call graph from run to a callee, its callee, and back to run.
+	// The tour steps from run to a callee and ripples out from it; then a
+	// search for "bump" ripples its callers out three hops, to main.
 	"codegraph": {
+		Setup: `(async () => {
+			for (let i = 0; i < 200 && !document.querySelector(".cg-node.is-focus"); i++) await new Promise((r) => setTimeout(r, 50));
+		})()`,
 		Play: `(async () => {
 			const w = (ms) => new Promise((r) => setTimeout(r, ms));
-			const s = document.querySelector("select[name=symbol]");
-			const pick = (v) => { s.value = v; s.dispatchEvent(new Event("change")); };
-			await w(900); pick("src/log.rs:24");
-			await w(1600); pick("src/log.rs:2");
-			await w(1600); pick("src/main.rs:32");
+			await w(3800);
+			document.querySelector("input[name=symbol]").value = "bump";
+			document.querySelector(".cg-find button").click();
+			await w(2400);
 		})()`,
-		Focus: ".cg-summary", Pad: 8, Seconds: 6.5,
+		Focus: ".cg-svg", Pad: 8, WideFocus: ".cg-svg", WidePad: 8, Seconds: 7,
 	},
-	// Each preset plays its requests through the cache: a request no-store
-	// bypasses it, stale-while-revalidate serves stale, Vary keeps one entry per
-	// language, and max-age with an ETag revalidates.
+	// The edge runs bursts under stale-while-revalidate; you reload through it,
+	// then switch the origin to no-cache and the same traffic replays as 304s.
 	"edgecache": {
-		Play: `(async () => {
-			const s = document.querySelector("select[name=preset]");
-			for (const v of ["no-store", "swr", "vary", "max-age"]) {
-				await new Promise((r) => setTimeout(r, 1600));
-				s.value = v; s.dispatchEvent(new Event("change"));
-			}
+		Setup: `(async () => {
+			const s = document.querySelector("select[name=speed]");
+			s.value = "20"; s.dispatchEvent(new Event("change"));
+			await new Promise((r) => setTimeout(r, 1200));
 		})()`,
-		Focus: ".ec-legend", Pad: 8, WideFocus: ".ec-legend", WidePad: 172, Seconds: 8,
+		Play: `(async () => {
+			const w = (ms) => new Promise((r) => setTimeout(r, ms));
+			const send = [...document.querySelectorAll(".ec-acts button")].find((b) => b.textContent === "Send my request");
+			const p = document.querySelector("select[name=policy]");
+			await w(1500); send.click();
+			await w(2600); p.value = "no-cache"; p.dispatchEvent(new Event("change"));
+			await w(2000); send.click();
+		})()`,
+		Focus: ".ec-canvas", Pad: 4, WideFocus: ".ec-canvas", WidePad: 4, Seconds: 8,
 	},
 	// Each query narrows 283 files to candidates by trigram, then to matches.
 	"grepall": {
@@ -130,20 +133,25 @@ var Showcases = map[string]Showcase{
 		Focus: ".mb-head", Pad: 8, Seconds: 7.5,
 	},
 	// keel: a new seed every 1.2 s; the digest, fault timeline and totals change.
+	// keel: seed 2's whole fault schedule plays at 10×, from the first partition
+	// to the verdict, then the sweep moves on to seed 3.
 	"keel": {
 		Setup: `(async () => {
-			const seed = document.querySelector("input[name=seed]"), run = document.querySelector(".kl-controls button[type=submit]");
-			seed.value = "2"; run.click();
-			for (let i = 0; i < 200 && (document.querySelectorAll(".kl-digest").length !== 1 || run.disabled); i++) await new Promise((r) => setTimeout(r, 25));
+			const click = (t) => [...document.querySelectorAll(".kl-controls button")].find((b) => b.textContent === t).click();
+			const v = (k) => document.querySelector(".kl-cells [data-k=" + k + "] .kl-v").textContent;
+			if (document.querySelector(".kl-acts button").textContent === "Pause") click("Pause");
+			const speed = document.querySelector("select[name=speed]");
+			speed.value = "10"; speed.dispatchEvent(new Event("change"));
+			click("Reset");
+			for (let i = 0; i < 400 && !(v("seeds") === "24" && v("t") === "0.00 s" && document.querySelector(".kl-match")); i++) await new Promise((r) => setTimeout(r, 25));
+			await new Promise((r) => setTimeout(r, 400));
 		})()`,
 		Play: `(async () => {
-			const seed = document.querySelector("input[name=seed]"), run = document.querySelector(".kl-controls button[type=submit]");
-			for (const s of [6, 14, 18, 22, 33]) {
-				await new Promise((r) => setTimeout(r, 1200));
-				seed.value = String(s); run.click();
-			}
+			const click = (t) => [...document.querySelectorAll(".kl-controls button")].find((b) => b.textContent === t).click();
+			await new Promise((r) => setTimeout(r, 200));
+			click("Play");
 		})()`,
-		Focus: ".kl-replay", Pad: 8, Seconds: 7.2,
+		Focus: ".kl-canvas", Pad: 4, Seconds: 8,
 	},
 	// lobby: you queue twice; players fill rooms on their own meanwhile.
 	"lobby": {

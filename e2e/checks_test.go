@@ -102,20 +102,53 @@ const sceneCheck = `(async () => {
 var demoChecks = map[string][]string{
 	"smoke": {`document.querySelector(".demo-out").textContent.includes("answered: hello from the page")`},
 	"codegraph": {
-		`document.querySelector(".cg-summary").textContent === "run (src/main.rs:32): 1 caller; 7 callees, 6 resolved, 1 unresolved."`,
-		`[...document.querySelectorAll("[aria-labelledby=cg-callees] .cg-edge")].map((li) => li.firstChild.textContent + ":" + li.querySelector(".cg-conf").textContent).filter((t) => /^(store::Store::set|store\.len\(\)\.to_string):/.test(t)).join() === "store::Store::set:exact,store.len().to_string:unresolved"`,
-		`document.querySelector(".cg-foot").textContent.includes("99 edges (imports excluded), 50 resolved to a definition: 44 exact, 6 likely, 0 name_only")`,
+		`until(() => document.querySelectorAll(".cg-node").length === 17 && document.querySelectorAll(".cg-e:not(.cg-via)").length === 19 && document.querySelectorAll(".cg-likely.cg-e").length === 1 &&
+			[...document.querySelectorAll(".cg-cells .cg-v")].slice(0, 3).map((v) => v.textContent).join() === "26,17,99" &&
+			document.querySelectorAll(".cg-node.is-focus").length > 0 && document.querySelectorAll(".cg-e.is-up, .cg-e.is-down").length > 0 &&
+			document.querySelector(".cg-foot").textContent.includes("99 edges (imports excluded), 50 resolved to a definition: 44 exact, 6 likely, 0 name_only"))`,
 		`(async () => {
-			const callers = () => [...document.querySelectorAll("[aria-labelledby=cg-callers] .cg-go")].map((b) => b.textContent).join();
-			[...document.querySelectorAll("[aria-labelledby=cg-callers] .cg-go")].find((b) => b.textContent === "main").click();
+			const v = (k) => document.querySelector(".cg-cells [data-k=" + k + "] .cg-v").textContent;
+			const sum = () => document.querySelector(".cg-summary").textContent;
+			const hops = () => [...document.querySelectorAll(".cg-node.is-up")].map((g) => g.querySelector(".cg-name").textContent + g.querySelector(".cg-hop").textContent).sort().join();
+			const play = document.querySelector(".cg-acts button");
+			if (play.textContent === "Pause") play.click();
+			document.querySelector(".cg-node[data-spec='src/store.rs:32']").dispatchEvent(new MouseEvent("click", { bubbles: true }));
+			return until(() => sum() === "store::Store::bump (src/store.rs:32): 2 callers; 0 callees, 0 resolved, 0 unresolved." &&
+				hops() === "Store::delete↑1,Store::set↑1,main↑3,run↑2" && v("callers") === "4" && v("depth") === "3" && v("callees") === "0" &&
+				/^\d+ call-tree queries walked from store::Store::bump in [\d.]+ ms; drawing the graph took 17 more in [\d.]+ ms, after indexing 4 files in [\d.]+ ms, in your browser\.$/.test(document.querySelector(".cg-out").textContent));
+		})()`,
+		`(async () => {
+			const play = document.querySelector(".cg-acts button");
+			if (play.textContent === "Pause") play.click();
+			const search = (q) => { document.querySelector("input[name=symbol]").value = q; document.querySelector(".cg-find button").click(); };
+			const sum = () => document.querySelector(".cg-summary").textContent;
+			const st = () => document.querySelector(".cg-status").textContent;
+			search("write");
+			let ok = await until(() => sum().startsWith("write names log::Stdout::write (src/log.rs:11) and log::Sink::write (src/log.rs:2): 3 callers;") &&
+				document.querySelectorAll(".cg-node.is-focus").length === 2 && document.querySelectorAll(".cg-via.is-up").length === 2 &&
+				[...document.querySelectorAll("[aria-labelledby=cg-callers] .cg-where")].some((w) => w.textContent.includes("via log::Sink::write")));
+			search("tokenize");
+			ok = ok && await until(() => sum().startsWith("parse::tokenize (src/parse.rs:30)") && document.querySelector(".cg-code").dataset.file === "src/parse.rs");
+			document.querySelector(".cg-line[data-n='36']").click();
+			ok = ok && await until(() => sum().startsWith("parse::key (src/parse.rs:34): 1 caller; 4 callees, 1 resolved, 3 unresolved.") && st() === "src/parse.rs:36 is inside parse::key.");
+			search("Store");
+			ok = ok && await until(() => st() === "Store resolves to struct store::Store (src/store.rs:4); the graph draws functions and methods.");
+			search("nope");
+			return ok && await until(() => st() === "no symbol named ` + "`nope` (try `codegraph find nope`)" + `" && sum().startsWith("parse::key "));
+		})()`,
+		`(async () => {
+			const play = document.querySelector(".cg-acts button");
+			if (play.textContent === "Pause") play.click();
+			const v = (k) => document.querySelector(".cg-cells [data-k=" + k + "] .cg-v").textContent;
+			const set = (n, x) => { const s = document.querySelector("select[name=" + n + "]"); s.value = x; s.dispatchEvent(new Event("change")); };
+			document.querySelector("input[name=symbol]").value = "main";
+			document.querySelector(".cg-find button").click();
 			let ok = await until(() => document.querySelector(".cg-summary").textContent.startsWith("main (src/main.rs:11)"));
-			[...document.querySelectorAll(".cg-go")].find((b) => b.textContent === "parse::parse_line").click();
-			ok = ok && await until(() => document.querySelector(".cg-summary").textContent.startsWith("parse::parse_line (src/parse.rs:19)") && callers() === "main");
-			const s = document.querySelector("select[name=symbol]");
-			s.value = "src/store.rs:32"; s.dispatchEvent(new Event("change"));
-			ok = ok && await until(() => callers() === "store::Store::set,store::Store::delete" && document.querySelectorAll(".cg-def").length === 3);
-			s.value = "src/main.rs:11"; s.dispatchEvent(new Event("change"));
-			return ok && await until(() => document.querySelector(".cg-summary").textContent.startsWith("main "));
+			set("ripple", "callees"); set("depth", "1");
+			ok = ok && await until(() => v("callers") === "–" && v("callees") === "6" && v("unresolved") === "5" && v("depth") === "1" && document.querySelectorAll(".cg-node.is-up").length === 0 &&
+				document.querySelector(".cg-out").textContent.startsWith("2 call-tree queries walked from main in "));
+			set("ripple", "both"); set("depth", "8");
+			return ok && await until(() => v("callers") === "0" && v("callees") === "15" && v("depth") === "3");
 		})()`,
 	},
 	"lobby": {
@@ -179,14 +212,27 @@ var demoChecks = map[string][]string{
 		`[...document.querySelectorAll(".rl-chart")].every(c => c.querySelectorAll("rect.rl-allowed").length > 20 && c.querySelectorAll("rect.rl-denied").length > 0)`,
 		`/^923 requests through 3 algorithms/.test(document.querySelector(".rl-status").textContent)`,
 	},
-	// The opening basket (a shaker and two supplement bottles) must go in a box;
-	// removing the shaker frees the bottles for a mailer.
+	// The floor runs on seed 1: after a reset the engine has packed three
+	// orders; the fourth (a dropper bottle) goes in a box by rule, your cap
+	// order too, and taking its box off the shelf re-judges the shift.
 	"anchorflow": {
-		`document.querySelector(".af-verdict .af-pkg").textContent === "9 x 7 x 5" && document.querySelectorAll(".af-view").length === 2`,
-		`document.querySelector(".af-status").textContent.startsWith("3 units judged against 31 packages in ")`,
+		`Number(document.querySelector(".af-cells [data-k=orders] .af-v").textContent) >= 3 && /^Packing floor at [\d:]+ of floor time: \d+ orders packed, \d+ in boxes and \d+ in mailers, latest #\d{3} in /.test(document.querySelector(".af-canvas").getAttribute("aria-label")) && /^\d+ orders packed by AnchorFlow's fit engine: \d+ calls judged [\d,]+ packages in [\d,]+ ms, in your browser\.$/.test(document.querySelector(".af-out").textContent)`,
+		`(() => { const c = document.querySelector(".af-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
 		`(async () => {
-			document.querySelector(".af-rm").click();
-			return await until(() => document.querySelector(".af-verdict .af-pkg").textContent === "7 1/4 x 12");
+			const click = (t) => [...document.querySelectorAll(".af-controls button, .af-shelfhead button")].find((b) => b.textContent === t).click();
+			const label = () => document.querySelector(".af-canvas").getAttribute("aria-label");
+			const you = () => document.querySelector(".af-youline").textContent;
+			if (document.querySelector(".af-acts button").textContent === "Pause") click("Pause");
+			click("Reset");
+			let ok = await until(() => label() === "Packing floor at 0:01:27 of floor time: 3 orders packed, 2 in boxes and 1 in mailers, latest #003 in 7 1/4 x 12.");
+			click("Next order");
+			ok = ok && await until(() => label().endsWith("latest #004 in Multi Box.") && document.querySelector(".af-now").textContent.includes("7 this basket needs a box"));
+			click("Drop on the line");
+			ok = ok && await until(() => you() === "Your order #Y1 (Cap, Folded T-shirt ×2) went in 9 x 7 x 5, box, $0.62 all in, 83 % full. Warehouse rule first: Cap ships only in a box.");
+			[...document.querySelectorAll(".af-pkg")].find((b) => b.firstChild.textContent === "9 x 7 x 5").click();
+			ok = ok && await until(() => document.querySelector(".af-status").textContent.startsWith("9 x 7 x 5 is off the shelf. The engine re-judged all 5 orders packed so far: 1 pick changed, cost ") && you().startsWith("Your order #Y1 (Cap, Folded T-shirt ×2) now goes in "));
+			click("Restock");
+			return ok && await until(() => document.querySelector(".af-status").textContent.startsWith("Every package is back on the shelf. The engine re-judged all 5 orders packed so far: 1 pick changed"));
 		})()`,
 	},
 	"btrv": {
@@ -256,18 +302,28 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"edgecache": {
-		`[...document.querySelectorAll(".ec-table .ec-badge")].map(b => b.textContent).join() === "MISS,HIT,REVALIDATED,HIT"`,
-		`[...document.querySelectorAll(".ec-table td.ec-origin")].map(c => c.textContent).join("|") === "GET → 200|none|conditional GET → 304|none"`,
-		`document.querySelectorAll(".ec-timeline rect.ec-mark").length === 4`,
-		`(() => { const b = document.querySelector(".ec-scroll"); return b.getAttribute("aria-label") === "Request log" && (b.tabIndex < 0 || b.getAttribute("role") === "region"); })()`,
+		`until(() => { const v = (k) => document.querySelector(".ec-cells [data-k=" + k + "] .ec-v").textContent; return Number(v("requests")) > 0 && ["MISS", "HIT", "STALE", "REVALIDATED"].includes(document.querySelector(".ec-table .ec-badge").textContent) && /^Edge at \d+ s of simulated time: \d+ requests, \d+ served from cache, \d+ sent to the origin/.test(document.querySelector(".ec-canvas").getAttribute("aria-label")); })`,
+		`(() => { const c = document.querySelector(".ec-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
+		`(() => { const b = document.querySelector(".ec-scroll"); return b.getAttribute("aria-label") === "Response log" && (b.tabIndex < 0 || b.getAttribute("role") === "region"); })()`,
 		`(async () => {
-			const s = document.querySelector("select[name=preset]");
+			const click = (t) => [...document.querySelectorAll(".ec-acts button")].find((b) => b.textContent === t).click();
+			const v = (k) => document.querySelector(".ec-cells [data-k=" + k + "] .ec-v").textContent;
 			const col = (sel) => [...document.querySelectorAll(sel)].map((c) => c.textContent).join();
-			const pick = (v) => { s.value = v; s.dispatchEvent(new Event("change")); };
-			pick("no-store");
-			const ok = await until(() => col(".ec-table .ec-badge") === "MISS,BYPASS,HIT" && col(".ec-table td.ec-body") === "version 1,version 2,version 1");
-			pick("max-age");
-			return ok && await until(() => col(".ec-table .ec-badge") === "MISS,HIT,REVALIDATED,HIT");
+			const play = document.querySelector(".ec-acts button");
+			if (play.textContent === "Pause") click("Pause");
+			click("Reset");
+			await until(() => v("requests") === "1");
+			for (let i = 0; i < 30; i++) { click("Step 10 s"); await new Promise((r) => setTimeout(r, 30)); }
+			let ok = await until(() => v("t") === "300 s" && v("requests") === "30" && v("ratio") === "93.3 %" && v("origin") === "6" && v("saved") === "24" && v("r304") === "5" && v("p50") === "8 s" && v("p95") === "40 s" &&
+				col(".ec-table tbody tr td:nth-child(2) .ec-badge") === "HIT,STALE,HIT,HIT,HIT,HIT");
+			const kind = document.querySelector("select[name=yours]");
+			kind.value = "reload"; kind.dispatchEvent(new Event("change"));
+			click("Send my request");
+			ok = ok && await until(() => document.querySelector(".ec-you").textContent === 'Your GET (Cache-Control: no-cache) at 300 s: REVALIDATED, status 200, Age 0, body "version 1". The origin saw conditional GET → 304.' && v("requests") === "31" && v("r304") === "6");
+			const pol = document.querySelector("select[name=policy]");
+			pol.value = "no-store"; pol.dispatchEvent(new Event("change"));
+			return ok && await until(() => v("ratio") === "0.0 %" && v("origin") === "31" && v("saved") === "0" && col(".ec-table tbody .ec-badge") === "BYPASS,BYPASS,BYPASS,BYPASS,BYPASS,BYPASS" &&
+				document.querySelector(".ec-table tbody tr td:nth-child(4)").textContent === "version 31");
 		})()`,
 	},
 	"strata": {
@@ -357,18 +413,43 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"keel": {
-		`[...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join() === "888b42107bc083ca,888b42107bc083ca" && document.querySelector(".kl-match") !== null`,
-		`[...document.querySelectorAll(".kl-cells .kl-v")].map((d) => d.textContent).join() === "477,0,6,7,linearizable"`,
-		`document.querySelectorAll(".kl-events li").length === 21 && document.querySelectorAll(".kl-timeline rect.kl-bar").length > 0`,
-		`/^Seed 2: 113,070 scheduler steps and 141,581 traced events over 35\.00 s of simulated time, run in [\d,]+ ms in your browser\.$/.test(document.querySelector(".kl-status").textContent)`,
+		`/^(Seed|Your seed) \d+ at [\d.]+ s of 3\d\.\d\d s simulated: .+; \d+ of \d+ fault events so far\. \d+ seeds checked, \d+ linearizable\.$/.test(document.querySelector(".kl-canvas").getAttribute("aria-label")) && (() => { const c = document.querySelector(".kl-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
+		`(async () => {
+			const click = (t) => [...document.querySelectorAll(".kl-controls button")].find((b) => b.textContent === t).click();
+			const v = (k) => document.querySelector(".kl-cells [data-k=" + k + "] .kl-v").textContent;
+			const digests = () => [...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join();
+			if (document.querySelector(".kl-acts button").textContent === "Pause") click("Pause");
+			click("Reset");
+			if (!await until(() => digests() === "888b42107bc083ca,888b42107bc083ca" && document.querySelector(".kl-match") !== null && v("seeds") === "24" && v("lin") === "24 / 24" &&
+				v("t") === "0.00 s" && v("faults") === "0 / 25" && v("ok") === "477" && v("fail") === "0" && v("info") === "6" && v("conf") === "7" && v("hist") === "linearizable")) return false;
+			click("Next fault");
+			if (!await until(() => v("t") === "0.25 s" && v("faults") === "1 / 25" && v("part") === "{5} | {1,2,3,4}" && v("faulty") === "none")) return false;
+			click("Next fault");
+			return await until(() => v("t") === "1.86 s" && v("faulty") === "n5 crashed" && v("part") === "{5} | {1,2,3,4}" &&
+				/^\d+ runs of keel's simulator: [\d,]+ scheduler steps and [\d,]+ traced events over [\d,.]+ s of simulated time, in [\d,]+ ms of calls, in your browser\.$/.test(document.querySelector(".kl-receipt").textContent));
+		})()`,
+		`(async () => {
+			const click = (t) => [...document.querySelectorAll(".kl-controls button")].find((b) => b.textContent === t).click();
+			const v = (k) => document.querySelector(".kl-cells [data-k=" + k + "] .kl-v").textContent;
+			const digests = () => [...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join();
+			if (document.querySelector(".kl-acts button").textContent === "Pause") click("Pause");
+			if (!await until(() => v("seeds") === "24")) return false;
+			document.querySelector("input[name=mine]").value = "1234";
+			click("Run my seed");
+			if (!await until(() => digests() === "75ca914818e02f3d,75ca914818e02f3d" && document.querySelector(".kl-match") !== null &&
+				v("ok") === "494" && v("info") === "3" && v("conf") === "14" && v("faults") === "0 / 13")) return false;
+			click("Replay");
+			if (!await until(() => digests() === "75ca914818e02f3d,75ca914818e02f3d" && document.querySelectorAll(".kl-which")[1].textContent === "replay")) return false;
+			for (let i = 0; i < 20 && v("t") !== "35.00 s"; i++) click("Next fault");
+			return await until(() => v("faults") === "13 / 13" && v("seeds") === "25" && v("lin") === "25 / 25");
+		})()`,
 		`(async () => {
 			const digests = () => [...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join();
-			document.querySelector("input[name=seed]").value = "8";
-			document.querySelector(".kl-controls").requestSubmit();
-			let ok = await until(() => digests() === "22e2ba986ec4d67e" && !document.querySelector(".kl-controls button.secondary").disabled);
-			document.querySelector(".kl-controls button.secondary").click();
-			ok = ok && await until(() => digests() === "22e2ba986ec4d67e,22e2ba986ec4d67e" && document.querySelector(".kl-match") !== null);
-			return ok && document.querySelectorAll(".kl-events li").length === 15;
+			const seed = document.querySelector("input[name=seed]");
+			seed.value = "8";
+			seed.dispatchEvent(new Event("input"));
+			return await until(() => digests() === "22e2ba986ec4d67e" && document.querySelector(".kl-out").textContent === "8" &&
+				document.querySelector(".kl-cells [data-k=ok] .kl-v").textContent === "526");
 		})()`,
 	},
 	"raytracer": {
