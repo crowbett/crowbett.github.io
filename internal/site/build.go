@@ -117,6 +117,7 @@ func prepare(cfg Config) (*prepared, error) {
 		"demoAsset": func(slug string) string { return "/demos/" + slug + "/ui.js" },
 		"demoKB":    func(slug string) string { return thousands((sizes[slug].Gzip + 1023) / 1024) },
 		"demoBytes": func(slug string) int { return sizes[slug].Raw },
+		"demo":      func(slug string) demoSize { return sizes[slug] },
 		"bind":      bindNumbers,
 		"pg": func(rel, label string, p *Project) pagerLink {
 			return pagerLink{Rel: rel, Label: label, P: p}
@@ -254,7 +255,15 @@ func writeSearch(file string, projects []Project) error {
 	return writeFile(file, b)
 }
 
-type demoSize struct{ Raw, Gzip int }
+// demoSize is what the lock records of one built binary.
+type demoSize struct {
+	Raw, Gzip int
+	Built     string // toolchain, e.g. "Go 1.27.3"
+	SHA       string // first 8 hex of the binary's sha256
+	Ref       string // the pinned commit, short
+}
+
+var version = regexp.MustCompile(`\d+\.\d+(\.\d+)?`)
 
 var (
 	numberSpace = regexp.MustCompile(`(\d) `)
@@ -304,10 +313,16 @@ func demoSizes(src fs.FS) (map[string]demoSize, error) {
 		return nil, err
 	}
 	var lock struct {
+		Go    string `json:"go"`
 		Demos []struct {
-			Slug string `json:"slug"`
-			Raw  int    `json:"bytes"`
-			Gzip int    `json:"gzip_bytes"`
+			Slug  string `json:"slug"`
+			Kind  string `json:"kind"`
+			Ref   string `json:"ref"`
+			Rustc string `json:"rustc"`
+			Clang string `json:"clang"`
+			SHA   string `json:"sha256"`
+			Raw   int    `json:"bytes"`
+			Gzip  int    `json:"gzip_bytes"`
 		} `json:"demos"`
 	}
 	if err := json.Unmarshal(b, &lock); err != nil {
@@ -315,9 +330,21 @@ func demoSizes(src fs.FS) (map[string]demoSize, error) {
 	}
 	sizes := map[string]demoSize{}
 	for _, d := range lock.Demos {
-		if d.Gzip > 0 {
-			sizes[d.Slug] = demoSize{Raw: d.Raw, Gzip: d.Gzip}
+		if d.Gzip == 0 {
+			continue
 		}
+		built := "Go " + version.FindString(lock.Go)
+		switch d.Kind {
+		case "rust":
+			built = "Rust " + version.FindString(d.Rustc)
+		case "cpp":
+			built = "C++, clang " + version.FindString(d.Clang)
+		}
+		ds := demoSize{Raw: d.Raw, Gzip: d.Gzip, Built: built, SHA: d.SHA[:min(8, len(d.SHA))]}
+		if len(d.Ref) >= 7 {
+			ds.Ref = d.Ref[:7]
+		}
+		sizes[d.Slug] = ds
 	}
 	return sizes, nil
 }
