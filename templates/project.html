@@ -30,6 +30,7 @@
           </div>
           <div class="demo-mount" data-demo-mount></div>
           <p class="demo-status" data-demo-status role="status" aria-live="polite"></p>
+          <a class="demo-code" href="#code" data-code-link hidden><span class="led">The code it runs</span><span class="dc-n"><span data-code-total></span> calls ↓</span></a>
         </section>
       </div>
       <script type="module" src="/assets/demo.js"></script>{{else}}<figure class="ph-fig">
@@ -42,6 +43,20 @@
 
   <div class="sheet">
   <div class="sheet-in">
+
+  {{with .Code}}<section class="code" id="code" aria-labelledby="code-title" data-code="{{.Slug}}">
+    <div class="code-head">
+      <h2 id="code-title">The code</h2>
+      <p class="code-src">{{if $.Project.Live}}The real source this demo runs, at commit <span class="sha">{{.Short}}</span>.{{else}}Real source at commit <span class="sha">{{.Short}}</span>.{{end}}{{if $.Project.Private}} The rest of the repository is private.{{end}}</p>
+      {{if $.Project.Live}}<p class="code-trace" data-code-trace aria-hidden="true"><span class="led off">idle</span><span data-trace-text>Use the demo and the code it runs lights up here.</span></p>{{end}}
+    </div>
+    {{if gt (len .Excerpts) 1}}<div class="code-tabs" role="tablist" aria-label="Excerpts" data-code-tabs hidden>{{range $i, $e := .Excerpts}}<button type="button" role="tab" id="ct-{{$i}}" aria-controls="cx-{{$i}}" aria-selected="{{if eq $i 0}}true{{else}}false{{end}}"{{if $i}} tabindex="-1"{{end}}><span class="ct-t">{{$e.Title}}</span><span class="ran" data-ran></span></button>{{end}}</div>{{end}}
+    {{range $i, $e := .Excerpts}}<figure class="code-ex" id="cx-{{$i}}"{{if gt (len $.Project.Code.Excerpts) 1}} role="tabpanel" aria-labelledby="ct-{{$i}}"{{end}} data-calls="{{$e.CallList}}">
+      <figcaption><span class="cx-t">{{$e.Title}}</span> <span class="cx-path">{{$e.Path}}<span class="cx-lines">:{{$e.From}}–{{$e.To}}</span></span>{{if $e.Calls}} <span class="cx-calls">runs on every {{range $j, $c := $e.CallLabels}}{{if $j}}, {{end}}<code>{{$c}}</code>{{end}} call</span>{{end}}<span class="cx-why">{{$e.Why}}</span></figcaption>
+      <pre class="cx-scroll" tabindex="0" role="region" aria-label="{{$e.Path}}, lines {{$e.From}} to {{$e.To}}"><code>{{range $k, $l := $e.Lines}}<span class="l"><span class="ln" aria-hidden="true">{{add $e.From $k}}</span>{{$e.HTML $k}}</span>{{end}}</code></pre>
+    </figure>{{end}}
+  </section>
+  <script type="module" src="/assets/code.js"></script>{{end}}
 
   <div class="project-info">
     <div class="body">{{.Body}}</div>

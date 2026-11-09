@@ -46,7 +46,11 @@ export function connect(slug, { callTimeoutMs = CALL_TIMEOUT_MS, loadTimeoutMs =
 
   const client = {
     slug,
-    call: (method, params = {}) => send({ type: "call", method, params }, callTimeoutMs),
+    // Each answered call is announced, so the page's code panel can light the source it ran.
+    call: (method, params = {}) => send({ type: "call", method, params }, callTimeoutMs).then((r) => {
+      document.dispatchEvent(new CustomEvent("demo:call", { detail: { slug, method, params } }));
+      return r;
+    }),
     close: () => fail(new Error("demo closed")),
   };
   return send({ type: "load", slug }, loadTimeoutMs).then(() => client, (err) => { fail(err); throw err; });
