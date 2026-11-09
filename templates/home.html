@@ -1,9 +1,7 @@
 {{define "home"}}{{template "head" .}}
 <section class="hero">
   <div class="hero-text">
-    <h1><b>{{.Owner.Name}}</b> builds databases, caches, queues, code search and game netcode in Go, Rust and C++, and tests them with simulation, fault injection and benchmarks.</h1>
-    {{if .LiveCount}}<p class="hook">{{.LiveCount}} of them run live in your browser: the real code, compiled to WebAssembly.</p>
-    <nav class="keys" aria-label="Live demos">{{range .Projects}}{{if .Live}}<a href="/projects/{{.Slug}}/#demo">{{.Title}}</a>{{end}}{{end}}</nav>{{end}}
+    <h1><b>{{.Owner.Name}}</b> builds databases, caches, queues, code search and game netcode in Go, Rust and C++, and tests them with simulation, fault injection and benchmarks.{{if .LiveCount}} <span>{{.LiveCount}} of the {{len .Projects}} below run in this tab: the real code, compiled to WebAssembly.</span>{{end}}</h1>
   </div>
     {{with .Hero}}<figure class="replay">
       <figcaption>
@@ -17,7 +15,7 @@
       <dl class="readouts">
         <div><dt>allowed</dt><dd class="k-a">{{num .Allowed}}</dd></div>
         <div><dt>denied</dt><dd class="k-d">{{num .Denied}}</dd></div>
-        <div><dt>limit</dt><dd>{{.Rate}}/s</dd></div>
+        <div class="k-run"><dt>your browser</dt><dd>-- ms</dd></div>
       </dl>
       <p class="replay-run" data-replay="{{.Slug}}" data-call="{{.Call}}" data-params="{{.Params}}" data-result="{{.Result}}" data-bytes="{{demoBytes .Slug}}"><button type="button">Run it in your browser</button> <span role="status">~{{demoKB .Slug}} KB download, checked against every bar.</span> <span class="replay-stamp" hidden>{{len .Wide.Bars}}/{{len .Wide.Bars}} buckets identical in your browser</span> <a href="/projects/{{.Slug}}/#demo" hidden>Try your own limit and attack</a></p>
     </figure>
@@ -51,6 +49,6 @@
 <text class="rt rt-n" x="0" y="{{.LaneY}}">allowed</text>
 <text class="rt rt-n rt-e" x="{{.W}}" y="{{.PeakY}}" dy="-6">{{.Peak}}/s peak</text>
 {{if and .AttackW .Attack}}<text class="rt rt-a f{{.AttackStep}}" x="{{.AttackMid}}" y="{{.PeakY}}" dy="-6">10× attack</text>{{end}}
-{{if .Burst1X}}<text class="rt rt-e f{{.BurstStep}}" x="{{.Burst1X}}" y="{{.Burst1Y}}">burst</text>{{end}}
+{{if .Burst1X}}<text class="rt{{if not .BurstRight}} rt-e{{end}} f{{.BurstStep}}" x="{{.Burst1X}}" y="{{.Burst1Y}}">burst</text>{{end}}
 <text class="rt rt-e" x="{{.W}}" y="{{.LimitY}}" dy="-6">{{.Rate}}/s limit</text>
 </svg>{{end}}

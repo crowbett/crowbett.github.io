@@ -86,6 +86,10 @@ func TestHeroRun(t *testing.T) {
 	if ok, _ := chromedp.Run(ctx, chromedp.Evaluate[bool](`"replayMatch" in document.querySelector("[data-replay]").dataset`)); !ok {
 		t.Errorf("hero re-run did not match the chart: %q", status)
 	}
+	meter, _ := chromedp.Run(ctx, chromedp.Evaluate[string](`(m => "lit" in m.dataset ? m.querySelector("dd").textContent : "")(document.querySelector(".k-run"))`))
+	if !regexp.MustCompile(`^\d+ ms$`).MatchString(meter) {
+		t.Errorf("your browser readout after a match = %q, want a lit measured time", meter)
+	}
 	t.Logf("hero re-run: %s", status)
 }
 

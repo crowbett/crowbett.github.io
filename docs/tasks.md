@@ -87,9 +87,10 @@ Done when: each of the seven pins is an ancestor of its repo's main.
 ### F8 CI over 60 s at 15 projects · status: done 2026-11-08 (e53cc6d and the e2e commits before it)
 One job ran gate and e2e at ~55 s plus ~10 s of upload and deploy. Now `gate` and three `e2e` shards (`E2E_SHARD=i/3`) run on separate runners and `deploy` waits for them: PR CI wall 37 s (measured). CI skips screenshots and the dark desktop and tablet tabs; tablet tabs check layout only; the slowest tabs start first.
 
-### F7 Does the Tab walk still need its timeline pause · order 37 · deps: none · status: todo
+### F7 Does the Tab walk still need its timeline pause · order 37 · deps: none · status: done 2026-11-09 (dropped; draft PRs #16, #17)
 From F6: the home Tab walk's 15-25 s stalls (F5) and the GPU freeze were inferred to be the same fault, so the walk may be fast without F5's animation-timeline pause. Not measured on CI.
 Done when: three `ci` runs with the pause removed are timed and the pause is kept or dropped on that evidence, recorded here.
+Result (measured, three CI runs each, 21 walks per run): with the pause, all walks took 42.6-50.2 s per run, the longest 6.6 s, slowest shard 32-37 s; without it, 45.4-50.7 s, the longest 6.4 s, slowest shard 30-34 s. No 15-25 s stall either way, so the pause and `setPlaybackRate` are gone.
 
 ## Open follow-ups (not loop work)
 
@@ -120,6 +121,7 @@ Owner: the design session. It owns `templates/`, `web/assets/` (site.css, demo.j
 
 ### V3b Home page memorable · order 104.5 · deps: V5 · status: doing (4f944f0, a4da0df, 7f2f2f5, 2f52864, 3cd851f, fc2a0a1, 2c63cc1, c82ef25, b79800e)
 V8 rounds 1-7 (2026-10-25) all said "maybe", the last ones "leaning yes for engineers" since the hero re-runs in the browser. What reviewers say is left is owner copy, published identity and the house style.
+2026-11-09 review: "maybe" (hook buried in a caption, keys inflate the hero at 1024+, the run climax is weak). Fixed: hook in the headline, keys dropped, measured run time lights a third readout. Next: a fresh-eyes re-review of the shipped page.
 Done when: a fresh-eyes reviewer rates home "would remember this site" (yes, not maybe) and the screenshots back it.
 
 ### V13 Tighten copy and tablet layout · status: done 2026-11-08 (083e2e3, 7fb2184, 3c2a6e1, 42541b5, e6a9555)
@@ -127,11 +129,11 @@ Project pages are bullets plus a demo note with evidence in the header; the home
 
 ### V14 Organized and interactive · status: done 2026-11-09 (e3479b5, fbd8729, f35ecbe, PR #13 merged as 9a84b58)
 Grouped home index with search (`/`), group chips and URL state; previous / next and a group crumb on project pages; command palette (⌘K), j/k and [ ] keys, prefetch on intent; title and diagram morph between pages; demo full screen. Fixes from a fresh-eyes review of the seven wave 2 demos: stale status lines (raytracer, netcode), btrv phone selection and palette, lobby card clipping, mcpbridge select and word breaks, grepall scrolling matches, styled file pickers (stash, btrv). e2e emulates touch on phone and tablet and shoots running demos at 820 px locally. CSS budget 48 KiB (PLAN.md).
-Open: one shared readout, control bar, status line and legend style across demos (review notes, 2026-11-08).
+Shared readout, legend and stat styles landed in V15.
 
-### V15 Review polish · status: doing 2026-11-09 (afd7fb1, b296e59)
+### V15 Review polish · status: done 2026-11-09 (afd7fb1, b296e59, b765ad6, 64cf058, ec9b814)
 Fixes from a fresh-eyes design review: the work table at 1024–1279 px (PR #14), facts overflow at 768–820, garbled diagram labels (labelled masks now 2x), palette house rules and phone layout, uppercase labels in four demos, raytracer readouts that disagreed mid-pass, mixed input faces, the inset jog, field bugs in kvlite, jobrun and edgecache, four stat block formats unified on `.cells`, off-palette legends, codegraph opening on an empty half, tag chips breaking, the 404 panel and hero alignment. Additions: a receipt line in every demo, measured start-up time in the plate, keypad hero keys, palette plate.
-Open: off-palette colours in strata (11 extrusion roles), netcode's flash, stash, lobby and mcpbridge locals; a shared `.cells.stack` rule to replace each demo's own.
+Then: every demo on `.cells stack` and `.demo-legend`, colours from demo tokens via `color-mix(in oklab)` (oklch swung orange through magenta on grepall), canvases read tokens through a probe, lowercase field labels; ui.css 54,058 → 50,603 B. Left: the raytracer screen palette mirrors `--screen*`; lobby's 300 ms seat flights cross card headers in flight (by design).
 
 ## Owner only
 

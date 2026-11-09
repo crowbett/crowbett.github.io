@@ -16,10 +16,11 @@
 .jr-zone { font-family: var(--mono); font-size: 0.75rem; color: var(--text-3); min-width: 2.5rem; }
 .jr-zone-change { color: var(--accent); font-weight: 600; }
 .jr-utc { font-family: var(--mono); font-size: 0.75rem; color: var(--text-3); }
-.jr-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.875rem; color: var(--text-2); margin: 0 0 8px; }
-.jr-key::before { content: ""; display: inline-block; width: 0.8rem; height: 0.8rem; margin-right: 0.35rem; vertical-align: -0.1rem; border-radius: 2px; }
-.jr-key-cap::before { background: var(--accent-tint); border: 1px solid var(--accent); box-sizing: border-box; }
-.jr-key-dot::before { background: var(--accent); border-radius: 50%; }
+.jr-legend { margin: 0 0 8px; }
+.jr-key { display: inline-flex; align-items: center; gap: 0.5em; }
+.jr-key::before { content: ""; flex: none; width: 0.75em; height: 0.75em; box-sizing: border-box; }
+.jr-key-cap::before { background: var(--accent-tint); border: 1px solid var(--accent); }
+.jr-key-dot::before { background: var(--accent); }
 .jr-chart { margin: 0; overflow-x: auto; }
 .jr-chart svg { display: block; width: 100%; height: 10rem; background: var(--sunken); border-radius: var(--r-1); }
 .jr-chart svg.jr-many { min-width: 40rem; }
