@@ -3,9 +3,9 @@
 .rc-find { flex-wrap: nowrap; gap: 8px; }
 .rc-q { flex: 1 1 auto; min-width: 0; max-width: 32rem; }
 .rc-controls { margin-bottom: 8px; }
-.rc-transport { flex-wrap: nowrap; gap: 8px; margin-top: 12px; }
-.demo-mount .rc-transport button { padding: 0 12px; flex: none; }
-.rc-transport select { width: 4.25rem; flex: none; }
+.rc-transport { flex-wrap: nowrap; gap: 6px; margin-top: 12px; min-width: 0; align-items: stretch; }
+.demo-mount .rc-transport button { padding: 0 9px; flex: 0 1 auto; min-width: 0; white-space: nowrap; font-size: 0.8125rem; }
+.demo-mount .rc-transport select { width: 3.75rem; flex: 0 0 auto; padding-left: 8px; padding-right: 4px; }
 .rc-live { margin: 0 0 4px; font-family: var(--mono); font-size: var(--t-label); color: var(--text-3); font-variant-numeric: tabular-nums; min-height: 1.5em; }
 .rc-setup { margin: 16px 0 0; }
 .rc-h { margin: 0 0 8px; font-size: 0.875rem; font-weight: 600; color: var(--text); }
