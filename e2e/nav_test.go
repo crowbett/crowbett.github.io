@@ -74,8 +74,25 @@ func TestIndexKeys(t *testing.T) {
 	t.Parallel()
 	ctx, cancel := newTab(t, 60*time.Second)
 	defer cancel()
-	if err := chromedp.Do(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(srv.URL+"/"), chromedp.WaitReady(chromedp.CSS("body"))); err != nil {
+	if err := chromedp.Do(ctx, chromedp.EmulateViewport(1280, 720), chromedp.Navigate(srv.URL+"/"), chromedp.WaitReady(chromedp.CSS("body"))); err != nil {
 		t.Fatal(err)
+	}
+	// The stage fits one screen: the dials under the picture end above the fold.
+	fits := `until(() => { const r = document.querySelector(".stage-fig").getBoundingClientRect(); return scrollY === 0 && r.height > 0 && r.bottom <= innerHeight; })`
+	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(fits), chromedp.EvalAwaitPromise)); err != nil || !ok {
+		t.Fatalf("the stage figure runs past a 1280x720 screen: %v", err)
+	}
+	// ? opens the keys sheet, which lists a row per shortcut and closes again.
+	sheet := `(async () => {
+		document.dispatchEvent(new KeyboardEvent("keydown", { key: "?", shiftKey: true, bubbles: true, cancelable: true }));
+		return until(() => document.querySelector(".pal-keys[open]") && document.querySelectorAll(".pal-keys kbd").length >= 10 && document.querySelector(".pal-keys").contains(document.activeElement));
+	})()`
+	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(sheet), chromedp.EvalAwaitPromise)); err != nil || !ok {
+		t.Fatalf("? did not open the keys sheet: %v", err)
+	}
+	pageQuality(t, ctx)
+	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(`(async () => { document.querySelector(".pal-keys .pal-x").click(); return until(() => !document.querySelector(".pal-keys").open); })()`), chromedp.EvalAwaitPromise)); err != nil || !ok {
+		t.Fatalf("the keys sheet did not close: %v", err)
 	}
 	js := `(async () => {
 		const press = (k) => document.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }));
@@ -87,6 +104,19 @@ func TestIndexKeys(t *testing.T) {
 	})()`
 	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(js), chromedp.EvalAwaitPromise)); err != nil || !ok {
 		t.Fatalf("j/k or search.json: %v", err)
+	}
+	// A row of the index on the Work sheet jumps to its panel, pinned under the
+	// header, and hands it focus; the index lists every project in home order.
+	row := `(async () => {
+		const rows = [...document.querySelectorAll(".work-toc li a")];
+		if (rows.map((a) => a.hash).join() !== [...document.querySelectorAll(".it")].map((it) => "#" + it.id).join()) return false;
+		rows.find((a) => a.hash === "#p-jobrun").click();
+		const it = document.querySelector("#p-jobrun");
+		return until(() => "now" in it.dataset && document.activeElement === it.querySelector("h4 a")
+			&& Math.abs(it.getBoundingClientRect().top - document.querySelector(".top").offsetHeight) < 2);
+	})()`
+	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(row), chromedp.EvalAwaitPromise)); err != nil || !ok {
+		t.Fatalf("the Work index did not jump to jobrun: %v", err)
 	}
 }
 

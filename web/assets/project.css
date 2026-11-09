@@ -79,6 +79,10 @@
 .facts .lang { color: var(--text); line-height: 2; }
 .facts .tags { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
 .facts .tags > * { flex: none; max-width: 100%; }
+.facts-area span { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1) var(--sp-3); }
+.facts-area a { display: inline-flex; align-items: center; min-height: 24px; }
+.facts dd .source { margin-top: var(--sp-1); }
+.facts dd { font-variant-numeric: tabular-nums; }
 @media (min-width: 48rem) {
   .body { padding: var(--sp-6) var(--sp-4); }
   .facts-fig { padding: var(--sp-5) var(--sp-3); }

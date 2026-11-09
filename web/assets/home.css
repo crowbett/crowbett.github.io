@@ -38,7 +38,12 @@
 .stage-dials dt { font: 400 var(--t-meta)/1.4 var(--sans); color: var(--band-dim); }
 .stage-dials dd { height: var(--dial); margin: var(--sp-1) 0 0; font: 400 var(--dial)/1 var(--sans); letter-spacing: -0.02em; color: var(--band-ink); font-variant-numeric: tabular-nums; }
 .stage-dials dd.nil { font: 400 var(--t-small)/var(--dial) var(--sans); color: var(--band-dim); }
-.stage-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); margin: 0; font: 400 var(--t-meta)/1.5 var(--sans); color: var(--band-dim); }
+.stage-ctl { display: flex; margin: 0; }
+/* The run key keeps the width of its widest label, so "Pause" moves nothing */
+.stage-ctl .key { flex-direction: column; gap: 0; }
+.stage-ctl .key::after { content: "Render it here"; height: 0; overflow: hidden; visibility: hidden; }
+.stage-say { position: absolute; z-index: 1; left: var(--sp-3); right: var(--sp-3); bottom: var(--sp-3); margin: 0; padding: var(--sp-2) var(--sp-3); border-radius: 10px; background: color-mix(in oklab, var(--screen) 88%, transparent); color: var(--screen-ink); font: 400 var(--t-label)/1.5 var(--mono); overflow-wrap: anywhere; pointer-events: none; }
+.stage-say:empty { display: none; }
 .stage-fig figcaption { display: grid; gap: var(--sp-3); }
 .stage-ctl .key[hidden] { display: none; }
 .stage-scenes { display: none; justify-self: start; gap: 2px; margin: 0; padding: 3px; border-radius: 999px; background: color-mix(in oklab, var(--band-ink) 6%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--band-ink) 12%, transparent); }
@@ -47,7 +52,13 @@
 .stage-scenes button:hover { color: var(--band-ink); background: color-mix(in oklab, var(--band-ink) 8%, transparent); }
 .stage-scenes [aria-pressed=true] { background: var(--band-ink); color: var(--band); }
 .stage-scenes button:focus-visible { outline-color: var(--band-ink); outline-offset: 1px; }
-@media (min-width: 64rem) { .stage-in { grid-template-columns: minmax(0, 1fr) minmax(0, 32rem); gap: var(--sp-8); min-height: calc(100svh - var(--top-h)); padding-block: var(--sp-7) calc(var(--sp-8) + 28px); } }
+/* Wide: the picture is sized by the screen's height as well as the column, so the dials under it stay above the fold; scenes and the run key share a row */
+@media (min-width: 64rem) {
+  .stage-in { grid-template-columns: minmax(0, 1fr) minmax(0, 32rem); gap: var(--sp-8); min-height: calc(100svh - var(--top-h)); padding-block: clamp(var(--sp-5), 6svh, var(--sp-7)) calc(clamp(var(--sp-4), 5svh, var(--sp-8)) + 36px); }
+  .stage-fig { justify-self: end; width: min(100%, max(23rem, 100svh - var(--top-h) - 19.75rem)); }
+  .stage-fig figcaption { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+  .stage-dials { order: 1; flex: 0 0 100%; }
+}
 
 /* Home: the work, a sheet over the stage, then one full-screen panel per project; each panel slides up over the last, which sinks (work.js names the timelines) */
 .work { padding-bottom: 0; }
@@ -55,8 +66,21 @@
 .work-head > * { margin: 0; }
 .work-head h2 { font-size: var(--t-h2); }
 .count { font-family: var(--sans); font-size: var(--t-meta); color: var(--text-3); }
-.work-toc { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-5); font-size: var(--t-small); }
-.work-toc > span { color: var(--text-3); font-variant-numeric: tabular-nums; }
+/* The index on the sheet: a panel with a cell per area, a row per project; a row jumps to its panel (work.js) */
+.work-toc { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin-top: var(--sp-3); border: 1px solid var(--line-strong); border-radius: var(--r-2); overflow: clip; background: var(--line-strong); font: 400 var(--t-meta)/1.4 var(--sans); color: var(--text-3); font-variant-numeric: tabular-nums; }
+.toc-g { padding-block: var(--sp-3) var(--sp-2); background: var(--bg); }
+.toc-h { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin: 0; padding: 0 var(--sp-3) var(--sp-2); }
+.toc-h a { color: var(--text-2); }
+.work-toc ol { margin: 0; padding: 0; list-style: none; }
+.work-toc li a { display: flex; align-items: baseline; gap: var(--sp-2); padding: var(--sp-1) var(--sp-3); color: var(--text); text-decoration: none; transition: var(--tr); }
+.work-toc li a:is(:hover, :focus-visible) { background: var(--block); color: var(--on-block); outline-offset: -2px; }
+.work-toc li a:is(:hover, :focus-visible) span { color: inherit; }
+.work-toc b { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 800 1rem/1.5 var(--display); letter-spacing: -0.02em; }
+.toc-n, .toc-l { color: var(--text-3); }
+.toc-l { display: none; margin-left: auto; white-space: nowrap; }
+@media (min-width: 40rem) { .toc-l { display: inline; } }
+@media (min-width: 64rem) { .work-toc { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.it { scroll-margin-top: var(--top-h); }
 .reel { margin: 0; padding: 0; list-style: none; }
 .it { display: grid; min-height: calc(100svh - var(--top-h)); border-radius: 28px 28px 0 0; box-shadow: var(--band-edge), inset 0 1px 0 color-mix(in oklab, var(--band-ink) 10%, transparent); }
 .js .it { position: sticky; top: var(--pin, var(--top-h)); }
@@ -103,7 +127,7 @@
   .it-text { align-content: center; }
   .it-dm .dm { scale: 2.6; }
 }
-@media (pointer: coarse) { .stage-scenes button { min-height: 44px; } .work-toc a { display: inline-flex; align-items: center; gap: 1ch; min-height: 44px; } }
+@media (pointer: coarse) { .stage-scenes button { min-height: 44px; } .work-toc a { display: inline-flex; align-items: center; min-height: 44px; } .work-toc li a { display: flex; } }
 
 /* Home: the dock, a bar over the reel (work.js): one tick per project by area, the current one named, with steps, its demo and the index */
 .dock { position: fixed; z-index: 20; left: 50%; bottom: max(var(--sp-4), env(safe-area-inset-bottom)); display: flex; align-items: center; gap: var(--sp-3); padding: 6px 6px 6px var(--sp-4); border-radius: 999px; background: color-mix(in oklab, var(--band) 80%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: var(--lift), inset 0 0 0 1px color-mix(in oklab, var(--band-ink) 14%, transparent); color: var(--band-ink); font: 400 var(--t-meta)/1 var(--sans); opacity: 0; visibility: hidden; translate: -50% 18px; transition: opacity var(--d-base) var(--ease-in), translate var(--d-spring) var(--spring-soft), visibility 0s var(--d-spring); }

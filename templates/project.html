@@ -54,6 +54,9 @@
       <dl>
         <div><dt>language</dt><dd class="lang">{{.Lang}}</dd></div>
         <div><dt>topics</dt><dd class="tags">{{range .Tags}}<span class="tag">{{.}}</span>{{end}}</dd></div>
+        <div><dt>area</dt><dd class="facts-area"><a href="/#g-{{.Kind.Key}}">{{.Kind.Name}}</a>{{$p := .}}{{range $.Groups}}{{if eq .Key $p.Kind.Key}}{{if gt (len .Projects) 1}}<span>with {{range .Projects}}{{if ne .Slug $p.Slug}}<a href="/projects/{{.Slug}}/">{{.Title}}</a> {{end}}{{end}}</span>{{end}}{{end}}{{end}}</dd></div>
+        {{if .Live}}{{with demo .Slug}}<div><dt>demo binary</dt><dd>{{num .Gzip}} B gzipped, {{num .Raw}} B before</dd></div>
+        <div><dt>built with</dt><dd>{{.Built}}{{if .Ref}}, from commit <code>{{.Ref}}</code>{{end}}<span class="source">The build's lock file, as <a href="/numbers/#nb-bin">Numbers</a> lists it</span></dd></div>{{end}}{{end}}
         <div id="source"><dt>source</dt><dd>{{if .Private}}Private, <a href="mailto:{{$.Owner.Email}}?subject={{.Title}}%20source">on request</a>{{else}}<a href="{{.Repo}}">{{slice .Repo 8}}</a>{{end}}</dd></div>
       </dl>
     </aside>

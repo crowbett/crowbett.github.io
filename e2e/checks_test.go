@@ -808,8 +808,18 @@ func feelCheck(t *testing.T, ctx context.Context) {
 // stageCheckProject: a project page has no code section, and when wide its
 // figure (the demo) runs the full width of the head, below the title, claim
 // and result, so nothing sits beside a tall demo.
-const stageCheckProject = `(() => {
+// The header names the project while its title is scrolled under it, and
+// only then; a live project's facts give its binary's size from the lock.
+const stageCheckProject = `(async () => {
 	if (document.querySelector("#code, .code-ex, [data-code-link]")) return false;
+	const demo = document.querySelector("[data-demo]");
+	if (demo && !document.querySelector(".facts").textContent.includes(Number(demo.dataset.gz).toLocaleString("en-US") + " B gzipped")) return false;
+	const bar = document.querySelector(".top"), h1 = document.querySelector(".project-head h1"), y = scrollY;
+	scrollTo({ top: h1.getBoundingClientRect().bottom + scrollY, behavior: "instant" });
+	if (!await until(() => bar.hasAttribute("data-past"))) return false;
+	scrollTo({ top: 0, behavior: "instant" });
+	if (!await until(() => !bar.hasAttribute("data-past"))) return false;
+	scrollTo({ top: y, behavior: "instant" });
 	const f = document.querySelector(".ph-fig");
 	if (!f || innerWidth < 1024) return true;
 	const r = f.getBoundingClientRect(), head = document.querySelector(".ph-in").getBoundingClientRect(), text = document.querySelector(".ph-text").getBoundingClientRect();
