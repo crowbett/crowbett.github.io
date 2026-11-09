@@ -24,7 +24,7 @@ Status (2026-10-25): live at https://crowbett.github.io. Scaffold done. 8 projec
 | What | Limit |
 |---|---|
 | One HTML page | 60 KiB |
-| CSS one page loads (site CSS + the largest demo `ui.css`) | 48 KiB |
+| CSS one page loads (the stylesheets it links + its demo's `ui.css`) | 48 KiB |
 | One demo's `ui.js` | 60 KiB |
 | One `.wasm`, gzip -9 | 2.25 MiB |
 | All `.woff2` fonts | 32 KiB |
@@ -38,6 +38,8 @@ WASM budget raised from 2 MiB to 2.25 MiB (decision, 2026-10-24, D2): edgecache'
 CSS budget counts one page, not the site (decision, 2026-10-25, F4): the limit summed every stylesheet, so each new demo's `ui.css` (2,090–3,336 bytes, measured) ate into it although a visitor only ever loads `site.css` and one demo's `ui.css`. After the shared field and label rules moved into site.css the sum was 40,530 bytes with 430 to spare, short of D7 and D8. The limit stays 40 KiB, now on the heaviest page: `site.css` 27,664 bytes plus edgecache's 3,126 is 30,790 (measured at the change), so ~10 KB is free for any one demo. A page's CSS weight, the thing the budget protects, is unchanged.
 
 CSS budget raised from 40 KiB to 48 KiB (decision, 2026-11-08, V14): the command palette, the project title and diagram morph, demo full screen, the Search key and the grouped index with its search box are site-wide, so their rules belong in site.css. That took site.css from 33,302 to ~37,500 bytes (measured), and with grepall's 7,167-byte `ui.css` the heaviest page passed 40 KiB. 8,697 bytes gzipped (measured), which is what crosses the wire. Rejected: a lazily linked palette stylesheet, since the build sums every non-demo stylesheet anyway and a first-open fetch would flash an unstyled dialog. 48 KiB leaves ~3.5 KB on the heaviest page; the next raise is another recorded decision.
+
+CSS budget measures each page (decision, 2026-11-09, V18): the check summed every non-demo stylesheet whether a page loaded it or not, so home-only stage and index rules counted against project pages and the reverse. site.css (41,854 bytes) is now split into site.css (every page: tokens, frame, the shared layers, diagrams, palette; 21,604 bytes), home.css (8,256) and project.css (project page and demo frame; 12,588), and the build sums the stylesheets each HTML page links plus the `ui.css` beside its `data-ui` module. Heaviest page: a project page with grepall's 6,842-byte `ui.css`, 41,034 bytes; home 29,860 (all measured at the change). The budget stays 48 KiB. Rejected: raising it, since what a visitor downloads per page is what the budget protects and that fell.
 
 Share image budget (added 2026-10-24, V7): 1200×630 cards rendered by `cmd/og`, 48,139–66,604 bytes each (measured 2026-10-26), so 100 KiB holds them. The build also fails when a card's HTML, site.css or a font no longer matches the hash recorded when its PNG was made (`web/og/.sums`, `site.ImageSum`): run `go run ./cmd/og` and commit `web/og`. Diagram masks work the same way: `go run ./cmd/dither` (needs Chrome and oxipng) writes `web/assets/dg/*.png` and `.sums`.
 

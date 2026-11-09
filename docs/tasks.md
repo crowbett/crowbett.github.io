@@ -141,6 +141,9 @@ The grouped work table became a scroll reel: one panel per project with a loopin
 ### V17 Stage, index and layers · status: done 2026-11-09
 Home opens on the raytracer rendering live on a pinned dark stage (`internal/site/stage.go`, `web/assets/stage.js`, poster by `cmd/stage`), with measured dials and a draggable material / NEE + MIS split; the reel became a type-led index on a sheet sliding over the stage beside one sticky monitor (`web/assets/work.js`); paper grid, glass header, sampled glow, closing footer. Demos open on their clearest state (ratelimitd burst, jobrun DST jump, keel seed 2, lobby squad, netcode 150 ms / 40 / 5%), clips re-recorded at 480 px CSS. `e2e` `stageCheck` and `workCheck` cover both. Open: lobby flights cross card headers; Low Power Mode on iOS blocks clip autoplay (posters show).
 
+### V18 Per-page CSS · status: in progress 2026-11-09
+site.css split into site.css (every page), home.css and project.css; the CSS budget measures what each page links (PLAN.md). Frees room for the next layers: monitor evidence caption, clickable monitor screen into the project page.
+
 ## Owner only
 
 ### U1 Make more repos public · status: user
