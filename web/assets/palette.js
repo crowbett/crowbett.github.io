@@ -34,6 +34,7 @@ function actions() {
     if (a) out.push({ tag: "go", title: `${word}: ${a.lastChild.textContent.trim()}`, key, href: a.pathname });
   }
   if (location.pathname !== "/") out.push({ tag: "go", title: "Work index", href: "/#work" });
+  if (location.pathname !== "/numbers/") out.push({ tag: "go", title: "Numbers: every measurement and binary", href: "/numbers/" });
   out.push({ tag: "shell", title: "Open the terminal", key: "`", run: () => import("/assets/nav.js").then((m) => m.openShell()) });
   out.push({ tag: "theme", title: "Switch light and dark", key: "t", run: () => import("/assets/nav.js").then((m) => m.toggleTheme()) });
   const mail = document.querySelector('.top a[href^="mailto:"]');

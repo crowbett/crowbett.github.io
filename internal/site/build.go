@@ -56,6 +56,14 @@ type pageData struct {
 	Next      *Project
 	Canonical string
 	Stage     *Stage
+	Bins      []binRow // the numbers page: every live demo's binary, largest first
+}
+
+// binRow is one demo binary on the numbers page.
+type binRow struct {
+	Slug, Title, Built, Kind string // Kind: go, rust or cpp
+	Raw, Gzip                int
+	Pct                      string // bar length, % of the largest
 }
 
 // pagerLink is one previous / next card at the foot of a project page.
@@ -119,6 +127,7 @@ func prepare(cfg Config) (*prepared, error) {
 		"demoBytes": func(slug string) int { return sizes[slug].Raw },
 		"demo":      func(slug string) demoSize { return sizes[slug] },
 		"bind":      bindNumbers,
+		"figures":   figures,
 		"pg": func(rel, label string, p *Project) pagerLink {
 			return pagerLink{Rel: rel, Label: label, P: p}
 		},
@@ -149,10 +158,20 @@ func prepare(cfg Config) (*prepared, error) {
 		}
 	}
 	base.Projects = listed
-	for _, p := range projects {
-		if p.Live() {
-			base.LiveCount++
+	most := 0
+	for _, p := range listed {
+		if !p.Live() {
+			continue
 		}
+		base.LiveCount++
+		d := sizes[p.Slug]
+		kind := map[byte]string{'G': "go", 'R': "rust", 'C': "cpp"}[d.Built[0]]
+		base.Bins = append(base.Bins, binRow{Slug: p.Slug, Title: p.Title, Built: d.Built, Kind: kind, Raw: d.Raw, Gzip: d.Gzip})
+		most = max(most, d.Gzip)
+	}
+	slices.SortStableFunc(base.Bins, func(a, b binRow) int { return b.Gzip - a.Gzip })
+	for i := range base.Bins {
+		base.Bins[i].Pct = fmt.Sprintf("%.2f", 100*float64(base.Bins[i].Gzip)/float64(most))
 	}
 	return &prepared{tmpl: tmpl, base: base, projects: projects}, nil
 }
@@ -209,6 +228,9 @@ func Build(cfg Config) error {
 		if err := render("project", "/projects/"+p.Slug+"/", p.Title, p); err != nil {
 			return err
 		}
+	}
+	if err := render("numbers", "/numbers/", "Numbers", nil); err != nil {
+		return err
 	}
 	if err := render("notfound", "/404.html", "Not found", nil); err != nil {
 		return err
@@ -270,6 +292,36 @@ var (
 	hyphenWord  = regexp.MustCompile(`[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)+`)
 )
 
+// figure finds a number; figures marks it unless it is part of a word or an
+// entity ("p99", "BM25", "3DBenchy", "&#39;"). An x between numbers or after
+// one ("400x225", "2.33x") is a times sign, not a letter.
+var figure = regexp.MustCompile(`\d[\d,.]*\d|\d`)
+
+func figures(s string) template.HTML {
+	h := string(bindNumbers(s))
+	letter := func(c byte) bool { return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' }
+	digit := func(c byte) bool { return c >= '0' && c <= '9' }
+	var b strings.Builder
+	last := 0
+	for _, m := range figure.FindAllStringIndex(h, -1) {
+		i, j := m[0], m[1]
+		if i > 0 {
+			c := h[i-1]
+			if c == '#' || c == '&' || letter(c) && !(c == 'x' && i > 1 && digit(h[i-2])) {
+				continue
+			}
+		}
+		if j < len(h) && letter(h[j]) && !(h[j] == 'x' && (j+1 == len(h) || !letter(h[j+1]))) {
+			continue
+		}
+		b.WriteString(h[last:i])
+		b.WriteString("<b>" + h[i:j] + "</b>")
+		last = j
+	}
+	b.WriteString(h[last:])
+	return template.HTML(b.String()) //nolint:gosec // bindNumbers escaped s; only digits are wrapped
+}
+
 // bindNumbers keeps a number on the same line as the word after it ("30 s",
 // "6.83 ms") with a no-break space, and a hyphenated word ("multi-Raft") whole
 // in a .nw span; the text is unchanged.
@@ -278,7 +330,6 @@ func bindNumbers(s string) template.HTML {
 	return template.HTML(hyphenWord.ReplaceAllString(s, `<span class="nw">$0</span>`))
 }
 
-// thousands formats n with comma separators, as the site's copy writes numbers.
 // languages lists every language the projects name ("Rust, Swift" names
 // two), the most used first, ties in the order they first appear.
 func languages(projects []Project) []string {
@@ -298,6 +349,7 @@ func languages(projects []Project) []string {
 	return out
 }
 
+// thousands formats n with comma separators, as the site's copy writes numbers.
 func thousands(n int) string {
 	s := strconv.Itoa(n)
 	for i := len(s) - 3; i > 0; i -= 3 {
@@ -352,7 +404,7 @@ func demoSizes(src fs.FS) (map[string]demoSize, error) {
 func writeSitemap(cfg Config, projects []Project) error {
 	var b strings.Builder
 	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n" + `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` + "\n")
-	urls := []string{"/"}
+	urls := []string{"/", "/numbers/"}
 	for _, p := range projects {
 		urls = append(urls, "/projects/"+p.Slug+"/")
 	}
