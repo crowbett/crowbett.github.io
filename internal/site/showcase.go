@@ -183,17 +183,14 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".nc-canvas", Pad: -140, Seconds: 7,
 	},
-	// ratelimitd: the same traffic seed under each pattern, 2 s apiece, back to
-	// bursts, where the sliding window lets more through than the token bucket.
+	// ratelimitd: calm traffic flows through all three gates; you launch the
+	// attack and the flood piles up red at each gate while the limit holds.
 	"ratelimitd": {
 		Play: `(async () => {
-			const s = document.querySelector("select[name=pattern]");
-			for (const v of ["ramp", "attack", "burst"]) {
-				await new Promise((r) => setTimeout(r, 2000));
-				s.value = v; s.dispatchEvent(new Event("change"));
-			}
+			await new Promise((r) => setTimeout(r, 2200));
+			document.querySelector(".rl-fire").click();
 		})()`,
-		Focus: ".rl-chart[data-algo=token_bucket]", Pad: 8, Seconds: 8,
+		Focus: ".rl-canvas", Pad: 4, Seconds: 7,
 	},
 	// raytracer: the marble scene, held at its third pass, renders on, then the split sweeps.
 	"raytracer": {
