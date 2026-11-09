@@ -603,7 +603,17 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 	// contrast; desktop dark shares the light layout. Tablet starts it only
 	// for local screenshots, so a running demo is seen at iPad width.
 	if hasDemo && (!layoutOnly || keepShots) && (scheme == "light" || w < 1000) {
-		err := chromedp.Do(ctx, chromedp.Click(chromedp.CSS("[data-demo-start]")))
+		// Desktop starts from the head: its clip plays, then "Run it live"
+		// jumps to the frame and starts it. Phone uses the frame's own key.
+		start := "[data-demo-start]"
+		head, _ := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector("[data-demo-go]") !== null`))
+		if head && w >= 1000 && !layoutOnly {
+			start = "[data-demo-go]"
+			if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(`(() => { const v = document.querySelector(".ph-screen video"); return until(() => v && !v.paused && "on" in v.dataset); })()`), chromedp.EvalAwaitPromise)); err != nil || !ok {
+				t.Errorf("project head clip did not play (err %v)", err)
+			}
+		}
+		err := chromedp.Do(ctx, chromedp.Click(chromedp.CSS(start)))
 		if err == nil {
 			_, err = chromedp.Run(ctx, chromedp.Poll[bool](`document.querySelector("[data-demo-ready],[data-demo-error]") !== null`,
 				chromedp.WithPollingTimeout(60*time.Second)))
@@ -696,8 +706,7 @@ func screenshot(t *testing.T, ctx context.Context, w int64, shot string) {
 	if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`(async () => {
 		const frames = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 		await frames();
-		const all = document.getAnimations();
-		// A scroll-driven animation is never ready once the page fits the viewport.
+		const all = document.getAnimations().filter((a) => a.timeline === document.timeline);
 		const settle = (a) => Promise.race([a.ready.catch(() => {}), new Promise((r) => setTimeout(r, 500))]);
 		await Promise.all(all.map(settle));
 		all.forEach((a) => { try { a.finish(); } catch {} });
