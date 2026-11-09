@@ -218,6 +218,7 @@ main:has(> :is(.stage, .project)) { width: auto; }
 @keyframes dm-b { 25%, 75% { opacity: 1; } 50% { opacity: 0; } }
 @keyframes dm-a-l { 50% { opacity: 0; } }
 @keyframes dm-b-l { 50% { opacity: 1; } }
+.dm-anchorflow { --m: url(/assets/dg/anchorflow-s.png); --ml: url(/assets/dg/anchorflow-l.png); }
 .dm-btrv { --m: url(/assets/dg/btrv-s.png); --ml: url(/assets/dg/btrv-l.png); }
 .dm-codegraph { --m: url(/assets/dg/codegraph-s.png); --ml: url(/assets/dg/codegraph-l.png); }
 .dm-edgecache { --m: url(/assets/dg/edgecache-s.png); --ml: url(/assets/dg/edgecache-l.png); }
