@@ -1,78 +1,84 @@
-// The anchorflow tour: a fresh shift paused after its first orders, one more
-// order packed by hand, your own order dropped on the line, then the top
-// pick taken off the shelf so the engine re-judges the whole shift.
+// The anchorflow tour: a fresh floor paused after its first tote, a coffee
+// basket the fit engine declines, the same basket again until shape history
+// answers, a bin the parser refuses, and the packing slip.
 const v = (t, k) => t.text(`.af-cells [data-k=${k}] .af-v`);
 const status = (t) => t.text(".af-status");
-const label = (t) => t.q(".af-canvas").getAttribute("aria-label") ?? "";
-const chips = (t) => [...t.root.querySelectorAll(".af-chip")];
-const ITEM = { cap: "7", shirt: "6" };
-// A fresh mixed shift (seed 1) stops after its third order, or its twelfth with reduced motion.
-const fresh = () => (matchMedia("(prefers-reduced-motion: reduce)").matches ? /: 12 orders packed/ : /^Packing floor at 0:01:27 of floor time: 3 orders packed/);
+const pause = async (t) => { if (t.text(".af-acts button") === "Pause") await t.click("Pause"); };
+// next presses Next step and waits for the floor to say what it did.
+const next = async (t) => {
+  const key = () => `${status(t)}|${v(t, "shipped")}|${v(t, "carts")}|${v(t, "stops")}`;
+  const before = key();
+  await t.click("Next step");
+  await t.until(() => key() !== before);
+};
+const until = async (t, re, n) => {
+  for (let i = 0; i < n && !re.test(status(t)); i++) await next(t);
+  if (!re.test(status(t))) throw new Error("the floor did not get there");
+};
 
 export const steps = [
   {
-    say: "AnchorFlow's real fit engine picks the package for every order on a simulated packing floor. Starting a fresh shift of mixed orders, paused:",
+    say: "AnchorFlow's own floor code, compiled to WebAssembly. A fresh floor, paused: a cart of four orders from the demo org's stores is picked in walk order, and its first tote packed and labelled.",
     run: async (t) => {
-      if (t.text(".af-acts button") === "Pause") await t.click("Pause");
-      if (!t.q(".af-shelfhead button:last-child").disabled) {
-        await t.click("Restock");
-        await t.until(() => status(t).startsWith("Every package is back on the shelf."));
-      }
-      await t.set(0, "mixed");
-      await t.until(() => fresh().test(label(t)) && status(t).startsWith("mixed: orders arrive"));
+      await pause(t);
+      await t.set(0, "");
+      await t.set(1, "");
+      await t.click("Reset");
+      await t.until(() => /^[A-Z]{3}-\d+ went in /.test(status(t)) && v(t, "shipped") === "1");
     },
-    then: (t) => `${v(t, "orders")} orders packed by ${v(t, "t")} of floor time: ${v(t, "boxes")} in boxes, ${v(t, "mailers")} in mailers, cost ${v(t, "cost")}.`,
+    then: (t) => `${v(t, "stops")} stops walked. ${status(t)}`,
   },
   {
-    say: "Next order sends the next one through the engine:",
+    say: "The coffee store's bags and mugs are classes the fit engine declines, so a coffee basket falls through the pyramid. A cart of coffee orders:",
     run: async (t) => {
-      await t.click("Next order");
-      await t.until(() => /latest #004 in /.test(label(t)));
-    },
-    then: (t) => {
-      const [lines, ...notes] = t.text(".af-now").replace(/^at the station, #004: /, "").split(" · ");
-      return `Order #004 (${lines}) went in ${label(t).replace(/^.*latest #004 in /, "").replace(/\.$/, "")}${notes.length ? `; ${notes.join("; ")}` : ""}.`;
-    },
-  },
-  {
-    say: "Your own order: a cap and two folded T-shirts, dropped on the line.",
-    run: async (t) => {
-      if (chips(t).map((b) => b.textContent).join("|") !== "Cap ✕|Folded T-shirt ×2 ✕") {
-        while (chips(t).length) await t.click(chips(t)[0]);
-        await t.set(2, ITEM.cap);
-        await t.click("Add");
-        await t.set(2, ITEM.shirt);
-        await t.click("Add");
-        await t.click("Add");
-      }
-      await t.click("Drop on the line");
-      await t.until(() => /^Your order #Y1 \(.*\) went in /.test(t.text(".af-youline")));
-    },
-    then: (t) => t.text(".af-youline"),
-  },
-  {
-    say: "Take top pick off removes the most-picked package from the shelf, and the engine re-judges every order packed so far:",
-    run: async (t) => {
-      await t.click("Take top pick off");
-      await t.until(() => / is off the shelf\. The engine re-judged all \d+ orders packed so far: /.test(status(t)));
+      await t.set(0, "DRF");
+      await until(t, /^DRF-\d+ went in /, 8);
     },
     then: (t) => status(t),
   },
   {
-    say: "Restock puts every package back, and the engine re-judges the shift once more. Its tally for the tour:",
+    say: "Now the same basket, again and again. Shape history answers once it has shipped at least 3 times with 70 % in one package:",
     run: async (t) => {
-      await t.click("Restock");
-      await t.until(() => status(t).startsWith("Every package is back on the shelf."));
+      await t.set(0, "repeat");
+      await until(t, /\(shape history: /, 16);
     },
-    then: (t) => t.text(".af-out"),
+    then: (t) => status(t),
+  },
+  {
+    say: "Bins are checked against the aisle layout by warehouse.ParseBin. Aisle A-01 has odd-numbered bins only:",
+    run: async (t) => {
+      await t.set(3, "LNT-PIN-COMPASS");
+      await t.set(4, "A-01-012-C");
+      await t.click("Move");
+      await t.until(() => status(t).startsWith("warehouse.ParseBin refused"));
+    },
+    then: (t) => status(t),
+  },
+  {
+    say: "A-01-011-D is a real bin, so the pin moves and the next cart picks it there:",
+    run: async (t) => {
+      await t.set(4, "A-01-011-D");
+      await t.click("Move");
+      await t.until(() => status(t).startsWith("Moved "));
+    },
+    then: (t) => status(t),
+  },
+  {
+    say: "Every packed order gets a 4x6 label and a packing slip as ZPL from labelzpl, drawn here from that ZPL. The packing slip:",
+    run: async (t) => {
+      await t.click("packing slip");
+      await t.until(() => t.text(".af-cap").includes("picks listed"));
+    },
+    then: (t) => `${t.text(".af-cap")}. ${t.text(".af-out")}`,
   },
 ];
 
-export const end = "That's the tour. Press Play to let the shift run, or build an order and take packages off the shelf yourself.";
+export const end = "That's the tour. Press Play to let the floor run, pick a store or the same basket again, or tell the packer to take another package.";
 
 export const share = {
   apply: async (t) => {
+    await t.until(() => v(t, "carts") !== "0");
     await t.click("Reset");
-    await t.until(() => / orders arrive at random/.test(status(t)) && Number(v(t, "orders")) >= 3);
+    await t.until(() => /^A fresh floor|went in /.test(status(t)));
   },
 };

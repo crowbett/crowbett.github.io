@@ -50,16 +50,24 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".adf-canvas", Pad: 4, WideFocus: ".adf-canvas", WidePad: 8, Seconds: 7,
 	},
-	// The floor packs orders on its own; you drop your cap order on the line,
-	// then take the top pick off the shelf and the shift is re-judged.
+	// A fresh floor, paused after its first cart is picked and its first tote
+	// packed; then it runs at 2×: the rest of the cart is packed and labelled
+	// and the next cart walks the aisles.
 	"anchorflow": {
-		Play: `(async () => {
+		Setup: `(async () => {
 			const w = (ms) => new Promise((r) => setTimeout(r, ms));
-			const click = (t) => [...document.querySelectorAll(".af-controls button, .af-shelfhead button")].find((b) => b.textContent === t).click();
-			await w(2600); click("Drop on the line");
-			await w(2600); click("Take top pick off");
+			const btn = (t) => [...document.querySelectorAll(".af-acts button")].find((b) => b.textContent === t);
+			for (let i = 0; i < 200 && !document.querySelector(".af-ladder li"); i++) await w(50);
+			if (btn("Pause")) btn("Pause").click();
+			btn("Reset").click();
+			for (let i = 0; i < 200 && !/^[A-Z]{3}-\d+ went in /.test(document.querySelector(".af-status").textContent); i++) await w(50);
+			const sp = document.querySelector("select[name=speed]");
+			sp.value = "2"; sp.dispatchEvent(new Event("change"));
 		})()`,
-		Focus: ".af-canvas", Pad: 4, WideFocus: ".af-canvas", WidePad: 8, Seconds: 8,
+		Play: `(async () => {
+			document.querySelector(".af-acts button").click();
+		})()`,
+		Focus: ".af-map", Pad: 4, WideFocus: ".af-bench", WidePad: 8, Seconds: 8,
 	},
 	// The tour steps from run to a callee and ripples out from it; then a
 	// search for "bump" ripples its callers out three hops, to main.

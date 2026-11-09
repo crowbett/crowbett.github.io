@@ -1,46 +1,21 @@
-// AnchorFlow demo: a packing floor. Orders arrive on simulated floor time and
-// AnchorFlow's real fit engine (internal/packfit, compiled to WebAssembly)
-// picks each one's package from its reference catalog; the items drop into
-// it where the engine placed them. Taking packaging off the shelf re-judges
-// the whole shift so far.
-const SEED = 1;
-const ARRIVE_S = 75; // mean floor seconds between orders
-const SPEEDS = [30, 60, 120, 240];
-const BELT_S = 240;
-const WARM = 3;
-const WARM_REDUCED = 12;
-const SHIFT = 150;
+// AnchorFlow demo: the demo org's shipping floor on AnchorFlow's own code,
+// compiled to WebAssembly. Each cart is routed through the bins in walk order
+// with scannable bin labels, each order is packed by the suggestion pyramid
+// over a shape model learned from every shipment so far, and its 4x6 label and
+// packing slip are drawn here from the ZPL the binary returns.
+const SPEEDS = [1, 2, 4];
+const CART = 4;
+const STOP_MS = 700;
+const PACK_MS = 2800;
 const DROP_MS = 240;
-const FLY_MS = 260;
-const SLIDE_MS = 220;
-const NEEDS_BOX = "this basket needs a box";
-
-// Item shapes are the ones the engine's own tests pin for each class.
-const ITEMS = [
-  ["Dropper bottle", "LIQUID", 1.5, 1.5, 4.5],
-  ["Supplement bottle", "CAPS", 2.75, 2.75, 4.75],
-  ["Small pill bottle", "CAPS", 2, 2, 3.5],
-  ["Powder tub", "TUB", 3.5, 3.5, 4.5],
-  ["Gummy jar", "GUMMY", 2.5, 2.5, 4.5],
-  ["Coffee bag", "BAG", 8.75, 4.5, 2.25],
-  ["Folded T-shirt", "TS", 7.75, 6.75, 0.25],
-  ["Cap", "HAT", 8, 6.5, 4.5],
-  ["Challenge coin", "COIN", 1.75, 1.75, 0.1],
-  ["Silver coin", "SILVER", 1.75, 1.75, 0.1],
-  ["Decal", "DECAL", 4, 3, 0.1],
-  ["Keychain", "KEYCHAIN", 1.5, 1.5, 0.75],
-  ["Shaker bottle", "SHAKER", 3.75, 3.75, 8.75],
-  ["Rolled poster", "POSTER", 24, 2, 2],
-  ["Boxed item", "", 10, 8, 3.5],
-].map(([name, cls, l, w, h]) => ({ name, class: cls, l, w, h }));
-const MIXES = [
-  ["mixed", "mixed", [3, 4, 2, 2, 2, 2, 5, 2, 2, 1, 3, 2, 2, 1, 1]],
-  ["merch", "merch", [0, 0, 0, 0, 0, 0, 8, 4, 3, 1, 4, 3, 1, 2, 0]],
-  ["supps", "supplements", [3, 6, 4, 3, 3, 2, 0, 0, 0, 0, 0, 0, 2, 0, 2]],
-];
-const YOURS = [[7, 1], [6, 2]];
+const SEED = 1;
+const MAX_POS = 168;
+const STAGES = [["order", 0], ["pick", 0], ["pack", 0], ["label", 0], ["manifest", 1], ["writeback", 1]];
 const KIND = { box: "box", poly_mailer: "poly mailer", poly_bubble_mailer: "bubble mailer", bubble_bag: "bubble bag", tube: "tube" };
+const SOURCE = { fit: "the fit engine", shape: "shape history", fit_open: "the fit engine, any package", shape_kinds: "fallback", shape_band: "fallback", shape_org: "fallback" };
 const isMailer = (k) => k === "poly_mailer" || k === "poly_bubble_mailer";
+// Code 128 bar and space widths, symbols 0-105, then the stop symbol.
+const C128 = "212222222122222221121223121322131222122213122312132212221213221312231212112232122132122231113222123122123221223211221132221231213212223112312131311222321122321221312212322112322211212123212321232121111323131123131321112313132113132311211313231113231311112133112331132131113123113321133121313121211331231131213113213311213131311123311321331121312113312311332111314111221411431111111224111422121124121421141122141221112214112412122114122411142112142211241211221114413111241112134111111242121142121241114212124112124211411212421112421211212141214121412121111143111341131141114113114311411113411311113141114131311141411131211412211214211232";
 
 const el = (tag, cls, text) => {
   const n = document.createElement(tag);
@@ -49,14 +24,9 @@ const el = (tag, cls, text) => {
   return n;
 };
 const fmt = (n) => n.toLocaleString("en-US");
-const money = (n) => `$${n.toFixed(2)}`;
 const pct = (n) => `${Math.round(n * 100)} %`;
 const ease = (t) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
-const clock = (s) => {
-  const t = Math.floor(s), h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), x = t % 60;
-  return `${h}:${String(m).padStart(2, "0")}:${String(x).padStart(2, "0")}`;
-};
-const lineText = (l) => (l.qty > 1 ? `${l.name} ×${l.qty}` : l.name);
+const plural = (n, one, many) => `${fmt(n)} ${n === 1 ? one : many}`;
 
 function field(label, input, cls) {
   const wrap = el("label", `demo-field${cls ? ` ${cls}` : ""}`);
@@ -79,15 +49,101 @@ function button(text, cls) {
   b.type = "button";
   return b;
 }
-function rng(seed) {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
+
+// code128 encodes text as symbol values: subset B, switching to C for runs of
+// four or more digits, then the check symbol.
+function code128(s) {
+  const run = (i) => { let j = i; while (j < s.length && s[j] >= "0" && s[j] <= "9") j++; return j - i; };
+  const out = [];
+  let set = run(0) >= 4 ? "C" : "B";
+  out.push(set === "C" ? 105 : 104);
+  for (let i = 0; i < s.length;) {
+    const n = run(i);
+    if (set === "B" && n >= 4) { out.push(99); set = "C"; }
+    if (set === "C") {
+      if (n >= 2) { out.push(Number(s.slice(i, i + 2))); i += 2; continue; }
+      out.push(100); set = "B";
+    }
+    out.push(s.charCodeAt(i) - 32);
+    i++;
+  }
+  out.push(out.reduce((a, v, i) => a + v * (i || 1), 0) % 103);
+  return out;
+}
+
+// gfa decodes ^GFA data (Zebra ASCII compression) into rows of bits.
+function gfa(data, bpr) {
+  const rows = [];
+  let row = "", count = 0;
+  const hex = bpr * 2;
+  const end = () => { rows.push(row); row = ""; };
+  for (const ch of data) {
+    const c = ch.charCodeAt(0);
+    if (c >= 71 && c <= 89) count += c - 70;
+    else if (c >= 103 && c <= 122) count += (c - 102) * 20;
+    else if (/[0-9A-F]/.test(ch)) { row += ch.repeat(count || 1); count = 0; if (row.length >= hex) end(); }
+    else if (ch === ",") { row = row.padEnd(hex, "0"); end(); }
+    else if (ch === "!") { row = row.padEnd(hex, "F"); end(); }
+    else if (ch === ":") { row = rows[rows.length - 1] || "0".repeat(hex); end(); }
+  }
+  return rows;
+}
+
+// zpl draws a ZPL label onto a canvas context in dots: the commands
+// AnchorFlow's labels use (^FO ^GB ^FB ^A0 ^CF ^FR ^FD ^GFA ^BY ^BC).
+function zpl(ctx, src, sans) {
+  let x = 0, y = 0, fh = 30, block = null, rev = false, by = { m: 2, h: 10 }, bc = null;
+  for (const raw of src.split("^").slice(1)) {
+    const cmd = raw.slice(0, 2), arg = raw.slice(2);
+    const a = arg.split(",");
+    if (cmd === "FO") { x = Number(a[0]); y = Number(a[1]); }
+    else if (cmd === "CF") fh = Number(a[1]) || fh;
+    else if (cmd === "A0") fh = Number(a[1]) || fh;
+    else if (cmd === "FB") block = { w: Number(a[0]), align: a[3] };
+    else if (cmd === "FR") rev = true;
+    else if (cmd === "BY") by = { m: Number(a[0]) || 2, h: Number(a[2]) || 10 };
+    else if (cmd === "BC") bc = { h: Number(a[1]) || by.h, line: a[2] !== "N" };
+    else if (cmd === "GB") {
+      const w = Number(a[0]), h = Number(a[1]), t = Math.min(Number(a[2]) || 1, w, h);
+      ctx.fillStyle = "#000";
+      ctx.fillRect(x, y, w, t); ctx.fillRect(x, y + h - t, w, t); ctx.fillRect(x, y, t, h); ctx.fillRect(x + w - t, y, t, h);
+    } else if (cmd === "GF") {
+      const bpr = Number(a[3]);
+      const rows = gfa(a.slice(4).join(","), bpr);
+      ctx.fillStyle = "#000";
+      rows.forEach((r, j) => {
+        let from = -1;
+        for (let i = 0; i <= r.length * 4; i++) {
+          const on = i < r.length * 4 && parseInt(r[i >> 2], 16) & (8 >> (i & 3));
+          if (on && from < 0) from = i;
+          if (!on && from >= 0) { ctx.fillRect(x + from, y + j, i - from, 1); from = -1; }
+        }
+      });
+    } else if (cmd === "FD") {
+      const text = arg;
+      if (bc) {
+        let cx = x;
+        ctx.fillStyle = "#000";
+        for (const v of code128(text)) {
+          const w = C128.slice(v * 6, v * 6 + 6);
+          for (let i = 0; i < 6; i++) { if (i % 2 === 0) ctx.fillRect(cx, y, Number(w[i]) * by.m, bc.h); cx += Number(w[i]) * by.m; }
+        }
+        for (let i = 0; i < 7; i++) { const w = Number("2331112"[i]); if (i % 2 === 0) ctx.fillRect(cx, y, w * by.m, bc.h); cx += w * by.m; }
+        if (bc.line) {
+          ctx.font = `400 ${Math.round(by.m * 9)}px ${sans}`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "top";
+          ctx.fillText(text, (x + cx) / 2, y + bc.h + 4);
+        }
+      } else {
+        ctx.font = `700 ${fh}px ${sans}`;
+        ctx.textBaseline = "top";
+        ctx.fillStyle = rev ? "#fff" : "#000";
+        if (block && block.align === "C") { ctx.textAlign = "center"; ctx.fillText(text, x + block.w / 2, y, block.w); }
+        else { ctx.textAlign = "left"; ctx.fillText(text, x, y); }
+      }
+    } else if (cmd === "FS") { block = null; rev = false; bc = null; }
+  }
 }
 
 export async function mount(root, demo) {
@@ -102,456 +158,348 @@ export async function mount(root, demo) {
   }
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-  const t0 = performance.now();
-  const cat = await demo.call("catalog", {});
-  let callMs = performance.now() - t0;
-  let calls = 1;
-  let judged = 0;
-  const traits = new Map(cat.classes.map((c) => [c.class, c]));
-  const kindOf = (u) => (traits.get(u.class)?.forcesBox ? "rule" : traits.get(u.class)?.soft ? "soft" : "rigid");
-
-  // Controls.
-  const play = button("Pause");
-  const step = button("Next order", "secondary");
-  const reset = button("Reset", "secondary");
-  const mix = select("mix", MIXES.map(([v, t]) => [v, t]), "mixed");
-  const speed = select("speed", SPEEDS.map((s) => [s, `${s}×`]), 60);
-  const acts = el("div", "af-acts");
-  acts.append(play, step, reset, field("orders", mix), field("speed", speed));
-
-  const yourItem = select("item", ITEMS.map((it, i) => [i, `${it.name} (${it.class || "plain"})`]), 0);
-  const addItem = button("Add", "secondary");
-  const yourLines = el("ul", "af-chips");
-  yourLines.setAttribute("aria-label", "Your order");
-  const drop = button("Drop on the line");
-  const you = el("div", "af-you");
-  const chipsWrap = el("div", "af-yours");
-  chipsWrap.append(el("span", "demo-label", "your order"), yourLines);
-  you.append(chipsWrap, field("item", yourItem, "af-item"), addItem, drop);
-  const form = el("form", "af-controls");
-  form.addEventListener("submit", (e) => e.preventDefault());
-  form.append(acts, you);
-
-  const canvas = el("canvas", "af-canvas");
-  canvas.setAttribute("role", "img");
-  const legend = el("p", "demo-legend af-legend");
-  for (const [k, t] of [["rule", "box-only item (warehouse rule)"], ["soft", "soft goods"], ["rigid", "rigid item"], ["you", "your order"]]) {
-    const s = el("span", "af-key", t);
-    s.dataset.kind = k;
-    legend.append(s);
-  }
-  const now = el("p", "af-now");
-  const youLine = el("p", "af-youline");
-  youLine.setAttribute("aria-live", "polite");
-  const cells = el("ul", "cells stack af-cells");
-  const cell = {};
-  for (const [k, t] of [["t", "floor time"], ["orders", "orders"], ["boxes", "boxes"], ["mailers", "mailers"], ["rule", "box by rule"],
-    ["none", "no fit"], ["cost", "cost"], ["per", "per order"], ["fill", "fill"]]) {
-    const li = el("li");
-    li.dataset.k = k;
-    const v = el("span", "af-v", "–");
-    li.append(el("span", null, t), v);
-    cell[k] = v;
-    cells.append(li);
-  }
-  const split = el("div", "af-split");
-  split.setAttribute("aria-hidden", "true");
-  const seg = {};
-  for (const k of ["mailer", "box", "rule"]) { seg[k] = el("span", `af-seg af-seg-${k}`); split.append(seg[k]); }
-  const splitKey = el("p", "demo-legend af-splitkey");
-  const top = el("ol", "af-top");
-  top.setAttribute("aria-label", "Packages most picked");
-  const tallyBox = el("section", "af-tally");
-  const kinds = el("div"), most = el("div");
-  kinds.append(el("h3", "af-h", "boxes vs mailers"), split, splitKey);
-  most.append(el("h3", "af-h", "most picked"), top);
-  tallyBox.append(kinds, most);
-
-  const shelfHead = el("div", "af-shelfhead");
-  const shelfTitle = el("h3", "af-h");
-  const takeTop = button("Take top pick off", "secondary");
-  const restock = button("Restock", "secondary");
-  shelfHead.append(shelfTitle, takeTop, restock);
-  const chip = new Map();
-  const groups = el("div", "af-shelf");
-  for (const [name, test] of [["mailers", (p) => isMailer(p.kind)], ["boxes", (p) => p.kind === "box"], ["inner packaging", (p) => !isMailer(p.kind) && p.kind !== "box"]]) {
-    const list = cat.packages.filter(test);
-    if (!list.length) continue;
-    const g = el("div", "af-group");
-    const ul = el("ul", "af-pkgs");
-    ul.setAttribute("aria-label", name);
-    for (const p of list) {
-      const li = el("li");
-      const b = button("", "af-pkg");
-      b.setAttribute("aria-pressed", "true");
-      const n = el("span", "af-pn");
-      b.append(el("span", null, p.name), n);
-      b.title = `${KIND[p.kind] || p.kind}, ${p.l} × ${p.w}${p.kind === "box" ? ` × ${p.h}` : ""} in, ${money(p.unitCost)}`;
-      b.addEventListener("click", () => toggle(p.name));
-      chip.set(p.name, { b, n });
-      li.append(b);
-      ul.append(li);
-    }
-    g.append(el("span", "demo-label", name), ul);
-    groups.append(g);
-  }
-  const shelfBox = el("section", "af-shelfbox");
-  shelfBox.append(shelfHead, groups);
-  const panels = el("div", "af-panels");
-  panels.append(tallyBox, shelfBox);
-  const status = el("p", "af-status");
-  status.setAttribute("aria-live", "polite");
-  const receipt = el("p", "demo-out af-out");
-  root.replaceChildren(form, canvas, legend, now, youLine, cells, panels, status, receipt);
-
-  // State.
-  let gen = 0;
-  let rand = rng(SEED);
-  let floor = 0;
-  let nextAt = 0;
-  let nextId = 1;
-  let belt = [];
-  let orders = [];
-  let station = null;
-  let flights = [];
-  let slideAt = 0;
-  const off = new Set();
-  let yours = YOURS.map(([i, qty]) => ({ ...ITEMS[i], qty }));
-  let yourN = 0;
-  let playing = !reduce.matches;
-  let visible = true;
-  let busy = 0;
-  let replaying = 0;
-  let chain = Promise.resolve();
-  let raf = 0;
-  let last = 0;
-  let lastDom = 0;
-  let colors = null;
-  let G = null;
-
-  const exec = (params) => {
+  let calls = 0, callMs = 0, chain = Promise.resolve(), busy = 0, gen = 0;
+  const exec = (method, params) => {
     busy++;
     const run = chain.then(async () => {
-      const a = performance.now();
+      const t0 = performance.now();
       try {
-        return await demo.call("plan", params);
+        return await demo.call(method, params);
       } finally {
-        callMs += performance.now() - a;
+        callMs += performance.now() - t0;
         calls++;
       }
     }).finally(() => { busy--; });
     chain = run.catch(() => {});
     return run;
   };
-  const planOf = (rec) => exec({ lines: rec.lines.map(({ name, class: c, l, w, h, qty }) => ({ name, class: c, l, w, h, qty })), exclude: [...off] });
 
-  function pickW(w) {
-    const sum = w.reduce((a, b) => a + b, 0);
-    let x = rand() * sum;
-    for (let i = 0; i < w.length; i++) if ((x -= w[i]) < 0) return i;
-    return w.length - 1;
-  }
-  function genOrder() {
-    const w = MIXES.find(([v]) => v === mix.value)[2];
-    const n = pickW([45, 35, 20]) + 1;
-    const lines = [];
-    let units = 0;
-    for (let k = 0; k < n; k++) {
-      const i = pickW(w), q = pickW([60, 28, 12]) + 1;
-      if (units + q > cat.maxUnits) break;
-      units += q;
-      const had = lines.find((l) => l.name === ITEMS[i].name);
-      if (had) had.qty += q;
-      else lines.push({ ...ITEMS[i], qty: q });
-    }
-    nextAt += -Math.log(1 - rand()) * ARRIVE_S;
-    return { id: nextId++, label: `#${String(nextId - 1).padStart(3, "0")}`, lines, arrival: nextAt, you: false };
-  }
-  function fillBelt() {
-    while (orders.length + belt.filter((o) => !o.you).length < SHIFT && nextAt < floor + BELT_S + 60) {
-      belt.push(genOrder());
-      belt.sort((a, b) => a.arrival - b.arrival);
-    }
-  }
+  let info = await exec("reset", { seed: SEED });
+  const storeName = (code) => info.stores.find((s) => s.Code === code)?.Name || code;
 
-  // summarize keeps what the tally needs from one engine answer.
-  function summarize(r) {
-    judged += r.packages.length;
-    const pick = r.packages.find((p) => p.suggested) || null;
-    const ruleItems = [...new Set(r.units.filter((u) => traits.get(u.class)?.forcesBox).map((u) => u.name))];
-    const barred = {};
-    for (const p of r.packages) if (p.excluded) barred[p.excluded] = (barred[p.excluded] || 0) + 1;
-    let fill = 0, placed = 0, room = 0;
-    if (pick) {
-      room = pick.usableL * pick.usableW * pick.usableH;
-      for (const q of pick.placements) placed += q.dx * q.dy * q.dz;
-      fill = room ? placed / room : 0;
-    }
-    return {
-      name: pick ? pick.name : "", kind: pick ? pick.kind : "", cost: pick ? pick.marginalCost : 0, fill, placed, room,
-      ruleItems, barred, units: r.units.length, seated: pick ? pick.placements.length : 0, packed: pick ? pick.packed : false,
-    };
-  }
+  // Controls.
+  const play = button("Pause");
+  const step = button("Next step", "secondary");
+  const reset = button("Reset", "secondary");
+  const mix = select("orders", [["", "all four stores"], ...info.stores.map((s) => [s.Code, s.Name]), ["repeat", "the same basket again"]], "");
+  const use = select("packer", [["", "the suggestion"], ...info.packages.map((p) => [p.name, `${p.name} (${KIND[p.kind] || p.kind})`])], "");
+  const speed = select("speed", SPEEDS.map((s) => [s, `${s}×`]), 1);
+  const acts = el("div", "af-acts");
+  acts.append(play, step, reset, field("orders", mix), field("packer takes", use, "af-pack"), field("speed", speed));
+  const sku = select("sku", info.products.map((p) => [p.sku, `${p.sku} · ${p.name}`]), "LNT-PIN-COMPASS");
+  const bin = el("input");
+  Object.assign(bin, { type: "text", name: "bin", value: "A-01-012-C", spellcheck: false, autocomplete: "off" });
+  const move = button("Move", "secondary");
+  const slot = el("div", "af-slot");
+  slot.append(field("re-slot a product", sku, "af-sku"), field("to bin", bin, "af-bin"), move);
+  const form = el("form", "af-controls");
+  form.addEventListener("submit", (e) => e.preventDefault());
+  form.append(acts, slot);
 
-  async function packNext(animate) {
-    const rec = belt.shift();
-    if (!rec) return;
-    const g = gen;
-    const r = await planOf(rec);
-    if (g !== gen) return;
-    rec.res = summarize(r);
-    rec.changed = false;
-    orders.push(rec);
-    const t = performance.now();
-    station = { rec, r, t0: animate ? t : 0 };
-    if (animate) {
-      flights.push({ t0: t, rec });
-      slideAt = t;
-    }
-    if (rec.you) sayYou(rec);
-    updateDom(true);
+  const stages = el("ol", "af-stages");
+  stages.setAttribute("aria-label", "Order flow");
+  const stage = {};
+  for (const [k, server] of STAGES) {
+    const li = el("li", null, server ? `${k} · server only` : k);
+    if (server) li.dataset.server = "";
+    stage[k] = li;
+    stages.append(li);
   }
+  const map = el("canvas", "af-map");
+  map.setAttribute("role", "img");
+  const legend = el("p", "demo-legend af-legend");
+  for (const [k, t] of [["bin", "product bin"], ["cart", "in this cart"], ["picked", "picked"], ["picker", "picker"], ["zone", "hat zone"]]) {
+    const s = el("span", "af-key", t);
+    s.dataset.kind = k;
+    legend.append(s);
+  }
+  const now = el("p", "af-now");
 
-  function sayYou(rec) {
-    const s = rec.res;
-    youLine.replaceChildren();
-    const head = `Your order ${rec.label} (${rec.lines.map(lineText).join(", ")}) `;
-    if (!s.name) {
-      youLine.append(head, el("strong", null, "has no answer"), ": nothing on the shelf fits, so the engine stays silent and a person decides.");
-      return;
-    }
-    youLine.append(head, rec.changed ? "now goes in " : "went in ", el("strong", null, s.name), `, ${KIND[s.kind] || s.kind}, ${money(s.cost)} all in, ${pct(s.fill)} full.`);
-    if (s.ruleItems.length) youLine.append(" ", el("span", "af-rule", `Warehouse rule first: ${s.ruleItems.join(", ")} ships only in a box.`));
-  }
+  const packH = el("h3", "af-h", "pack");
+  const orderLine = el("p", "af-order");
+  const lines = el("ul", "af-lines");
+  lines.setAttribute("aria-label", "Order lines");
+  const ladder = el("ol", "af-ladder");
+  ladder.setAttribute("aria-label", "Suggestion pyramid for this order");
+  const why = el("p", "af-why");
+  why.setAttribute("aria-live", "polite");
+  const box = el("canvas", "af-box");
+  box.setAttribute("role", "img");
+  const acc = el("p", "af-acc", "The shape-history tiers are ordered by measured accuracy, on 25,021 shipments with train and test disjoint in time: same basket " +
+    "(sku+qty) 98.6% > same shape (class+qty) 89.1% > same kinds (class set) 67.0% (internal/packsuggest/shape_key.go, line 1). Only the first two answer live.");
+  const pack = el("section");
+  pack.append(packH, orderLine, lines, ladder, why);
+  const boxFig = el("section");
+  boxFig.append(el("h3", "af-h", "package · packfit.PlanFor"), box);
+  const labelH = el("h3", "af-h", "label");
+  const tabs = el("div", "af-tabs");
+  const tabLabel = button("4x6 label"), tabSlip = button("packing slip", "secondary");
+  for (const b of [tabLabel, tabSlip]) tabs.append(b);
+  const label = el("canvas", "af-label");
+  label.setAttribute("role", "img");
+  const cap = el("p", "af-cap");
+  const print = el("section");
+  print.append(labelH, tabs, label, cap);
+  const pair = el("div", "af-pair");
+  pair.append(boxFig, print);
+  const bench = el("div", "af-bench");
+  bench.append(pack, pair, acc);
 
-  function tally() {
-    const t = { boxes: 0, mailers: 0, rule: 0, none: 0, cost: 0, placed: 0, room: 0, picks: new Map() };
-    for (const o of orders) {
-      const s = o.res;
-      if (!s.name) { t.none++; continue; }
-      if (s.kind === "box") { t.boxes++; if (s.ruleItems.length) t.rule++; } else t.mailers++;
-      t.cost += s.cost;
-      t.placed += s.placed;
-      t.room += s.room;
-      t.picks.set(s.name, (t.picks.get(s.name) || 0) + 1);
-    }
-    return t;
+  const cells = el("ul", "cells stack af-cells");
+  const cell = {};
+  for (const [k, t] of [["shipped", "shipped"], ["carts", "carts"], ["stops", "stops walked"], ["fit", "by fit"], ["shape", "by shape history"],
+    ["fit_open", "by fit, any package"], ["fallback", "by fallback"], ["keys", "model keys"]]) {
+    const li = el("li");
+    li.dataset.k = k;
+    const v = el("span", "af-v", "0");
+    li.append(el("span", null, t), v);
+    cell[k] = v;
+    cells.append(li);
   }
+  const status = el("p", "af-status");
+  status.setAttribute("aria-live", "polite");
+  const receipt = el("p", "demo-out af-out");
+  root.replaceChildren(form, stages, map, legend, now, bench, cells, status, receipt);
+
+  // State.
+  let products = new Map(info.products.map((p) => [p.sku, p]));
+  let cart = null; // {n, orders, stops, at, leg, legT0, path, packed}
+  let cur = null; // {order, r, t0}
+  let carts = 0, stops = 0, last = null, sheet = "label";
+  let playing = !reduce.matches, visible = true, raf = 0, prev = 0, wait = 0;
+  let colors = null, M = null, B = null;
 
   function readColors() {
     const s = getComputedStyle(root);
     const v = (n) => s.getPropertyValue(n).trim();
     colors = {
       bg: v("--sunken"), surface: v("--surface"), line: v("--line"), strong: v("--line-strong"), text: v("--text"), text2: v("--text-2"),
-      text3: v("--text-3"), accent: v("--accent"), live: v("--live"), signal: v("--signal"), danger: v("--danger"), mono: v("--mono") || "monospace",
+      text3: v("--text-3"), accent: v("--accent"), tint: v("--accent-tint"), live: v("--live"), signal: v("--signal"),
+      mono: v("--mono") || "monospace", sans: v("--sans") || "sans-serif",
     };
   }
+  const lineColor = (i) => [colors.accent, colors.live, colors.signal][i] || colors.text2;
 
-  function layout() {
-    const W = Math.max(280, canvas.clientWidth);
-    const narrow = W < 520;
-    const padL = 12, padR = 12, padT = 8;
-    const beltTop = padT + 14, beltH = 38;
-    const sTop = beltTop + beltH + 28;
-    const VH = narrow ? 124 : 186;
-    const vTop = sTop + (narrow ? 54 : 40);
-    const laneTop = vTop + VH + 30;
-    const plotW = W - padL - padR;
-    const cards = Math.max(1, Math.floor((plotW + 6) / ((narrow ? 76 : 90) + 6)));
-    const cardW = (plotW + 6) / cards - 6, cardH = 62;
-    const H = laneTop + cardH + 10;
-    G = { W, H, padL, padR, padT, beltTop, beltH, sTop, VH, vTop, laneTop, cards, cardW, cardH, plotW, x0: padL + 60, narrow };
-    canvas.style.height = `${H}px`;
+  function size(c, H, min = 280) {
+    const W = Math.max(min, c.clientWidth);
+    c.style.height = `${H}px`;
     const dpr = window.devicePixelRatio || 1;
     const w = Math.round(W * dpr), h = Math.round(H * dpr);
-    if (canvas.width !== w || canvas.height !== h) Object.assign(canvas, { width: w, height: h });
+    if (c.width !== w || c.height !== h) Object.assign(c, { width: w, height: h });
+    return W;
   }
-  const bx = (t) => G.x0 + ((t - floor) / BELT_S) * (G.W - G.padR - G.x0);
-  const unitColor = (k) => (k === "rule" ? colors.signal : k === "soft" ? colors.live : colors.text2);
-  const fit = (ctx, s, w) => {
-    if (ctx.measureText(s).width <= w) return s;
-    while (s.length > 1 && ctx.measureText(`${s}…`).width > w) s = s.slice(0, -1);
-    return `${s}…`;
+  function layout() {
+    const narrow = map.clientWidth < 560;
+    const rowH = narrow ? 30 : 34, top = 22, padL = narrow ? 48 : 52, padR = 10;
+    const floorB = top + info.aisles.length * rowH;
+    const toteY = floorB + 38;
+    const H = toteY + 46;
+    const W = size(map, H);
+    M = { W, H, narrow, rowH, top, padL, padR, floorB, toteY, front: padL - 14, dock: { x: padL - 14, y: floorB + 10 } };
+    const bw = Math.max(280, box.clientWidth);
+    B = { W: bw, H: bw < 520 ? 150 : 180 };
+    size(box, B.H);
+    size(label, Math.round((Math.max(120, label.clientWidth) * 1218) / 812), 120);
+    if (cart) cart.path = route(cart.stops);
+  }
+  const px = (pos) => M.padL + ((pos - 1) / (MAX_POS - 1)) * (M.W - M.padL - M.padR);
+  const aisleIdx = (k) => info.aisles.findIndex((a) => a.key === k);
+  const rackY = (i) => M.top + i * M.rowH + 6;
+  const walkY = (i) => rackY(i) + 16;
+
+  // route is the picker's walk: from the pack station up the front cross-aisle
+  // into each aisle, along it to each stop in turn, and back.
+  function route(list) {
+    const legs = [];
+    let p = { ...M.dock }, ai = -1;
+    for (const s of list) {
+      const i = aisleIdx(s.bin.aisle);
+      const to = { x: px(s.bin.pos), y: walkY(i) };
+      const pts = [p];
+      if (i !== ai) { pts.push({ x: M.front, y: p.y }, { x: M.front, y: to.y }); }
+      pts.push(to);
+      legs.push(pts);
+      p = to; ai = i;
+    }
+    legs.push([p, { x: M.front, y: p.y }, { ...M.dock }]);
+    return legs;
+  }
+  // cut is the part of a leg walked by t (0 to 1), as points.
+  const cut = (pts, t) => {
+    const seg = [];
+    let total = 0;
+    for (let i = 1; i < pts.length; i++) { const d = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y); seg.push(d); total += d; }
+    let at = total * Math.min(1, Math.max(0, t));
+    const out = [pts[0]];
+    for (let i = 0; i < seg.length; i++) {
+      if (at <= seg[i]) { const f = seg[i] ? at / seg[i] : 1; out.push({ x: pts[i].x + (pts[i + 1].x - pts[i].x) * f, y: pts[i].y + (pts[i + 1].y - pts[i].y) * f }); return out; }
+      at -= seg[i];
+      out.push(pts[i + 1]);
+    }
+    return out;
   };
 
-  function draw(ts) {
-    if (!G || !colors) return;
-    const c = colors;
-    const dpr = window.devicePixelRatio || 1;
-    const ctx = canvas.getContext("2d");
+  function drawMap(ts) {
+    if (!M || !colors) return;
+    const c = colors, ctx = map.getContext("2d"), dpr = window.devicePixelRatio || 1;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = c.bg;
-    ctx.fillRect(0, 0, G.W, G.H);
-    const font = (px, w = 400) => `${w} ${px}px ${c.mono}`;
-    drawBelt(ctx, font);
-    drawStation(ctx, ts, font);
-    drawLane(ctx, ts, font);
-  }
-
-  function ticket(ctx, o, x, y, font) {
-    const c = colors;
-    const units = o.lines.flatMap((l) => Array(l.qty).fill(kindOf(l)));
-    const w = 44, h = 30;
-    ctx.fillStyle = c.surface;
-    ctx.fillRect(x, y, w, h);
-    ctx.lineWidth = o.you ? 2 : 1;
-    ctx.strokeStyle = o.you ? c.accent : c.strong;
-    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
-    ctx.fillStyle = o.you ? c.accent : c.text2;
-    ctx.font = font(9, o.you ? 600 : 400);
-    ctx.textAlign = "left";
-    ctx.fillText(o.you ? "you" : o.label, x + 4, y + 11);
-    units.forEach((k, i) => {
-      ctx.fillStyle = unitColor(k);
-      ctx.fillRect(x + 4 + (i % 5) * 7, y + 15 + Math.floor(i / 5) * 6, 5, 4);
-    });
-  }
-
-  function drawBelt(ctx, font) {
-    const c = colors, y = G.beltTop, h = G.beltH, x1 = G.W - G.padR;
-    ctx.fillStyle = c.text3;
+    ctx.fillRect(0, 0, M.W, M.H);
+    const font = (p, w = 400) => `${w} ${p}px ${c.mono}`;
     ctx.font = font(10);
-    ctx.textAlign = "left";
-    ctx.fillText("incoming orders, arriving on floor time", G.padL, G.padT + 6);
-    ctx.fillStyle = c.surface;
-    ctx.globalAlpha = 0.5;
-    ctx.fillRect(G.x0, y, x1 - G.x0, h);
-    ctx.globalAlpha = 1;
-    // Rollers move with the floor clock.
-    ctx.strokeStyle = c.line;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let t = Math.ceil(floor / 15) * 15; t <= floor + BELT_S; t += 15) {
-      const x = Math.round(bx(t)) + 0.5;
-      ctx.moveTo(x, y); ctx.lineTo(x, y + h);
-    }
-    ctx.stroke();
-    ctx.strokeStyle = c.strong;
-    ctx.beginPath();
-    ctx.moveTo(G.x0, y + h + 0.5); ctx.lineTo(x1, y + h + 0.5);
-    ctx.stroke();
     ctx.fillStyle = c.text3;
-    ctx.textAlign = "center";
-    const every = G.narrow ? 120 : 60;
-    for (let t = Math.ceil(floor / every) * every; t <= floor + BELT_S; t += every) {
-      const x = bx(t);
-      if (x < G.x0 + 22 || x > x1 - 22) continue;
-      ctx.fillText(clock(t).slice(0, -3), x, y + h + 13);
-    }
     ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(M.narrow ? "floor · bins 1–168" : "floor · aisles A-01 to A-05, bins 1–168 · walk order: aisle, then bin", 4, 13);
+    const inCart = new Map(), done = new Set();
+    if (cart) cart.stops.forEach((s, i) => { inCart.set(s.bin.raw, i); if (i < cart.at) done.add(s.bin.raw); });
+    info.aisles.forEach((a, i) => {
+      const y = rackY(i);
+      ctx.fillStyle = c.text2;
+      ctx.font = font(10, 600);
+      ctx.fillText(a.key, 4, y + 9);
+      for (const z of info.zones.filter((z) => z.aisle === a.key)) {
+        ctx.fillStyle = c.tint;
+        ctx.fillRect(px(z.min_pos), y - 2, px(z.max_pos) - px(z.min_pos), 14);
+        ctx.strokeStyle = c.accent;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px(z.min_pos) + 0.5, y - 1.5, px(z.max_pos) - px(z.min_pos) - 1, 13);
+      }
+      ctx.fillStyle = c.line;
+      ctx.fillRect(M.padL, y + 3, M.W - M.padL - M.padR, 4);
+      if (a.odd_only && !M.narrow) { ctx.fillStyle = c.text3; ctx.font = font(9); ctx.textAlign = "right"; ctx.fillText("odd bins only", M.W - M.padR, y - 3); ctx.textAlign = "left"; }
+    });
+    for (const p of products.values()) {
+      const i = aisleIdx(p.bin.aisle);
+      if (i < 0) continue;
+      const k = inCart.get(p.bin.raw);
+      const on = k !== undefined;
+      ctx.fillStyle = done.has(p.bin.raw) ? c.live : on ? c.accent : c.text3;
+      const x = px(p.bin.pos), y = rackY(i);
+      ctx.fillRect(x - (on ? 2.5 : 1.5), y + (on ? -1 : 1), on ? 5 : 3, on ? 12 : 8);
+    }
+    if (cart) {
+      const legs = cart.path;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = c.strong;
+      ctx.beginPath();
+      for (const pts of legs) pts.forEach((p, j) => (j ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.strokeStyle = c.accent;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      const t = cart.legT0 && ts ? (ts - cart.legT0) / (STOP_MS / Number(speed.value)) : 1;
+      let w = M.dock;
+      for (let k = 0; k < Math.min(cart.at + 1, legs.length); k++) {
+        const pts = k < cart.at ? legs[k] : cut(legs[k], t);
+        pts.forEach((p, j) => (j ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+        w = pts[pts.length - 1];
+      }
+      ctx.stroke();
+      ctx.fillStyle = c.signal;
+      ctx.beginPath(); ctx.arc(w.x, w.y, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.font = font(10, 600);
+      cart.stops.forEach((s, i) => {
+        if (M.narrow && i !== cart.at - 1) return;
+        const y = rackY(aisleIdx(s.bin.aisle));
+        ctx.fillStyle = i < cart.at ? c.live : c.accent;
+        ctx.textAlign = "center";
+        ctx.fillText(String(i + 1), px(s.bin.pos), y - 4);
+      });
+    }
     ctx.fillStyle = c.text;
     ctx.font = font(10, 600);
-    ctx.fillText("pack", G.padL, y + 16);
-    ctx.fillStyle = c.text3;
-    ctx.font = font(10);
-    ctx.fillText(clock(floor), G.padL, y + 30);
-    ctx.fillText("floor time →", x1 - 72, y + h + 25);
-    ctx.save();
-    ctx.beginPath(); ctx.rect(G.x0, y - 2, x1 - G.x0, h + 4); ctx.clip();
-    for (let i = belt.length - 1; i >= 0; i--) {
-      const o = belt[i];
-      const x = Math.max(G.x0, bx(o.arrival));
-      if (x > x1) continue;
-      ticket(ctx, o, x, y + 4, font);
-    }
-    ctx.restore();
-    ctx.strokeStyle = c.text;
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(G.x0, y - 3); ctx.lineTo(G.x0, y + h + 3); ctx.stroke();
-  }
-
-  function why(s) {
-    if (!s.name) return ["danger", "nothing on the shelf fits: the engine stays silent and a person decides"];
-    if (s.ruleItems.length) {
-      const n = s.barred[NEEDS_BOX] || 0;
-      return ["rule", `rule first: ${s.ruleItems.join(", ")} ships only in a box${n ? `, ${n} mailers barred` : ""}`];
-    }
-    if (s.kind === "box") return ["plain", "no usable mailer fits, so the cheapest box that does"];
-    return ["plain", "the cheapest usable mailer the basket fits"];
-  }
-
-  function drawStation(ctx, ts, font) {
-    const c = colors, x = G.padL, w = G.plotW;
-    if (!station) return;
-    const { rec, r } = station;
-    const s = rec.res;
-    const pick = r.packages.find((p) => p.suggested);
     ctx.textAlign = "left";
-    let y = G.sTop + 12;
-    ctx.font = font(11);
-    ctx.fillStyle = rec.you ? c.accent : c.text3;
-    const tag = rec.you ? `you ${rec.label}` : rec.label;
-    ctx.fillText(tag, x, y);
-    let cx = x + ctx.measureText(tag).width + 8;
-    ctx.font = font(14, 700);
-    ctx.fillStyle = rec.you ? c.accent : c.text;
-    const name = s.name || "no answer";
-    ctx.fillText(name, cx, y + 1);
-    cx += ctx.measureText(name).width + 10;
-    if (s.name) {
-      ctx.font = font(11);
-      ctx.fillStyle = c.text2;
-      const d = `${KIND[s.kind] || s.kind} · ${money(s.cost)} · ${pct(s.fill)} full`;
-      if (G.narrow) { y += 16; cx = x; }
-      ctx.fillText(fit(ctx, d, x + w - cx), cx, y);
-    }
-    const [k, t] = why(s);
-    ctx.font = font(10, k === "plain" ? 400 : 600);
-    ctx.fillStyle = k === "rule" ? c.signal : k === "danger" ? c.danger : c.text3;
-    ctx.fillText(fit(ctx, t, w), x, y + 17);
-    if (!pick) return;
-
-    const gap = 16, slot = (w - gap) / 2, capH = 16, room = G.VH - capH;
-    const L = pick.usableL, Wd = pick.usableW, Hh = pick.usableH;
-    const k2 = Math.min(slot / L, room / Wd, room / Hh);
-    const mail = isMailer(pick.kind);
-    const n = Math.max(1, pick.placements.length);
-    const span = Math.min(700, 42000 / Number(speed.value));
-    const units = r.units;
-    for (const [i, axis] of [[0, "y"], [1, "z"]]) {
-      const bw = L * k2, bh = (axis === "y" ? Wd : Hh) * k2;
-      const ox = x + i * (slot + gap) + (slot - bw) / 2;
-      const oy = G.vTop + room - bh;
+    ctx.fillText("pack", M.dock.x + 10, M.dock.y + 4);
+    ctx.fillStyle = c.surface;
+    ctx.fillRect(M.dock.x - 6, M.dock.y - 4, 12, 8);
+    // Totes on the cart.
+    const n = CART, gap = 6, tw = (M.W - 8 - gap * (n - 1)) / n, ty = M.toteY;
+    ctx.font = font(10);
+    ctx.fillStyle = c.text3;
+    ctx.fillText("cart · one tote per order", 4, ty - 6);
+    for (let i = 0; i < n; i++) {
+      const x = 4 + i * (tw + gap);
+      const o = cart?.orders[i];
       ctx.fillStyle = c.surface;
-      ctx.strokeStyle = mail ? c.live : s.ruleItems.length ? c.signal : c.text2;
+      ctx.fillRect(x, ty, tw, 40);
+      ctx.strokeStyle = o ? c.strong : c.line;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x + 0.5, ty + 0.5, tw - 1, 39);
+      if (!o) continue;
+      const need = o.lines.reduce((a, l) => a + l.qty, 0);
+      const got = cart.got[o.tote] || 0;
+      const shipped = cart.packed.has(o.id);
+      ctx.fillStyle = shipped ? c.live : c.accent;
+      ctx.globalAlpha = shipped ? 0.35 : 0.22;
+      ctx.fillRect(x + 1, ty + 1, ((tw - 2) * got) / need, 38);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = c.text;
+      ctx.font = font(10, 600);
+      ctx.fillText(`${M.narrow ? "" : `tote ${o.tote} · `}${o.number}`, x + 5, ty + 15);
+      ctx.font = font(10);
+      ctx.fillStyle = c.text2;
+      ctx.fillText(shipped ? "packed" : `${got}/${need}${M.narrow ? "" : " picked"}`, x + 5, ty + 31);
+    }
+    map.setAttribute("aria-label", cart ? `Floor map: cart ${carts}, ${cart.orders.length} orders, stop ${Math.min(cart.at, cart.stops.length)} of ${cart.stops.length} in walk order.` : "Floor map: no cart out yet.");
+  }
+
+  function drawBox(ts) {
+    if (!B || !colors) return;
+    const c = colors, ctx = box.getContext("2d"), dpr = window.devicePixelRatio || 1;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = c.bg;
+    ctx.fillRect(0, 0, B.W, B.H);
+    const font = (p, w = 400) => `${w} ${p}px ${c.mono}`;
+    const plan = cur?.r.plan;
+    ctx.font = font(10);
+    ctx.fillStyle = c.text3;
+    ctx.textAlign = "left";
+    if (!plan) { ctx.fillText(cur ? "nothing to draw" : "no order packed yet", 8, 16); return; }
+    const pad = 8, gap = 16, slotW = (B.W - pad * 2 - gap) / 2, room = B.H - 30;
+    const L = plan.usableL, Wd = plan.usableW, Hh = plan.usableH;
+    const k = Math.min(slotW / L, room / Wd, room / Hh);
+    const mail = isMailer(plan.kind);
+    const lineOf = cur.r.units.map((u) => cur.order.lines.findIndex((l) => l.sku === u.sku));
+    const n = Math.max(1, plan.placements.length);
+    const span = Math.min(900, 2000 / Number(speed.value));
+    for (const [i, axis] of [[0, "y"], [1, "z"]]) {
+      const bw = L * k, bh = (axis === "y" ? Wd : Hh) * k;
+      const ox = pad + i * (slotW + gap) + (slotW - bw) / 2, oy = 8 + room - bh;
+      ctx.fillStyle = c.surface;
+      ctx.strokeStyle = mail ? c.live : c.text2;
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       if (mail && ctx.roundRect) ctx.roundRect(ox, oy, bw, bh, Math.min(6, bh / 2)); else ctx.rect(ox, oy, bw, bh);
       ctx.fill();
       ctx.stroke();
-      if (axis === "y" && pick.structure) {
+      if (axis === "y" && plan.structure) {
         ctx.setLineDash([3, 3]);
         ctx.strokeStyle = c.text3;
         ctx.lineWidth = 1;
-        for (const [px, py, pw, ph] of pick.structure.cells) ctx.strokeRect(ox + px * k2, oy + py * k2, pw * k2, ph * k2);
+        for (const [qx, qy, qw, qh] of plan.structure.cells) ctx.strokeRect(ox + qx * k, oy + qy * k, qw * k, qh * k);
         ctx.setLineDash([]);
       }
-      const order = [...pick.placements].sort((p, q) => (axis === "y" ? p.z - q.z : q.y - p.y));
+      const order = [...plan.placements].sort((p, q) => (axis === "y" ? p.z - q.z : q.y - p.y));
       ctx.save();
-      ctx.beginPath(); ctx.rect(ox - 1, G.vTop - 30, bw + 2, room + 30); ctx.clip();
+      ctx.beginPath(); ctx.rect(ox - 1, 0, bw + 2, oy + bh + 1); ctx.clip();
       for (const p of order) {
-        const u = (ts - (station.t0 + (p.seq / n) * span)) / DROP_MS;
-        if (station.t0 && u <= 0) continue;
-        const e = station.t0 ? ease(u) : 1;
-        const col = unitColor(kindOf(units[p.index]));
-        let px = ox + p.x * k2, py, pw = p.dx * k2, ph;
-        if (axis === "y") {
-          py = oy + p.y * k2; ph = p.dy * k2;
-          const g = 1 + 0.25 * (1 - e);
-          px -= (pw * (g - 1)) / 2; py -= (ph * (g - 1)) / 2; pw *= g; ph *= g;
-        } else {
-          ph = p.dz * k2;
-          const end = oy + bh - (p.z + p.dz) * k2;
-          py = end - (1 - e) * (end - (G.vTop - ph - 4));
-        }
-        const a = station.t0 ? Math.min(1, u * 3) : 1;
-        ctx.globalAlpha = 0.42 * a;
+        const u = cur.t0 ? (ts - (cur.t0 + (p.seq / n) * span)) / DROP_MS : 1;
+        if (u <= 0) continue;
+        const e = ease(u), col = lineColor(lineOf[p.index]);
+        const x = ox + p.x * k, w = p.dx * k;
+        let y, h;
+        if (axis === "y") { y = oy + p.y * k; h = p.dy * k; }
+        else { h = p.dz * k; const end = oy + bh - (p.z + p.dz) * k; y = end - (1 - e) * (end + h); }
+        ctx.globalAlpha = 0.4 * Math.min(1, u * 3);
         ctx.fillStyle = col;
-        ctx.fillRect(px, py, pw, ph);
-        ctx.globalAlpha = a;
-        ctx.strokeStyle = rec.you ? c.accent : col;
+        ctx.fillRect(x, y, w, h);
+        ctx.globalAlpha = Math.min(1, u * 3);
+        ctx.strokeStyle = col;
         ctx.lineWidth = 1.25;
-        ctx.strokeRect(px + 0.5, py + 0.5, Math.max(0, pw - 1), Math.max(0, ph - 1));
+        ctx.strokeRect(x + 0.5, y + 0.5, Math.max(0, w - 1), Math.max(0, h - 1));
       }
       ctx.restore();
       ctx.globalAlpha = 1;
@@ -559,330 +507,251 @@ export async function mount(root, demo) {
       ctx.fillStyle = c.text3;
       ctx.textAlign = "center";
       const d = (v) => Number(v.toFixed(2));
-      ctx.fillText(`${axis === "y" ? (G.narrow ? "top" : "top-down") : "front"} · ${d(L)} × ${d(axis === "y" ? Wd : Hh)}${G.narrow ? "" : " in"}`, x + i * (slot + gap) + slot / 2, G.vTop + room + 13);
-      ctx.textAlign = "left";
+      ctx.fillText(`${axis === "y" ? "top" : "front"} · ${d(L)} × ${d(axis === "y" ? Wd : Hh)} in`, pad + i * (slotW + gap) + slotW / 2, B.H - 8);
     }
+    box.setAttribute("aria-label", `${plan.name}, ${KIND[plan.kind] || plan.kind}: ${plan.placements.length} of ${cur.r.units.length} units placed, seen from the top and the front.`);
   }
 
-  function glyph(ctx, s, x, y, you) {
-    const c = colors;
-    ctx.lineWidth = 1.5;
-    if (!s.name) {
-      ctx.setLineDash([2, 2]);
-      ctx.strokeStyle = c.danger;
-      ctx.strokeRect(x + 0.5, y + 2.5, 22, 15);
-      ctx.setLineDash([]);
-      return;
-    }
-    const col = you ? c.accent : isMailer(s.kind) ? c.live : s.ruleItems.length ? c.signal : c.text2;
-    ctx.strokeStyle = col;
-    ctx.fillStyle = col;
-    if (isMailer(s.kind)) {
-      ctx.globalAlpha = 0.25;
-      ctx.fillRect(x, y + 6, 26, 12);
-      ctx.globalAlpha = 1;
-      ctx.strokeRect(x + 0.5, y + 6.5, 25, 11);
-      ctx.beginPath(); ctx.moveTo(x + 1, y + 7); ctx.lineTo(x + 13, y + 13); ctx.lineTo(x + 25, y + 7); ctx.stroke();
-    } else {
-      ctx.globalAlpha = 0.25;
-      ctx.fillRect(x + 2, y + 2, 20, 16);
-      ctx.globalAlpha = 1;
-      ctx.strokeRect(x + 2.5, y + 2.5, 19, 15);
-      ctx.beginPath(); ctx.moveTo(x + 12, y + 3); ctx.lineTo(x + 12, y + 18); ctx.stroke();
-    }
+  function drawLabel() {
+    const ctx = label.getContext("2d");
+    const s = label.width / 812;
+    ctx.setTransform(s, 0, 0, s, 0, 0);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, 812, 1218);
+    if (!cur?.r.label) { label.setAttribute("aria-label", "No label printed yet."); return; }
+    zpl(ctx, sheet === "label" ? cur.r.label : cur.r.slip, colors?.sans || "sans-serif");
+    label.setAttribute("aria-label", sheet === "label"
+      ? `4 by 6 shipping label for ${cur.order.number}: demo label, not postage, tracking ${cur.r.tracking}.`
+      : `Packing slip for ${cur.order.number}: ${cur.order.lines.length} lines with their bins.`);
   }
 
-  function card(ctx, o, x, y, font) {
-    const c = colors, w = G.cardW, h = G.cardH, s = o.res;
-    ctx.fillStyle = o.changed ? c.bg : c.surface;
-    ctx.fillRect(x, y, w, h);
-    ctx.lineWidth = o.you ? 2 : 1;
-    ctx.strokeStyle = o.you ? c.accent : o.changed ? c.text2 : c.line;
-    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
-    ctx.font = font(9, o.you ? 600 : 400);
-    ctx.textAlign = "left";
-    ctx.fillStyle = o.you ? c.accent : c.text3;
-    ctx.fillText(o.you ? `you ${o.label}` : o.label, x + 5, y + 11);
-    if (o.changed) {
-      ctx.textAlign = "right";
-      ctx.fillStyle = c.text2;
-      ctx.fillText("new", x + w - 5, y + 11);
-      ctx.textAlign = "left";
-    }
-    glyph(ctx, s, x + 5, y + 15, o.you);
-    ctx.fillStyle = c.text2;
-    ctx.fillText(s.name ? money(s.cost) : "no fit", x + 36, y + 30);
-    ctx.font = font(9, 600);
-    ctx.fillStyle = c.text;
-    ctx.fillText(fit(ctx, s.name || "a person decides", w - 10), x + 5, y + 52);
-  }
+  function draw(ts) { drawMap(ts); drawBox(ts); }
 
-  function drawLane(ctx, ts, font) {
-    const c = colors, y = G.laneTop;
-    ctx.font = font(10);
-    ctx.fillStyle = c.text3;
-    ctx.textAlign = "left";
-    ctx.fillText("shipped, newest first →", G.padL, y - 8);
-    const step = G.cardW + 6;
-    const fitN = G.cards;
-    const list = orders.slice(-fitN - 1).reverse();
-    const slide = slideAt ? 1 - ease((ts - slideAt) / SLIDE_MS) : 0;
-    const more = orders.length - fitN;
-    if (more > 0) {
-      ctx.textAlign = "right";
-      ctx.fillText(`+${fmt(more)} earlier`, G.W - G.padR, y - 8);
-    }
-    ctx.save();
-    ctx.beginPath(); ctx.rect(G.padL, y - 1, G.plotW, G.cardH + 2); ctx.clip();
-    const flying = [];
-    for (let i = list.length - 1; i >= 0; i--) {
-      const f = flights.find((q) => q.rec === list[i]);
-      if (f) flying.push(f);
-      else card(ctx, list[i], G.padL + i * step - slide * step, y, font);
-    }
-    ctx.restore();
-    // A parcel leaves the station and lands at the head of the lane.
-    for (const f of flying) {
-      const t = ease((ts - f.t0) / FLY_MS);
-      ctx.globalAlpha = Math.min(1, 0.25 + t);
-      card(ctx, f.rec, G.padL, y - (1 - t) * (y - G.vTop - G.VH / 3), font);
-      ctx.globalAlpha = 1;
-    }
-    if (!orders.length) {
-      ctx.fillStyle = c.text3;
-      ctx.fillText("nothing shipped yet", G.padL, y + 20);
-    }
-  }
+  function setStage(k) { for (const [n] of STAGES) stage[n].toggleAttribute("data-on", n === k); }
 
-  function updateDom(force) {
-    const t = performance.now();
-    if (!force && t - lastDom < 200) return;
-    lastDom = t;
-    cell.t.textContent = clock(floor);
-    const T = tally();
-    const n = orders.length;
-    cell.orders.textContent = fmt(n);
-    cell.boxes.textContent = fmt(T.boxes);
-    cell.mailers.textContent = fmt(T.mailers);
-    cell.rule.textContent = fmt(T.rule);
-    cell.none.textContent = fmt(T.none);
-    cell.cost.textContent = money(T.cost);
-    cell.per.textContent = n - T.none ? money(T.cost / (n - T.none)) : "–";
-    cell.fill.textContent = T.room ? pct(T.placed / T.room) : "–";
-    const packed = T.boxes + T.mailers || 1;
-    seg.mailer.style.width = `${(T.mailers / packed) * 100}%`;
-    seg.box.style.width = `${((T.boxes - T.rule) / packed) * 100}%`;
-    seg.rule.style.width = `${(T.rule / packed) * 100}%`;
-    splitKey.replaceChildren();
-    for (const [k, v, label] of [["mailer", T.mailers, "mailers"], ["box", T.boxes - T.rule, "other boxes"], ["rule", T.rule, "boxes by rule"]]) {
-      const s = el("span", "af-key", `${label} ${fmt(v)}`);
-      s.dataset.kind = k;
-      splitKey.append(s);
-    }
-    const ranked = [...T.picks].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-    const max = ranked.length ? ranked[0][1] : 1;
-    top.replaceChildren(...ranked.slice(0, 5).map(([name, k]) => {
-      const li = el("li");
-      const p = cat.packages.find((q) => q.name === name);
-      li.classList.toggle("af-gone", off.has(name));
-      const bar = el("span", `af-bar${isMailer(p?.kind) ? " af-bar-mailer" : ""}`);
-      bar.style.width = `${(k / max) * 100}%`;
-      const track = el("span", "af-track");
-      track.append(bar);
-      li.append(el("span", "af-tn", name), track, el("span", "af-tc", fmt(k)));
+  function showOrder(o, r) {
+    packH.textContent = `pack · ${o.number}`;
+    orderLine.replaceChildren(el("strong", null, storeName(o.store)), ` · ${o.customer}, ${o.city} · tote ${o.tote}`);
+    lines.replaceChildren(...o.lines.map((l, i) => {
+      const li = el("li", null, `${l.qty} × ${l.name} (${l.class})`);
+      li.dataset.i = String(i);
       return li;
     }));
-    if (!ranked.length) top.append(el("li", "af-dim", "no packages picked yet"));
-    for (const [name, { b, n: cnt }] of chip) {
-      const k = T.picks.get(name) || 0;
-      cnt.textContent = k ? ` ${fmt(k)}` : "";
-      b.setAttribute("aria-pressed", String(!off.has(name)));
-    }
-    shelfTitle.textContent = `shelf · ${cat.packages.length - off.size} of ${cat.packages.length} on it`;
-    takeTop.disabled = !ranked.some(([name]) => !off.has(name)) || !!replaying;
-    restock.disabled = !off.size || !!replaying;
-    receipt.textContent = `${fmt(n)} orders packed by AnchorFlow's fit engine: ${fmt(calls)} calls judged ${fmt(judged)} packages in ${fmt(Math.round(callMs))} ms, in your browser.`;
-    if (station) {
-      const s = station.rec.res;
-      now.replaceChildren();
-      now.append(el("span", "af-dim", `at the station, ${station.rec.you ? "your order " : ""}${station.rec.label}: `), station.rec.lines.map(lineText).join(", "));
-      if (s.name && !s.packed) now.append(el("span", "af-dim", ` · the drawing seats ${s.seated} of ${s.units} units; the fit rules accept it, the packer that draws it placed fewer`));
-      const reasons = Object.entries(s.barred).map(([why, k]) => `${k} ${why}`).join("; ");
-      if (reasons) now.append(el("span", "af-dim", ` · barred by rule: ${reasons}`));
-    }
-    canvas.setAttribute("aria-label", `Packing floor at ${clock(floor)} of floor time: ${fmt(n)} orders packed, ${fmt(T.boxes)} in boxes and ${fmt(T.mailers)} in mailers, ` +
-      `${station ? `latest ${station.rec.label} in ${station.rec.res.name || "nothing"}` : "none yet"}.`);
-    step.disabled = n >= SHIFT && !belt.some((o) => o.you);
-    drop.disabled = !yours.length || n >= SHIFT;
+    renderLadder(r);
+    const s = r.suggestion;
+    why.replaceChildren();
+    if (s) {
+      why.append("Suggested ", el("strong", null, s.name), ` by ${SOURCE[s.source] || s.source}: ${s.reason}.`);
+      if (r.packed !== s.name) why.append(` The packer took ${r.packed} instead; that is what the model learns from.`);
+    } else why.append("No suggestion: a person decides.");
+    if (r.plan && !r.plan.packed) why.append(` The drawing seats ${r.plan.placements.length} of ${r.units.length} units.`);
+    cap.textContent = sheet === "label" ? `^XA … ^XZ, ${fmt(r.label.length)} bytes of ZPL · tracking ${r.tracking}` : `^XA … ^XZ, ${fmt(r.slip.length)} bytes of ZPL · picks listed with their bins`;
   }
 
-  function renderYours() {
-    yourLines.replaceChildren();
-    for (const l of yours) {
-      const li = el("li");
-      const b = button(`${lineText(l)} ✕`, "secondary af-chip");
-      b.setAttribute("aria-label", `Remove one ${l.name}`);
-      b.addEventListener("click", () => {
-        l.qty--;
-        yours = yours.filter((x) => x.qty > 0);
-        renderYours();
-      });
-      li.append(b);
-      yourLines.append(li);
+  // renderLadder lays the pyramid out in the order Suggest walks it, marking
+  // the step that answered and why each one before it did not.
+  function renderLadder(r) {
+    const src = r.suggestion?.source || "", reason = r.suggestion?.reason || "";
+    const tier = (g) => info.tiers.find((x) => x.tier === g.tier);
+    const detail = (g) => `${g.key} · ${g.box ? `${g.box} ${g.agree}/${g.obs}` : "no history yet"}${g.boxNow ? ` → ${g.boxNow} ${g.agreeNow}/${g.obsNow}` : ""}`;
+    const rows = [["rules", "none in the demo org", "", false]];
+    let answered = src === "fit";
+    rows.push(["fit engine", answered ? "answered" : "declined", "", answered]);
+    for (const g of r.rungs.filter((g) => tier(g)?.live)) {
+      const t = tier(g);
+      let state, on = false;
+      if (src === "shape" && reason.startsWith(`${t.name}:`)) { state = "answered"; on = answered = true; }
+      else if (answered) state = "not asked";
+      else if (!g.box || g.obs < info.minObs) state = `under ${info.minObs} shipped`;
+      else if (g.agree / g.obs < info.minShare) state = `under ${pct(info.minShare)} agree`;
+      else state = "no answer";
+      rows.push([`shape · ${t.name}`, state, detail(g), on]);
     }
-    if (!yours.length) yourLines.append(el("li", "af-dim", "empty, add an item"));
-    const units = yours.reduce((a, l) => a + l.qty, 0);
-    addItem.disabled = units >= cat.maxUnits;
-    drop.disabled = !units || orders.length >= SHIFT;
+    rows.push(["fit, any package", src === "fit_open" ? "answered" : answered ? "not asked" : "declined", "", src === "fit_open"]);
+    if (src === "fit_open") answered = true;
+    const fb = r.rungs.find((g) => !tier(g)?.live && src.startsWith("shape_") && reason.startsWith(`${tier(g).name}:`));
+    rows.push([fb ? `fallback · ${tier(fb).name}` : "fallback", fb ? "answered" : answered ? "not asked" : "no answer", fb ? detail(fb) : "", !!fb]);
+    ladder.replaceChildren(...rows.map(([name, state, det, on]) => {
+      const li = el("li");
+      li.toggleAttribute("data-on", on);
+      li.append(el("span", "af-ln", name), el("span", "af-ls", state), el("span", "af-lh", det));
+      return li;
+    }));
+  }
+
+  function updateDom() {
+    const src = last?.sources || {};
+    cell.shipped.textContent = fmt(last?.shipped || 0);
+    cell.carts.textContent = fmt(carts);
+    cell.stops.textContent = fmt(stops);
+    cell.fit.textContent = fmt(src.fit || 0);
+    cell.shape.textContent = fmt(src.shape || 0);
+    cell.fit_open.textContent = fmt(src.fit_open || 0);
+    cell.fallback.textContent = fmt((src.shape_kinds || 0) + (src.shape_band || 0) + (src.shape_org || 0));
+    cell.keys.textContent = fmt(last?.modelKeys || 0);
+    receipt.textContent = `${plural(calls, "call", "calls")} into AnchorFlow's code: ${plural(carts, "cart", "carts")} routed, ` +
+      `${plural(last?.shipped || 0, "order", "orders")} packed and labelled, a shape model of ${plural(last?.modelKeys || 0, "key", "keys")}, in ${fmt(Math.round(callMs))} ms, in your browser.`;
+    step.disabled = !!busy;
   }
 
   const fail = (err) => { status.textContent = err.message; };
 
-  async function rejudge(note) {
-    const g = gen, my = ++replaying;
-    await chain;
-    if (g !== gen || my !== replaying) return;
-    const before = tally().cost;
-    let changed = 0;
-    const list = [...orders];
-    updateDom(true);
-    for (let i = 0; i < list.length; i++) {
-      const rec = list[i];
-      const r = await planOf(rec);
-      if (g !== gen || my !== replaying) return;
-      const prev = rec.res.name;
-      rec.res = summarize(r);
-      rec.changed = prev !== rec.res.name;
-      if (rec.changed) changed++;
-      if (station && station.rec === rec) station = { rec, r, t0: reduce.matches ? 0 : performance.now() };
-      if (i % 8 === 7) status.textContent = `Re-judging the shift: ${fmt(i + 1)} of ${fmt(list.length)} orders…`;
-    }
-    replaying = 0;
-    const mine = list.filter((o) => o.you).pop();
-    if (mine && mine.changed) sayYou(mine);
-    const after = tally().cost;
-    status.textContent = `${note}. The engine re-judged all ${fmt(list.length)} orders packed so far: ${fmt(changed)} ${changed === 1 ? "pick" : "picks"} changed, cost ${money(before)} → ${money(after)}.`;
-    updateDom(true);
-    draw(performance.now());
-    kick();
-  }
-
-  function toggle(name) {
-    if (off.has(name)) off.delete(name); else off.add(name);
-    rejudge(off.has(name) ? `${name} is off the shelf` : `${name} is back on the shelf`).catch(fail);
-  }
-
-  async function restart() {
-    gen++;
+  async function nextCart() {
     const g = gen;
-    replaying = 0;
-    rand = rng(SEED);
-    floor = 0; nextAt = 0; nextId = 1; yourN = 0;
-    belt = []; orders = []; station = null; flights = []; slideAt = 0;
-    youLine.textContent = "";
-    fillBelt();
-    const warm = reduce.matches ? WARM_REDUCED : WARM;
-    for (let i = 0; i < warm; i++) {
-      floor = belt[0].arrival;
-      await packNext(false);
-      if (g !== gen) return;
-      fillBelt();
+    const r = await exec("cart", { n: CART, mix: mix.value });
+    if (g !== gen) return;
+    carts++;
+    const at = reduce.matches || !playing ? r.stops.length : 0;
+    cart = { ...r, at: 0, got: {}, packed: new Set(), legT0: 0, path: route(r.stops) };
+    for (let i = 0; i < at; i++) arrive();
+    if (!at) cart.legT0 = performance.now();
+    setStage("pick");
+    const units = r.orders.reduce((a, o) => a + o.lines.reduce((b, l) => b + l.qty, 0), 0);
+    status.textContent = `Cart ${carts}: ${plural(r.orders.length, "order", "orders")} from ${[...new Set(r.orders.map((o) => storeName(o.store)))].join(", ")}, ` +
+      `${plural(units, "unit", "units")} at ${plural(r.stops.length, "stop", "stops")} in walk order.`;
+    updateDom();
+  }
+
+  function arrive() {
+    const s = cart.stops[cart.at];
+    for (const p of s.picks) cart.got[p.tote] = (cart.got[p.tote] || 0) + p.qty;
+    stops++;
+    cart.at++;
+    const what = s.picks.map((p) => `${p.qty} × ${products.get(p.sku)?.name || p.sku} into tote ${p.tote}`).join(", ");
+    now.replaceChildren(el("span", "af-dim", `stop ${cart.at} of ${cart.stops.length} · ${s.bin.raw}${s.bin.zone ? ` (${s.bin.zone})` : ""} · scanned ${s.scan} · `), what);
+  }
+
+  async function packNext() {
+    const o = cart.orders.find((x) => !cart.packed.has(x.id));
+    if (!o) return;
+    const g = gen;
+    setStage("pack");
+    const r = await exec("pack", { id: o.id, use: use.value });
+    if (g !== gen) return;
+    cart.packed.add(o.id);
+    last = r;
+    cur = { order: o, r, t0: reduce.matches || !playing ? 0 : performance.now() };
+    showOrder(o, r);
+    drawLabel();
+    setStage("label");
+    now.replaceChildren(el("span", "af-dim", `${o.number} · tote ${o.tote} → `), `${r.packed}, labelled ${r.tracking}`);
+    status.textContent = `${o.number} went in ${r.packed}${r.suggestion ? ` (${SOURCE[r.suggestion.source] || r.suggestion.source}: ${r.suggestion.reason})` : ""}.`;
+    updateDom();
+  }
+
+  // advance runs the floor's next step: a cart out, its walk finished, or the next tote packed.
+  async function advance(animated) {
+    if (!cart || cart.packed.size === cart.orders.length) return nextCart();
+    if (cart.at < cart.stops.length) {
+      if (!animated) { while (cart.at < cart.stops.length) arrive(); cart.legT0 = 0; updateDom(); }
+      return;
     }
-    status.textContent = `${MIXES.find(([v]) => v === mix.value)[1]}: orders arrive at random, about one every ${ARRIVE_S} s of floor time (seed ${SEED}), up to ${SHIFT} a shift.`;
-    updateDom(true);
-    draw(performance.now());
+    return packNext();
   }
 
   function frame(ts) {
     raf = 0;
-    const dt = last ? Math.min(100, ts - last) : 16;
-    last = ts;
-    if (playing && !replaying) {
-      if (orders.length >= SHIFT && !belt.some((o) => o.you)) {
-        setPlaying(false);
-        status.textContent = `Shift full: ${fmt(SHIFT)} orders packed. Reset for a new shift.`;
-      } else {
-        floor += (dt / 1000) * Number(speed.value);
-        const nx = belt[0];
-        if (nx && nx.arrival <= floor) {
-          floor = nx.arrival;
-          if (!busy) packNext(!reduce.matches).catch(fail);
-        }
-        fillBelt();
+    const dt = prev ? Math.min(100, ts - prev) : 16;
+    prev = ts;
+    if (playing && !busy) {
+      const sp = Number(speed.value);
+      if (cart && cart.at < cart.stops.length) {
+        if (!cart.legT0) cart.legT0 = ts;
+        if (ts - cart.legT0 >= STOP_MS / sp) { arrive(); cart.legT0 = ts; updateDom(); }
+      } else if (cart && cart.at === cart.stops.length && cart.legT0 && ts - cart.legT0 < STOP_MS / sp) {
+        // walking back to the pack station
+      } else if ((wait -= dt * sp) <= 0) {
+        // A pack holds the bench for PACK_MS; a new cart sets off at once.
+        wait = cart && cart.packed.size < cart.orders.length ? PACK_MS : 0;
+        if (cart) cart.legT0 = 0;
+        advance(true).catch(fail);
       }
     }
-    flights = flights.filter((f) => ts - f.t0 < FLY_MS);
     draw(ts);
-    updateDom(false);
-    const span = Math.min(700, 42000 / Number(speed.value)) + DROP_MS;
-    const moving = flights.length || (slideAt && ts - slideAt < SLIDE_MS) || (station && station.t0 && ts - station.t0 < span);
-    if ((playing || moving) && visible && !document.hidden) raf = requestAnimationFrame(frame);
-    else last = 0;
+    if ((playing || (cur?.t0 && ts - cur.t0 < 2200)) && visible && !document.hidden) raf = requestAnimationFrame(frame);
+    else prev = 0;
   }
   const kick = () => { if (!raf && visible && !document.hidden) raf = requestAnimationFrame(frame); };
+
   function setPlaying(v) {
     playing = v;
     play.textContent = v ? "Pause" : "Play";
     play.setAttribute("aria-pressed", String(v));
-    if (v) kick();
+    if (v) { wait = 0; kick(); }
   }
 
-  // Inputs.
-  play.addEventListener("click", () => setPlaying(!playing));
-  step.addEventListener("click", async () => {
-    setPlaying(false);
+  async function restart() {
+    gen++;
+    status.textContent = "";
     await chain;
-    if (replaying || !belt.length) return;
-    floor = Math.max(floor, belt[0].arrival);
-    await packNext(!reduce.matches);
-    fillBelt();
+    info = await exec("reset", { seed: SEED });
+    products = new Map(info.products.map((p) => [p.sku, p]));
+    cart = null; cur = null; last = null; carts = 0; stops = 0; wait = 0;
+    packH.textContent = "pack";
+    orderLine.textContent = "";
+    lines.replaceChildren();
+    ladder.replaceChildren();
+    why.textContent = "";
+    cap.textContent = "";
+    now.textContent = "";
+    setStage("order");
+    await nextCart();
+    status.textContent = `A fresh floor (seed ${SEED}), its shape model empty. ${status.textContent}`;
+    if (!playing) await advance(false);
+    updateDom();
+    drawLabel();
     draw(performance.now());
-    kick();
+  }
+
+  async function slotIt() {
+    const p = products.get(sku.value);
+    const want = bin.value.trim().toUpperCase();
+    try {
+      const r = await exec("slot", { sku: sku.value, bin: want });
+      products.set(r.sku, r);
+      bin.value = r.bin.raw;
+      status.textContent = `Moved ${r.name} from ${p.bin.raw} to ${r.bin.raw} (aisle ${r.bin.aisle}, bin ${r.bin.pos}, level ${r.bin.level}${r.bin.zone ? `, ${r.bin.zone}` : ""}). The next cart picks it there.`;
+    } catch (err) {
+      status.textContent = `warehouse.ParseBin refused ${want}: ${err.message.replace(/^bin "[^"]*": /, "")}.`;
+    }
+    updateDom();
+    draw(performance.now());
+  }
+
+  play.addEventListener("click", () => setPlaying(!playing));
+  step.addEventListener("click", () => {
+    setPlaying(false);
+    if (cart && cart.at < cart.stops.length) { while (cart.at < cart.stops.length) arrive(); cart.legT0 = 0; updateDom(); draw(performance.now()); return; }
+    advance(false).then(() => { draw(performance.now()); kick(); }).catch(fail);
   });
   reset.addEventListener("click", () => restart().then(kick).catch(fail));
-  mix.addEventListener("change", () => restart().then(kick).catch(fail));
+  move.addEventListener("click", () => slotIt().catch(fail));
+  bin.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); slotIt().catch(fail); } });
+  sku.addEventListener("change", () => { bin.value = products.get(sku.value)?.bin.raw || ""; });
   speed.addEventListener("change", kick);
-  addItem.addEventListener("click", () => {
-    const it = ITEMS[Number(yourItem.value)];
-    const had = yours.find((l) => l.name === it.name);
-    if (had) had.qty++; else yours.push({ ...it, qty: 1 });
-    renderYours();
+  for (const [b, k] of [[tabLabel, "label"], [tabSlip, "slip"]]) b.addEventListener("click", () => {
+    sheet = k;
+    tabLabel.className = k === "label" ? "" : "secondary";
+    tabSlip.className = k === "slip" ? "" : "secondary";
+    tabLabel.setAttribute("aria-pressed", String(k === "label"));
+    tabSlip.setAttribute("aria-pressed", String(k === "slip"));
+    labelH.textContent = k === "label" ? "label" : "packing slip";
+    if (cur) showOrder(cur.order, cur.r);
+    drawLabel();
   });
-  drop.addEventListener("click", async () => {
-    if (!yours.length) return;
-    yourN++;
-    const rec = { id: `you${yourN}`, label: `#Y${yourN}`, lines: yours.map((l) => ({ ...l })), arrival: floor + (playing ? 20 : 0), you: true };
-    youLine.textContent = `Your order ${rec.label} is on the line.`;
-    if (playing) {
-      belt.push(rec);
-      belt.sort((a, b) => a.arrival - b.arrival);
-    } else {
-      await chain;
-      belt.unshift(rec);
-      if (!replaying) await packNext(!reduce.matches);
-    }
-    draw(performance.now());
-    kick();
-  });
-  takeTop.addEventListener("click", () => {
-    const ranked = [...tally().picks].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).filter(([name]) => !off.has(name));
-    if (ranked.length) toggle(ranked[0][0]);
-  });
-  restock.addEventListener("click", () => {
-    off.clear();
-    rejudge("Every package is back on the shelf").catch(fail);
-  });
+  tabLabel.setAttribute("aria-pressed", "true");
+  tabSlip.setAttribute("aria-pressed", "false");
 
-  new ResizeObserver(() => { if (!root.isConnected) return; layout(); readColors(); draw(performance.now()); }).observe(canvas);
-  new IntersectionObserver(([en]) => { visible = en.isIntersecting; kick(); }).observe(canvas);
+  const redraw = () => { if (!root.isConnected) return; root.classList.toggle("af-wide", root.clientWidth >= 500); layout(); readColors(); draw(performance.now()); drawLabel(); };
+  new ResizeObserver(redraw).observe(map);
+  new IntersectionObserver(([en]) => { visible = en.isIntersecting; kick(); }).observe(map);
   document.addEventListener("visibilitychange", kick);
-  const recolor = () => { readColors(); draw(performance.now()); };
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", recolor);
-  window.addEventListener("themechange", recolor);
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redraw);
+  addEventListener("themechange", redraw);
   reduce.addEventListener("change", () => setPlaying(playing && !reduce.matches));
 
-  renderYours();
   await cssReady;
+  root.classList.toggle("af-wide", root.clientWidth >= 500);
   readColors();
   layout();
   await restart();

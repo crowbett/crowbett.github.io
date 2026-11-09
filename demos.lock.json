@@ -162,11 +162,11 @@
     {
       "slug": "anchorflow",
       "repo": "anchorflow",
-      "ref": "6c60aa1e6c961c5d8a63683ec3402d6a8c31f33a",
+      "ref": "2a797623e5a4585f645ec581393e723749adbc82",
       "pkg": "./cmd/webdemo",
-      "sha256": "92436ce080d5a05d55f6af46fe4a41970021192c8b8e4c00f16f1b57f2963332",
-      "bytes": 5519388,
-      "gzip_bytes": 1503234
+      "sha256": "574719aaab950a323558102246028a8371586b4abaff3963c672165a2eb8120f",
+      "bytes": 6234728,
+      "gzip_bytes": 1691522
     },
     {
       "slug": "adfactory",
