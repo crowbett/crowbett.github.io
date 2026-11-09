@@ -83,22 +83,15 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".ga-status", Pad: 8, WideFocus: ".ga-funnel", WidePad: 8, Seconds: 8,
 	},
-	// Fresh seeded draws, jitter off (every retry waits the full cap), more attempts.
+	// The scheduler runs after an outage; a flaky job retries, then a second outage hits.
 	"jobrun": {
 		Play: `(async () => {
 			const w = (ms) => new Promise((r) => setTimeout(r, ms));
-			const btn = [...document.querySelectorAll(".jr-panel button")].find((b) => b.textContent === "New draws");
-			const jit = document.querySelector("input[name=jitter]");
-			const att = document.querySelector("input[name=maxAttempts]");
-			const set = (v) => { att.value = v; att.dispatchEvent(new Event("input")); };
-			await w(700); btn.click();
-			await w(900); btn.click();
-			await w(1000); jit.click();
-			await w(1300); jit.click();
-			await w(1000); set("11");
-			await w(1500); set("8");
+			const click = (t) => [...document.querySelectorAll(".jr-acts button")].find((b) => b.textContent === t).click();
+			await w(700); click("Enqueue flaky job");
+			await w(3300); click("Outage");
 		})()`,
-		Focus: ".jr-legend", Pad: 8, WideFocus: ".jr-legend", WidePad: 150, Seconds: 8,
+		Focus: ".jr-canvas", Pad: 4, Seconds: 8,
 	},
 	// Overwriting 20 keys turns half the log dead; compaction reclaims it into a
 	// sealed segment, then a put and its tombstone land in the fresh one.
