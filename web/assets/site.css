@@ -158,6 +158,11 @@ main:has(> :is(.stage, .project, .nums)) { width: auto; }
 .top nav { display: flex; gap: var(--sp-1); margin-right: calc(-1 * var(--sp-3)); }
 .top nav :is(a, button) { gap: var(--sp-2); padding: 0 var(--sp-3); border: 0; border-radius: 999px; background: none; color: var(--text-2); font-family: var(--sans); font-size: var(--t-meta); cursor: pointer; transition: var(--tr); }
 .top nav :is(a, button):hover { background: color-mix(in oklab, var(--text) 8%, transparent); color: var(--text); }
+/* A project page names itself beside the brand once its title has scrolled away (project.js) */
+.top-here { display: none; margin: 0 auto 0 var(--sp-3); font: 800 0.9375rem/1 var(--display); letter-spacing: -0.02em; color: var(--text-2); opacity: 0; translate: 0 6px; transition: opacity var(--d-base) var(--ease-in), translate var(--d-spring) var(--spring-soft); }
+.top-here::before { content: "/"; margin-right: var(--sp-3); font: 400 var(--t-meta)/1 var(--sans); color: var(--text-3); }
+.top[data-past] .top-here { opacity: 1; translate: 0; }
+@media (min-width: 48rem) { .top-here { display: block; } }
 .find kbd { display: inline-block; width: 6ch; font: inherit; color: var(--text-3); }
 @media (hover: none) { .find kbd { display: none; } }
 @media (max-width: 23rem) { .top nav { gap: 0; } .top nav :is(a, button) { padding-inline: 0.4rem; } }
@@ -266,6 +271,9 @@ body:has(.notfound) main { flex: 1 0 auto; }
 .foot-k, .foot-s { margin: 0; font: 400 var(--t-meta)/1.5 var(--sans); color: var(--text-3); }
 .foot-mail { justify-self: start; font: 800 clamp(1.1rem, 0.2rem + 3.6vw, 3.25rem)/1.05 var(--display); letter-spacing: -0.04em; color: var(--text); text-decoration: none; overflow-wrap: anywhere; }
 .foot-mail:hover { color: var(--accent); }
+.foot-keys { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; text-decoration: underline 1px; text-underline-offset: 0.22em; cursor: pointer; }
+.foot-keys:hover { color: var(--accent-hover); text-decoration-thickness: 2px; }
+@media (hover: none) { .foot-keys { display: none; } }
 .foot-s { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--sp-2) var(--sp-4); margin-top: var(--sp-5); }
 
 /* Command palette (palette.js): a modal sheet over the page */
@@ -300,6 +308,14 @@ body:has(.notfound) main { flex: 1 0 auto; }
   .pal-o small { display: block; margin: 0; }
 }
 @media (hover: none) { .pal-foot, .pal kbd { display: none; } }
+/* The keys sheet (keys.js): the palette's frame around every shortcut */
+.pal-keys[open] { grid-template-rows: auto minmax(0, 1fr); width: min(32rem, 100% - 2 * var(--edge)); }
+.keys-l { padding-bottom: var(--sp-3); overflow-y: auto; }
+.keys-l h2 { letter-spacing: 0; }
+.keys-l dl { margin: 0; }
+.keys-l dl div { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); align-items: baseline; gap: var(--sp-3); padding: var(--sp-1) var(--sp-4); }
+.keys-l dd { margin: 0; font-size: var(--t-small); color: var(--text-2); }
+.keys-l kbd { display: inline-block; min-width: 1.75em; padding: 1px var(--sp-1); color: var(--text); text-align: center; }
 /* The terminal (shell.js): a dark screen in both schemes that drops from the top. */
 :is(.result, .demo, .project-info) { position: relative; }
 .mode-key svg { width: 1.125rem; height: 1.125rem; overflow: visible; }

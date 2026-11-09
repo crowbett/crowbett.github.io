@@ -173,8 +173,19 @@ if (reel) {
     if (document.hidden) pause(video); else play(video);
   });
 
+  const plain = (e) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+  // The index on the sheet: a row or an area jumps to its panel and hands it
+  // focus, so Tab carries on from the panel and not from the index behind it.
+  document.querySelector(".work-toc")?.addEventListener("click", (e) => {
+    const a = e.target.closest("a[href^='#']");
+    const i = a ? items.indexOf(document.getElementById(a.hash.slice(1))?.closest(".it")) : -1;
+    if (i < 0 || !plain(e)) return;
+    e.preventDefault();
+    jump(i);
+    items[i].querySelector("h4 a").focus({ preventScroll: true });
+  });
+
   if (dock) {
-    const plain = (e) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
     ticks.forEach((t, i) => t.addEventListener("click", (e) => { if (plain(e)) { e.preventDefault(); jump(i); } }));
     steps.forEach((b) => b.addEventListener("click", () => jump(items.indexOf(now) + Number(b.dataset.step))));
     // "Run it live" runs the current panel's demo in place, as its own key does.

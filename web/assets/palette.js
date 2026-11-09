@@ -41,6 +41,7 @@ function actions() {
   if (location.pathname !== "/live/") out.push({ tag: "go", title: "Live: every demo, side by side", href: "/live/" });
   out.push({ tag: "shell", title: "Open the terminal", key: "`", run: () => import("/assets/nav.js").then((m) => m.openShell()) });
   out.push({ tag: "theme", title: "Switch light and dark", key: "t", run: () => import("/assets/nav.js").then((m) => m.toggleTheme()) });
+  out.push({ tag: "keys", title: "Keyboard shortcuts", key: "?", run: () => import("/assets/nav.js").then((m) => m.openKeys()) });
   const mail = document.querySelector('.top a[href^="mailto:"]');
   if (mail) {
     const addr = mail.href.slice(7);

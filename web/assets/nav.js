@@ -1,6 +1,7 @@
 // Site-wide keys and speed. The Search link goes to the home work index without
 // JS. ⌘K, Ctrl+K or "/" opens the palette anywhere and ` the terminal; j and k
-// walk the index; [ and ] step between projects; t switches the theme. A link the pointer or focus rests on is
+// walk the index; [ and ] step between projects; t switches the theme; ? lists
+// every key. A link the pointer or focus rests on is
 // prefetched, so the next page is usually there before the click lands.
 const button = document.querySelector("[data-palette]");
 const mac = /mac|iphone|ipad/i.test(navigator.userAgentData?.platform ?? navigator.platform);
@@ -9,6 +10,14 @@ const open = async () => (palette ??= await import("/assets/palette.js")).open(b
 // The terminal (shell.js) opens from its header key, the ` key or the palette.
 const term = document.querySelector("[data-shell]");
 export const openShell = async (from) => (shell ??= await import("/assets/shell.js")).open(from);
+// The keys sheet (keys.js) opens with ?, from the footer or the palette.
+let keys;
+export const openKeys = async () => (keys ??= await import("/assets/keys.js")).open(mac);
+const help = document.querySelector("[data-keys]");
+if (help) {
+  help.hidden = false;
+  help.addEventListener("click", openKeys);
+}
 if (term) {
   term.hidden = false;
   term.addEventListener("click", () => openShell(term));
@@ -71,6 +80,9 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "`") {
     e.preventDefault();
     openShell(term);
+  } else if (e.key === "?") {
+    e.preventDefault();
+    openKeys();
   } else if (e.key === "t" && mode) {
     toggleTheme(mode);
   } else if (e.key === "/") {

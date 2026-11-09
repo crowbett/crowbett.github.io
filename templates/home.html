@@ -13,6 +13,7 @@
         <canvas class="stage-r" width="{{.Width}}" height="{{.Width}}" aria-hidden="true"></canvas>
         <canvas class="stage-l" width="{{.Width}}" height="{{.Width}}" aria-hidden="true"></canvas>
         <div class="stage-split" aria-hidden="true"><b></b></div>
+        <p class="stage-say" role="status"></p>
       </div>
       <p class="stage-tag" aria-hidden="true"><span>{{.LeftLabel}}</span><span>{{.RightLabel}}</span></p>
       <figcaption>
@@ -22,7 +23,7 @@
           <div><dt>samples/s here</dt><dd data-k="rate" class="nil">--</dd></div>
           <div><dt>noise, L ÷ R</dt><dd data-k="ratio" class="nil">--</dd></div>
         </dl>
-        <p class="stage-ctl"><button type="button" class="key" data-run>Render it here</button><span role="status"></span></p>
+        <p class="stage-ctl"><button type="button" class="key" data-run>Render it here</button></p>
       </figcaption>
     </figure>
     <script type="module" src="/assets/stage.js"></script>{{end}}
@@ -32,7 +33,12 @@
   <header class="work-head work-in">
     <h2 id="work-h">Work</h2>
     <p class="count">{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} with a live demo. <a href="/live/">Run them side by side</a>{{end}}</p>
-    <nav class="work-toc" aria-label="Groups">{{range .Groups}}<span><a href="#g-{{.Key}}">{{.Name}}</a> {{len .Projects}}</span>{{end}}</nav>
+    <nav class="work-toc" aria-label="Projects by area">{{range .Groups}}
+      <div class="toc-g">
+        <p class="toc-h"><a href="#g-{{.Key}}">{{.Name}}</a> <span>{{len .Projects}}</span></p>
+        <ol>{{range .Projects}}<li><a href="#p-{{.Slug}}"><span class="toc-n">{{rank .Slug}}</span><b>{{.Title}}</b><span class="toc-l">{{.Lang}}</span></a></li>{{end}}</ol>
+      </div>{{end}}
+    </nav>
   </header>
   <ol class="reel" data-live-css="/assets/demo.css" data-live-cap="1">{{range $g := .Groups}}{{range $i, $p := .Projects}}
     <li class="it" id="p-{{.Slug}}"{{if .Live}} data-clip{{end}}>
