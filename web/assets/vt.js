@@ -12,6 +12,21 @@
       for (const m of document.querySelectorAll('meta[name="theme-color"]')) m.content = t === "dark" ? "#0a0d13" : "#f2f5f7";
     }
   } catch {}
+  // The home intro (home.css): once, when a visit lands on home with motion
+  // welcome. Any key, click, wheel or touch ends it where it is.
+  const h = document.documentElement;
+  if (location.pathname === "/" && !location.hash && !document.referrer.startsWith(location.origin) && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    try {
+      if (!localStorage.getItem("intro")) {
+        localStorage.setItem("intro", "1");
+        h.dataset.intro = "";
+        const ev = ["keydown", "pointerdown", "wheel", "touchstart"];
+        const end = () => { delete h.dataset.intro; for (const e of ev) removeEventListener(e, end, true); };
+        for (const e of ev) addEventListener(e, end, { capture: true, passive: true });
+        setTimeout(end, 1800);
+      }
+    } catch {}
+  }
   const slugOf = (url) => url && /^\/projects\/([a-z0-9-]+)\/$/.exec(new URL(url).pathname)?.[1];
   const here = slugOf(location.href);
   // The screen flies too: the current panel's screen on home becomes the
