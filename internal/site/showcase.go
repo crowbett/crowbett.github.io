@@ -10,7 +10,7 @@ var Showcases = map[string]Showcase{
 			const play = document.querySelector(".bt-acts button");
 			for (let i = 0; i < 400 && play.textContent !== "Replay"; i++) await w(50);
 			const sp = document.querySelector("select[name=speed]");
-			sp.value = "2"; sp.dispatchEvent(new Event("change"));
+			sp.value = "5"; sp.dispatchEvent(new Event("change"));
 			const reset = [...document.querySelectorAll(".bt-acts button")].find((b) => b.textContent === "Reset");
 			play.click();
 			for (let i = 0; i < 100 && (play.disabled || play.textContent !== "Pause"); i++) await w(50);
@@ -26,7 +26,7 @@ var Showcases = map[string]Showcase{
 			await w(300);
 			play.click();
 			for (let i = 0; i < 200 && play.textContent !== "Replay"; i++) await w(50);
-			await w(500);
+			await w(600);
 			cor.click();
 		})()`,
 		Focus: ".bt-map", Pad: 8, WideFocus: ".bt-map", WidePad: 8, Seconds: 8,
