@@ -1,5 +1,5 @@
-// Site-wide keys and speed. The Search link goes to the home work reel without
-// JS. ⌘K, Ctrl+K or "/" opens the palette anywhere; j and k walk the reel;
+// Site-wide keys and speed. The Search link goes to the home work index without
+// JS. ⌘K, Ctrl+K or "/" opens the palette anywhere; j and k walk the index;
 // [ and ] step between projects. A link the pointer or focus rests on is
 // prefetched, so the next page is usually there before the click lands.
 const button = document.querySelector("[data-palette]");
@@ -26,12 +26,12 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     open();
   } else if (e.key === "j" || e.key === "k") {
-    const names = [...document.querySelectorAll(".shot-name a")];
+    const names = [...document.querySelectorAll(".it h4 a")];
     if (!names.length) return;
     const i = names.indexOf(document.activeElement);
     const next = names[i < 0 ? 0 : Math.max(0, Math.min(names.length - 1, i + (e.key === "j" ? 1 : -1)))];
     next.focus({ preventScroll: true });
-    next.closest(".shot").scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+    next.closest(".it").scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
     e.preventDefault();
   } else if (e.key === "[" || e.key === "]") {
     document.querySelector(`.pager [rel=${e.key === "[" ? "prev" : "next"}]`)?.click();

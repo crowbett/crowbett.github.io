@@ -170,7 +170,7 @@ func TestSite(t *testing.T) {
 	// One tab per page, viewport and scheme, all in parallel. The slowest tabs
 	// start first so they do not run on alone at the end: desktop and phone
 	// light, which run every demo check, then the pages with the most checks
-	// (home replays the hero).
+	// (home renders the stage and walks the index).
 	type tab struct {
 		page, scheme string
 		vp           int
@@ -362,9 +362,9 @@ func TestDemoFrame(t *testing.T) {
 }
 
 // TestReducedMotion loads pages whose diagrams play on load (and home, whose
-// reel loads clips), and the smoke demo whose frame animates on ready: with
-// motion allowed something animates, with prefers-reduced-motion nothing does
-// and no clip loads.
+// stage renders on its own and whose monitor plays clips), and the smoke demo
+// whose frame animates on ready: with motion allowed something animates, with
+// prefers-reduced-motion nothing does, no clip loads and the stage waits.
 func TestReducedMotion(t *testing.T) {
 	t.Parallel()
 	for _, page := range []string{"/", "/projects/quorum/", "/demos/smoke/"} {
@@ -391,12 +391,13 @@ func TestReducedMotion(t *testing.T) {
 						s.querySelector("[data-demo-start]").click();
 						await new Promise((r) => { const t = setInterval(() => { if ("demoReady" in s.dataset) { clearInterval(t); r(); } }, 10); });
 					} else {
-						document.querySelector("#p-quorum .dm, .facts .dm")?.scrollIntoView({ block: "center" });
+						document.querySelector("#p-quorum, .facts .dm")?.scrollIntoView({ block: "center" });
 						await new Promise((r) => setTimeout(r, 400));
 						document.querySelector("#p-netcode")?.scrollIntoView({ block: "center" });
 						await new Promise((r) => setTimeout(r, 400));
 					}
-					return document.getAnimations().length + document.querySelectorAll(".shot video").length;
+					const f = document.querySelector("[data-stage]");
+					return document.getAnimations().length + document.querySelectorAll(".mon video").length + (f && "live" in f.dataset ? 1 : 0);
 				})()`, chromedp.EvalAwaitPromise))
 				cancel()
 				if err != nil {
@@ -641,9 +642,12 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 		// for it to settle; desktop walks the same DOM order.
 		tabOrder(t, ctx)
 	}
-	if isHome, _ := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector(".reel") !== null`)); isHome && !layoutOnly && scheme == "light" {
-		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(reelCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
-			t.Errorf("home reel check failed (err %v)", err)
+	if isHome, _ := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector(".work") !== null`)); isHome && !layoutOnly && scheme == "light" {
+		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(stageCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
+			t.Errorf("home stage check failed (err %v)", err)
+		}
+		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(workCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
+			t.Errorf("home work index check failed (err %v)", err)
 		}
 	}
 	overflow, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.documentElement.scrollWidth > document.documentElement.clientWidth`))
@@ -693,7 +697,9 @@ func screenshot(t *testing.T, ctx context.Context, w int64, shot string) {
 		const frames = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 		await frames();
 		const all = document.getAnimations();
-		await Promise.all(all.map((a) => a.ready.catch(() => {})));
+		// A scroll-driven animation is never ready once the page fits the viewport.
+		const settle = (a) => Promise.race([a.ready.catch(() => {}), new Promise((r) => setTimeout(r, 500))]);
+		await Promise.all(all.map(settle));
 		all.forEach((a) => { try { a.finish(); } catch {} });
 		await frames();
 		return true;

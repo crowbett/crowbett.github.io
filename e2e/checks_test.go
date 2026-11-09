@@ -2,19 +2,31 @@
 
 package e2e
 
-// reelCheck scrolls the home reel to a live project: the panel crossing the
-// middle becomes current, the rail (desktop) or sticky bar (narrower) names
-// it, its recorded clip loads and plays, and no other clip plays.
-const reelCheck = `(async () => {
-	const shots = [...document.querySelectorAll(".shot")];
-	const s = document.querySelector("#p-netcode");
-	s.scrollIntoView({ block: "center" });
-	const playing = () => [...document.querySelectorAll(".shot video")].filter((v) => !v.paused);
-	let ok = await until(() => "now" in s.dataset && s.querySelector("video[data-on]") && playing().length === 1 && playing()[0].closest(".shot") === s);
-	if (innerWidth >= 1024) ok = ok && document.querySelector(".rail [aria-current]")?.hash === "#p-netcode";
-	else ok = ok && document.querySelector(".reel-now").textContent === "netcode" + String(shots.indexOf(s) + 1).padStart(2, "0") + " / " + shots.length;
-	document.querySelector("#p-keel").scrollIntoView({ block: "center" });
-	return ok && await until(() => playing().length === 1 && playing()[0].closest(".shot").id === "p-keel" && s.querySelector("video").paused);
+// workCheck scrolls the home index to a live project: it becomes current at
+// the reading line, the monitor names it and plays its recorded clip, and no
+// other clip plays; moving on to another project swaps the clip.
+const workCheck = `(async () => {
+	const items = [...document.querySelectorAll(".it")];
+	const playing = () => [...document.querySelectorAll(".mon video")].filter((v) => !v.paused && v.isConnected);
+	const at = async (slug) => {
+		const it = document.querySelector("#p-" + slug);
+		it.scrollIntoView({ block: "center" });
+		return until(() => "now" in it.dataset && document.querySelector(".mon-hud").textContent === slug + String(items.indexOf(it) + 1).padStart(2, "0") + " / " + items.length
+			&& playing().length === 1 && playing()[0].src.endsWith("/reel/" + slug + ".mp4") && playing()[0].dataset.on !== undefined);
+	};
+	return await at("netcode") && await at("keel");
+})()`
+
+// stageCheck waits for the home stage to render in this tab: the real path
+// tracer finishes passes, the readouts fill with measured values and the
+// noise ratio shows the light-sampled half is the cleaner one. The stage is
+// sticky, so it is seen from the top of the page, not scrolled into view.
+const stageCheck = `(async () => {
+	const f = document.querySelector("[data-stage]");
+	scrollTo(0, 0);
+	const v = (k) => f.querySelector("[data-k=" + k + "]").textContent;
+	return until(() => "live" in f.dataset && Number(v("spp")) >= 2 && /^[\d,]+k$/.test(v("rate")) && parseFloat(v("ratio")) > 1
+		&& /^live, pass \d+$/.test(f.querySelector("[data-state]").textContent));
 })()`
 
 // demoChecks holds, per demo slug, JavaScript expressions that must all be

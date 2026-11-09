@@ -44,8 +44,9 @@
 {{define "foot"}}
 </main>
 <footer class="foot">
-  <p>No tracking, no cookies.</p>
-  <p>© {{.Year}} {{.Owner.Name}} · <a href="mailto:{{.Owner.Email}}">{{.Owner.Email}}</a></p>
+  <p class="foot-k">Contact</p>
+  <a class="foot-mail" href="mailto:{{.Owner.Email}}">{{.Owner.Email}}</a>
+  <p class="foot-s"><span>No tracking, no cookies.</span> <span>© {{.Year}} {{.Owner.Name}}</span></p>
 </footer>
 <script type="module" src="/assets/motion.js"></script>
 <script type="module" src="/assets/nav.js"></script>

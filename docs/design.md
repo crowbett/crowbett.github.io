@@ -6,6 +6,7 @@ How the site looks and behaves. Design-track tasks in `docs/tasks.md` cite secti
 
 - **An instrument panel**: cold paper, black rules, one signal blue, a dark screen that shows real output, lamps that light only when something is live. Labelled, ruled, exact.
 - Made by someone who measures before claiming: data set like data, nothing decorative that is not also information, fast on a cheap phone.
+- **Depth comes from layers that mean something**: paper, a sheet sliding over a live screen, glass only where a bar floats over content, glow only sampled from real pixels on a screen.
 - Never the default AI-built look (`~/research/reports/Striking engineer portfolio design.md`).
 - References (principles, not pixels): teenage.engineering, oxide.computer, tigerbeetle.com, ciechanow.ski, samwho.dev, jepsen.io, danluu.com.
 
@@ -16,7 +17,7 @@ Four self-hosted OFL faces, 26,908 bytes of woff2 in total (measured 2026-10-26)
 - `--display`: Archivo Expanded (`wdth 125, wght 800`, 7,752 B). Headings, the name, row names. Tracking −0.03em, −0.05em at h1.
 - `--sans`: Archivo (`wdth 100, wght 400`, 7,704 B). Prose. No bold cut; emphasis is colour or the display face.
 - `--mono`: Martian Mono (`wdth 100`, `wght 400-700`, 9,076 B), so 600 in demos and mask labels is real bold. Labels, metrics, tags, keys, demo chrome; lowercase, no tracking, no uppercase.
-- `--dots`: Doto (`ROND 0, wght 700`, 2,376 B). Instrument numerals only: replay readouts, the 404 code.
+- `--dots`: Doto (`ROND 0, wght 700`, 2,376 B). Instrument numerals only: stage dials, the 404 code.
 - Subset, features and axes are in `scripts/fonts.sh` (no hinting, name records kept); licences in `web/assets/fonts/OFL-*.txt`.
 - All preloaded with `font-display: optional`, so nothing swaps in late.
 - `tabular-nums` wherever numbers sit in columns or update live. Prose stops at `--measure: 42rem`.
@@ -59,7 +60,7 @@ Named by role; light and dark both first-class; screen tokens are the same in bo
 | `--live-tint` | `#dbeee3` | `#10271b` | lamp halo |
 | `--danger` | `#b41b39` (6.0 / 6.5 / 5.5 on tint) | `#f87584` (7.3 / 6.8 / 6.0 on tint) | errors only (crimson, never the signal) |
 | `--danger-tint` | `#fce5e6` | `#39161a` | error panel ground |
-| `--screen` | `#0b0d10` | `#060709` | the replay screen |
+| `--screen` | `#0b0d10` | `#060709` | stage and monitor screens |
 | `--screen-ink` | `#dde3e8` (15.1) | `#dde3e8` (15.6) | screen text |
 | `--screen-dim` | `#8b96a2` (6.5) | `#8b96a2` (6.7) | screen axis labels |
 | `--screen-ok` | `#60e09b` (11.7) | `#60e09b` (12.1) | allowed bars |
@@ -77,20 +78,20 @@ Named by role; light and dark both first-class; screen tokens are the same in bo
 - Spacing `--sp-1`…`--sp-9` (px at 360 → 1280): 4 → 4.5, 8 → 9, 12 → 13.5, 16 → 18, 24 → 27, 32 → 36, 48 → 54, 64 → 72, 96 → 108. Nothing off-scale.
 - Gutter 16 → 32 px; the frame edge `--edge` is the larger of the gutter and the safe-area insets (`viewport-fit=cover`). Content max 80rem; sections 64 → 96 px apart.
 - **The panel**: each module is a CSS grid on a `--line-strong` ground with a 1 px gap, so the gaps are the hairlines and no cell draws a border. Every module is a panel.
-- Radius 0 (`--r-1: 0`, which demos read); only lamps are round. No shadows.
+- Radius 0 (`--r-1: 0`, which demos read) for panels and keys; screens take `--r-2: 14px` and the work sheet a 28 → 36 px top. Shadows: `--lift` under screens and the sheet only.
 - Keys: flat squares, 1 px `--rule` border, hover fills `--block`, a press sinks 2 px in 40 ms and springs back on `--spring-snappy`.
 - `.cells`: mono cells on the hairline ground, for demo output that is a set of values.
 - Coarse pointers: keys, buttons and demo fields at least 44 px tall; demo inputs, selects and textareas at ≥ 16px.
 
 ## Motion
 
-- Durations: 120 ms colour, 200 ms state changes, 300 ms (`--d-spring`) springs; never above 300 ms.
+- Durations: 120 ms colour, 200 ms state changes, 300 ms (`--d-spring`) springs; media crossfades (monitor layers, poster to live render) `--d-media` 450–600 ms. Nothing else above 300 ms.
 - Easing: `cubic-bezier(0.2, 0, 0, 1)` in, `cubic-bezier(0.4, 0, 1, 1)` out; `linear()` springs (mass 1): `--spring-snappy` (stiffness 900, damping 36: ~302 ms, 9.5% overshoot) for keys, `--spring-soft` (300, 30: ~282 ms, no overshoot) for the demo mount and status.
 - Animate `opacity` and `transform` only; never `mask-position` or layout.
 - Never scale to exactly 0 (start from `scale(0.001)`); `site.Check` rejects a zero scale in built CSS, HTML or JS (F6).
 - `prefers-reduced-motion: reduce` turns every transition and animation off; demos do not auto-play.
-- No scroll-triggered reveals of content that should already be readable; no page-load stagger.
-- **Numbers move only when they count real data**: replay readouts count the run's totals with the wipe; the demo percentage follows bytes received. No scrambles or decorative counters; with reduced motion or no JS, figures never move (`TestHeroTicker`).
+- No scroll-triggered reveals of content that should already be readable; no page-load stagger. One scroll-driven effect: the stage sinks (scale 0.93, opacity 0.25) as the sheet covers it, where `animation-timeline` is supported and motion is allowed.
+- **Numbers move only when they count real data**: the stage dials count passes the tracer finished in this tab; the demo percentage follows bytes received. No scrambles or decorative counters.
 - **Diagram motion**: each mask holds a rest and a mid-motion pose; motion is a `step-end` `opacity` flip between them, once when 60% on screen (web/assets/motion.js; A-B-A-B-A over 1.6 s) and looping while a row is hovered or focused. It ends on the rest pose.
 - **Page to page**: cross-document view transitions; the header holds still and the page slides. Opening or leaving a project names only its title and diagram (web/assets/vt.js, a classic head script because `pagereveal` fires before modules run), so they fly between the home row and the project page, and between projects, in `--d-spring`.
 - Checks: e2e requires CLS 0 at load on every page and counts `document.getAnimations()` with and without reduced motion on home, a project page and the smoke demo.
@@ -99,22 +100,20 @@ Named by role; light and dark both first-class; screen tokens are the same in bo
 
 For: who this is, what they build, and that the proof runs (`templates/home.html`).
 
-- **Hero**: one `h1` in sans, `--text-2`, opening with the name in the display face; it ends with the hook in `--text` (live count, "the real code, compiled to WebAssembly"). One column, at most 34em from 64rem. No keys and no role line on the page; the index below links every demo and the role is in the meta description.
-- **Replay**: one real ratelimitd GCRA run (`race`, attack at 10× the limit, seed 1) from the WebAssembly build (`data/hero-trace.json`), drawn at build time on a graticule screen: 480×200 from 40rem, 320×240 below. Denied above, allowed below, each lane on its own labelled scale (dashed "N/s peak", vermilion "N/s limit"); the attack window shaded and labelled. A 1.8 s wipe reveals the bars.
-- Doto readouts (allowed in `--live`, denied, limit) from the trace: under the screen on phones, a 15rem column from 64rem.
-- "Run it in your browser" is the page's one filled key. On click only, `web/assets/hero.js` loads the build, repeats the recorded call, compares the whole answer, replays the wipe, lights "N/N buckets identical in your browser" with a link to the full demo and lights the "your browser" readout with the measured run time (dim "-- ms" until then). Without JS it is inert. `TestHeroRun` clicks it; `TestHeroTrace` re-runs the call every deploy (docs/demo-contract.md §Home replay).
-- **Work reel**: "Work" and "N projects, M live" (build-time counts), then one panel per project, grouped by `group` front matter (`site.Groups`), live first within each and numbered `01`… at build time. A panel is a 16:10 preview on `--screen` and a short text column: number, name (the page link), language, tagline, metric, action ("Run it live" key and a lit "Live demo" lamp, or "Details" and an unlit "Source on request" / "Source on GitHub" lamp). A live demo's preview is a muted, looping clip of the real demo (`web/reel/<slug>.mp4` with a `.webp` poster, recorded by `cmd/reel` from the showcase in `internal/site/showcase.go`); quorum shows its diagram. Clips load 75% of a viewport ahead and only the panel at the middle of the viewport plays; reduced motion or Save-Data shows posters only. From 64rem a sticky rail lists every project by group and marks the current one, the panels snap (proximity) and sit beside their text; below it a sticky bar names the current project with "NN / 15" and a progress line. Project pages link their group in the crumb and end with previous / next in the same order.
-  - Under 40rem: number, diagram and name over language on one line; tagline, metric and action (lamp left, key right) stacked below.
-  - 40rem to 64rem: two columns of cards, an odd last card spanning both, action at the foot.
-  - From 64rem: a seven-column subgrid table under an `aria-hidden` `--sunken` head (`#`, `mechanism`, `project`, `lang`, `what it is`, `evidence`, `demo`).
-  - Hover and focus fill the row with `--block`, turn its text, diagram and lamp `--on-block`, invert the key and loop the diagram.
+- **Layers**, back to front: the paper (`--paper`, a dot grid over `--bg`), the stage pinned under the header, the work sheet (rounded top, `--lift` shadow) that slides up over it, the screens on the sheet, and glass bars (`--glass`, backdrop blur) that float over content: the header and, below 48rem, the monitor bar.
+- **Stage**: a dark graticule screen in both schemes. Left (or above, under 64rem) the `h1`: the name in the display face at up to 8rem with an accent halo, then the role line in `--screen-dim`, the hook (live count, "the real code, compiled to WebAssembly", the tracer and its size), a "See the work" key and a link to the full demo.
+- The picture is the raytracer demo itself (`site.HomeStage`: Cornell box, 480 px, seed 1). `web/assets/stage.js` loads the 110 KB build in a worker and renders it in row bands, material-only sampling on the left canvas and NEE + MIS on the right, split by a draggable divider (pointer or arrow keys). A scan line marks the band; a 12×12 canvas copies the picture, blurred and saturated behind the screen as its glow. Under it three Doto dials measured in this tab: samples per pixel, samples/s over the last 2 s, and the noise ratio left ÷ right from the binary's own RMSE estimates. It stops at 512 spp.
+- It starts by itself after `load` while the stage is on screen and not covered by the sheet, and pauses when either changes or the tab hides. With reduced motion, Save-Data, a 2g/3g connection or fewer than 4 cores it does not start; "Render it here" does. Until then it shows `web/reel/stage.webp`, the same render recorded at 64 spp by `go run ./cmd/stage`, labelled "recorded".
+- **Work index**: the sheet holds "Work" and "N projects, M with a live demo", then the projects grouped by `group` front matter (`site.Groups`), live first within each, numbered `01`… at build time. Each item: number and name in the display face (the page link), tagline, language, metric, and a lit "Run it live" lamp or an unlit "Source on request" / "Source on GitHub". The current item is in `--text` with a `--block` bar that springs in; the rest sit in `--text-3`, and on a fine pointer hovering one dims the others.
+- **Monitor**: a 16:10 screen beside the index (5fr / 7fr from 64rem, halves from 48rem, sticky) or pinned under the header as a glass bar below 48rem. It shows the current project: the muted looping clip of its real demo (`web/reel/<slug>.mp4`, `.webp` poster, recorded by `cmd/reel` from `internal/site/showcase.go`), or quorum's diagram, with a HUD chip "name NN / 15" and a glow sampled from the playing frame. The current item is the last one whose top passed the reading line, 40% down the screen (or of the part below the monitor bar), or the one under the mouse or focus. Layers crossfade in `--d-media`; clips load only near the sheet; reduced motion or Save-Data shows posters only. Without JS the monitor is hidden and the stage does not pin.
+- Project pages link their group in the crumb and end with previous / next in the same order.
 - **Diagrams** (`templates/diagrams.html`, `cmd/dither`): one line drawing per slug, one accent element naming the idea, showing a behaviour its project page states. `go run ./cmd/dither` renders each at 112×54 (index, home share card) and 224×108 with labels (facts, project share cards), both poses, dithered to one bit (Bayer 8×8): `web/assets/dg/<slug>-<size>.png`, 30 files, 27,025 B (measured 2026-11-09). The labelled size is stored at 2x: the drawing is dithered at one pixel per CSS pixel and doubled, and its 7 px labels are drawn at 2x and thresholded, because at 1x Martian Mono turned "redis" into "eedis". CSS masks (`.dm`) take `currentColor` for ink and `--signal` for accent, so one PNG serves both themes and hover. The build fails on a mask older than its drawing (`web/assets/dg/.sums`) or a missing `.dm-<slug>` rule or `url()`.
 
 ## Navigation
 
 - **Search key** in the top bar opens the command palette (web/assets/palette.js, loaded on first use; `/search.json` from the build). ⌘K, Ctrl+K or `/` anywhere. Without JS it is a link to the home index. The key label has a fixed box, so filling it in moves nothing.
 - **Palette**: a modal `<dialog>` with a combobox over a listbox. "This page" actions first (run the demo, full screen, previous / next, work index), then projects with their diagram, language, group and a live lamp, then Contact (copy or write an email), so ⌘K then Enter never copies the email. A `--block` "Go to" plate heads it like a demo frame; the backdrop is flat `--bg` at 88%, no blur or shadow. Title hits rank first; a subsequence matches too ("rlim" finds ratelimitd).
-- **Keys**: `j` / `k` walk the work reel (focus the name, centre the panel), `[` / `]` step projects. None fire while typing or inside a demo.
+- **Keys**: `j` / `k` walk the work index (focus the name, centre the item), `[` / `]` step projects. None fire while typing or inside a demo.
 - **Prefetch**: an internal link the pointer, a touch or focus rests on is prefetched once.
 
 ## Project page
@@ -143,8 +142,8 @@ One frame for every demo, built by the site (`templates/project.html`, `web/asse
 
 - No photo, illustration, mascot, emoji section markers or stock icons.
 - No cream paper, warm-clay accents, uppercase tracked eyebrows, identical card grids or "→" appended to links.
-- No decorative gradients, glass, glow, blur or noise textures.
-- No scroll-jacking, parallax, custom cursors, typing or scramble effects, or carousels.
+- No decorative gradients, glow, blur or noise textures: glow is sampled from a live screen, glass only on bars over content.
+- No scroll-jacking, parallax, custom cursors, typing or scramble effects, or carousels: the index scrolls natively and the monitor follows it.
 - No skill bars, logo walls, social links or follower counts.
 - No third-party anything (fonts, analytics, embeds).
 - No layout that needs JavaScript: with scripts off every page reads correctly and only demo buttons are inert.
@@ -176,3 +175,4 @@ One line each; full reasoning and review rounds are in git (`git log -p docs/des
 - 2026-11-09 V15: fresh-eyes review fixes: work table at 1024–1279 px, legible 2x mask labels, palette as an instrument module (no shadow or blur, contact last), hero keypad, one horizontal inset (`--sp-4`) for header, facts, demo and write-up, one mono face for every demo control, `.cells` stat blocks with the label above the value, a receipt line ending every demo, measured "ready in" on the plate, 404 in a panel. Owner: "find the best looking features a web page can have".
 - 2026-11-09 V3b: hero hook moved into the headline, keys dropped, run time as a third readout, burst label kept clear of the lane label at 320 px, palette close button. A fresh-eyes review rated home "maybe": hook buried, keys inflate the hero, run climax weak.
 - 2026-11-09 Reel: the grouped table and its search became a scroll reel of project panels, each with a clip of its real demo running and a short description, a sticky rail (desktop) or current-project bar (phone and tablet). Clips are recorded from the pinned binaries and go stale with them like share cards. Owner: "i still feel kind of lost looking at all of it"; wanted "a scroll carousel where each scroll showed a projects animation preview and a small description".
+- 2026-11-09 Stage: the home opens on the raytracer rendering live (material vs NEE + MIS, measured dials) on a pinned dark stage; the reel became a type-led index on a sheet that slides over it, with one sticky monitor playing the current clip; paper grid, glass bars, sampled glow, rounded screens and lift shadows. Reverses V3b's "WASM per visit": 110 KB, after load, only on capable devices with motion allowed. Owner: "this ui isn't all that", "we need to add like layers".
