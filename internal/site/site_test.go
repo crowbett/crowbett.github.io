@@ -75,9 +75,29 @@ func testFS(project string) fstest.MapFS {
 	}
 }
 
+// withClip gives the fixture's live demo a showcase and a reel clip recorded
+// from its current sources, as cmd/reel would.
+func withClip(t *testing.T, src fstest.MapFS) {
+	t.Helper()
+	Showcases["demo"] = Showcase{Seconds: 1}
+	t.Cleanup(func() { delete(Showcases, "demo") })
+	src["web/reel/demo.mp4"] = &fstest.MapFile{Data: []byte("mp4")}
+	src["web/reel/demo.webp"] = &fstest.MapFile{Data: []byte("webp")}
+	items, err := ReelSources(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum, err := ImageSum(src, items["demo"], nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	src[ReelSums] = &fstest.MapFile{Data: []byte("demo " + sum + "\n")}
+}
+
 func TestBuildAndCheck(t *testing.T) {
 	out := t.TempDir()
 	src := testFS(strings.Replace(goodProject, "demo: planned", "demo: live\ndemo_try: Try it.", 1))
+	withClip(t, src)
 	if err := Build(Config{Src: src, Out: out, Owner: DefaultOwner, Now: time.Now()}); err != nil {
 		t.Fatal(err)
 	}
@@ -255,5 +275,23 @@ func TestCheckGzipsEachBinary(t *testing.T) {
 		if got := strings.Contains(err.Error(), fmt.Sprintf("/wasm/d%d.wasm: ", i)); got != over {
 			t.Errorf("d%d.wasm reported %v, want %v:\n%v", i, got, over, err)
 		}
+	}
+}
+
+// TestReelStale fails the build when a live demo's UI changed after its clip
+// was recorded, and when a live demo has no clip.
+func TestReelStale(t *testing.T) {
+	live := strings.Replace(goodProject, "demo: planned", "demo: live\ndemo_try: Try it.", 1)
+	src := testFS(live)
+	withClip(t, src)
+	src["web/demos/demo/ui.js"] = &fstest.MapFile{Data: []byte("export function mount(){ return 1 }")}
+	if err := Build(Config{Src: src, Out: t.TempDir(), Owner: DefaultOwner, Now: time.Now()}); err == nil || !strings.Contains(err.Error(), "reel clips out of date for demo") {
+		t.Errorf("changed ui.js: got %v, want a stale reel clip", err)
+	}
+	src = testFS(live)
+	withClip(t, src)
+	delete(src, "web/reel/demo.mp4")
+	if err := Build(Config{Src: src, Out: t.TempDir(), Owner: DefaultOwner, Now: time.Now()}); err == nil || !strings.Contains(err.Error(), "no reel clip") {
+		t.Errorf("missing clip: got %v, want a missing reel clip", err)
 	}
 }

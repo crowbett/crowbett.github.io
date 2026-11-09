@@ -1,10 +1,11 @@
 // Command reel records the home page's preview clips: headless Chrome opens
 // each live demo from dist, starts the real WebAssembly build, plays the
-// demo's showcase script (reel.go) and screencasts its frame. ffmpeg encodes
-// web/reel/<slug>.mp4 plus a first-frame poster, and web/reel/.sums ties each
-// clip to its pinned binary and UI so the build fails when one goes stale.
+// demo's showcase (internal/site/showcase.go) and screencasts its frame.
+// ffmpeg encodes web/reel/<slug>.mp4 plus a first-frame poster, and
+// web/reel/.sums ties each clip to its pinned binary, UI and showcase so the
+// build fails when one goes stale.
 //
-//	make site && go run ./cmd/reel [slug...]
+//	go run ./cmd/reel [slug...]
 package main
 
 import (
@@ -12,13 +13,16 @@ import (
 	"errors"
 	"fmt"
 	"image/png"
+	"io/fs"
 	"log"
+	"maps"
 	"math"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -27,6 +31,8 @@ import (
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
+
+	"github.com/crowbett/crowbett.github.io/internal/site"
 )
 
 const (
@@ -46,10 +52,16 @@ func run(only []string) error {
 	if _, err := exec.LookPath("ffmpeg"); err != nil {
 		return fmt.Errorf("ffmpeg not found: %w", err)
 	}
-	if _, err := os.Stat("dist/index.html"); err != nil {
-		return errors.New("dist is missing: run make site first")
+	dist, err := os.MkdirTemp("", "reel-dist")
+	if err != nil {
+		return err
 	}
-	srv := httptest.NewServer(http.FileServer(http.Dir("dist")))
+	defer os.RemoveAll(dist)
+	cfg := site.Config{Src: os.DirFS("."), Out: dist, Owner: site.DefaultOwner, Now: time.Now(), Recording: true}
+	if err := site.Build(cfg); err != nil {
+		return err
+	}
+	srv := httptest.NewServer(http.FileServer(http.Dir(dist)))
 	defer srv.Close()
 
 	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.Flag("mute-audio", true), chromedp.DisableGPU, chromedp.WindowSize(width, 1400))
@@ -63,16 +75,18 @@ func run(only []string) error {
 	if err := os.MkdirAll(out, 0o755); err != nil {
 		return err
 	}
+	sources, err := site.ReelSources(os.DirFS("."))
+	if err != nil {
+		return err
+	}
 	slugs := only
 	if len(slugs) == 0 {
-		for slug := range shows {
-			slugs = append(slugs, slug)
-		}
+		slugs = slices.Sorted(maps.Keys(sources))
 	}
 	for _, slug := range slugs {
-		show, ok := shows[slug]
-		if !ok {
-			return fmt.Errorf("%s: no showcase in reel.go", slug)
+		show, ok := site.Showcases[slug]
+		if _, live := sources[slug]; !ok || !live {
+			return fmt.Errorf("%s: not a live demo with a showcase", slug)
 		}
 		start := time.Now()
 		if err := record(browser, srv.URL, slug, show); err != nil {
@@ -80,8 +94,34 @@ func run(only []string) error {
 		}
 		fi, _ := os.Stat(filepath.Join(out, slug+".mp4"))
 		log.Printf("%s: %d B in %v", slug, fi.Size(), time.Since(start).Round(time.Millisecond))
+		if err := writeSum(slug, sources[slug]); err != nil {
+			return err
+		}
 	}
 	return nil
+}
+
+// writeSum records in web/reel/.sums what slug's clip was made from.
+func writeSum(slug string, source []byte) error {
+	sum, err := site.ImageSum(os.DirFS("."), source, nil)
+	if err != nil {
+		return err
+	}
+	b, err := os.ReadFile(site.ReelSums)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return err
+	}
+	sums := map[string]string{slug: sum}
+	for _, line := range strings.Split(strings.TrimSpace(string(b)), "\n") {
+		if name, s, ok := strings.Cut(line, " "); ok && name != slug {
+			sums[name] = s
+		}
+	}
+	var out strings.Builder
+	for _, name := range slices.Sorted(maps.Keys(sums)) {
+		fmt.Fprintf(&out, "%s %s\n", name, sums[name])
+	}
+	return os.WriteFile(site.ReelSums, []byte(out.String()), 0o644)
 }
 
 type frame struct {
@@ -89,7 +129,7 @@ type frame struct {
 	at   float64
 }
 
-func record(browser context.Context, base, slug string, show showcase) error {
+func record(browser context.Context, base, slug string, show site.Showcase) error {
 	ctx, cancel := chromedp.NewContext(browser)
 	defer cancel()
 	ctx, cancelT := context.WithTimeout(ctx, 3*time.Minute)
@@ -120,12 +160,12 @@ func record(browser context.Context, base, slug string, show showcase) error {
 	if _, err := chromedp.Run(ctx, chromedp.Poll[bool](`"demoReady" in document.querySelector("[data-demo]").dataset`, chromedp.WithPollingTimeout(2*time.Minute))); err != nil {
 		return err
 	}
-	if show.setup != "" {
-		if _, err := chromedp.Run(ctx, chromedp.Evaluate[any](show.setup, chromedp.EvalAwaitPromise)); err != nil {
+	if show.Setup != "" {
+		if _, err := chromedp.Run(ctx, chromedp.Evaluate[any](show.Setup, chromedp.EvalAwaitPromise)); err != nil {
 			return fmt.Errorf("setup: %w", err)
 		}
 	}
-	focus := show.focus
+	focus := show.Focus
 	if focus == "" {
 		focus = "[data-demo-mount]"
 	}
@@ -135,7 +175,7 @@ func record(browser context.Context, base, slug string, show showcase) error {
 		scrollTo(0, m.getBoundingClientRect().top + scrollY - pad);
 		const r = m.getBoundingClientRect();
 		return {x: Math.max(r.x - pad, 0), y: Math.max(r.y - pad, 0), w: Math.min(r.width + 2 * pad, innerWidth)};
-	})(%q, %d)`, focus, show.pad)))
+	})(%q, %d)`, focus, show.Pad)))
 	if err != nil {
 		return err
 	}
@@ -178,12 +218,12 @@ func record(browser context.Context, base, slug string, show showcase) error {
 		return err
 	}
 	began := time.Now()
-	if show.play != "" {
-		if _, err := chromedp.Run(ctx, chromedp.Evaluate[any](show.play, chromedp.EvalAwaitPromise)); err != nil {
+	if show.Play != "" {
+		if _, err := chromedp.Run(ctx, chromedp.Evaluate[any](show.Play, chromedp.EvalAwaitPromise)); err != nil {
 			return fmt.Errorf("play: %w", err)
 		}
 	}
-	if rest := show.seconds - time.Since(began).Seconds(); rest > 0 {
+	if rest := show.Seconds - time.Since(began).Seconds(); rest > 0 {
 		time.Sleep(time.Duration(rest * float64(time.Second)))
 	}
 	if err := screencast(false); err != nil {
@@ -195,7 +235,7 @@ func record(browser context.Context, base, slug string, show showcase) error {
 	if len(got) == 0 {
 		return errors.New("no frames")
 	}
-	return encode(tmp, slug, got, rect.X, rect.Y, rect.W, show.seconds)
+	return encode(tmp, slug, got, rect.X, rect.Y, rect.W, show.Seconds)
 }
 
 type box struct{ X, Y, W float64 }

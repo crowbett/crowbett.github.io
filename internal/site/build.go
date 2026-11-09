@@ -38,6 +38,9 @@ type Config struct {
 	Out   string // output directory; replaced wholesale
 	Owner Owner
 	Now   time.Time
+	// Recording skips the staleness checks of images and clips: cmd/reel
+	// builds the pages it records from before their clips exist.
+	Recording bool
 }
 
 type pageData struct {
@@ -143,11 +146,16 @@ func Build(cfg Config) error {
 	if err != nil {
 		return err
 	}
-	if err := checkShareCards(cfg, s); err != nil {
-		return err
-	}
-	if err := checkMasks(cfg, s); err != nil {
-		return err
+	if !cfg.Recording {
+		if err := checkShareCards(cfg, s); err != nil {
+			return err
+		}
+		if err := checkMasks(cfg, s); err != nil {
+			return err
+		}
+		if err := checkReel(cfg); err != nil {
+			return err
+		}
 	}
 	if err := os.RemoveAll(cfg.Out); err != nil {
 		return err
