@@ -1,5 +1,5 @@
-// Site-wide keys and speed. The Search link goes to the home index without JS. ⌘K or Ctrl+K opens the palette anywhere ("/" too
-// where the page has no search box of its own); j and k walk the work index;
+// Site-wide keys and speed. The Search link goes to the home work reel without
+// JS. ⌘K, Ctrl+K or "/" opens the palette anywhere; j and k walk the reel;
 // [ and ] step between projects. A link the pointer or focus rests on is
 // prefetched, so the next page is usually there before the click lands.
 const button = document.querySelector("[data-palette]");
@@ -22,16 +22,16 @@ document.addEventListener("keydown", (e) => {
     return;
   }
   if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented || typing(e.target)) return;
-  if (e.key === "/" && !document.querySelector(".finder")) {
+  if (e.key === "/") {
     e.preventDefault();
     open();
   } else if (e.key === "j" || e.key === "k") {
-    const rows = [...document.querySelectorAll(".row:not([hidden]) > a")];
-    if (!rows.length) return;
-    const i = rows.indexOf(document.activeElement);
-    const next = rows[i < 0 ? 0 : Math.max(0, Math.min(rows.length - 1, i + (e.key === "j" ? 1 : -1)))];
+    const names = [...document.querySelectorAll(".shot-name a")];
+    if (!names.length) return;
+    const i = names.indexOf(document.activeElement);
+    const next = names[i < 0 ? 0 : Math.max(0, Math.min(names.length - 1, i + (e.key === "j" ? 1 : -1)))];
     next.focus({ preventScroll: true });
-    next.scrollIntoView({ block: "nearest" });
+    next.closest(".shot").scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
     e.preventDefault();
   } else if (e.key === "[" || e.key === "]") {
     document.querySelector(`.pager [rel=${e.key === "[" ? "prev" : "next"}]`)?.click();

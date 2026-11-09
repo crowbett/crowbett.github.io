@@ -2,30 +2,19 @@
 
 package e2e
 
-// finderCheck checks the desktop table gives its text columns room (a
-// full-width row once sized the name column), then drives the home search and
-// group chips: matches keep their fixed numbers, the URL carries the filter,
-// "/" focuses the box and the no-match button resets everything.
-const finderCheck = `(async () => {
-	const q = document.querySelector(".finder input"), count = document.querySelector(".count");
-	const shown = () => [...document.querySelectorAll(".row:not([hidden])")].map((r) => r.querySelector(".row-name").textContent + r.querySelector(".row-n").textContent).join();
-	const groups = () => [...document.querySelectorAll(".group:not([hidden])")].map((g) => g.dataset.g).join();
-	const type = (v) => { q.value = v; q.dispatchEvent(new Event("input")); };
-	const index = document.querySelector(".index").getBoundingClientRect().width;
-	if (innerWidth >= 1024 && document.querySelector(".row-tag").getBoundingClientRect().width < index / 5) throw new Error("the tagline column is under a fifth of the table");
-	type("rust");
-	let ok = await until(() => shown() === "keel01,stash03,codegraph10,strata13,netcode14" && groups() === "storage,tools,graphics" && count.textContent === "5 of 15 shown" && location.search === "?q=rust");
-	document.querySelector('.filter [data-g="tools"]').click();
-	ok = ok && await until(() => shown() === "codegraph10" && location.search === "?q=rust&g=tools");
-	type("zzz");
-	ok = ok && await until(() => !document.querySelector(".nomatch").hidden && groups() === "");
-	document.querySelector(".nomatch button").click();
-	ok = ok && await until(() => document.querySelectorAll(".row:not([hidden])").length === 15 && !/shown/.test(count.textContent) && location.search === "" && document.querySelector('.filter [data-g=""]').getAttribute("aria-pressed") === "true");
-	q.blur();
-	document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "/", bubbles: true, cancelable: true }));
-	ok = ok && await until(() => document.activeElement === q);
-	q.blur();
-	return ok;
+// reelCheck scrolls the home reel to a live project: the panel crossing the
+// middle becomes current, the rail (desktop) or sticky bar (narrower) names
+// it, its recorded clip loads and plays, and no other clip plays.
+const reelCheck = `(async () => {
+	const shots = [...document.querySelectorAll(".shot")];
+	const s = document.querySelector("#p-netcode");
+	s.scrollIntoView({ block: "center" });
+	const playing = () => [...document.querySelectorAll(".shot video")].filter((v) => !v.paused);
+	let ok = await until(() => "now" in s.dataset && s.querySelector("video[data-on]") && playing().length === 1 && playing()[0].closest(".shot") === s);
+	if (innerWidth >= 1024) ok = ok && document.querySelector(".rail [aria-current]")?.hash === "#p-netcode";
+	else ok = ok && document.querySelector(".reel-now").textContent === "netcode" + String(shots.indexOf(s) + 1).padStart(2, "0") + " / " + shots.length;
+	document.querySelector("#p-keel").scrollIntoView({ block: "center" });
+	return ok && await until(() => playing().length === 1 && playing()[0].closest(".shot").id === "p-keel" && s.querySelector("video").paused);
 })()`
 
 // demoChecks holds, per demo slug, JavaScript expressions that must all be
