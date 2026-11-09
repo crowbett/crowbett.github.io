@@ -206,7 +206,7 @@ var demoChecks = map[string][]string{
 			ok = ok && await until(() => tile("broadcast_1080i").dataset.state === "refused" && document.querySelector(".adf-cells [data-k=refused] .adf-v").textContent === "1");
 			tile("broadcast_1080i").click();
 			ok = ok && await until(() => document.querySelector(".adf-reasons").textContent.includes("below broadcast_1080i floor"));
-			[...document.querySelectorAll(".adf-acts button")].find((b) => b.textContent === "Reset").click();
+			[...document.querySelectorAll(".adf-transport button")].find((b) => b.textContent === "Reset").click();
 			return ok && await until(() => tile("broadcast_1080i").dataset.state === "ready" && tile("shorts").dataset.state === "advisory");
 		})()`,
 	},

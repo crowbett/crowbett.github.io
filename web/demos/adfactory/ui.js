@@ -71,29 +71,36 @@ export async function mount(root, demo) {
   // Controls.
   const source = select("source", SOURCES, "3840x2160");
   const cut = select("cut", CUTS, 0);
-  const mix = select("mix", MIXES.map((m, i) => [i, `${db(m[0], 2)} LUFS, peak ${db(m[1], 2)} dBTP`]), 0);
+  const mix = select("mix", MIXES.map((m, i) => [i, `${db(m[0], 2)} LUFS, ${db(m[1], 2)} dBTP`]), 0);
   const track = el("input");
   Object.assign(track, { type: "checkbox", name: "track", checked: true });
   const speed = select("speed", SPEEDS.map((s) => [s, `${s}×`]), 1);
-  const knobs = el("div", "adf-knobs");
-  knobs.append(field("source", source), field("cut", cut), field("measured mix", mix), field("follow motion", track, "adf-check"), field("speed", speed));
-
   const play = button("Pause");
   const step = button("Step ¼ s", "secondary");
   const reset = button("Reset", "secondary");
+  const transport = el("div", "adf-transport");
+  speed.setAttribute("aria-label", "speed");
+  transport.append(play, step, reset, speed);
+
   const hook = el("input");
   Object.assign(hook, { type: "text", name: "hook", value: "One clip, every feed", maxLength: 120, autocomplete: "off", spellcheck: false });
   const hookPos = select("hook-position", POS, "tc");
   const capPos = select("caption-position", POS, "bc");
-  const acts = el("div", "adf-acts");
-  acts.append(play, step, reset, field("hook", hook, "adf-hook"), field("hook at", hookPos), field("captions at", capPos));
-
   const plats = el("div", "adf-plats");
-  plats.setAttribute("role", "group");
-  plats.setAttribute("aria-label", "Platforms");
+  const group = (name, ...kids) => {
+    const f = el("fieldset", "adf-grp");
+    f.append(el("legend", null, name), ...kids);
+    return f;
+  };
   const form = el("form", "adf-controls");
+  form.setAttribute("aria-labelledby", "adf-brief");
   form.addEventListener("submit", (e) => e.preventDefault());
-  form.append(knobs, acts, plats);
+  const briefHead = el("h3", "adf-h", "Change the brief");
+  briefHead.id = "adf-brief";
+  form.append(briefHead, group("footage", field("source", source), field("cut", cut)),
+    group("sound and motion", field("measured mix", mix), field("follow motion", track, "adf-check")),
+    group("on-screen copy", field("hook", hook, "adf-hook"), field("hook at", hookPos), field("captions at", capPos)),
+    group("platforms", plats));
 
   const canvas = el("canvas", "adf-canvas");
   canvas.tabIndex = 0;
@@ -128,7 +135,7 @@ export async function mount(root, demo) {
   status.setAttribute("aria-live", "polite");
   const receipt = el("p", "demo-out adf-out");
   receipt.setAttribute("aria-live", "polite");
-  root.replaceChildren(form, canvas, legend, you, tiles, detail, cells, status, receipt);
+  root.replaceChildren(canvas, legend, transport, you, tiles, detail, form, cells, status, receipt);
 
   // State.
   const scene = { x0: 0.22, x1: 0.62, y: 0.38, px: 0.7, py: 0.3 };
