@@ -2,14 +2,17 @@
 
 package e2e
 
-// finderCheck drives the home search and group chips: matches keep their
-// fixed numbers, the URL carries the filter, "/" focuses the box and the
-// no-match button resets everything.
+// finderCheck checks the desktop table gives its text columns room (a
+// full-width row once sized the name column), then drives the home search and
+// group chips: matches keep their fixed numbers, the URL carries the filter,
+// "/" focuses the box and the no-match button resets everything.
 const finderCheck = `(async () => {
 	const q = document.querySelector(".finder input"), count = document.querySelector(".count");
 	const shown = () => [...document.querySelectorAll(".row:not([hidden])")].map((r) => r.querySelector(".row-name").textContent + r.querySelector(".row-n").textContent).join();
 	const groups = () => [...document.querySelectorAll(".group:not([hidden])")].map((g) => g.dataset.g).join();
 	const type = (v) => { q.value = v; q.dispatchEvent(new Event("input")); };
+	const index = document.querySelector(".index").getBoundingClientRect().width;
+	if (innerWidth >= 1024 && document.querySelector(".row-tag").getBoundingClientRect().width < index / 5) throw new Error("the tagline column is under a fifth of the table");
 	type("rust");
 	let ok = await until(() => shown() === "keel01,stash03,codegraph10,strata13,netcode14" && groups() === "storage,tools,graphics" && count.textContent === "5 of 15 shown" && location.search === "?q=rust");
 	document.querySelector('.filter [data-g="tools"]').click();
