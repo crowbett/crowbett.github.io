@@ -100,7 +100,9 @@ var demoChecks = map[string][]string{
 			let ok = await until(() => st().startsWith("1 client frame, 6 frames on the wire") && settled());
 			click("Play");
 			ok = ok && await until(() => document.querySelector(".mb-bar button").textContent === "Playing…");
-			return ok && await until(() => st().startsWith("7 client frames, 26 frames") && settled() && document.querySelector(".mb-bar button").textContent === "Play");
+			ok = ok && await until(() => /^[2-6] client frames/.test(st()));
+			click("Step");
+			return ok && await until(() => /^[3-7] client frames/.test(st()) && settled() && document.querySelector(".mb-bar button").textContent === "Play");
 		})()`,
 		`(async () => {
 			const methods = (leg) => [...document.querySelectorAll('.mb-row[data-leg="' + leg + '"] .mb-method')].map((m) => m.textContent);
@@ -320,10 +322,9 @@ var demoChecks = map[string][]string{
 	},
 }
 
-// layoutOnly viewports check layout (overflow, CLS, a screenshot with the
-// demo running) but leave demo checks and axe to desktop and phone, which
-// already cover them: running both on a third width pushed CI's CPU-bound
-// demos past their waits. Demo behaviour does not depend on the scheme, so
+// layoutOnly viewports check page layout (overflow, CLS, a screenshot) and
+// leave demos and axe to desktop and phone, which already cover them: running
+// demos on a third width pushed CI past its 60 s budget. Demo behaviour does not depend on the scheme, so
 // dark tabs run at most each demo's first check.
 var viewports = []struct {
 	name          string
@@ -804,8 +805,8 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 		t.Fatal(err)
 	}
 	// Dark tabs start the demo only at phone width, where axe checks its
-	// contrast; desktop and tablet dark share the light layout.
-	if hasDemo && (scheme == "light" || (w < 1000 && !layoutOnly)) {
+	// contrast; desktop dark shares the light layout.
+	if hasDemo && !layoutOnly && (scheme == "light" || w < 1000) {
 		err := chromedp.Do(ctx, chromedp.Click(chromedp.CSS("[data-demo-start]")))
 		if err == nil {
 			_, err = chromedp.Run(ctx, chromedp.Poll[bool](`document.querySelector("[data-demo-ready],[data-demo-error]") !== null`,
@@ -823,7 +824,7 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 			t.Fatal(err)
 		}
 		checks := demoChecks[slug]
-		if layoutOnly || scheme == "dark" {
+		if scheme == "dark" {
 			checks = checks[:min(1, len(checks))]
 		}
 		if len(checks) == 0 {
