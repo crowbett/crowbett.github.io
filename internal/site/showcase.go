@@ -50,18 +50,23 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".cg-summary", Pad: 8, Seconds: 6.5,
 	},
-	// Each preset plays its requests through the cache: a request no-store
-	// bypasses it, stale-while-revalidate serves stale, Vary keeps one entry per
-	// language, and max-age with an ETag revalidates.
+	// The edge runs bursts under stale-while-revalidate; you reload through it,
+	// then switch the origin to no-cache and the same traffic replays as 304s.
 	"edgecache": {
-		Play: `(async () => {
-			const s = document.querySelector("select[name=preset]");
-			for (const v of ["no-store", "swr", "vary", "max-age"]) {
-				await new Promise((r) => setTimeout(r, 1600));
-				s.value = v; s.dispatchEvent(new Event("change"));
-			}
+		Setup: `(async () => {
+			const s = document.querySelector("select[name=speed]");
+			s.value = "20"; s.dispatchEvent(new Event("change"));
+			await new Promise((r) => setTimeout(r, 1200));
 		})()`,
-		Focus: ".ec-legend", Pad: 8, WideFocus: ".ec-legend", WidePad: 172, Seconds: 8,
+		Play: `(async () => {
+			const w = (ms) => new Promise((r) => setTimeout(r, ms));
+			const send = [...document.querySelectorAll(".ec-acts button")].find((b) => b.textContent === "Send my request");
+			const p = document.querySelector("select[name=policy]");
+			await w(1500); send.click();
+			await w(2600); p.value = "no-cache"; p.dispatchEvent(new Event("change"));
+			await w(2000); send.click();
+		})()`,
+		Focus: ".ec-canvas", Pad: 4, WideFocus: ".ec-canvas", WidePad: 4, Seconds: 8,
 	},
 	// Each query narrows 283 files to candidates by trigram, then to matches.
 	"grepall": {

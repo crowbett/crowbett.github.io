@@ -269,18 +269,28 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"edgecache": {
-		`[...document.querySelectorAll(".ec-table .ec-badge")].map(b => b.textContent).join() === "MISS,HIT,REVALIDATED,HIT"`,
-		`[...document.querySelectorAll(".ec-table td.ec-origin")].map(c => c.textContent).join("|") === "GET → 200|none|conditional GET → 304|none"`,
-		`document.querySelectorAll(".ec-timeline rect.ec-mark").length === 4`,
-		`(() => { const b = document.querySelector(".ec-scroll"); return b.getAttribute("aria-label") === "Request log" && (b.tabIndex < 0 || b.getAttribute("role") === "region"); })()`,
+		`until(() => { const v = (k) => document.querySelector(".ec-cells [data-k=" + k + "] .ec-v").textContent; return Number(v("requests")) > 0 && ["MISS", "HIT", "STALE", "REVALIDATED"].includes(document.querySelector(".ec-table .ec-badge").textContent) && /^Edge at \d+ s of simulated time: \d+ requests, \d+ served from cache, \d+ sent to the origin/.test(document.querySelector(".ec-canvas").getAttribute("aria-label")); })`,
+		`(() => { const c = document.querySelector(".ec-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
+		`(() => { const b = document.querySelector(".ec-scroll"); return b.getAttribute("aria-label") === "Response log" && (b.tabIndex < 0 || b.getAttribute("role") === "region"); })()`,
 		`(async () => {
-			const s = document.querySelector("select[name=preset]");
+			const click = (t) => [...document.querySelectorAll(".ec-acts button")].find((b) => b.textContent === t).click();
+			const v = (k) => document.querySelector(".ec-cells [data-k=" + k + "] .ec-v").textContent;
 			const col = (sel) => [...document.querySelectorAll(sel)].map((c) => c.textContent).join();
-			const pick = (v) => { s.value = v; s.dispatchEvent(new Event("change")); };
-			pick("no-store");
-			const ok = await until(() => col(".ec-table .ec-badge") === "MISS,BYPASS,HIT" && col(".ec-table td.ec-body") === "version 1,version 2,version 1");
-			pick("max-age");
-			return ok && await until(() => col(".ec-table .ec-badge") === "MISS,HIT,REVALIDATED,HIT");
+			const play = document.querySelector(".ec-acts button");
+			if (play.textContent === "Pause") click("Pause");
+			click("Reset");
+			await until(() => v("requests") === "1");
+			for (let i = 0; i < 30; i++) { click("Step 10 s"); await new Promise((r) => setTimeout(r, 30)); }
+			let ok = await until(() => v("t") === "300 s" && v("requests") === "30" && v("ratio") === "93.3 %" && v("origin") === "6" && v("saved") === "24" && v("r304") === "5" && v("p50") === "8 s" && v("p95") === "40 s" &&
+				col(".ec-table tbody tr td:nth-child(2) .ec-badge") === "HIT,STALE,HIT,HIT,HIT,HIT");
+			const kind = document.querySelector("select[name=yours]");
+			kind.value = "reload"; kind.dispatchEvent(new Event("change"));
+			click("Send my request");
+			ok = ok && await until(() => document.querySelector(".ec-you").textContent === 'Your GET (Cache-Control: no-cache) at 300 s: REVALIDATED, status 200, Age 0, body "version 1". The origin saw conditional GET → 304.' && v("requests") === "31" && v("r304") === "6");
+			const pol = document.querySelector("select[name=policy]");
+			pol.value = "no-store"; pol.dispatchEvent(new Event("change"));
+			return ok && await until(() => v("ratio") === "0.0 %" && v("origin") === "31" && v("saved") === "0" && col(".ec-table tbody .ec-badge") === "BYPASS,BYPASS,BYPASS,BYPASS,BYPASS,BYPASS" &&
+				document.querySelector(".ec-table tbody tr td:nth-child(4)").textContent === "version 31");
 		})()`,
 	},
 	"strata": {
