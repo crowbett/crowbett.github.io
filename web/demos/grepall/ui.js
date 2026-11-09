@@ -227,11 +227,16 @@ export async function mount(root, demo) {
   list.setAttribute("aria-label", "Matches");
   const spacer = el("div", "ga-spacer");
   list.append(spacer);
+  const mobile = matchMedia("(max-width: 40rem)");
 
   const corpusNote = el("details", "ga-corpus");
   const indexNote = el("p", "ga-built");
   root.replaceChildren(form, presets, status, stages, funnel, mapWrap, indexNote, resHead, list, corpusNote);
   await cssReady;
+  // On a phone the matches come first; parse and plan follow them.
+  const place = () => (mobile.matches ? corpusNote.before(mapWrap, indexNote, stages) : status.after(stages, funnel, mapWrap, indexNote, resHead, list));
+  place();
+  mobile.addEventListener("change", place);
 
   const colors = () => {
     const s = getComputedStyle(root);
@@ -419,7 +424,7 @@ export async function mount(root, demo) {
       if (!n) {
         n = el("div", "ga-row");
         pool.push(n);
-        list.append(n);
+        spacer.append(n);
       }
       const r = rows[i];
       n.hidden = false;
@@ -443,7 +448,9 @@ export async function mount(root, demo) {
       rows.push({ f });
       for (const l of f.lines) rows.push({ l });
     }
-    spacer.style.height = `${rows.length * ROW}px`;
+    const wide = rows.reduce((w, r) => Math.max(w, r.f ? `${r.f.repo}/${r.f.path}`.length + 12 : r.l.text.length + 5), 0);
+    spacer.style.setProperty("height", `${rows.length * ROW}px`);
+    spacer.style.setProperty("width", `calc(${wide}ch + 36px)`);
     list.style.height = `${Math.min(Math.max(rows.length, 1) * ROW, 16 * ROW)}px`;
     list.hidden = rows.length === 0;
     list.scrollTop = 0;

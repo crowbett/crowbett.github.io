@@ -4,12 +4,14 @@
 
 .mb-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
 .mb-bar select { height: 2.25rem; max-width: 100%; }
-.mb-bar .demo-field { flex: 1 1 14rem; max-width: 22rem; }
 .mb-bar button { height: 2.25rem; }
+.mb-bar .demo-field { flex: 1 1 14rem; max-width: 22rem; }
+@media (max-width: 40rem) { .mb-bar .demo-field { flex-basis: 100%; max-width: none; } }
 .mb-note { margin: 12px 0 0; max-width: 46rem; font-size: 0.9375rem; color: var(--text-2); }
-.mb-from { margin: 4px 0 12px; font-family: var(--mono); font-size: 0.6875rem; color: var(--text-3); }
+.mb-from, .mb-valid, .mb-fine { font-family: var(--mono); font-size: 0.6875rem; color: var(--text-3); }
+.mb-from { margin: 4px 0 12px; }
 
-.mb-main { display: grid; gap: 16px; align-items: start; }
+.mb-main { display: grid; gap: 16px; align-items: start; overflow-wrap: break-word; }
 @media (min-width: 64rem) {
   .mb-main { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
   .mb-inspect { position: sticky; top: 16px; }
@@ -32,12 +34,13 @@
 
 .mb-rows .mb-pkt {
   position: relative; z-index: 1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 1px 6px;
-  max-width: 100%; min-height: 0; padding: 3px 7px; text-align: start; white-space: normal; overflow-wrap: anywhere;
+  max-width: 100%; min-height: 0; padding: 3px 7px; text-align: start; white-space: normal;
   font-family: var(--mono); font-size: 0.6875rem; line-height: 1.35; color: var(--text);
   background: var(--surface); border: 1px solid var(--line-strong);
 }
 .mb-rows .mb-pkt:hover { background: var(--surface); color: var(--text); border-color: var(--accent); }
 .mb-rows .mb-pkt:focus-visible { outline-offset: 1px; }
+.mb-pkt > * { min-width: 0; }
 .mb-row:is([data-leg="c2b"], [data-leg="b2c"]) .mb-pkt { grid-column: 1; justify-self: end; }
 .mb-row:is([data-leg="b2s"], [data-leg="s2b"]) .mb-pkt { grid-column: 3; justify-self: start; }
 .mb-row[data-leg="c2b"] .mb-pkt { border-color: var(--control-line); }
@@ -53,7 +56,7 @@
 .mb-refused .mb-badge, .mb-refused .mb-trace { color: var(--danger); }
 .mb-trace {
   grid-column: 1 / -1; justify-self: center; position: relative; z-index: 1; max-width: 92%;
-  padding: 1px 8px; text-align: center; overflow-wrap: anywhere;
+  padding: 1px 8px; text-align: center;
   font-family: var(--mono); font-size: 0.6875rem; line-height: 1.4; color: var(--text-3); background: var(--sunken);
 }
 
@@ -66,14 +69,14 @@
 .mb-key-lane::before { background: var(--accent-tint); border-left: 1px solid var(--accent); }
 
 .mb-inspect { display: grid; gap: 8px; align-content: start; min-width: 0; padding: 12px; background: var(--surface); border: 1px solid var(--line-strong); }
-.mb-ihead { margin: 0; font-family: var(--mono); font-size: 0.75rem; font-weight: 600; overflow-wrap: anywhere; }
+.mb-ihead { margin: 0; font-family: var(--mono); font-size: 0.75rem; font-weight: 600; }
 .mb-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
 .mb-links:empty { display: none; }
 .mb-links button { padding: 2px 10px; font-family: var(--mono); font-size: 0.6875rem; }
 .mb-ifoot { margin: 0; font-size: 0.875rem; color: var(--text-2); }
 .mb-json {
   margin: 0; max-height: 30rem; overflow: auto; padding: 8px 0; background: var(--sunken); border: 1px solid var(--line-strong);
-  font: 400 0.75rem/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 2;
+  font: 400 0.75rem/1.5 var(--mono); white-space: pre-wrap; tab-size: 2;
 }
 .mb-made { box-shadow: inset 3px 0 var(--mb-sig); }
 .mb-l { --mb-i: 0; position: relative; display: block; padding: 0 10px 0 calc(var(--mb-i) * 2ch + 1.75em); }
@@ -98,10 +101,10 @@
 .mb-ed textarea::selection { color: transparent; background: var(--accent-tint); }
 @media (pointer: coarse) { .mb-ed pre, .mb-ed textarea { font-size: 16px; } .mb-rows .mb-pkt { min-height: 32px; } }
 .mb-edtools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
-.mb-valid { margin: 0; font-family: var(--mono); font-size: 0.6875rem; color: var(--text-3); }
+.mb-valid { margin: 0; }
 .mb-valid.mb-bad { color: var(--danger); }
 
 .mb-status { margin: 12px 0 0; font-size: 0.875rem; color: var(--text-2); }
 .mb-cells { margin-top: 8px; }
 .mb-ck { color: var(--text-3); }
-.mb-fine { margin: 8px 0 0; font-family: var(--mono); font-size: 0.6875rem; color: var(--text-3); }
+.mb-fine { margin: 8px 0 0; }

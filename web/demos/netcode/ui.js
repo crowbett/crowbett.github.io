@@ -375,6 +375,7 @@ export async function mount(root, demo) {
   function show(v) {
     if (gen !== generation) return;
     view = v;
+    if (playing) summary();
     readout();
     paint();
   }
@@ -408,6 +409,7 @@ export async function mount(root, demo) {
   }
   function setPlaying(on) {
     playing = on;
+    status.setAttribute("aria-live", on ? "off" : "polite");
     put(play, on ? "Pause" : "Play");
     if (on && !raf) { acc = 0; lastT = null; raf = requestAnimationFrame(frame); }
     if (!on && view) summary();
