@@ -105,6 +105,7 @@ export async function mount(root, demo) {
   lane.setAttribute("aria-hidden", "true");
   lane.append(el("span", "lj-end", "mac"), el("span", "lj-end lj-end-r", "phone"));
   const log = el("ol", "lj-log");
+  log.tabIndex = 0;
   log.setAttribute("aria-label", "Frames and pushes through the relay, newest first");
   relay.append(relayHead, lane, log, attacks);
 
@@ -167,7 +168,7 @@ export async function mount(root, demo) {
   let callMs = 0;
   let calls = 0;
   let rtt = null;
-  let shownCard = null;
+  let shownCard = "";
   let waitSince = null;
   let waitKey = "";
   let autoUsed = 0;
@@ -265,10 +266,18 @@ export async function mount(root, demo) {
   }
 
   // Lock Screen card, from the last push the phone verified.
+  // Only a new push repaints: rebuilding the buttons would drop keyboard focus.
   function paintCard(c) {
-    shownCard = c;
+    const key = JSON.stringify(c ?? null);
+    if (key === shownCard) return;
+    shownCard = key;
     cardBtns.replaceChildren();
-    if (!c) return;
+    if (!c) {
+      delete card.dataset.state;
+      cardStatus.textContent = "–";
+      cardText.textContent = "pairing…";
+      return;
+    }
     const waiting = c.status === "waiting";
     card.dataset.state = c.status;
     cardStatus.textContent = waiting ? "needs you" : c.status;
@@ -369,6 +378,7 @@ export async function mount(root, demo) {
     const g = gen;
     callMs = 0; calls = 0; rtt = null; pending = 0; waitKey = ""; waitSince = null;
     log.replaceChildren();
+    paintCard(null);
     status.textContent = "";
     const { r } = await exec("start", { seed: 1, cols: 46, rows: 13 });
     if (g !== gen) return;

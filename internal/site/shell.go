@@ -23,6 +23,7 @@ var ShellTries = map[string][]string{
 	"grepall":    {`corpus`, `build`, `plan {"q": "func New", "regex": false, "case": "auto"}`},
 	"codegraph":  {`sample`, `callers {"symbol": "main"}`},
 	"mcpbridge":  {`scenarios`, `open {"server": "legacy", "seed": 1}`},
+	"adfactory":  {`targets`, `plan {"source": {"width": 1920, "height": 1080, "duration": 6}, "frames": [{"boxes": [{"kind": "face", "x": 0.6, "y": 0.2, "w": 0.08, "h": 0.14, "confidence": 0.9}]}], "targets": ["reels", "youtube"], "hook": {"text": "One clip in", "position": "tc", "end": 3}, "mix": {"integrated": -17.6, "truePeak": -1.1}}`},
 	"anchorflow": {`catalog`, `plan {"lines": [{"name": "Coffee bag", "class": "BAG", "l": 8.75, "w": 4.5, "h": 2.25, "qty": 3}], "exclude": []}`},
 	"netcode":    {`new {"seed": 1, "players": 6}`, `step {"ticks": 60}`},
 	"raytracer":  {`load {"scene": "cornell", "width": 64, "seed": 1}`, `render {"sampling": "nee", "y0": 0, "rows": 8}`},
