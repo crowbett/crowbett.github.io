@@ -327,41 +327,53 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"strata": {
-		`/^XY test piece: 272 triangles, 20 × 20 × 5 mm\. Sliced into 25 layers of 1,033 toolpaths, 10\.79 m in all, in \d[\d,]* ms in your browser\.$/.test(document.querySelector(".st-summary").textContent)`,
-		`document.querySelector(".st-where").textContent === "11 of 25 · z 2.2 mm"`,
-		`[...document.querySelectorAll(".st-key")].map((k) => k.dataset.kind).join() === "OuterWall,InnerWall,SparseInfill"`,
-		`(() => { const c = document.querySelector(".st-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n > 2000; })()`,
+		`/^25 layers, 1,033 toolpaths and 10\.79 m of extrusion sliced by strata's engine in [\d.,]+ ms; 25 layers fetched in [\d.,]+ ms, in your browser\.$/.test(document.querySelector(".st-out").textContent) && document.querySelector(".st-summary").textContent === "XY test piece: 272 triangles, 20 × 20 × 5 mm." && document.querySelector(".st-canvas").getAttribute("aria-label").startsWith("XY test piece sliced into 25 layers; toolpaths drawn up to layer ")`,
+		`(() => { const c = document.querySelector(".st-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
+		`(async () => {
+			const text = (sel) => document.querySelector(sel).textContent;
+			const v = (k) => text(".st-cells [data-k=" + k + "] .st-v");
+			const click = (t) => [...document.querySelectorAll(".st-acts button")].find((b) => b.textContent === t).click();
+			const set = (sel, val, ev) => { const e = document.querySelector(sel); e.value = val; e.dispatchEvent(new Event(ev)); };
+			let ok = await until(() => /^[\d.]+ m$/.test(v("drawn")));
+			if (text(".st-acts button") === "Pause") click("Pause");
+			set("input[name=layer]", "10", "input");
+			ok = ok && await until(() => text(".st-where") === "11 of 25 · z 2.2 mm" && v("layer") === "11 / 25" && v("z") === "2.2 mm" &&
+				[...document.querySelectorAll(".st-key")].map((k) => k.dataset.kind).join() === "OuterWall,InnerWall,SparseInfill,nozzle");
+			set("input[name=layer]", "24", "input");
+			ok = ok && await until(() => v("drawn") === "10.79 m" && text(".st-acts button") === "Replay");
+			set("input[name=layer]", "0", "input");
+			ok = ok && await until(() => text(".st-where") === "1 of 25 · z 0.2 mm" && !!document.querySelector(".st-key[data-kind=Skirt]"));
+			click("Next layer");
+			ok = ok && await until(() => text(".st-where") === "2 of 25 · z 0.4 mm");
+			click("Restart");
+			ok = ok && await until(() => text(".st-acts button") === "Pause");
+			click("Pause");
+			return ok;
+		})()`,
 		`(async () => {
 			const text = (sel) => document.querySelector(sel).textContent;
 			const set = (sel, v, ev) => { const e = document.querySelector(sel); e.value = v; e.dispatchEvent(new Event(ev)); };
-			set("input[name=layer]", "0", "input");
-			let ok = await until(() => text(".st-where") === "1 of 25 · z 0.2 mm" && !!document.querySelector(".st-key[data-kind=Skirt]"));
+			if (text(".st-acts button") === "Pause") [...document.querySelectorAll(".st-acts button")][0].click();
+			set("input[name=layer]", "10", "input");
+			let ok = await until(() => text(".st-where") === "11 of 25 · z 2.2 mm");
 			set("select[name=layerHeight]", "0.12", "change");
-			ok = ok && await until(() => text(".st-summary").includes("Sliced into 41 layers") && text(".st-where") === "1 of 41 · z 0.2 mm");
+			ok = ok && await until(() => text(".st-summary") === "XY test piece: 272 triangles, 20 × 20 × 5 mm. At 0.12 mm: 41 layers (25 at 0.2 mm), 1,329 toolpaths (1,033), 15.35 m (10.79 m)." &&
+				text(".st-where") === "18 of 41 · z 2.24 mm" && /^41 layers, 1,329 toolpaths and 15\.35 m of extrusion .* 41 layers fetched in/.test(text(".st-out")));
 			let stl = "solid t\n";
 			const v = [[0, 0, 0], [10, 0, 0], [0, 10, 0], [0, 0, 10]];
 			for (const f of [[0, 2, 1], [0, 1, 3], [0, 3, 2], [1, 2, 3]]) stl += "facet normal 0 0 0\nouter loop\n" + f.map((i) => "vertex " + v[i].join(" ") + "\n").join("") + "endloop\nendfacet\n";
-			const dt = new DataTransfer();
-			dt.items.add(new File([stl + "endsolid t\n"], "tetra.stl"));
 			const file = document.querySelector("input[name=file]");
-			file.files = dt.files;
-			file.dispatchEvent(new Event("change"));
-			const tetra = (n) => text(".st-summary").startsWith("tetra.stl: 4 triangles, 10 × 10 × 10 mm. Sliced into " + n + " layers");
-			ok = ok && await until(() => tetra(83) && document.querySelector("select[name=model]").selectedOptions[0].textContent === "tetra.stl");
 			const pickFile = (body, name) => { const t = new DataTransfer(); t.items.add(new File([body], name)); file.files = t.files; file.dispatchEvent(new Event("change")); };
 			const model = () => document.querySelector("select[name=model]").selectedOptions[0].textContent;
-			set("select[name=layerHeight]", "0.2", "change");
-			pickFile("AAAA", "bad.stl");
-			ok = ok && await until(() => text(".st-summary").startsWith("bad.stl: ") && model() === "tetra.stl" && / of 50 · /.test(text(".st-where")));
+			const layers = (n) => new RegExp("^" + n + " layers, ").test(text(".st-out"));
 			pickFile(stl + "endsolid t\n", "tetra.stl");
-			set("select[name=layerHeight]", "0.12", "change");
-			ok = ok && await until(() => tetra(83) && model() === "tetra.stl" && / of 83 · /.test(text(".st-where")));
+			ok = ok && await until(() => text(".st-summary") === "tetra.stl: 4 triangles, 10 × 10 × 10 mm." && layers(83) && model() === "tetra.stl");
 			set("select[name=layerHeight]", "0.2", "change");
-			ok = ok && await until(() => tetra(50));
+			ok = ok && await until(() => layers(50) && text(".st-summary").includes(" At 0.2 mm: 50 layers (83 at 0.12 mm), ") && / of 50 · /.test(text(".st-where")));
+			pickFile("AAAA", "bad.stl");
+			ok = ok && await until(() => text(".st-summary").startsWith("bad.stl: ") && model() === "tetra.stl" && layers(50));
 			set("select[name=model]", "xy", "change");
-			ok = ok && await until(() => text(".st-summary").startsWith("XY test piece: 272 triangles") && text(".st-summary").includes("Sliced into 25 layers") && !document.querySelector("option[value=file]"));
-			set("input[name=layer]", "10", "input");
-			return ok && await until(() => text(".st-where") === "11 of 25 · z 2.2 mm");
+			return ok && await until(() => text(".st-summary") === "XY test piece: 272 triangles, 20 × 20 × 5 mm." && layers(25) && !document.querySelector("option[value=file]"));
 		})()`,
 	},
 	"grepall": {
