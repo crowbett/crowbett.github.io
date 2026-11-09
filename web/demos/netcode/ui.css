@@ -20,9 +20,10 @@
 .nc-world { margin-bottom: 12px; }
 .nc-readouts { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 12px 20px; }
 .nc-client-head { margin: 0 0 4px; font-family: var(--mono); font-size: 0.75rem; color: var(--text-3); }
-.nc-cells > li, .nc-world > li { display: flex; justify-content: space-between; gap: 8px; }
+.nc-cells > li, .nc-world > li { display: flex; flex-direction: column; gap: 2px; min-width: 6rem; }
 .nc-k { color: var(--text-3); }
-.nc-v { color: var(--text); }
+.nc-v { font-size: 0.875rem; color: var(--text); }
+.nc-out { margin-top: 12px; }
 .nc-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 12px 0 4px; font-family: var(--mono); font-size: 0.75rem; color: var(--text-2); }
 .nc-key::before { content: ""; display: inline-block; width: 0.7rem; height: 0.7rem; margin-right: 0.35rem; vertical-align: -0.05rem; border-radius: 50%; }
 .nc-key[data-kind="me"]::before { background: var(--accent); }

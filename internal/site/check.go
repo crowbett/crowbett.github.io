@@ -38,7 +38,7 @@ var Budgets = struct {
 var DemoTokens = map[string]bool{
 	"--bg": true, "--surface": true, "--sunken": true, "--line": true, "--line-strong": true,
 	"--control-line": true, "--text": true, "--text-2": true, "--text-3": true, "--accent": true,
-	"--accent-tint": true, "--block": true, "--on-block": true, "--signal": true, "--live": true, "--danger": true, "--mono": true, "--sans": true, "--r-1": true,
+	"--accent-tint": true, "--block": true, "--on-block": true, "--signal": true, "--live": true, "--danger": true, "--mono": true, "--sans": true, "--t-label": true, "--r-1": true,
 }
 
 var (

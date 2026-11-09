@@ -7,8 +7,7 @@
 .jr-field input { width: 7rem; }
 .jr-wide input { width: 100%; max-width: 24rem; }
 .jr-field select { max-width: 100%; }
-.jr-mono, .jr-field input.jr-mono { font-family: var(--mono); }
-.jr-field input[name="start"] { width: 14rem; max-width: 100%; }
+.jr-mono { font-family: var(--mono); }
 .jr-check { display: flex; gap: 6px; align-items: center; height: 2.25rem; font-size: 0.875rem; color: var(--text-2); }
 .jr-note { margin: 0 0 8px; font-size: 0.875rem; color: var(--text-2); max-width: 40rem; }
 .jr-note:empty { display: none; }
@@ -29,6 +28,7 @@
 .jr-axis { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.75rem; color: var(--text-3); margin: 4px 0 12px; }
 .jr-scroll { overflow-x: auto; }
 .jr-table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
-.jr-table th { text-align: left; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); font-weight: normal; padding: 4px 8px; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
+.jr-table th { text-align: left; font-family: var(--mono); font-size: var(--t-label); color: var(--text-3); font-weight: normal; padding: 4px 8px; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
 .jr-table td { padding: 4px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 .jr-dead td { color: var(--danger); }
+.jr-status { margin-top: 12px; }

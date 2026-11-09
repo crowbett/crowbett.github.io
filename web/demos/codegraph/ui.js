@@ -1,7 +1,7 @@
 // codegraph demo: codegraph's real indexer, resolver and SQLite graph, compiled to
 // WebAssembly. A four-file Rust sample is indexed in the tab; pick a function to see
 // its callers and callees exactly as the resolver reports them, with each edge's confidence.
-const START = "src/main.rs:11";
+const START = "src/main.rs:32";
 
 const el = (tag, cls, text) => {
   const n = document.createElement(tag);
@@ -22,7 +22,9 @@ export async function mount(root, demo) {
     document.head.append(css);
   }
 
+  const t0 = performance.now();
   const info = await demo.call("sample", {});
+  const indexMs = performance.now() - t0;
   const prefix = `${info.root}/`;
   const rel = (p) => (p && p.startsWith(prefix) ? p.slice(prefix.length) : p);
   const files = new Map(info.files.map((f) => [f.path, f]));
@@ -78,7 +80,8 @@ export async function mount(root, demo) {
       `${c.exact} exact, ${c.likely} likely, ${c.name_only} name_only.`,
   );
 
-  root.replaceChildren(form, summary, graph, codeHead, code, foot);
+  const receipt = el("p", "demo-out cg-out");
+  root.replaceChildren(form, summary, graph, codeHead, code, foot, receipt);
 
   const badge = (conf) => el("span", `cg-conf cg-${conf || "none"}`, conf || "unresolved");
 
@@ -143,6 +146,7 @@ export async function mount(root, demo) {
     const mine = ++seq;
     pick.value = spec;
     let callers, callees;
+    const t1 = performance.now();
     try {
       [callers, callees] = await Promise.all([
         demo.call("callers", { symbol: spec }),
@@ -157,6 +161,7 @@ export async function mount(root, demo) {
       return;
     }
     if (mine !== seq) return;
+    const lookupMs = performance.now() - t1;
     const up = fill("callers", callers);
     const down = fill("callees", callees);
     const open = down.filter((n) => !n.confidence).length;
@@ -170,6 +175,7 @@ export async function mount(root, demo) {
     summary.textContent =
       `${callees.roots[0].qname} (${sym.file}:${sym.line}): ${plural(up.length, "caller", "callers")}; ` +
       `${plural(down.length, "callee", "callees")}, ${down.length - open} resolved, ${open} unresolved.`;
+    receipt.textContent = `${plural(info.files.length, "file", "files")} indexed in ${Math.round(indexMs)} ms; this lookup of callers and callees took ${Math.round(lookupMs)} ms, in your browser.`;
     if (focus) pick.focus();
   }
 

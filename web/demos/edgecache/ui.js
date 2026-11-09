@@ -111,7 +111,7 @@ function table(steps) {
   wrap.setAttribute("aria-label", "Request log");
   const t = el("table", "ec-table");
   const head = el("tr");
-  for (const h of ["t (s)", "X-Cache", "Age", "Body", "Origin traffic"]) head.append(el("th", null, h));
+  for (const h of ["t (s)", "X-Cache", "age", "body", "origin traffic"]) head.append(el("th", null, h));
   const thead = el("thead");
   thead.append(head);
   const tbody = el("tbody");
