@@ -3,7 +3,8 @@
 // halves always hold the same samples per pixel. It starts on its own only
 // where motion is welcome, data is not being saved and the device has cores
 // to spare, and only while on screen; elsewhere the recorded poster stands
-// until Render is pressed.
+// until Render is pressed. Picking another scene restarts the render on it;
+// the new picture wipes in band by band over the last one.
 import { connect } from "/assets/demo.js";
 
 const fig = document.querySelector("[data-stage]");
@@ -11,7 +12,9 @@ const TARGET_MS = 24;
 const METER_MS = 2000;
 
 if (fig) {
-  const { stage: slug, scene, width, seed } = fig.dataset;
+  const { stage: slug, width, seed } = fig.dataset;
+  let scene = fig.dataset.scene;
+  let traced = "";
   const W = Number(width);
   const max = () => Number(fig.dataset.max);
   const view = fig.querySelector(".stage-view");
@@ -105,8 +108,11 @@ if (fig) {
       if (!demo) {
         status.textContent = "Loading the path tracer…";
         demo = await connect(slug);
-        info = await demo.call("load", { scene, width: W, seed: Number(seed) });
         status.textContent = "";
+      }
+      if (traced !== scene) {
+        info = await demo.call("load", { scene, width: W, seed: Number(seed) });
+        traced = fig.dataset.scene = scene;
       }
       while (running && passes < max()) await band();
     } catch (err) {
@@ -114,6 +120,7 @@ if (fig) {
       status.textContent = err.message;
       demo?.close();
       demo = null;
+      traced = "";
       passes = 0;
       y = 0;
     } finally {
@@ -131,6 +138,31 @@ if (fig) {
   run.addEventListener("click", () => {
     if (running) { wanted = false; stop(); } else { wanted = true; start(); }
   });
+  // Scenes: the pressed button is the one on screen or loading.
+  const left = fig.querySelector(".stage-tag span")?.textContent;
+  const right = fig.querySelector(".stage-tag span:last-child")?.textContent;
+  const picks = [...fig.querySelectorAll("[data-scene-id]")];
+  for (const b of picks) {
+    b.addEventListener("click", async () => {
+      if (b.getAttribute("aria-pressed") === "true") return;
+      for (const o of picks) o.setAttribute("aria-pressed", String(o === b));
+      wanted = true;
+      await stop();
+      scene = b.dataset.sceneId;
+      passes = 0;
+      y = 0;
+      rows = 8;
+      meter = [];
+      errs = [NaN, NaN];
+      set("spp", "0");
+      set("rate", "--");
+      set("ratio", "--");
+      run.hidden = false;
+      state.textContent = `tracing, ${b.textContent.toLowerCase()}`;
+      poster.alt = `The ${b.dataset.name} traced in this tab by the path tracer: ${left} sampling on the left, ${right} on the right.`;
+      start();
+    });
+  }
   const loaded = document.readyState === "complete" ? Promise.resolve() : new Promise((r) => addEventListener("load", r, { once: true }));
   // Running while the picture is on screen and the work sheet has not slid over it.
   let shown = false;

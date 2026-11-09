@@ -29,6 +29,17 @@ const stageCheck = `(async () => {
 		&& /^live, pass \d+$/.test(f.querySelector("[data-state]").textContent));
 })()`
 
+// sceneCheck picks the glass sphere on the stage: the tracer loads that
+// scene, restarts from pass one and its readouts fill again.
+const sceneCheck = `(async () => {
+	const f = document.querySelector("[data-stage]");
+	const b = f.querySelector("[data-scene-id=final3]");
+	b.click();
+	const v = (k) => f.querySelector("[data-k=" + k + "]").textContent;
+	return until(() => b.getAttribute("aria-pressed") === "true" && f.dataset.scene === "final3" && Number(v("spp")) >= 1
+		&& /^live, pass \d+$/.test(f.querySelector("[data-state]").textContent) && f.querySelector(".stage-view img").alt.startsWith("The Cornell box, glass sphere traced"));
+})()`
+
 // demoChecks holds, per demo slug, JavaScript expressions that must all be
 // true (or resolve true) once the demo reports ready. Every live demo adds
 // at least one check that proves it rendered real output from its binary.
