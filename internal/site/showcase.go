@@ -247,23 +247,23 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".sh-live", Pad: 8, Seconds: 8,
 	},
-	// strata: the layer slider climbs from layer 2 to the top: solid floor,
-	// sparse infill (scrubbed quickly, it repeats), solid roof, top surface.
+	// strata: the temperature tower is drawn layer by layer and its stack
+	// rises; then the layer height drops to 0.12 mm and it is re-sliced.
 	"strata": {
 		Setup: `(async () => {
-			const l = document.querySelector("input[name=layer]");
-			l.value = "1"; l.dispatchEvent(new Event("input"));
-			for (let i = 0; i < 200 && !document.querySelector(".st-where").textContent.startsWith("2 of "); i++) await new Promise((r) => setTimeout(r, 25));
+			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+			const set = (sel, v) => { const e = document.querySelector(sel); e.value = v; e.dispatchEvent(new Event("change")); };
+			set("select[name=model]", "tower");
+			set("select[name=speed]", "20");
+			for (let i = 0; i < 400 && !/^200 layers, .* fetched in /.test(document.querySelector(".st-out").textContent); i++) await wait(25);
+			[...document.querySelectorAll(".st-acts button")].find((b) => b.textContent === "Restart").click();
 		})()`,
 		Play: `(async () => {
-			const l = document.querySelector("input[name=layer]");
 			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-			const to = (i) => { l.value = String(i); l.dispatchEvent(new Event("input")); };
-			await wait(800);
-			for (const i of [2, 3]) { to(i); await wait(700); }
-			for (let i = 4; i <= 20; i++) { to(i); await wait(110); }
-			for (let i = 21; i <= 24; i++) { await wait(700); to(i); }
+			await wait(5200);
+			const h = document.querySelector("select[name=layerHeight]");
+			h.value = "0.12"; h.dispatchEvent(new Event("change"));
 		})()`,
-		Focus: ".st-canvas", Pad: -45, WideFocus: ".st-scrub", WidePad: -16, Seconds: 8,
+		Focus: ".st-canvas", Pad: -46, WideFocus: ".st-canvas", WidePad: 4, Seconds: 8,
 	},
 }
