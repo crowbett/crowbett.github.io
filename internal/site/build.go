@@ -106,6 +106,7 @@ func prepare(cfg Config) (*prepared, error) {
 			return fmt.Sprintf("%02d", slices.IndexFunc(listed, func(p Project) bool { return p.Slug == slug })+1)
 		},
 		"reelWide":  func() string { return ReelWide },
+		"langs":     func() []string { return languages(listed) },
 		"demoAsset": func(slug string) string { return "/demos/" + slug + "/ui.js" },
 		"demoKB":    func(slug string) string { return thousands((sizes[slug].Gzip + 1023) / 1024) },
 		"demoBytes": func(slug string) int { return sizes[slug].Raw },
@@ -260,6 +261,25 @@ func bindNumbers(s string) template.HTML {
 }
 
 // thousands formats n with comma separators, as the site's copy writes numbers.
+// languages lists every language the projects name ("Rust, Swift" names
+// two), the most used first, ties in the order they first appear.
+func languages(projects []Project) []string {
+	var out []string
+	count := map[string]int{}
+	for _, p := range projects {
+		for _, l := range strings.Split(p.Lang, ", ") {
+			if l = strings.TrimSpace(l); l != "" {
+				if count[l] == 0 {
+					out = append(out, l)
+				}
+				count[l]++
+			}
+		}
+	}
+	slices.SortStableFunc(out, func(a, b string) int { return count[b] - count[a] })
+	return out
+}
+
 func thousands(n int) string {
 	s := strconv.Itoa(n)
 	for i := len(s) - 3; i > 0; i -= 3 {
