@@ -64,6 +64,7 @@
 .it h4 a { display: flex; align-items: baseline; gap: var(--sp-3); color: var(--screen-ink); text-decoration: none; text-shadow: 0 0 48px color-mix(in oklab, var(--accent) 45%, transparent); }
 .it h4 a:hover .it-name { text-decoration: underline; text-decoration-thickness: 0.06em; text-underline-offset: 0.08em; }
 .it-n { font: 400 var(--t-label)/1 var(--mono); letter-spacing: 0; color: var(--screen-dim); font-variant-numeric: tabular-nums; text-shadow: none; }
+.it h4.long { font-size: min(clamp(2.4rem, 1rem + 5.2vw, 5.6rem), (100cqi - 2.5rem) / 8); }
 .it-name { overflow-wrap: anywhere; }
 .it-tag { max-width: 30em; font-size: var(--t-lede); line-height: 1.4; color: var(--screen-dim); text-wrap: balance; }
 .it-metric { max-width: 40em; padding-left: var(--sp-3); box-shadow: inset 2px 0 var(--screen-signal); font: 400 var(--t-label)/1.6 var(--mono); color: var(--screen-ink); }

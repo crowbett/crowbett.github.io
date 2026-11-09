@@ -1,10 +1,10 @@
 // Pointer feel, for a mouse only (touch and pens get none of it): a light
-// that follows the pointer across the dark screens' graticule; with motion
-// allowed, previews that tilt toward it under a glare, and primary keys that
-// lean to it. Browsers already deliver pointermove and scroll once a frame.
+// that follows the pointer across the dark screens' graticule and along the
+// edge of the panel it is over; with motion allowed, previews that tilt
+// toward it under a glare, and primary keys that lean to it. Browsers already deliver pointermove and scroll once a frame.
 const fine = matchMedia("(hover: hover) and (pointer: fine)");
 const calm = matchMedia("(prefers-reduced-motion: reduce)");
-let lit = null, tilted = null, leaned = null, ev = null;
+let lit = null, rimmed = null, tilted = null, leaned = null, ev = null;
 
 const clear = (el, ...props) => { if (!el) return; for (const p of props) el.style.removeProperty(p); delete el.dataset.feel; };
 const frame = (hit) => {
@@ -18,6 +18,14 @@ const frame = (hit) => {
     s.style.setProperty("--mx", `${x - r.left}px`);
     s.style.setProperty("--my", `${y - r.top}px`);
     s.dataset.feel = "";
+  }
+  const h = t?.closest(".result, .demo, .project-info, .card-shot");
+  if (h !== rimmed) { if (rimmed) delete rimmed.dataset.rim; rimmed = h; }
+  if (h) {
+    const r = h.getBoundingClientRect();
+    h.style.setProperty("--hx", `${x - r.left}px`);
+    h.style.setProperty("--hy", `${y - r.top}px`);
+    h.dataset.rim = "";
   }
   if (calm.matches) return;
 
@@ -53,5 +61,6 @@ addEventListener("scroll", () => { if (ev) frame(); }, { passive: true });
 document.documentElement.addEventListener("pointerleave", () => {
   ev = null;
   clear(lit); clear(tilted, "--rx", "--ry"); clear(leaned, "--lx", "--ly");
-  lit = tilted = leaned = null;
+  if (rimmed) delete rimmed.dataset.rim;
+  lit = rimmed = tilted = leaned = null;
 });
