@@ -1,12 +1,12 @@
 {
   "slug": "quorum",
   "repo": "quorum",
-  "ref": "3f92d9faa9756fb151dae96b61c6fdf7068a047e",
+  "ref": "018f99dd3e3239fb5a442485f2bd5b14b24ec423",
   "excerpts": [
     {
       "path": "internal/raft/raft.go",
-      "from": 691,
-      "to": 713,
+      "from": 705,
+      "to": 727,
       "title": "Commit only through the current term",
       "why": "The leader commits the highest index a quorum holds, but only through an entry of its own term: the Raft paper's Figure 8 case.",
       "calls": [],
@@ -63,11 +63,13 @@
     },
     {
       "path": "internal/sim/sim.go",
-      "from": 536,
-      "to": 571,
+      "from": 548,
+      "to": 583,
       "title": "Simulated network delivery",
       "why": "Due messages are shuffled by the seeded PRNG and dropped across partitions or cut links, so any reordering replays bit for bit.",
-      "calls": [],
+      "calls": [
+        "tick"
+      ],
       "text": [
         "// deliver hands every due message to its destination, in a random order.",
         "func (c *cluster) deliver() {",
@@ -146,5 +148,5 @@
       ]
     }
   ],
-  "sum": "2ef848fa0a6b60ef4ac3c8c6e08dda468e75c2350206c39da41c010fbafb9e6c"
+  "sum": "456102719fb70fac067ecccc5a3623e6929b54b0ac48f379df28f3fed52abbce"
 }
