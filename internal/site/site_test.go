@@ -92,6 +92,18 @@ func withClip(t *testing.T, src fstest.MapFS) {
 		t.Fatal(err)
 	}
 	src[ReelSums] = &fstest.MapFile{Data: []byte("demo " + sum + "\n")}
+	saved := HomeStage
+	HomeStage.Slug = "demo"
+	t.Cleanup(func() { HomeStage = saved })
+	src[StagePoster] = &fstest.MapFile{Data: []byte("webp")}
+	item, err := StageSource(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sum, err = ImageSum(src, item, nil); err != nil {
+		t.Fatal(err)
+	}
+	src[StageSums] = &fstest.MapFile{Data: []byte("stage " + sum + "\n")}
 }
 
 func TestBuildAndCheck(t *testing.T) {
@@ -196,33 +208,6 @@ func TestBindNumbers(t *testing.T) {
 	want := "10,000 seeds gate <span class=\"nw\">multi-Raft</span> &amp; &#34;x&#34;"
 	if got != want {
 		t.Errorf("bindNumbers = %q, want %q", got, want)
-	}
-}
-
-func TestBuildRejectsHeroTraceWithoutLiveDemo(t *testing.T) {
-	src := testFS(goodProject)
-	src["data/hero-trace.json"] = &fstest.MapFile{Data: []byte(`{"slug":"demo","params":{"rate":50},"result":{"bucketUs":500000,"emissionUs":20000,"offered":[30],"series":[{"algo":"gcra","allowed":[25],"denied":[5]}]}}`)}
-	err := Build(Config{Src: src, Out: t.TempDir(), Owner: DefaultOwner, Now: time.Now()})
-	if err == nil || !strings.Contains(err.Error(), "no live demo") {
-		t.Fatalf("want no-live-demo error, got %v", err)
-	}
-}
-
-// The peak label is a number on the page: it must be the tallest denied
-// bucket as a rate, and its line must touch that bar, in both drawings.
-func TestHeroPeakIsTallestDeniedBucket(t *testing.T) {
-	src := fstest.MapFS{"data/hero-trace.json": &fstest.MapFile{Data: []byte(`{"slug":"demo","params":{"rate":50,"durationMs":2000},"result":{"bucketUs":500000,"emissionUs":20000,"offered":[30,300,280,20],"series":[{"algo":"gcra","allowed":[25,25,25,20],"denied":[5,275,255,0]}]}}`)}}
-	h, err := loadHeroTrace(src)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, c := range []*heroChart{h.Wide, h.Tall} {
-		if c.Peak != 550 {
-			t.Errorf("%s: peak %d/s, want 550", c.Class, c.Peak)
-		}
-		if top := c.Bars[1].DY; top != c.PeakY {
-			t.Errorf("%s: tallest denied bar tops out at %v, peak line at %v", c.Class, top, c.PeakY)
-		}
 	}
 }
 

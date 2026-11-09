@@ -63,8 +63,8 @@ func arrive(ctx context.Context, path string) bool {
 	return false
 }
 
-// TestIndexKeys walks the home reel with j and k and checks search.json
-// lists every project in reel order.
+// TestIndexKeys walks the home index with j and k and checks search.json
+// lists every project in index order.
 func TestIndexKeys(t *testing.T) {
 	t.Parallel()
 	ctx, cancel := newTab(t, 60*time.Second)
@@ -74,10 +74,10 @@ func TestIndexKeys(t *testing.T) {
 	}
 	js := `(async () => {
 		const press = (k) => document.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }));
-		const at = () => document.activeElement.closest(".shot")?.querySelector(".shot-n").firstChild.textContent.trim();
+		const at = () => document.activeElement.closest(".it")?.querySelector(".it-n").textContent.trim();
 		press("j"); press("j"); press("j"); press("k");
 		const index = await (await fetch("/search.json")).json();
-		const rows = [...document.querySelectorAll(".shot-name")].map((n) => n.textContent).join();
+		const rows = [...document.querySelectorAll(".it-name")].map((n) => n.textContent).join();
 		return until(() => at() === "02" && index.map((p) => p.title).join() === rows && index[0].n === 1);
 	})()`
 	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(js), chromedp.EvalAwaitPromise)); err != nil || !ok {
