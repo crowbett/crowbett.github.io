@@ -54,13 +54,23 @@ if (reel) {
   const dock = document.querySelector(".dock");
   const ticks = dock ? [...dock.querySelectorAll(".dock-ticks a")] : [];
   const steps = dock ? [...dock.querySelectorAll("[data-step]")] : [];
+  // The dock's number and name roll in from the direction of travel.
+  let was = -1;
   const showDock = (k) => {
     if (!dock) return;
     const t = ticks[k];
     if (!t) { delete dock.dataset.on; return; }
     dock.dataset.on = "";
-    dock.querySelector("[data-dock-n]").textContent = t.dataset.n;
-    dock.querySelector("[data-dock-name]").textContent = t.dataset.name;
+    const label = dock.querySelector(".dock-now");
+    label.querySelector("[data-dock-n]").textContent = t.dataset.n;
+    label.querySelector("[data-dock-name]").textContent = t.dataset.name;
+    if (!reduced && was >= 0 && was !== k) {
+      const d = k > was ? 1 : -1;
+      for (const [i, x] of [...label.children].entries()) {
+        x.animate([{ translate: `0 ${d * 110}%`, opacity: 0, filter: "blur(3px)" }, { translate: "0 0", opacity: 1, filter: "blur(0)" }], { duration: 420, delay: i * 40, easing: "cubic-bezier(0.2, 0, 0, 1)", fill: "backwards" });
+      }
+    }
+    was = k;
     const go = dock.querySelector("[data-dock-go]");
     go.href = `/projects/${t.dataset.slug}/${"live" in t.dataset ? "#demo" : ""}`;
     go.textContent = "live" in t.dataset ? "Run it live" : "Open";
@@ -193,11 +203,40 @@ if (reel) {
     box.addEventListener("pointerleave", () => delete peek.dataset.on);
   }
 
+  // Index cards: each poster fades in as it arrives; under a mouse, a card
+  // plays its recorded clip.
+  const cards = fin ? [...fin.querySelectorAll(".card")] : [];
+  for (const c of cards) {
+    const img = c.querySelector(".card-shot img");
+    if (!img) continue;
+    const show = () => { img.dataset.in = ""; };
+    if (img.complete) show();
+    else { img.addEventListener("load", show, { once: true }); img.addEventListener("error", show, { once: true }); }
+    if (still) continue;
+    let v = null;
+    c.addEventListener("pointerenter", (e) => {
+      if (e.pointerType !== "mouse" || v) return;
+      const src = img.getAttribute("src");
+      v = Object.assign(document.createElement("video"), { muted: true, loop: true, playsInline: true, preload: "auto", poster: src, src: src.replace(/\.webp$/, ".mp4"), disablePictureInPicture: true });
+      v.setAttribute("aria-hidden", "true");
+      v.addEventListener("playing", () => { if (v) v.dataset.on = ""; });
+      img.after(v);
+      play(v);
+    });
+    c.addEventListener("pointerleave", () => {
+      if (!v) return;
+      const old = v;
+      v = null;
+      pause(old);
+      delete old.dataset.on;
+      setTimeout(() => old.remove(), 300);
+    });
+  }
+
   // The index: an area and a language narrow it; cards glide to their new
   // places where the browser has view transitions.
   const filters = fin?.querySelector("[data-filters]");
   if (filters) {
-    const cards = [...fin.querySelectorAll(".card")];
     const count = fin.querySelector("[data-all-n]");
     const all = count.textContent;
     const want = { g: "", lang: "" };
