@@ -131,7 +131,7 @@ export async function mount(root, demo) {
   const canvas = el("canvas", "kv-canvas");
   canvas.setAttribute("role", "img");
   const legend = el("p", "demo-legend kv-legend");
-  for (const [k, t] of [["live", "live record"], ["dead", "dead (overwritten)"], ["tomb", "tombstone"], ["you", "yours"], ["lost", "lost in the crash"], ["hdr", "segment header"]]) {
+  for (const [k, t] of [["live", "live record"], ["dead", "dead (overwritten or deleted)"], ["tomb", "tombstone"], ["you", "yours"], ["lost", "lost in the crash"], ["hdr", "segment header"]]) {
     const s = el("span", "kv-key-sw", t);
     s.dataset.kind = k;
     legend.append(s);
@@ -182,7 +182,6 @@ export async function mount(root, demo) {
   let chips = new Map();
   let ghosts = [];
   let marks = [];
-  let lines = [];
   let flash = new Map();
   let hover = null;
   let colors = null;
@@ -390,7 +389,8 @@ export async function mount(root, demo) {
       const cutMark = L.s.active && marks.find((m) => m.text && now < m.until);
       ctx.fillStyle = cutMark ? c.danger : L.s.active ? c.signal : c.text3;
       if (cutMark) ctx.font = font(10, 600);
-      const meta = cutMark ? cutMark.text : L.s.active ? `active · ${B(L.s.bytes)}` : `sealed · ${B(L.s.bytes)}${L.hint ? ` · hint ${B(L.hint.size)}` : ""}`;
+      let meta = cutMark ? cutMark.text : L.s.active ? `active · ${B(L.s.bytes)}` : `sealed · ${B(L.s.bytes)}${L.hint ? ` · hint ${B(L.hint.size)}` : ""}`;
+      if (cutMark && ctx.measureText(meta).width > G.W - 2 * G.pad - nw - 8) meta = cutMark.short;
       ctx.fillText(meta, G.pad + nw + 8, L.y + 11);
       if (L.hidden && !(marks.length && L.s.active)) {
         ctx.textAlign = "right";
@@ -795,7 +795,8 @@ export async function mount(root, demo) {
       const pc = pieces(cutAt, 1, lane.start, lane.ty)[0];
       const pe = end < cutAt ? pieces(end, 1, lane.start, lane.ty)[0] : null;
       const text = `cut at byte ${fmt(cutAt)}${pe ? ` · recovered to ${fmt(end)}` : ""}`;
-      if (pc) marks.push({ x: pc.x, y: pc.y, text, color: "danger", until: now + HOLD_MS });
+      const short = `cut ${fmt(cutAt)}${pe ? ` → ${fmt(end)}` : ""}`;
+      if (pc) marks.push({ x: pc.x, y: pc.y, text, short, color: "danger", until: now + HOLD_MS });
       if (pe) marks.push({ x: pe.x, y: pe.y, color: "live", until: now + HOLD_MS });
     }
     const oldKv = new Map(before.keys.map((k) => [k.key, k.value]));
@@ -816,11 +817,9 @@ export async function mount(root, demo) {
     crash.lost = lostAll;
     holdUntil = now + (animate ? HOLD_MS : 0);
     const truncated = r.log.length && /truncated torn tail/.test(r.log[r.log.length - 1]) && end < cutAt;
-    let s = r.torn
-      ? `Plug pulled: ${B(r.torn)} cut off the end of ${segName(act.id)} at byte ${fmt(cutAt)}. kvlite reopened from its own files, `
-      : `Plug pulled with nothing torn: kvlite reopened from its own files, `;
-    if (r.torn) s += truncated ? `truncated the torn record at byte ${fmt(end)} (its own log line is below) ` : "found the cut on a record boundary ";
-    s += `and rebuilt the keydir from ${plural(F.records, "record", "records")}. `;
+    let s = r.torn ? `Plug pulled: ${B(r.torn)} cut off the end of ${segName(act.id)} at byte ${fmt(cutAt)}. kvlite reopened from its own files` : "Plug pulled with nothing torn: kvlite reopened from its own files";
+    if (r.torn) s += truncated ? ` and truncated the torn record at byte ${fmt(end)} (its own log line is below)` : "; the cut fell on a record boundary";
+    s += `; ${plural(F.records, "record survives", "records survive")} on disk. `;
     s += lostAll ? `${plural(lostAll, "write", "writes")} lost` : "Nothing lost";
     s += changed.length ? `; rolled back: ${changed.join(", ")}.` : ".";
     status.textContent = s;
@@ -968,6 +967,7 @@ export async function mount(root, demo) {
   new IntersectionObserver(([en]) => { visible = en.isIntersecting; kick(); }).observe(canvas);
   document.addEventListener("visibilitychange", kick);
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { readColors(); draw(performance.now()); });
+  addEventListener("themechange", () => { readColors(); draw(performance.now()); });
   reduce.addEventListener("change", () => setPlaying(playing && !reduce.matches));
 
   await cssReady;

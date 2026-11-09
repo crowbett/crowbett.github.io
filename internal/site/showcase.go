@@ -98,7 +98,8 @@ var Showcases = map[string]Showcase{
 		Focus: ".jr-legend", Pad: 8, WideFocus: ".jr-legend", WidePad: 150, Seconds: 8,
 	},
 	// The workload writes and compacts; your key flies into the active segment,
-	// then the plug is pulled mid-write and the torn record turns red.
+	// then the plug is pulled mid-write and the torn record turns red. The
+	// narrow clip starts a little into the canvas so the segments stay in frame.
 	"kvlite": {
 		Setup: `(async () => {
 			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -114,7 +115,7 @@ var Showcases = map[string]Showcase{
 			await wait(2300);
 			click("Pull the plug");
 		})()`,
-		Focus: ".kv-canvas", Pad: 4, Seconds: 7,
+		Focus: ".kv-canvas", Pad: -96, WideFocus: ".kv-canvas", WidePad: 4, Seconds: 7,
 	},
 	// Play sends each client frame through the bridge; packets cross the lanes
 	// and the bridge's translations light up as the conversation builds.
