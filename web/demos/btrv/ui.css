@@ -12,6 +12,7 @@
 .bt-note, .bt-status { font-family: var(--mono); font-size: 0.75rem; color: var(--text-2); overflow-wrap: anywhere; }
 .bt-status { color: var(--text); }
 .bt-progress { width: 100%; }
+.bt-progress.bt-idle { visibility: hidden; }
 .bt-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
 .bt-tabs:empty { display: none; }
 .bt-tab { font-family: var(--mono); font-size: 0.75rem; }

@@ -6,12 +6,12 @@
   document.documentElement.classList.add("js");
   const slugOf = (url) => url && /^\/projects\/([a-z0-9-]+)\/$/.exec(new URL(url).pathname)?.[1];
   const here = slugOf(location.href);
-  // The screen flies too: the home monitor, when it shows the project being
-  // opened, becomes the project page's screen.
+  // The screen flies too: the current panel's screen on home becomes the
+  // project page's screen.
   const parts = (slug) => {
     const q = (s) => document.querySelector(s);
     if (here) return { title: q(".project-head h1 span"), fig: q(".facts-fig .dm"), screen: q(".ph-screen") };
-    return { title: q(`#p-${slug} .it-name`), screen: q(`#p-${slug}[data-now]`) && q(".mon-screen") };
+    return { title: q(`#p-${slug} .it-name`), screen: q(`#p-${slug}[data-now] .it-glass`) };
   };
   const name = (slug, vt) => {
     if (!slug || !vt) return;
