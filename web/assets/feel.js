@@ -1,7 +1,8 @@
 // Pointer feel, for a mouse only (touch and pens get none of it): a light
 // that follows the pointer across the dark screens' graticule and along the
 // edge of the panel it is over; with motion allowed, previews that tilt
-// toward it under a glare, and primary keys that lean to it. Browsers already deliver pointermove and scroll once a frame.
+// toward it under a glare with their layers at different depths, and primary
+// keys that lean to it. Browsers already deliver pointermove and scroll once a frame.
 const fine = matchMedia("(hover: hover) and (pointer: fine)");
 const calm = matchMedia("(prefers-reduced-motion: reduce)");
 let lit = null, rimmed = null, tilted = null, leaned = null, ev = null;
@@ -30,7 +31,7 @@ const frame = (hit) => {
   if (calm.matches) return;
 
   const g = t?.closest(".it-glass, .card-shot");
-  if (g !== tilted) { clear(tilted, "--rx", "--ry"); tilted = g; }
+  if (g !== tilted) { clear(tilted, "--rx", "--ry"); clear(tilted?.parentElement, "--dx", "--dy"); tilted = g; }
   if (g) {
     const r = g.getBoundingClientRect();
     const px = (x - r.left) / r.width, py = (y - r.top) / r.height;
@@ -39,6 +40,9 @@ const frame = (hit) => {
     g.style.setProperty("--gx", `${(px * 100).toFixed(1)}%`);
     g.style.setProperty("--gy", `${(py * 100).toFixed(1)}%`);
     g.dataset.feel = "";
+    g.parentElement.style.setProperty("--dx", (px - 0.5).toFixed(3));
+    g.parentElement.style.setProperty("--dy", (py - 0.5).toFixed(3));
+    g.parentElement.dataset.feel = "";
   }
 
   const k = t?.closest(".stage-go .key, .ph-go .key, .it .key, .dock-go");
@@ -60,7 +64,7 @@ addEventListener("pointermove", (e) => {
 addEventListener("scroll", () => { if (ev) frame(); }, { passive: true });
 document.documentElement.addEventListener("pointerleave", () => {
   ev = null;
-  clear(lit); clear(tilted, "--rx", "--ry"); clear(leaned, "--lx", "--ly");
+  clear(lit); clear(tilted, "--rx", "--ry"); clear(tilted?.parentElement, "--dx", "--dy"); clear(leaned, "--lx", "--ly");
   if (rimmed) delete rimmed.dataset.rim;
   lit = rimmed = tilted = leaned = null;
 });
