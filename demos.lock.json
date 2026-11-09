@@ -88,6 +88,15 @@
       "sha256": "558823a3efcb847b76ced22aa6982fcca8509fb61f4e42022724cf14483b0546",
       "bytes": 12408806,
       "gzip_bytes": 2077179
+    },
+    {
+      "slug": "btrv",
+      "repo": "btrv",
+      "ref": "0519b757dd0898b5d92103a8f03fde0976693d47",
+      "pkg": "./cmd/webdemo",
+      "sha256": "62f84a7623760a7b6b3e9795b8f9e384137bb5a35537607ec0483e7038cc1483",
+      "bytes": 5320344,
+      "gzip_bytes": 1471365
     }
   ]
 }
