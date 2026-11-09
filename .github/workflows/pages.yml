@@ -58,9 +58,10 @@ jobs:
 
   e2e:
     name: e2e ${{ matrix.shard }}
-    # Three runners split the page tabs, four split the demo tours, and an
-    # eighth runs every other test, so the slow-link and motion checks never
-    # share a runner with demo tabs. One runner with every tour took 89 s, two 61 s, three 62 s.
+    # Three runners split the page tabs, four split the demo tours, an eighth
+    # runs every other test, so the slow-link and motion checks never share a
+    # runner with demo tabs, and a ninth runs the live panels and the wall,
+    # which start up to four demos at once. One runner with every tour took 89 s, two 61 s, three 62 s.
     strategy:
       matrix:
         include:
@@ -74,7 +75,7 @@ jobs:
             flags: -run ^TestSite$$
             split: 2/3
           - shard: 3
-            flags: -skip "^(TestSite|TestTours)$$"  # quoted: make hands it to sh
+            flags: -skip "^(TestSite|TestTours|TestLivePanel|TestLiveWall)$$"  # quoted: make hands it to sh
             split: ""
           - shard: 4
             flags: -run ^TestTours$$
@@ -88,6 +89,9 @@ jobs:
           - shard: 7
             flags: -run ^TestTours$$
             split: 3/4
+          - shard: 8
+            flags: -run "^(TestLivePanel|TestLiveWall)$$"
+            split: ""
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:

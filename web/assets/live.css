@@ -1,0 +1,50 @@
+/* The live wall (wall.js): every live demo as a tile. A tile's screen holds its recording's poster until the demo is ready, then the demo covers it at the same size, so nothing on the page moves. While it loads the layer waits off screen, so a demo starts its frame loop only once it is shown. */
+main:has(> .wall) { width: auto; }
+.wall-head { position: relative; isolation: isolate; overflow: clip; color: var(--band-ink); background: var(--band); }
+.wall-in { display: grid; gap: var(--sp-4); width: min(80rem, 100% - 2 * var(--edge)); margin-inline: auto; padding-block: var(--sp-5) calc(var(--sp-7) + 28px); }
+.wall-in > * { margin: 0; }
+.wall .crumb { font-size: var(--t-meta); color: var(--band-dim); }
+.wall .crumb a { color: var(--band-ink); }
+.wall h1 { font-size: var(--t-h1); line-height: 0.88; letter-spacing: -0.05em; color: var(--band-ink); }
+.wall .lede { max-width: 36em; font-size: var(--t-lede); line-height: 1.4; color: var(--band-dim); text-wrap: balance; }
+.wall-note { display: grid; max-width: 36em; font-size: var(--t-small); line-height: 1.5; color: var(--band-dim); }
+.wall-note > span { grid-area: 1 / 1; }
+.wall-note b { font-weight: 400; color: var(--band-ink); font-variant-numeric: tabular-nums; }
+.wall-note > span + span, .wall-note[data-auto] > span:first-child { visibility: hidden; }
+.wall-note[data-auto] > span + span { visibility: visible; }
+
+.wall .sheet-in { padding-block: 0 var(--sp-7); }
+.wall-grid { display: grid; gap: var(--sp-6) var(--sp-5); margin: 0; padding: 0; list-style: none; }
+@media (min-width: 64rem) { .wall-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.wt { display: grid; gap: var(--sp-3); align-content: start; min-width: 0; scroll-margin-top: calc(var(--top-h) + var(--sp-4)); }
+.wt-screen { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: var(--r-2); background: var(--screen); box-shadow: 0 0 0 1px var(--line-strong); }
+.wt-screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.wt-live { position: absolute; inset: 0; z-index: 1; overflow: hidden; padding: var(--sp-3); background: var(--surface); color: var(--text); visibility: hidden; opacity: 0; }
+.wt-live:not([data-on]) { translate: -200vw 0; }
+.wt-live[data-on] { visibility: visible; opacity: 1; }
+@media (prefers-reduced-motion: no-preference) { .wt-live[data-on] { transition: opacity var(--d-media) var(--ease-in); } }
+.wt-load { position: absolute; z-index: 2; left: var(--sp-3); right: var(--sp-3); bottom: var(--sp-3); padding: var(--sp-2) var(--sp-3); border-radius: 10px; background: color-mix(in oklab, var(--screen) 88%, transparent); color: var(--screen-ink); font: 400 var(--t-label)/1.5 var(--mono); }
+.wt-load .demo-load { display: flex; align-items: center; gap: var(--sp-3); }
+.wt-load progress { flex: 1; height: 6px; border: 0; background: color-mix(in oklab, var(--screen-ink) 18%, transparent); appearance: none; overflow: hidden; }
+.wt-load progress::-webkit-progress-bar { background: color-mix(in oklab, var(--screen-ink) 18%, transparent); }
+.wt-load progress::-webkit-progress-value { background: var(--screen-ink); }
+.wt-load progress::-moz-progress-bar { background: var(--screen-ink); }
+.wt-load .demo-pct { min-width: 9ch; padding: 0; border: 0; background: none; color: inherit; text-align: right; font-variant-numeric: tabular-nums; }
+
+.wt-meta { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-1) var(--sp-4); align-items: baseline; }
+.wt-meta > * { margin: 0; }
+.wt h2 { font-size: var(--t-lede); line-height: 1.25; letter-spacing: -0.01em; }
+.wt h2 a { color: var(--text); text-decoration: none; }
+.wt h2 a:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+.wt-tag { grid-column: 1 / -1; grid-row: 2; color: var(--text-2); font-size: var(--t-small); line-height: 1.5; text-wrap: pretty; }
+.wt-bar { grid-column: 2; grid-row: 1; display: flex; flex-direction: row-reverse; align-items: center; gap: var(--sp-3); }
+.wt-st { width: 23ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 400 var(--t-label)/1.5 var(--mono); color: var(--text-3); font-variant-numeric: tabular-nums; }
+.wt[data-state=live] .wt-st { color: var(--live); }
+.wt[data-state=error] .wt-st { color: var(--danger); }
+.wt-go { flex-direction: column; gap: 0; }
+.wt-go::before, .wt-go::after { content: "Try again"; height: 0; overflow: hidden; visibility: hidden; }
+.wt-go::before { content: "Loading…"; }
+.wt-go:disabled { opacity: 0.7; cursor: progress; }
+html:not(.js) .wt-bar { display: none; }
+@media (pointer: coarse) { .wt-go { min-height: 44px; } }
+@media (max-width: 30rem) { .wt-meta { grid-template-columns: minmax(0, 1fr); } .wt-bar { grid-column: 1; grid-row: 3; flex-direction: row; justify-content: space-between; } .wt-st { width: auto; } }

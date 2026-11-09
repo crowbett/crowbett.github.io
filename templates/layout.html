@@ -31,7 +31,9 @@
 <link rel="stylesheet" href="/assets/site.css">
 {{if eq .Path "/"}}<link rel="stylesheet" href="/assets/home.css">
 {{else if .Project}}<link rel="stylesheet" href="/assets/project.css">
-{{else if eq .Path "/numbers/"}}<link rel="stylesheet" href="/assets/numbers.css">
+{{if .Project.Live}}<link rel="stylesheet" href="/assets/demo.css">
+{{end}}{{else if eq .Path "/numbers/"}}<link rel="stylesheet" href="/assets/numbers.css">
+{{else if eq .Path "/live/"}}<link rel="stylesheet" href="/assets/live.css">
 {{end}}
 <script src="/assets/vt.js"></script>
 </head>
@@ -49,7 +51,7 @@
 <footer class="foot">
   <p class="foot-k">Contact</p>
   <a class="foot-mail" href="mailto:{{.Owner.Email}}">{{.Owner.Email}}</a>
-  <p class="foot-s"><span>No tracking, no cookies.</span> <a href="/numbers/">Every number, and where it was measured</a> <span>© {{.Year}} {{.Owner.Name}}</span></p>
+  <p class="foot-s"><span>No tracking, no cookies.</span> <a href="/numbers/">Every number, and where it was measured</a> {{if .LiveCount}}<a href="/live/">Every demo, side by side</a> {{end}}<span>© {{.Year}} {{.Owner.Name}}</span></p>
 </footer>
 <script type="module" src="/assets/motion.js"></script>
 <script type="module" src="/assets/feel.js"></script>
