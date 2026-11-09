@@ -70,3 +70,20 @@ for (const a of document.querySelectorAll(".pager a")) {
     a.style.setProperty("--my", `${e.clientY - r.top}px`);
   });
 }
+
+// #find=<words>, as the palette links a page's prose, scrolls to the first
+// passage that starts with those words and marks it.
+function find() {
+  const m = /^#find=(.+)$/.exec(location.hash);
+  if (!m) return;
+  let words;
+  try { words = decodeURIComponent(m[1]); } catch { return; }
+  const norm = (s) => s.replace(/\s+/g, " ").trim();
+  const hit = [...document.querySelectorAll("main :is(p, li, h2, h3)")].find((e) => norm(e.textContent).includes(words));
+  if (!hit) return;
+  document.querySelector(".found")?.classList.remove("found");
+  hit.classList.add("found");
+  hit.scrollIntoView({ block: "center" });
+}
+addEventListener("hashchange", find);
+if (document.readyState === "complete") find(); else addEventListener("load", find, { once: true });
