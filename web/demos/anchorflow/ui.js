@@ -296,10 +296,12 @@ export async function mount(root, demo) {
     const H = toteY + 46;
     const W = size(map, H);
     M = { W, H, narrow, rowH, top, padL, padR, floorB, toteY, front: padL - 14, dock: { x: padL - 14, y: floorB + 10 } };
+    const lh = Math.round((Math.max(120, label.clientWidth) * 1218) / 812);
+    size(label, lh, 120);
+    // Side by side with the label, the package drawing takes the label's height.
     const bw = Math.max(280, box.clientWidth);
-    B = { W: bw, H: bw < 520 ? 150 : 180 };
+    B = { W: bw, H: bw < 520 ? 150 : root.classList.contains("af-wide") ? Math.max(180, lh) : 180 };
     size(box, B.H);
-    size(label, Math.round((Math.max(120, label.clientWidth) * 1218) / 812), 120);
     if (cart) cart.path = route(cart.stops);
   }
   const px = (pos) => M.padL + ((pos - 1) / (MAX_POS - 1)) * (M.W - M.padL - M.padR);
