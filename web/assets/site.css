@@ -173,8 +173,10 @@ main:has(> :is(.stage, .project)) { width: auto; }
 .led.off::before { background: none; border: 1.5px solid currentColor; box-shadow: none; }
 
 /* Layers shared by home and project pages: the dark band, glow, HUD chips, the sheet that slides over the band, the screen */
-.stage, .project-head { position: relative; isolation: isolate; overflow: clip; color: var(--screen-ink); background: radial-gradient(110% 80% at 72% 45%, transparent 35%, oklch(0 0 0 / 0.6)), linear-gradient(var(--grat) 1px, transparent 1px) 0 0 / 100% 48px, linear-gradient(90deg, var(--grat) 1px, transparent 1px) 0 0 / 48px 100%, var(--screen); }
+.stage, .project-head, .notfound { position: relative; isolation: isolate; overflow: clip; color: var(--screen-ink); background: radial-gradient(110% 80% at 72% 45%, transparent 35%, oklch(0 0 0 / 0.6)), linear-gradient(var(--grat) 1px, transparent 1px) 0 0 / 100% 48px, linear-gradient(90deg, var(--grat) 1px, transparent 1px) 0 0 / 48px 100%, var(--screen); }
 :is(.stage, .project-head) .led { color: var(--screen-ok); }
+:is(.stage, .notfound) .key { border-color: color-mix(in oklab, var(--screen-ink) 45%, transparent); background: oklch(1 0 0 / 0.04); color: var(--screen-ink); }
+:is(.stage, .notfound) .key:hover { background: var(--block); border-color: var(--block); color: var(--on-block); }
 .glow { position: absolute; z-index: -1; pointer-events: none; filter: blur(56px) saturate(1.7); opacity: 0.8; mask-image: radial-gradient(closest-side, #000 35%, transparent); }
 .stage-hud, .stage-tag span, .mon-hud, .ph-hud { margin: 0; padding: var(--sp-1) var(--sp-3); border-radius: 999px; background: oklch(0.1 0.01 262 / 0.55); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: var(--screen-ink); font: 400 var(--t-label)/1.5 var(--mono); }
 @supports (animation-timeline: scroll()) { @media (prefers-reduced-motion: no-preference) { .js :is(.stage-in, .ph-in) { animation: sink linear both; animation-timeline: scroll(root); animation-range: 0 100svh; } } }
@@ -232,10 +234,11 @@ main:has(> :is(.stage, .project)) { width: auto; }
 @keyframes rise { from { opacity: 0; transform: translateY(4px); } }
 
 /* 404 */
-.notfound { display: grid; gap: var(--sp-5); margin-top: var(--sp-5); padding: var(--sp-6) var(--sp-4); border: 1px solid var(--line-strong); }
-.notfound h1 { display: grid; gap: var(--sp-3); margin: 0; font-size: var(--t-h2); }
-.notfound .code { font: 700 min(30vw, 14rem)/0.8 var(--dots); letter-spacing: -0.02em; color: var(--accent); }
-.notfound .lede { max-width: var(--measure); margin: 0; font-size: var(--t-lede); color: var(--text-2); }
+.notfound { display: grid; gap: var(--sp-5); margin-top: var(--sp-5); padding: var(--sp-7) var(--sp-5); border-radius: var(--r-2); box-shadow: var(--lift); }
+.notfound h1 { display: grid; gap: var(--sp-3); margin: 0; font-size: var(--t-h2); color: var(--screen-ink); }
+.notfound .code { font: 700 min(30vw, 14rem)/0.8 var(--dots); letter-spacing: -0.02em; color: var(--screen-signal); text-shadow: 0 0 56px color-mix(in oklab, var(--screen-signal) 55%, transparent); }
+.notfound .lede { max-width: var(--measure); margin: 0; font-size: var(--t-lede); color: var(--screen-dim); }
+.notfound .lede a { color: var(--screen-ink); }
 body:has(.notfound) { display: flex; flex-direction: column; min-height: 100vh; }
 body:has(.notfound) main { flex: 1 0 auto; }
 .foot { display: grid; gap: var(--sp-3); margin-top: var(--section); padding: var(--sp-7) 0 max(var(--sp-6), env(safe-area-inset-bottom)); border-top: 1px solid var(--line-strong); }
