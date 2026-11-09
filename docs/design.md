@@ -92,6 +92,7 @@ Named by role; light and dark both first-class; screen tokens are the same in bo
 - No scroll-triggered reveals of content that should already be readable; no page-load stagger.
 - **Numbers move only when they count real data**: replay readouts count the run's totals with the wipe; the demo percentage follows bytes received. No scrambles or decorative counters; with reduced motion or no JS, figures never move (`TestHeroTicker`).
 - **Diagram motion**: each mask holds a rest and a mid-motion pose; motion is a `step-end` `opacity` flip between them, once when 60% on screen (web/assets/motion.js; A-B-A-B-A over 1.6 s) and looping while a row is hovered or focused. It ends on the rest pose.
+- **Page to page**: cross-document view transitions; the header holds still and the page slides. Opening or leaving a project names only its title and diagram (web/assets/vt.js, a classic head script because `pagereveal` fires before modules run), so they fly between the home row and the project page, and between projects, in `--d-spring`.
 - Checks: e2e requires CLS 0 at load on every page and counts `document.getAnimations()` with and without reduced motion on home, a project page and the smoke demo.
 
 ## Home
@@ -109,6 +110,13 @@ For: who this is, what they build, and that the proof runs (`templates/home.html
   - Hover and focus fill the row with `--block`, turn its text, diagram and lamp `--on-block`, invert the key and loop the diagram.
 - **Diagrams** (`templates/diagrams.html`, `cmd/dither`): one line drawing per slug, one accent element naming the idea, showing a behaviour its project page states. `go run ./cmd/dither` renders each at 112×54 (index, home share card) and 224×108 with labels (facts, project share cards), both poses, dithered to one bit (Bayer 8×8): `web/assets/dg/<slug>-<size>.png`, 16 files, 11,702 B (measured). CSS masks (`.dm`) take `currentColor` for ink and `--signal` for accent, so one PNG serves both themes and hover. The build fails on a mask older than its drawing (`web/assets/dg/.sums`) or a missing `.dm-<slug>` rule or `url()`.
 
+## Navigation
+
+- **Search key** in the top bar opens the command palette (web/assets/palette.js, loaded on first use; `/search.json` from the build). ⌘K or Ctrl+K anywhere, `/` where the page has no search box. Without JS it is a link to the home index. The key label has a fixed box, so filling it in moves nothing.
+- **Palette**: a modal `<dialog>` with a combobox over a listbox. "This page" actions first (run the demo, full screen, previous / next, copy or write an email), then projects with their diagram, language, group and a live lamp. Title hits rank first; a subsequence matches too ("rlim" finds ratelimitd).
+- **Keys**: `j` / `k` walk the work index, `[` / `]` step projects. None fire while typing or inside a demo.
+- **Prefetch**: an internal link the pointer, a touch or focus rests on is prefetched once.
+
 ## Project page
 
 For: a visitor checks the claim, then runs it. Order: header, demo frame (live only), write-up with facts (`templates/project.html`).
@@ -123,7 +131,7 @@ For: a visitor checks the claim, then runs it. Order: header, demo frame (live o
 
 One frame for every demo, built by the site (`templates/project.html`, `web/assets/demo.js`); `ui.js` only fills the mount.
 
-- **Plate**: `--block` hairline cells: lamp and "Live demo" left, `WebAssembly, ~N KB` (gzip bytes from the lock) right. The name is already the h1.
+- **Plate**: `--block` hairline cells: lamp and "Live demo" left, `WebAssembly, ~N KB` (gzip bytes from the lock), then "Full screen" where the browser can put an element full screen (not iPhone Safari): the frame fills the display, centred up to 90rem, and demos that track their width use it. The name is already the h1.
 - **Instruction**: the project's `demo_try` line, before the button.
 - **Before start**: the filled start key and "Runs in your browser. Nothing downloads until you start."
 - **Loading**: Pages gzips .wasm, so progress compares decompressed bytes with the lock's raw size (`data-bytes`): bar and percentage, then "Starting…"; the button reads "Loading…". Without `data-bytes` (smoke) the bar is indeterminate. Screen readers get one status.
@@ -164,3 +172,4 @@ One line each; full reasoning and review rounds are in git (`git log -p docs/des
 - 2026-10-26 V12: oklch tokens, ink/fill blue split, vermilion signal, crimson danger, Bayer masks, `linear()` springs. One job per colour; dither stays put.
 - 2026-10-26 V12: readouts count with the wipe; card hashes cover site.css and fonts. Totals did accumulate; no stale cards.
 - 2026-11-08 V13: bullet project pages with a demo note; evidence in the header; write-up and facts one 7fr/5fr panel from 48rem; 2-column index cards from 40rem to 64rem; no hero role line; 44px targets and 16px demo fields on coarse pointers; safe-area gutters; 820×1180 tablet e2e viewport. Owner found it wordy; tablets get a checked layout.
+- 2026-11-08 V14: grouped index with search, command palette, title and diagram morph between pages, demo full screen, j/k and [ ] keys, prefetch on intent; e2e emulates touch below 1000 px. Owner: "very user friendly and very interactive. and organized".
