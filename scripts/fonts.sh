@@ -20,10 +20,8 @@ fetch() { # dir file sha256
 }
 fetch archivo 'Archivo[wdth,wght].ttf' 0e094a7d3c7c4c25cf1310c4b30014f1dae9332220b1c2c88f4fa996f0b05053
 fetch martianmono 'MartianMono[wdth,wght].ttf' c3467843ec1c2574b05fbcfd7147c7bfbcf63ddca8fc2bcb9d117f1bfb1b22e7
-fetch doto 'Doto[ROND,wght].ttf' 6f4fe7d37853b91df3698daa84cde2dbe1c9695d88c986e6510134910337d426
 curl -fsSL -o "$out/OFL-archivo.txt" "$base/archivo/OFL.txt"
 curl -fsSL -o "$out/OFL-martian-mono.txt" "$base/martianmono/OFL.txt"
-curl -fsSL -o "$out/OFL-doto.txt" "$base/doto/OFL.txt"
 
 unicodes='U+0020-007E,U+00A0,U+00A9,U+00B1,U+00B5,U+00B7,U+00D7,U+2013,U+2014,U+2018,U+2019,U+201C,U+201D,U+2026,U+2190-2193,U+2212,U+2264,U+2265'
 
@@ -37,6 +35,5 @@ build() { # source name axes...
 build 'Archivo[wdth,wght].ttf' archivo-expanded-800 wdth=125 wght=800
 build 'Archivo[wdth,wght].ttf' archivo-400 wdth=100 wght=400
 build 'MartianMono[wdth,wght].ttf' martian-mono wdth=100 wght=400:700
-build 'Doto[ROND,wght].ttf' doto-700 ROND=0 wght=700
 
 wc -c "$out"/*.woff2
