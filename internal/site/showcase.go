@@ -172,7 +172,8 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".lb-canvas", Pad: 4, Seconds: 8,
 	},
-	// netcode: you steer player 0 in a loop and dash while bots move.
+	// netcode: you take over player 0 from the autopilot and dash around while
+	// the link turns into a mobile one and the rollbacks rewind deeper.
 	"netcode": {
 		Play: `(async () => {
 			const c = document.querySelector(".nc-canvas");
@@ -180,13 +181,15 @@ var Showcases = map[string]Showcase{
 			const key = (type, code) => c.dispatchEvent(new KeyboardEvent(type, { code, bubbles: true, cancelable: true }));
 			const hold = async (code, ms) => { key("keydown", code); await wait(ms); key("keyup", code); };
 			const run = async (code, ms) => { key("keydown", code); await wait(ms / 2); await hold("Space", 80); await wait(ms / 2 - 80); key("keyup", code); };
+			const net = document.querySelector("select[name=network]");
 			await wait(500);
-			await run("KeyD", 1600);
-			await hold("KeyS", 600);
+			await run("KeyD", 1400);
+			net.value = "mobile"; net.dispatchEvent(new Event("change"));
+			await hold("KeyS", 700);
 			await run("KeyA", 1600);
-			await hold("KeyW", 600);
+			await hold("KeyW", 900);
 		})()`,
-		Focus: ".nc-canvas", Pad: -140, Seconds: 7,
+		Focus: ".nc-canvas", Pad: 8, WideFocus: ".nc-canvas", WidePad: 8, Seconds: 8,
 	},
 	// ratelimitd: the same traffic seed under each pattern, 2 s apiece, back to
 	// bursts, where the sliding window lets more through than the token bucket.

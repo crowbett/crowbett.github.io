@@ -474,19 +474,37 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"netcode": {
-		`document.querySelector(".nc-lamp").dataset.state === "ok" && /^State hashes match: client [1-6], tick [\d,]+$/.test(document.querySelector(".nc-lamp-text").textContent) && /^[0-9a-f]{16}$/.test(document.querySelector(".nc-lamp-hash").textContent)`,
-		`(() => { const v = [...document.querySelectorAll(".nc-world .nc-v")].map((n) => n.textContent); return v[3] === "0" && Number(v[2].replace(/,/g, "")) > 0; })()`,
-		`[...document.querySelectorAll(".nc-cells")].every((c) => /^[\d,]+$/.test(c.querySelector(".nc-v").textContent))`,
-		`(() => { const c = document.querySelector(".nc-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n > 20000; })()`,
+		`document.querySelector(".nc-lamp").dataset.state === "ok" && /^State hashes match: client [0-5], tick [\d,]+$/.test(document.querySelector(".nc-lamp-text").textContent) && /^([0-9a-f]{16}) = \1$/.test(document.querySelector(".nc-lamp-hash").textContent)`,
+		`(() => { const v = (k) => document.querySelector(".nc-cells [data-k=" + k + "] .nc-v").textContent; return v("desyncs") === "0" && Number(v("checks").replace(/,/g, "")) > 0 && /^\d+\.\d ms$/.test(v("rtt")) && /^[\d,]+ of [\d,]+$/.test(v("lost")); })()`,
+		`(() => { const c = document.querySelector(".nc-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); let n = 0; for (let i = 0; i < d.length; i += 16) { if (d[i + 3]) n++; set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); } return n > 20000 && set.size > 20; })()`,
 		`(async () => {
+			const v = (k) => document.querySelector(".nc-cells [data-k=" + k + "] .nc-v").textContent;
+			const lamp = () => document.querySelector(".nc-lamp").textContent;
 			const play = document.querySelector(".nc-play");
 			if (play.textContent === "Pause") play.click();
-			const tick = () => Number(document.querySelector(".nc-world .nc-v").textContent.replace(/,/g, ""));
-			await new Promise((r) => setTimeout(r, 100));
-			const before = tick();
+			document.querySelector(".nc-reset").click();
+			if (!await until(() => v("tick") === "180" && v("rollbacks") === "5" && v("resim") === "70" && v("checks") === "423" && v("late") === "87" &&
+				lamp() === "State hashes match: client 5, tick 168c611453593013c92 = c611453593013c92" &&
+				document.querySelector(".nc-echo").textContent === "Player 0's input for tick 145: on your screen at once, run by the server 133 ms later, on bot 1's screen 233 ms later (simulated time).")) return false;
 			document.querySelector(".nc-step").click();
-			await until(() => tick() === before + 60);
-			return /^Tick [\d,]+, [\d.]+ s simulated: you rolled back [\d,]+ times?, [\d,]+ frames? resimulated; [\d,]+ hash checks, 0 desyncs\.$/.test(document.querySelector(".nc-status").textContent);
+			return await until(() => v("tick") === "181" && v("checks") === "427" && lamp().endsWith("23c29a45c12306f5 = 23c29a45c12306f5"));
+		})()`,
+		`(async () => {
+			const c = document.querySelector(".nc-canvas");
+			const key = (type, code) => c.dispatchEvent(new KeyboardEvent(type, { code, bubbles: true, cancelable: true }));
+			key("keydown", "KeyD");
+			if (document.querySelector(".nc-play").textContent === "Play") document.querySelector(".nc-play").click();
+			const ok = await until(() => document.querySelector(".nc-hint").textContent.startsWith("You are steering player 0") &&
+				/^Your input for tick [\d,]+: on your screen at once, run by the server [\d,]+ ms later, on bot 1's screen [\d,]+ ms later \(simulated time\)\.$/.test(document.querySelector(".nc-echo").textContent));
+			key("keyup", "KeyD");
+			return ok;
+		})()`,
+		`(async () => {
+			const s = document.querySelector("select[name=network]");
+			s.value = "mobile"; s.dispatchEvent(new Event("change"));
+			const rtt = () => parseFloat(document.querySelector(".nc-cells [data-k=rtt] .nc-v").textContent);
+			return await until(() => document.querySelector(".nc-status").textContent === "Link set to mobile: 180 ms latency, 60 ms jitter, 4 % loss, each way." &&
+				document.querySelector("input[name=latency_ms]").value === "180" && rtt() > 300);
 		})()`,
 	},
 }
