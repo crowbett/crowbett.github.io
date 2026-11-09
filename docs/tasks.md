@@ -87,9 +87,10 @@ Done when: each of the seven pins is an ancestor of its repo's main.
 ### F8 CI over 60 s at 15 projects · status: done 2026-11-08 (e53cc6d and the e2e commits before it)
 One job ran gate and e2e at ~55 s plus ~10 s of upload and deploy. Now `gate` and three `e2e` shards (`E2E_SHARD=i/3`) run on separate runners and `deploy` waits for them: PR CI wall 37 s (measured). CI skips screenshots and the dark desktop and tablet tabs; tablet tabs check layout only; the slowest tabs start first.
 
-### F7 Does the Tab walk still need its timeline pause · order 37 · deps: none · status: todo
+### F7 Does the Tab walk still need its timeline pause · order 37 · deps: none · status: done 2026-11-09 (dropped; draft PRs #16, #17)
 From F6: the home Tab walk's 15-25 s stalls (F5) and the GPU freeze were inferred to be the same fault, so the walk may be fast without F5's animation-timeline pause. Not measured on CI.
 Done when: three `ci` runs with the pause removed are timed and the pause is kept or dropped on that evidence, recorded here.
+Result (measured, three CI runs each, 21 walks per run): with the pause, all walks took 42.6-50.2 s per run, the longest 6.6 s, slowest shard 32-37 s; without it, 45.4-50.7 s, the longest 6.4 s, slowest shard 30-34 s. No 15-25 s stall either way, so the pause and `setPlaybackRate` are gone.
 
 ## Open follow-ups (not loop work)
 
