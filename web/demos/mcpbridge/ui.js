@@ -16,8 +16,17 @@ const SEED = 1;
 const el = (tag, cls, text) => {
   const n = document.createElement(tag);
   if (cls) n.className = cls;
-  if (text !== undefined) n.textContent = text;
+  if (text !== undefined) soft(n, text, tag);
   return n;
+};
+// Long tokens may wrap after "/" and "." instead of mid-word.
+const soft = (n, text, tag) => {
+  if (text.length < 14 || tag === "option") {
+    n.textContent = text;
+    return;
+  }
+  const parts = text.split(/(?<=[/.])/);
+  n.replaceChildren(...parts.flatMap((s, i) => (i ? [document.createElement("wbr"), s] : [s])));
 };
 const btn = (text, cls) => {
   const b = el("button", cls, text);
@@ -470,7 +479,7 @@ export async function mount(root, demo) {
   function inspect(e) {
     const m = meta.get(e.seq);
     const [name] = label(e);
-    iHead.textContent = `${e.seq} · ${LEG[e.leg]} · ${name}`;
+    soft(iHead, `${e.seq} · ${LEG[e.leg]} · ${name}`);
     iLinks.replaceChildren();
     if (e.src) iLinks.append(linkTo(e.src, `Translates ${e.src}`));
     if (e.re) iLinks.append(linkTo(e.re, `Answers ${e.re}`));

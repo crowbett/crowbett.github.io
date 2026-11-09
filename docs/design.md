@@ -92,6 +92,7 @@ Named by role; light and dark both first-class; screen tokens are the same in bo
 - No scroll-triggered reveals of content that should already be readable; no page-load stagger.
 - **Numbers move only when they count real data**: replay readouts count the run's totals with the wipe; the demo percentage follows bytes received. No scrambles or decorative counters; with reduced motion or no JS, figures never move (`TestHeroTicker`).
 - **Diagram motion**: each mask holds a rest and a mid-motion pose; motion is a `step-end` `opacity` flip between them, once when 60% on screen (web/assets/motion.js; A-B-A-B-A over 1.6 s) and looping while a row is hovered or focused. It ends on the rest pose.
+- **Page to page**: cross-document view transitions; the header holds still and the page slides. Opening or leaving a project names only its title and diagram (web/assets/vt.js, a classic head script because `pagereveal` fires before modules run), so they fly between the home row and the project page, and between projects, in `--d-spring`.
 - Checks: e2e requires CLS 0 at load on every page and counts `document.getAnimations()` with and without reduced motion on home, a project page and the smoke demo.
 
 ## Home
@@ -102,12 +103,19 @@ For: who this is, what they build, and that the proof runs (`templates/home.html
 - **Replay**: one real ratelimitd GCRA run (`race`, attack at 10× the limit, seed 1) from the WebAssembly build (`data/hero-trace.json`), drawn at build time on a graticule screen: 480×200 from 40rem, 320×240 below. Denied above, allowed below, each lane on its own labelled scale (dashed "N/s peak", vermilion "N/s limit"); the attack window shaded and labelled. A 1.8 s wipe reveals the bars.
 - Doto readouts (allowed in `--live`, denied, limit) from the trace: under the screen on phones, a 15rem column from 64rem.
 - "Run it in your browser" is the page's one filled key. On click only, `web/assets/hero.js` loads the build, repeats the recorded call, compares the whole answer, replays the wipe and lights "N/N buckets identical in your browser" with a link to the full demo. Without JS it is inert. `TestHeroRun` clicks it; `TestHeroTrace` re-runs the call every deploy (docs/demo-contract.md §Home replay).
-- **Work index**: "Work" and "N projects, M live" (build-time counts), then an `<ol>`, live first, numbered `01`… by a CSS counter. Each row (`row` in `templates/layout.html`) is one link (to `#demo` when live): number, diagram, name, language, tagline, metric, action. Action: a lit "Live demo" lamp and "Run it" key, or an unlit "Source on request" / "Source on GitHub" lamp and "Details" key.
+- **Work index**: "Work" and "N projects, M live" (build-time counts), a search box (`/` focuses, Escape clears) and one chip per group, then one section per group (`group` front matter, `site.Groups`), live first within each, numbered `01`… at build time so a filtered row keeps its number. Filters live in the URL (`?q=`, `?g=`). Project pages link their group in the crumb and end with previous / next in the same order. Each row (`row` in `templates/layout.html`) is one link (to `#demo` when live): number, diagram, name, language, tagline, metric, action. Action: a lit "Live demo" lamp and "Run it" key, or an unlit "Source on request" / "Source on GitHub" lamp and "Details" key.
   - Under 40rem: number, diagram and name over language on one line; tagline, metric and action (lamp left, key right) stacked below.
   - 40rem to 64rem: two columns of cards, an odd last card spanning both, action at the foot.
   - From 64rem: a seven-column subgrid table under an `aria-hidden` `--sunken` head (`#`, `mechanism`, `project`, `lang`, `what it is`, `evidence`, `demo`).
   - Hover and focus fill the row with `--block`, turn its text, diagram and lamp `--on-block`, invert the key and loop the diagram.
 - **Diagrams** (`templates/diagrams.html`, `cmd/dither`): one line drawing per slug, one accent element naming the idea, showing a behaviour its project page states. `go run ./cmd/dither` renders each at 112×54 (index, home share card) and 224×108 with labels (facts, project share cards), both poses, dithered to one bit (Bayer 8×8): `web/assets/dg/<slug>-<size>.png`, 16 files, 11,702 B (measured). CSS masks (`.dm`) take `currentColor` for ink and `--signal` for accent, so one PNG serves both themes and hover. The build fails on a mask older than its drawing (`web/assets/dg/.sums`) or a missing `.dm-<slug>` rule or `url()`.
+
+## Navigation
+
+- **Search key** in the top bar opens the command palette (web/assets/palette.js, loaded on first use; `/search.json` from the build). ⌘K or Ctrl+K anywhere, `/` where the page has no search box. Without JS it is a link to the home index. The key label has a fixed box, so filling it in moves nothing.
+- **Palette**: a modal `<dialog>` with a combobox over a listbox. "This page" actions first (run the demo, full screen, previous / next, copy or write an email), then projects with their diagram, language, group and a live lamp. Title hits rank first; a subsequence matches too ("rlim" finds ratelimitd).
+- **Keys**: `j` / `k` walk the work index, `[` / `]` step projects. None fire while typing or inside a demo.
+- **Prefetch**: an internal link the pointer, a touch or focus rests on is prefetched once.
 
 ## Project page
 
@@ -123,7 +131,7 @@ For: a visitor checks the claim, then runs it. Order: header, demo frame (live o
 
 One frame for every demo, built by the site (`templates/project.html`, `web/assets/demo.js`); `ui.js` only fills the mount.
 
-- **Plate**: `--block` hairline cells: lamp and "Live demo" left, `WebAssembly, ~N KB` (gzip bytes from the lock) right. The name is already the h1.
+- **Plate**: `--block` hairline cells: lamp and "Live demo" left, `WebAssembly, ~N KB` (gzip bytes from the lock), then "Full screen" from 40rem where the browser can put an element full screen (its slot is reserved, so it appears without a shift; phones reach it from the palette): the frame fills the display, centred up to 90rem, and demos that track their width use it. The name is already the h1.
 - **Instruction**: the project's `demo_try` line, before the button.
 - **Before start**: the filled start key and "Runs in your browser. Nothing downloads until you start."
 - **Loading**: Pages gzips .wasm, so progress compares decompressed bytes with the lock's raw size (`data-bytes`): bar and percentage, then "Starting…"; the button reads "Loading…". Without `data-bytes` (smoke) the bar is indeterminate. Screen readers get one status.
@@ -164,3 +172,4 @@ One line each; full reasoning and review rounds are in git (`git log -p docs/des
 - 2026-10-26 V12: oklch tokens, ink/fill blue split, vermilion signal, crimson danger, Bayer masks, `linear()` springs. One job per colour; dither stays put.
 - 2026-10-26 V12: readouts count with the wipe; card hashes cover site.css and fonts. Totals did accumulate; no stale cards.
 - 2026-11-08 V13: bullet project pages with a demo note; evidence in the header; write-up and facts one 7fr/5fr panel from 48rem; 2-column index cards from 40rem to 64rem; no hero role line; 44px targets and 16px demo fields on coarse pointers; safe-area gutters; 820×1180 tablet e2e viewport. Owner found it wordy; tablets get a checked layout.
+- 2026-11-08 V14: grouped index with search, command palette, title and diagram morph between pages, demo full screen, j/k and [ ] keys, prefetch on intent; e2e emulates touch below 1000 px. Owner: "very user friendly and very interactive. and organized".

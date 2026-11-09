@@ -2,8 +2,8 @@
 {{with .Project}}
 <article class="project">
   <header class="project-head">
-    <p class="crumb"><a href="/#work">Work</a> <span aria-hidden="true">/</span> {{.Slug}}</p>
-    <h1>{{.Title}}</h1>
+    <p class="crumb"><a href="/#work">Work</a> <span aria-hidden="true">/</span> <a href="/#g-{{.Kind.Key}}">{{.Kind.Name}}</a> <span aria-hidden="true">/</span> {{.Slug}}</p>
+    <h1><span>{{.Title}}</span></h1>
     <p class="lede">{{.Tagline}}</p>
     {{if .Metric}}<figure class="result">
       <p class="result-label">Evidence</p>
@@ -17,6 +17,7 @@
     <div class="demo-head">
       <h2 id="demo-title">Live demo</h2>
       <span class="demo-spec">WebAssembly, ~{{demoKB .Slug}} KB</span>
+      <button type="button" class="demo-full" data-demo-full>Full screen</button>
     </div>
     <p class="demo-try">{{.DemoTry}}</p>
     <div class="demo-bar">
@@ -42,4 +43,5 @@
   </div>
 </article>
 {{end}}
+<nav class="pager" aria-label="More projects">{{with .Prev}}<a href="/projects/{{.Slug}}/" rel="prev"><span>Previous</span> {{.Title}}</a>{{end}}{{with .Next}}<a href="/projects/{{.Slug}}/" rel="next"><span>Next</span> {{.Title}}</a>{{end}}</nav>
 {{template "foot" .}}{{end}}

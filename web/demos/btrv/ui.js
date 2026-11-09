@@ -74,12 +74,13 @@ export async function mount(root, demo) {
 
   // Controls
   const sampleBtn = button("Load the sample file", null, () => guard(() => load(null)));
-  const pick = el("input");
+  const pick = el("input", "vh");
   Object.assign(pick, { type: "file", multiple: true, name: "files" });
-  const pickField = el("label", "demo-field bt-pick");
-  pickField.append(el("span", "demo-label", "Or open your own Btrieve files (data files and their .DDF)"), pick);
+  const pickKey = el("label", "key bt-open");
+  pickKey.append(el("span", null, "Open a file"), pick);
+  const picked = el("span", "bt-picked", "no file chosen");
   const controls = el("div", "bt-controls");
-  controls.append(sampleBtn, pickField);
+  controls.append(sampleBtn, pickKey, picked);
   const privacy = el("p", "bt-note", "Drop files anywhere on this panel. They are read inside this tab by the WebAssembly build; nothing is uploaded.");
   const status = el("p", "bt-status");
   status.setAttribute("aria-live", "polite");
@@ -93,7 +94,7 @@ export async function mount(root, demo) {
 
   // Page map
   const mapHead = el("div", "bt-head");
-  mapHead.append(el("h3", "bt-h", "Page map"), el("span", "bt-sub", "one cell per page, in file order"));
+  mapHead.append(el("h3", "bt-h", "page map"), el("span", "bt-sub", "one cell per page, in file order"));
   const canvas = el("canvas", "bt-map");
   canvas.tabIndex = 0;
   canvas.setAttribute("role", "img");
@@ -119,7 +120,7 @@ export async function mount(root, demo) {
 
   // Rows and export
   const rowsHead = el("div", "bt-head");
-  const rowsTitle = el("h3", "bt-h", "Rows");
+  const rowsTitle = el("h3", "bt-h", "rows");
   const rowsSub = el("span", "bt-sub", "");
   rowsHead.append(rowsTitle, rowsSub);
   const rowsBox = el("div", "bt-rows");
@@ -193,6 +194,7 @@ export async function mount(root, demo) {
 
   async function load(list) {
     damaged.clear();
+    picked.textContent = list ? list.map((f) => f.name).join(", ") : "the sample file";
     opened = list ? await upload(list) : await demo.call("sample");
     renderTabs();
     if (!opened.selected) {
@@ -228,6 +230,7 @@ export async function mount(root, demo) {
     const c = { name, sel, n, kinds: sel.kinds, kind: new Uint8Array(n), lp: new Float64Array(n), a: new Int32Array(n), b: new Int32Array(n),
       x: new Int32Array(n), problems: new Map(), read: 0, done: false, scan: null, table: !!sel.names, sel2: null, hover: -1, pick: -1 };
     cur = c;
+    sampleBtn.classList.add("secondary");
     for (const b of tabs.querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.name === name));
     for (let from = 0; from < n; from += 4096) {
       const p = await demo.call("pages", { from, n: 4096 });
@@ -253,8 +256,10 @@ export async function mount(root, demo) {
     renderSchema();
     renderSummary();
     resetRows();
-    readText.textContent = "Hover or tap a page for its header; arrow keys move between pages.";
-    damageBtn.hidden = true;
+    const want = n > 40 && c.kind[40] === dk ? 40 : data.length ? data[0] : -1;
+    c.pick = want;
+    c.fresh = true;
+    showPage(want);
     markFirst();
     if (!c.table) {
       status.textContent = describe(sel.file) + (sel.schemaError ? ` No schema: ${sel.schemaError}` : "");
@@ -304,6 +309,7 @@ export async function mount(root, demo) {
   }
 
   // Page map drawing
+  const coarse = matchMedia("(pointer: coarse)");
   let geo = { size: 10, gap: 2, cols: 1, rows: 1, w: 0, h: 0 };
   function layout() {
     if (!cur) return;
@@ -311,6 +317,7 @@ export async function mount(root, demo) {
     const maxH = Math.min(340, Math.max(180, innerHeight * 0.45));
     let size = Math.floor(Math.sqrt((w * maxH) / Math.max(1, cur.n))) - 1;
     size = Math.max(2, Math.min(22, size));
+    if (coarse.matches && size < 24 && Math.ceil(cur.n / Math.floor((w + 2) / 26)) <= 42) size = 24;
     const gap = size >= 9 ? 2 : 1;
     const cols = Math.max(1, Math.floor((w + gap) / (size + gap)));
     const rows = Math.ceil(cur.n / cols);
@@ -322,8 +329,8 @@ export async function mount(root, demo) {
   function colours() {
     const cs = getComputedStyle(wrap);
     const v = (n) => cs.getPropertyValue(n).trim();
-    return { fcr: v("--bt-fcr"), pat: v("--bt-pat"), reserved: v("--bt-reserved"), data: v("--bt-data"), tint: v("--bt-tint"), variable: v("--bt-var"),
-      index: v("--bt-index"), free: v("--bt-free"), ground: v("--bt-ground"), ink: v("--bt-ink"), bad: v("--bt-bad"), other: v("--bt-other") };
+    return { fcr: v("--bt-sig"), pat: v("--accent"), reserved: v("--line-strong"), data: v("--bt-blk"), tint: v("--accent-tint"), variable: v("--text"),
+      index: v("--text-2"), free: v("--control-line"), ground: v("--sunken"), ink: v("--text"), bad: v("--danger"), other: v("--text-3") };
   }
 
   function draw() {
@@ -361,7 +368,11 @@ export async function mount(root, demo) {
           break;
         }
         case "fcr": case "pat": case "reserved":
-          if (c.x[i] || k === "reserved") { ctx.fillStyle = col[k]; ctx.fillRect(x, y, s, s); }
+          if (c.x[i] || k === "reserved") {
+            ctx.fillStyle = col[k];
+            ctx.fillRect(x, y, s, s);
+            if (k === "pat" && s >= 6) { ctx.fillStyle = col.ground; ctx.fillRect(x, y + Math.floor(s / 2) - 1, s, 2); }
+          }
           else { ctx.strokeStyle = col[k]; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, s - 1, s - 1); }
           break;
         case "variable":
@@ -372,6 +383,7 @@ export async function mount(root, demo) {
           ctx.fillStyle = col.index;
           ctx.fillRect(x, y, s, s);
           if (!c.x[i] && s >= 6) { const q = Math.max(1, Math.round(s / 4)); ctx.fillStyle = col.ground; ctx.fillRect(x + q, y + q, s - 2 * q, s - 2 * q); }
+          else if (s >= 6) { ctx.fillStyle = col.ground; for (let d = 2; d < s; d += 4) ctx.fillRect(x + d, y, 1, s); }
           break;
         case "free": case "freed":
           ctx.fillStyle = col.ground;
@@ -393,6 +405,7 @@ export async function mount(root, demo) {
         default:
           ctx.fillStyle = col.other;
           ctx.fillRect(x, y, s, s);
+          if (s >= 6) { ctx.fillStyle = col.ground; ctx.fillRect(x + Math.floor(s / 2) - 1, y + Math.floor(s / 2) - 1, 2, 2); }
       }
     }
     ctx.globalAlpha = 1;
@@ -452,7 +465,7 @@ export async function mount(root, demo) {
   }
 
   function showPage(i) {
-    readText.textContent = i < 0 ? "" : pageText(i);
+    readText.textContent = i < 0 ? "Select a page for its header; arrow keys move between pages." : pageText(i);
     const k = i >= 0 ? cur.kinds[cur.kind[i]] : "";
     const can = k === "data";
     const set = damaged.get(cur.name);
@@ -481,6 +494,7 @@ export async function mount(root, demo) {
     const i = cellAt(e);
     if (i < 0) return;
     cur.pick = i;
+    cur.fresh = false;
     showPage(i);
     draw();
   });
@@ -489,8 +503,10 @@ export async function mount(root, demo) {
     const d = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: geo.cols, ArrowUp: -geo.cols, Home: -Infinity, End: Infinity }[e.key];
     if (d === undefined) return;
     e.preventDefault();
-    const from = cur.pick < 0 ? 0 : cur.pick;
-    cur.pick = Math.max(0, Math.min(cur.n - 1, d === -Infinity ? 0 : d === Infinity ? cur.n - 1 : from + (cur.pick < 0 ? 0 : d)));
+    const start = cur.fresh;
+    cur.fresh = false;
+    const from = start ? 0 : cur.pick;
+    cur.pick = Math.max(0, Math.min(cur.n - 1, d === -Infinity ? 0 : d === Infinity ? cur.n - 1 : from + (start ? 0 : d)));
     showPage(cur.pick);
     draw();
   });
@@ -500,7 +516,7 @@ export async function mount(root, demo) {
     const c = cur, sel = c.sel;
     schemaSec.replaceChildren();
     const head = el("div", "bt-head");
-    head.append(el("h3", "bt-h", "Schema"));
+    head.append(el("h3", "bt-h", "schema"));
     const file = opened.files.find((f) => f.name === c.name);
     let src = "";
     if (sel.source === "dictionary") src = `from the DDF dictionary: table ${file.table}`;
@@ -571,7 +587,7 @@ export async function mount(root, demo) {
     const c = cur, f = c.sel.file;
     sumSec.replaceChildren();
     const head = el("div", "bt-head");
-    head.append(el("h3", "bt-h", "Decode summary"), el("span", "bt-sub", c.done ? "export.Copy's report, as btrv dump prints it" : c.table ? "reading…" : ""));
+    head.append(el("h3", "bt-h", "decode summary"), el("span", "bt-sub", c.done ? "export.Copy's report, as btrv dump prints it" : c.table ? "reading…" : ""));
     sumSec.append(head);
     const r = c.scan && c.scan.report;
     const pairs = [

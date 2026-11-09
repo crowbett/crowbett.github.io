@@ -112,8 +112,8 @@ function slices(text, chunks) {
 function palette(node) {
   const s = getComputedStyle(node);
   const v = (n) => s.getPropertyValue(n).trim();
-  return { new: v("--sh-new"), reused: v("--sh-reused"), dup: v("--sh-dup"), ground: v("--sh-ground"), nonce: v("--sh-nonce"),
-    ct: v("--sh-ct"), tag: v("--sh-tag"), hdr: v("--sh-hdr"), sel: v("--sh-sel"), bad: v("--sh-bad") };
+  return { new: v("--sh-new"), reused: v("--sh-reused"), dup: v("--sh-dup"), ground: v("--sh-ground"), nonce: v("--accent"),
+    ct: v("--text-2"), tag: v("--sh-tag"), hdr: v("--sh-hdr"), sel: v("--text") };
 }
 
 function sizeCanvas(c, w, h) {
@@ -126,6 +126,7 @@ function sizeCanvas(c, w, h) {
   return g;
 }
 
+const SWATCH = { nonce: "var(--accent)", ct: "var(--text-2)", bad: "var(--text)" };
 const STATUS = { new: "new, sealed and stored", reused: "reused from the repository", dup: "repeats an earlier chunk of this document" };
 
 export async function mount(root, demo) {
@@ -171,8 +172,11 @@ export async function mount(root, demo) {
   file.name = "file";
   file.accept = "text/*,.txt,.md,.csv,.json,.log,.toml,.yaml,.yml,.go,.rs,.js,.ts,.py,.html,.css";
   const controls = el("div", "sh-controls");
-  controls.append(backupBtn, insertBtn, deleteBtn, field("Document", preset), field("Average chunk", avg),
-    field("Open a text file (stays in this tab)", file, "sh-file"));
+  file.className = "vh";
+  const filePick = el("label", "sh-pick");
+  filePick.append(file, el("span", null, "Open a text file"));
+  const fname = el("span", "sh-fname", "stays in this tab");
+  controls.append(backupBtn, insertBtn, deleteBtn, field("Document", preset), field("Average chunk", avg), filePick, fname);
 
   const ta = el("textarea");
   ta.name = "text";
@@ -193,6 +197,7 @@ export async function mount(root, demo) {
   for (const [k, t] of [["new", "new: sealed and stored"], ["reused", "reused: already in the repository"], ["dup", "repeat within the document"]]) {
     const s = el("span", "sh-key", t);
     s.dataset.s = k;
+    s.style.setProperty("--c", SWATCH[k] || `var(--sh-${k})`);
     legend.append(s);
   }
   const rows = el("ol", "sh-rows");
@@ -228,7 +233,7 @@ export async function mount(root, demo) {
   const offset = el("input");
   Object.assign(offset, { type: "number", name: "offset", min: 0, step: 1, value: 0 });
   offset.inputMode = "numeric";
-  const flipBtn = button("Flip one bit");
+  const flipBtn = button("Flip one bit", true);
   const packRow = el("div", "sh-controls");
   packRow.append(field("Pack", packSel), field("Byte", offset, "sh-num"), flipBtn);
   const mapBox = el("div", "sh-mapbox");
@@ -239,6 +244,7 @@ export async function mount(root, demo) {
   for (const [k, t] of [["nonce", "nonce (24 B)"], ["ct", "ciphertext"], ["tag", "Poly1305 tag (16 B)"], ["hdr", "sealed header + length"], ["bad", "flipped"]]) {
     const s = el("span", "sh-key", t);
     s.dataset.s = k;
+    s.style.setProperty("--c", SWATCH[k] || `var(--sh-${k})`);
     plegend.append(s);
   }
   const byteInfo = el("p", "sh-byte");
@@ -388,6 +394,7 @@ export async function mount(root, demo) {
     o.hidden = o.disabled = false;
     o.textContent = f.name;
     preset.value = "file";
+    fname.textContent = f.name;
     setText(t);
   }
   file.addEventListener("change", () => loadFile(file.files[0]));
@@ -403,7 +410,8 @@ export async function mount(root, demo) {
     const li = el("li", "sh-row");
     const head = el("div", "sh-rowhead");
     head.append(el("span", "sh-n", `#${b.n + 1}`),
-      el("span", "sh-sum", `${fmt(b.chunks.length)} chunks: ${fmt(b.new)} new, ${fmt(b.reused)} reused${b.dup ? `, ${fmt(b.dup)} repeated` : ""} · ${bytes(b.logical)} → ${bytes(b.stored)} stored`));
+      el("span", "sh-sum", `${fmt(b.chunks.length)} chunks: ${fmt(b.new)} new, ${fmt(b.reused)} reused${b.dup ? `, ${fmt(b.dup)} repeated` : ""} · `));
+    head.lastChild.append(el("span", "sh-nw", `${bytes(b.logical)} → ${bytes(b.stored)} stored`));
     const restore = button("Restore", true);
     restore.setAttribute("aria-label", `Restore backup ${b.n + 1}`);
     restore.addEventListener("click", () => doRestore(b, li));
@@ -577,7 +585,15 @@ export async function mount(root, demo) {
     for (const b of pack.blobs) for (let i = 0; i < b.l; i++) kinds[b.o + i] = i < pack.nonce ? "nonce" : i >= b.l - pack.tag ? "tag" : "ct";
     for (let i = 0; i < n; i++) {
       const x = (i % cols) * cs, y = Math.floor(i / cols) * cs;
-      if (flipped.has(i)) { g.globalAlpha = 1; g.fillStyle = p.bad; g.fillRect(x, y, cs, cs); continue; }
+      if (flipped.has(i)) {
+        g.globalAlpha = 1;
+        g.fillStyle = p.sel;
+        g.fillRect(x, y, cs, cs);
+        g.fillStyle = p.ground;
+        const q = Math.max(2, Math.round(cs * 0.4));
+        g.fillRect(x + (cs - q) / 2, y + (cs - q) / 2, q, q);
+        continue;
+      }
       g.fillStyle = p[kinds[i]];
       g.globalAlpha = 0.3 + (0.7 * pack.bytes[i]) / 255;
       const gap = cs > 9 ? 2 : 1;

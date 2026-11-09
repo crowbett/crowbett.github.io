@@ -6,6 +6,7 @@ tags: content-defined chunking, deduplication, authenticated encryption, backups
 repo:
 demo: live
 demo_try: Edit the harbour log in the middle and back up again; only the chunks around your edit are stored.
+group: storage
 order: 12
 metric: 803.5 MiB backed up in 2.28 s, stored 2.33x smaller; an unchanged rerun takes 0.60 s
 metric_source: README benchmark, Windows 11, 16 cores, local SSD, warm OS cache, 5,439 files

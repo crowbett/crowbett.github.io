@@ -6,6 +6,7 @@ tags: job queue, Postgres, gRPC, cron
 repo: https://github.com/crowbett/jobrun
 demo: live
 demo_try: See a cron expression's next ten runs in any time zone, or the delay after each failed attempt.
+group: services
 order: 6
 metric: ~1,030 jobs/s completed at saturation with the default 16 workers
 metric_source: README results, one Windows 11 box, Postgres 17, medians of 3 runs

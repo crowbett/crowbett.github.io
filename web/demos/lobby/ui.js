@@ -159,7 +159,7 @@ export async function mount(root, demo) {
   function layout() {
     const W = Math.max(280, canvas.clientWidth);
     const padL = 30, padR = 12, padT = 20;
-    const floorH = Math.round(Math.min(300, Math.max(180, W * 0.36)));
+    const floorH = Math.round(Math.min(300, Math.max(W < 600 ? 260 : 180, W * 0.36)));
     const axisY = padT + floorH;
     const laneTop = axisY + 34;
     const cardH = 74;
@@ -386,15 +386,27 @@ export async function mount(root, demo) {
 
     // Room cards.
     let x = G.padL;
-    ctx.save();
-    ctx.beginPath(); ctx.rect(0, G.laneTop - 2, G.W, G.cardH + 4); ctx.clip();
-    for (let i = 0; i < cards.length && x < G.W; i++) {
+    const fit = (limit) => {
+      let n = 0, e = G.padL;
+      while (n < cards.length && e + cardW(cards[n].size) <= limit) e += cardW(cards[n++].size) + 8;
+      return n;
+    };
+    let shown = fit(G.W - G.padR);
+    const more = cards.length - shown;
+    if (more) shown = fit(G.W - G.padR - 64);
+    const hidden = cards.length - shown;
+    for (let i = 0; i < shown; i++) {
       const k = cards[i];
       const off = k.slide ? (1 - ease((now - k.slide) / SLIDE_MS)) * -k.from : 0;
       drawCard(ctx, k, x + off, now, font);
       x += cardW(k.size) + 8;
     }
-    ctx.restore();
+    if (hidden) {
+      ctx.fillStyle = c.text2;
+      ctx.font = font(10, 600);
+      ctx.textAlign = "right";
+      ctx.fillText(`+${fmt(hidden)} ${hidden === 1 ? "room" : "rooms"}`, G.W - G.padR, G.laneTop + 20);
+    }
     if (!cards.length) {
       ctx.fillStyle = c.text3;
       ctx.font = font(10);

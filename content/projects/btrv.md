@@ -5,7 +5,8 @@ lang: Go
 tags: file formats, Btrieve, data recovery, CSV and SQLite export
 repo:
 demo: live
-demo_try: Tap a page of the map for its header, switch to the inferred schema, then damage a page.
+demo_try: Select a page of the map for its header, switch to the inferred schema, then damage a page.
+group: storage
 order: 15
 metric: 2,483,585 rows/s read and decoded, 15 columns per record, slowest of 6 runs
 metric_source: Apple M3 Pro under load, docs/BENCHMARKS.md

@@ -144,6 +144,23 @@ async function start(section) {
   }
 }
 
+// Full screen where the browser allows it on an element (not iPhone Safari):
+// the demo frame fills the display and demos that track their width use it.
+// The key's slot is laid out from the start, so showing it moves nothing.
+function fullScreen(section) {
+  const button = section.querySelector("[data-demo-full]");
+  if (!button || !document.fullscreenEnabled) return;
+  button.dataset.on = "";
+  button.addEventListener("click", () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else section.requestFullscreen().catch(() => {});
+  });
+  document.addEventListener("fullscreenchange", () => {
+    button.textContent = document.fullscreenElement === section ? "Exit full screen" : "Full screen";
+  });
+}
+
 for (const section of document.querySelectorAll("[data-demo]")) {
   section.querySelector("[data-demo-start]").addEventListener("click", () => start(section));
+  fullScreen(section);
 }

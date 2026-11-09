@@ -48,7 +48,7 @@
 .ga-fcount { grid-column: 3; align-self: center; text-align: right; font-family: var(--mono); font-weight: 600; font-size: clamp(1.25rem, 3vw, 2rem); font-variant-numeric: tabular-nums; color: var(--text); }
 .ga-fcount[data-stage="candidates"] { color: var(--ga-cand-ink); }
 .ga-fcount[data-stage="matched"] { color: var(--accent); }
-.ga-mapw { margin-bottom: 8px; }
+.ga-mapw { margin: 12px 0 8px; }
 .ga-map { display: block; width: 100%; touch-action: manipulation; cursor: crosshair; }
 .ga-readout { margin: 6px 0 0; min-height: 1.25rem; font-family: var(--mono); font-size: 0.75rem; color: var(--text); overflow-wrap: anywhere; }
 .ga-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 4px 0 0; font-family: var(--mono); font-size: 0.6875rem; color: var(--text-2); }
@@ -59,15 +59,14 @@
 .ga-built { margin: 0 0 20px; font-family: var(--mono); font-size: 0.6875rem; color: var(--text-3); }
 .ga-rh { border: 1px solid var(--line-strong); border-bottom: 0; }
 .ga-list { position: relative; overflow: auto; border: 1px solid var(--line-strong); background: var(--sunken); font-family: var(--mono); font-size: 0.8125rem; }
-.ga-spacer { width: 1px; }
+.ga-spacer { position: relative; min-width: 100%; }
 .ga-row { position: absolute; top: 0; left: 0; right: 0; height: 26px; display: flex; gap: 12px; align-items: center; padding: 0 12px; white-space: pre; overflow: hidden; box-sizing: border-box; }
 .ga-row[hidden] { display: none; }
 .ga-file { background: var(--surface); border-top: 1px solid var(--line); font-weight: 600; color: var(--text); }
 .ga-sel { box-shadow: inset 3px 0 var(--accent); }
-.ga-path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .ga-cnt { font-weight: 400; color: var(--text-3); }
 .ga-ln { flex: 0 0 4.5ch; text-align: right; color: var(--text-3); font-variant-numeric: tabular-nums; }
-.ga-code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--text-2); tab-size: 2; }
+.ga-code { color: var(--text-2); tab-size: 2; }
 .ga-code mark { background: var(--accent-tint); color: var(--accent); font-weight: 600; }
 .ga-list, .ga-funnel, .ga-mapw, .ga-stages { transition: opacity 120ms var(--ga-ease); }
 .ga-stale .ga-list, .ga-stale .ga-funnel, .ga-stale .ga-mapw, .ga-stale .ga-stages { opacity: 0.5; }
