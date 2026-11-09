@@ -237,14 +237,6 @@ func tabOrder(t *testing.T, ctx context.Context) {
 	// Focusing a card loops its diagram, and under load Chrome then held one
 	// Tab key event for 15-25 s (F5 in docs/tasks.md). Focus order and rings
 	// do not depend on animation time, so the walk pauses the timeline.
-	if err := chromedp.Do(ctx, setPlaybackRate(0)); err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := chromedp.Do(ctx, setPlaybackRate(1)); err != nil {
-			t.Error(err)
-		}
-	}()
 	var got []stop
 	for range n {
 		err := chromedp.Do(ctx, chromedp.Func(func(ctx context.Context, tg *chromedp.Target) error {
