@@ -175,9 +175,28 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"ratelimitd": {
-		`[...document.querySelectorAll(".rl-chart")].map(c => c.dataset.algo).join() === "gcra,token_bucket,sliding_window"`,
-		`[...document.querySelectorAll(".rl-chart")].every(c => c.querySelectorAll("rect.rl-allowed").length > 20 && c.querySelectorAll("rect.rl-denied").length > 0)`,
-		`/^923 requests through 3 algorithms/.test(document.querySelector(".rl-status").textContent)`,
+		`/^Traffic floor at [\d.]+ s of run \d+: [\d,]+ requests offered; gcra allowed [\d,]+, denied [\d,]+; token bucket allowed [\d,]+, denied [\d,]+; sliding window allowed/.test(document.querySelector(".rl-canvas").getAttribute("aria-label")) && document.querySelector(".rl-cells [data-k=emit] .rl-v").textContent === "100 ms"`,
+		`(() => { const c = document.querySelector(".rl-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
+		`(async () => {
+			const click = (t) => [...document.querySelectorAll(".rl-acts button")].find((b) => b.textContent === t).click();
+			const v = (k) => document.querySelector(".rl-cells [data-k=" + k + "] .rl-v").textContent;
+			const steps = async (n) => { for (let i = 0; i < n; i++) { const t = v("t"); click("Step 1 s"); await until(() => v("t") !== t); } };
+			if (document.querySelector(".rl-acts button").textContent === "Pause") click("Pause");
+			click("Reset");
+			let ok = await until(() => v("t") === "0.0 s" && v("offered") === "0" && v("run").endsWith("seed 1"));
+			await steps(5);
+			ok = ok && v("offered") === "36" && v("gcra") === "36 · 100 %" && v("sliding_window") === "33 · 92 %";
+			click("Launch the attack");
+			ok = ok && await until(() => document.querySelector(".rl-status").textContent.match(/^Re-ran run \d+ as 15.000 s of attack traffic, so it hits at 5.0 s/));
+			await steps(3);
+			return ok && await until(() => v("offered") === "349" && v("gcra") === "75 · 21 %" && v("token_bucket") === "75 · 21 %" && v("sliding_window") === "60 · 17 %" &&
+				document.querySelector(".rl-you-tick").textContent === " Yours so far: gcra 274 denied · token bucket 274 denied · sliding window 286 denied.");
+		})()`,
+		`(async () => {
+			const r = document.querySelector("input[name=rate]");
+			r.value = "4"; r.dispatchEvent(new Event("input"));
+			return await until(() => /^Re-ran run \d+: attack traffic .*limit 50 \/s, burst 10/.test(document.querySelector(".rl-status").textContent) && document.querySelector(".rl-cells [data-k=emit] .rl-v").textContent === "20 ms");
+		})()`,
 	},
 	// The opening basket (a shaker and two supplement bottles) must go in a box;
 	// removing the shaker frees the bottles for a mailer.
