@@ -290,9 +290,14 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"mcpbridge": {
-		`until(() => [...document.querySelectorAll(".mb-c-r .mb-k")].some((k) => k.textContent === '"io.modelcontextprotocol/protocolVersion"') &&
+		// 2×, as the visitor can pick: at 1× a loaded CI runner can take over 20 s to the fourth message.
+		`(async () => {
+			const speed = document.querySelector("select[name=speed]");
+			if (speed.value !== "2") { speed.value = "2"; speed.dispatchEvent(new Event("change")); }
+			return until(() => [...document.querySelectorAll(".mb-c-r .mb-k")].some((k) => k.textContent === '"io.modelcontextprotocol/protocolVersion"') &&
 			Number(document.querySelector(".mb-cells [data-k=messages] .mb-v").textContent) >= 4 && Number(document.querySelector(".mb-cells [data-k=made] .mb-v").textContent) >= 1 &&
-			document.querySelector(".mb-status").textContent.startsWith("session 1 · legacy client, modern server · engine xlate.New"))`,
+			document.querySelector(".mb-status").textContent.startsWith("session 1 · legacy client, modern server · engine xlate.New"));
+		})()`,
 		`until(() => ((() => { const c = document.querySelector(".mb-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,
 		`(async () => {
 			const q = (s) => document.querySelector(s);
@@ -365,7 +370,11 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"btrv": {
-		`until(() => [...document.querySelectorAll(".bt-key:not([hidden])")].map((k) => k.dataset.kind + ":" + k.querySelector(".bt-count").textContent).filter((t) => /^(fcr|pat|data|free|unreferenced):/.test(t)).join() === "fcr:2,pat:2,data:250,free:5,unreferenced:4")`,
+		// 10×, as the visitor can pick: at 1× a loaded CI runner can take over 20 s to map every page.
+		`(async () => {
+			document.querySelector("select[name=speed]").value = "10";
+			return until(() => [...document.querySelectorAll(".bt-key:not([hidden])")].map((k) => k.dataset.kind + ":" + k.querySelector(".bt-count").textContent).filter((t) => /^(fcr|pat|data|free|unreferenced):/.test(t)).join() === "fcr:2,pat:2,data:250,free:5,unreferenced:4");
+		})()`,
 		`(async () => {
 			await until(() => document.querySelector(".bt-cells [data-k=records] .bt-v").textContent.endsWith("/ 2,919"));
 			const c = document.querySelector(".bt-map"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set();
@@ -468,7 +477,8 @@ var demoChecks = map[string][]string{
 			if (play.textContent === "Pause") click("Pause");
 			click("Reset");
 			await until(() => v("requests") === "1");
-			for (let i = 0; i < 30; i++) { click("Step 10 s"); await new Promise((r) => setTimeout(r, 30)); }
+			// Reset lands asynchronously and may wipe early steps, so step until the clock says 300 s.
+			for (let n = 0; v("t") !== "300 s" && n < 90; n++) { const was = v("t"); click("Step 10 s"); await until(() => v("t") !== was); }
 			let ok = await until(() => v("t") === "300 s" && v("requests") === "30" && v("ratio") === "93.3 %" && v("origin") === "6" && v("saved") === "24" && v("r304") === "5" && v("p50") === "8 s" && v("p95") === "40 s" &&
 				col(".ec-table tbody tr td:nth-child(2) .ec-badge") === "HIT,STALE,HIT,HIT,HIT,HIT");
 			const kind = document.querySelector("select[name=yours]");
