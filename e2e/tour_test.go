@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -20,11 +21,12 @@ func TestTours(t *testing.T) {
 		t.Fatal(err)
 	}
 	shard, shards := split(t)
-	for i, f := range tours {
-		if i%shards != shard {
+	at := tourShard(tours, shards)
+	for _, f := range tours {
+		slug := filepath.Base(filepath.Dir(f))
+		if at[slug] != shard {
 			continue
 		}
-		slug := filepath.Base(filepath.Dir(f))
 		t.Run(slug, func(t *testing.T) {
 			t.Parallel()
 			ctx, cancel := newTab(t, 120*time.Second)
@@ -72,4 +74,40 @@ func TestTours(t *testing.T) {
 			}
 		})
 	}
+}
+
+// tourCost is each tour's seconds in one local run of all of them (2026-11-09);
+// a new tour counts 10 until measured.
+var tourCost = map[string]int{"mcpbridge": 30, "edgecache": 19, "strata": 18, "raytracer": 18, "codegraph": 15, "btrv": 14, "netcode": 13, "kvlite": 13, "grepall": 11, "keel": 11, "lobby": 10, "recall": 9, "jobrun": 8, "ratelimitd": 7, "livejob": 7, "anchorflow": 7, "stash": 6, "adfactory": 6}
+
+// tourShard puts each tour on a runner, longest first onto the least loaded,
+// so the slow ones never share one.
+func tourShard(tours []string, shards int) map[string]int {
+	type tc struct {
+		slug string
+		cost int
+	}
+	var all []tc
+	for _, f := range tours {
+		slug := filepath.Base(filepath.Dir(f))
+		c, ok := tourCost[slug]
+		if !ok {
+			c = 10
+		}
+		all = append(all, tc{slug, c})
+	}
+	sort.SliceStable(all, func(i, j int) bool { return all[i].cost > all[j].cost })
+	load := make([]int, shards)
+	at := map[string]int{}
+	for _, x := range all {
+		min := 0
+		for i := range load {
+			if load[i] < load[min] {
+				min = i
+			}
+		}
+		at[x.slug] = min
+		load[min] += x.cost
+	}
+	return at
 }

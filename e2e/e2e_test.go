@@ -676,6 +676,11 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 		if err != nil {
 			t.Fatal(err)
 		}
+		// Demos pause off screen, and on a phone the swap from recording to
+		// live build can leave the demo just below the fold.
+		if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`(document.querySelector("[data-demo-mount]").scrollIntoView({ block: "start" }), true)`)); err != nil {
+			t.Fatal(err)
+		}
 		checks := demoChecks[slug]
 		if scheme == "dark" || layoutOnly {
 			checks = checks[:min(1, len(checks))]
