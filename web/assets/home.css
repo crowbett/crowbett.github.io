@@ -185,8 +185,6 @@ html:active-view-transition-type(filter)::view-transition-old(root), html:active
   [data-feel].it-screen .glow { translate: calc(var(--dx) * 2.4rem) calc(var(--dy) * 1.6rem); transition: translate 120ms linear; }
   [data-feel]:is(.it-screen, .card) :is(.it-glass, .card-shot) :is(img, img[data-in], video) { translate: calc(var(--dx) * -2.8%) calc(var(--dy) * -2.8%); transition: translate 120ms linear, scale var(--d-spring) var(--spring-soft), opacity var(--d-base) var(--ease-in); }
   [data-feel].it-screen .it-go { translate: calc(var(--dx) * 1.1rem) calc(var(--dy) * 0.8rem); transition: opacity var(--d-base) var(--ease-in), translate 120ms linear; }
-}
-@media (hover: hover) and (pointer: fine) {
   .card { transition: opacity var(--d-base) var(--ease-in); }
-  .all-grid:has(.card:hover) .card:not(:hover) { opacity: 0.5; }
+  .all-grid:has(.card[data-feel]) .card:not([data-feel]) { opacity: 0.5; }
 }
