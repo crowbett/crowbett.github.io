@@ -1,63 +1,60 @@
 {{define "home"}}{{template "head" .}}
-<section class="hero">
-  <div class="hero-text">
-    <h1><b>{{.Owner.Name}}</b> builds databases, caches, queues, code search and game netcode in Go, Rust and C++, and tests them with simulation, fault injection and benchmarks.{{if .LiveCount}} <span>{{.LiveCount}} of the {{len .Projects}} below run in this tab: the real code, compiled to WebAssembly.</span>{{end}}</h1>
-  </div>
-    {{with .Hero}}<figure class="replay">
+<section class="stage" aria-labelledby="stage-h">
+  <div class="stage-in">
+    <div class="stage-text">
+      <h1 id="stage-h"><b>{{.Owner.Name}}</b> <span>builds databases, caches, queues, code search and game netcode in Go, Rust and C++, and tests them with simulation, fault injection and benchmarks.</span></h1>
+      <p class="stage-hook">{{if .LiveCount}}{{.LiveCount}} of the {{len .Projects}} projects below run in this tab: the real code, compiled to WebAssembly.{{end}}{{with .Stage}} The picture is one of them, a C++ path tracer ({{demoKB .Slug}} KB).{{end}}</p>
+      <p class="stage-go"><a class="key" href="#work">See the work</a>{{with .Stage}}<a class="stage-link" href="/projects/{{.Slug}}/#demo">Open the full {{.Slug}} demo</a>{{end}}</p>
+    </div>
+    {{with .Stage}}<figure class="stage-fig" data-stage="{{.Slug}}" data-scene="{{.Scene}}" data-width="{{.Width}}" data-seed="{{.Seed}}" data-max="{{.MaxSpp}}" data-poster-spp="{{.PosterSpp}}">
+      <canvas class="glow" width="12" height="12" aria-hidden="true"></canvas>
+      <div class="stage-view">
+        <img src="/reel/stage.webp" width="{{.Width}}" height="{{.Width}}" alt="The {{.SceneLabel}} traced by the path tracer at {{.PosterSpp}} samples per pixel: grainy with {{.LeftLabel}} sampling on the left, cleaner with {{.RightLabel}} on the right." fetchpriority="high">
+        <canvas class="stage-r" width="{{.Width}}" height="{{.Width}}" aria-hidden="true"></canvas>
+        <canvas class="stage-l" width="{{.Width}}" height="{{.Width}}" aria-hidden="true"></canvas>
+        <i class="stage-scan" aria-hidden="true"></i>
+        <div class="stage-split" aria-hidden="true"><b></b></div>
+        <p class="stage-hud"><span class="led">{{.Slug}}</span><span data-state>recorded, {{.PosterSpp}} spp</span></p>
+        <p class="stage-tag" aria-hidden="true"><span>{{.LeftLabel}}</span><span>{{.RightLabel}}</span></p>
+      </div>
       <figcaption>
-        <span class="replay-t">{{.Slug}}'s {{.Algo}} limiter at {{.Rate}} requests/s{{if eq .Pattern "attack"}} under a 10× attack{{end}}</span>
-        <span class="replay-v">Recorded from the real WebAssembly build. Every deploy re-runs it and fails if one bar differs.</span>
+        <dl class="stage-dials">
+          <div><dt>samples/pixel</dt><dd data-k="spp">{{.PosterSpp}}</dd></div>
+          <div><dt>samples/s here</dt><dd data-k="rate" class="nil">--</dd></div>
+          <div><dt>noise, L ÷ R</dt><dd data-k="ratio" class="nil">--</dd></div>
+        </dl>
+        <p class="stage-ctl"><button type="button" class="key" data-run>Render it here</button><span role="status"></span></p>
       </figcaption>
-      <div class="screen">
-        {{template "replay-chart" .Wide}}{{template "replay-chart" .Tall}}
-        <p class="replay-axis"><span>0 s</span><span>{{.Seconds}} s</span></p>
-      </div>
-      <dl class="readouts">
-        <div><dt>allowed</dt><dd class="k-a">{{num .Allowed}}</dd></div>
-        <div><dt>denied</dt><dd class="k-d">{{num .Denied}}</dd></div>
-        <div class="k-run"><dt>your browser</dt><dd>-- ms</dd></div>
-      </dl>
-      <p class="replay-run" data-replay="{{.Slug}}" data-call="{{.Call}}" data-params="{{.Params}}" data-result="{{.Result}}" data-bytes="{{demoBytes .Slug}}"><button type="button">Run it in your browser</button> <span role="status">~{{demoKB .Slug}} KB download, checked against every bar.</span> <span class="replay-stamp" hidden>{{len .Wide.Bars}}/{{len .Wide.Bars}} buckets identical in your browser</span> <a href="/projects/{{.Slug}}/#demo" hidden>Try your own limit and attack</a></p>
     </figure>
-    <script type="module" src="/assets/hero.js"></script>{{end}}
-</section>
-<section id="work" class="reel" aria-labelledby="work-h">
-  <header class="reel-head"><h2 id="work-h">Work</h2><p class="count">{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} with a live demo{{end}}</p></header>
-  <nav class="rail" aria-label="Projects"><div>{{range .Groups}}
-    <p class="rail-g">{{.Name}}</p>
-    <ol>{{range .Projects}}<li><a href="#p-{{.Slug}}"><span>{{rank .Slug}}</span>{{.Title}}</a></li>{{end}}</ol>{{end}}
-  </div></nav>
-  <p class="reel-now" aria-hidden="true"><b></b><span></span><i></i></p>
-  <div class="shots">{{range .Groups}}
-  <section class="chapter" id="g-{{.Key}}" aria-labelledby="g-{{.Key}}-h">
-    <h3 class="chapter-h" id="g-{{.Key}}-h">{{.Name}} <span>{{len .Projects}}</span></h3>
-    {{range .Projects}}<article class="shot" id="p-{{.Slug}}" aria-labelledby="p-{{.Slug}}-h">
-      <a class="shot-media" href="/projects/{{.Slug}}/{{if .Live}}#demo{{end}}" tabindex="-1" aria-hidden="true">{{if .Live}}<img src="/reel/{{.Slug}}.webp" alt="" width="16" height="10" loading="lazy" decoding="async" data-clip="/reel/{{.Slug}}.mp4">{{else}}{{template "dmask" .Slug}}{{end}}</a>
-      <div class="shot-text">
-        <p class="shot-n">{{rank .Slug}} <span>/ {{len $.Projects}}</span></p>
-        <h4 class="shot-name" id="p-{{.Slug}}-h"><a href="/projects/{{.Slug}}/"><span>{{.Title}}</span></a></h4>
-        <p class="shot-lang">{{.Lang}}</p>
-        <p class="shot-tag">{{.Tagline}}</p>
-        {{if .Metric}}<p class="metric">{{bind .Metric}}</p>{{end}}
-        <p class="shot-act">{{if .Live}}<a class="key" href="/projects/{{.Slug}}/#demo">Run it live</a><span class="led">Live demo</span>{{else}}<a class="key" href="/projects/{{.Slug}}/">Details</a><span class="led off">Source on {{if .Private}}request{{else}}GitHub{{end}}</span>{{end}}</p>
-      </div>
-    </article>
-    {{end}}</section>{{end}}
+    <script type="module" src="/assets/stage.js"></script>{{end}}
   </div>
 </section>
-<script type="module" src="/assets/reel.js"></script>
+<section id="work" class="work" aria-labelledby="work-h">
+  <div class="work-in">
+    <header class="work-head"><h2 id="work-h">Work</h2><p class="count">{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} with a live demo{{end}}</p></header>
+    <div class="work-grid">
+      <div class="mon" aria-hidden="true">
+        <div class="mon-box">
+          <canvas class="glow" width="16" height="10"></canvas>
+          <div class="mon-screen"><span class="mon-dm">{{template "dmask" "quorum"}}</span></div>
+          <p class="mon-hud"><b></b><span></span></p>
+        </div>
+      </div>
+      <div class="idx">{{range .Groups}}
+        <section class="idx-g" aria-labelledby="g-{{.Key}}-h">
+          <h3 id="g-{{.Key}}-h">{{.Name}} <span>{{len .Projects}}</span></h3>
+          <ol>{{range .Projects}}
+            <li class="it" id="p-{{.Slug}}"{{if .Live}} data-clip="/reel/{{.Slug}}.mp4" data-poster="/reel/{{.Slug}}.webp"{{end}}>
+              <h4><a href="/projects/{{.Slug}}/"><span class="it-n">{{rank .Slug}}</span> <span class="it-name">{{.Title}}</span></a></h4>
+              <p class="it-tag">{{.Tagline}}</p>
+              <p class="it-meta"><span>{{.Lang}}</span>{{if .Metric}}<span class="metric">{{bind .Metric}}</span>{{end}}</p>
+              <p class="it-act">{{if .Live}}<a class="led" href="/projects/{{.Slug}}/#demo">Run it live</a>{{else}}<span class="led off">Source on {{if .Private}}request{{else}}GitHub{{end}}</span>{{end}}</p>
+            </li>{{end}}
+          </ol>
+        </section>{{end}}
+      </div>
+    </div>
+  </div>
+</section>
+<script type="module" src="/assets/work.js"></script>
 {{template "foot" .}}{{end}}
-{{define "replay-chart"}}<svg class="replay-chart {{.Class}}" viewBox="0 0 {{.W}} {{.H}}" role="img" aria-label="{{.Label}}">
-{{if .AttackW}}<rect class="rz" x="{{.AttackX}}" y="0" width="{{.AttackW}}" height="{{.H}}"/>{{end}}
-{{range .Bars}}<rect class="ra" x="{{.X}}" y="{{.AY}}" width="{{$.BarW}}" height="{{.AH}}"/>{{if .DH}}<rect class="rd" x="{{.X}}" y="{{.DY}}" width="{{$.BarW}}" height="{{.DH}}"/>{{end}}{{end}}
-<rect class="rw" x="0" y="0" width="{{.W}}" height="{{.H}}"/>
-<line class="rb" x1="0" x2="{{.W}}" y1="{{.DenyY}}" y2="{{.DenyY}}"/>
-<line class="rp" x1="0" x2="{{.W}}" y1="{{.PeakY}}" y2="{{.PeakY}}"/>
-<line class="rl" x1="0" x2="{{.W}}" y1="{{.LimitY}}" y2="{{.LimitY}}"/>
-<text class="rt rt-n" x="0" y="{{.DenyY}}" dy="-6">denied</text>
-<text class="rt rt-n" x="0" y="{{.LaneY}}">allowed</text>
-<text class="rt rt-n rt-e" x="{{.W}}" y="{{.PeakY}}" dy="-6">{{.Peak}}/s peak</text>
-{{if and .AttackW .Attack}}<text class="rt rt-a f{{.AttackStep}}" x="{{.AttackMid}}" y="{{.PeakY}}" dy="-6">10× attack</text>{{end}}
-{{if .Burst1X}}<text class="rt{{if not .BurstRight}} rt-e{{end}} f{{.BurstStep}}" x="{{.Burst1X}}" y="{{.Burst1Y}}">burst</text>{{end}}
-<text class="rt rt-e" x="{{.W}}" y="{{.LimitY}}" dy="-6">{{.Rate}}/s limit</text>
-</svg>{{end}}

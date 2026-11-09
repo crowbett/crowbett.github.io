@@ -296,8 +296,11 @@ export async function mount(root, demo) {
   // Grows the textarea to its content (the box around it scrolls), keeping the box's scroll.
   const fit = () => {
     const top = edBox.scrollTop;
+    // Holding the box open while the textarea is measured keeps the page from reflowing.
+    ed.style.minHeight = `${ed.offsetHeight}px`;
     ta.style.height = "auto";
     ta.style.height = `${ta.scrollHeight}px`;
+    ed.style.minHeight = "";
     edBox.scrollTop = top;
   };
   function paintMirror() {
@@ -388,6 +391,7 @@ export async function mount(root, demo) {
     }
     if (lines.length < 2) return;
     lines.splice(i, 1);
+    if (!lines[i]?.trim() && (i === 0 || !lines[i - 1].trim())) lines.splice(i, 1);
     setText(lines.join("\n"), true);
   });
   preset.addEventListener("change", () => {

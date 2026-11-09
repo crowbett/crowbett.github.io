@@ -55,7 +55,7 @@ type pageData struct {
 	Prev      *Project
 	Next      *Project
 	Canonical string
-	Hero      *heroTrace
+	Stage     *Stage
 }
 
 type groupView struct {
@@ -90,12 +90,9 @@ func prepare(cfg Config) (*prepared, error) {
 			return nil, fmt.Errorf("%s: demo is live but web/demos/%s/ui.js is missing", p.Slug, p.Slug)
 		}
 	}
-	hero, err := loadHeroTrace(cfg.Src)
-	if err != nil {
-		return nil, err
-	}
-	if hero != nil && !slices.ContainsFunc(projects, func(p Project) bool { return p.Slug == hero.Slug && p.Live() }) {
-		return nil, fmt.Errorf("data/hero-trace.json replays %s, which has no live demo", hero.Slug)
+	var stage *Stage
+	if slices.ContainsFunc(projects, func(p Project) bool { return p.Slug == HomeStage.Slug && p.Live() }) {
+		stage = &HomeStage
 	}
 	var listed []Project
 	tmpl, err := template.New("").Funcs(template.FuncMap{
@@ -116,7 +113,7 @@ func prepare(cfg Config) (*prepared, error) {
 	}
 	// Home lists projects by group, live demos first within each, then by
 	// order; every page that numbers or walks the projects uses this order.
-	base := pageData{Owner: cfg.Owner, Year: cfg.Now.Year(), Hero: hero}
+	base := pageData{Owner: cfg.Owner, Year: cfg.Now.Year(), Stage: stage}
 	for _, g := range Groups {
 		gv := groupView{Group: g}
 		for _, live := range []bool{true, false} {
@@ -152,6 +149,11 @@ func Build(cfg Config) error {
 		}
 		if err := checkMasks(cfg, s); err != nil {
 			return err
+		}
+		if s.base.Stage != nil {
+			if err := checkStage(cfg); err != nil {
+				return err
+			}
 		}
 		if err := checkReel(cfg); err != nil {
 			return err

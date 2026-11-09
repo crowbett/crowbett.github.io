@@ -79,6 +79,7 @@ export async function mount(root, demo) {
     o.value = v;
     pattern.append(o);
   }
+  pattern.value = "burst";
   const rate = numberInput("rate", 50, 1, 1000);
   const burst = numberInput("burst", 20, 1, 2000);
   const seed = numberInput("seed", 1, 0, 999999);

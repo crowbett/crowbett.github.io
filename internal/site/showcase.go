@@ -17,6 +17,7 @@ var Showcases = map[string]Showcase{
 			const idle = async () => { await w(100); for (let i = 0; i < 200 && dmg.disabled; i++) await w(50); };
 			await w(600);
 			for (let i = 0; i < 7; i++) { key("ArrowDown"); await w(160); }
+			for (let i = 0; i < 40 && dmg.hidden; i++) { key("ArrowRight"); await w(120); }
 			await w(500);
 			dmg.click();
 			await idle();
@@ -24,7 +25,7 @@ var Showcases = map[string]Showcase{
 			dmg.click();
 			await idle();
 		})()`,
-		Focus: ".bt-mapsec", Pad: 12, Seconds: 7,
+		Focus: ".bt-map", Pad: 8, Seconds: 7,
 	},
 	// Walk the call graph from run to a callee, its callee, and back to run.
 	"codegraph": {
@@ -36,21 +37,20 @@ var Showcases = map[string]Showcase{
 			await w(1600); pick("src/log.rs:2");
 			await w(1600); pick("src/main.rs:32");
 		})()`,
-		Focus: ".cg-summary", Pad: 12, Seconds: 6.5,
+		Focus: ".cg-summary", Pad: 8, Seconds: 6.5,
 	},
-	// Requests are added one per line; each lands on the timeline with the
-	// cache's verdict: revalidated, bypassed by no-store, then a hit.
+	// Each preset plays its requests through the cache: a request no-store
+	// bypasses it, stale-while-revalidate serves stale, Vary keeps one entry per
+	// language, and max-age with an ETag revalidates.
 	"edgecache": {
 		Play: `(async () => {
-			const w = (ms) => new Promise((r) => setTimeout(r, ms));
-			const t = document.querySelector("textarea[name=requests]");
-			const type = (v) => { t.value = v; t.setSelectionRange(v.length, v.length); t.scrollTop = t.scrollHeight; t.dispatchEvent(new Event("input")); };
-			t.focus();
-			await w(700); type("0\n30\n61\n90\n125");
-			await w(1300); type("0\n30\n61\n90\n125\n130 Cache-Control: no-store");
-			await w(1300); type("0\n30\n61\n90\n125\n130 Cache-Control: no-store\n140");
+			const s = document.querySelector("select[name=preset]");
+			for (const v of ["no-store", "swr", "vary", "max-age"]) {
+				await new Promise((r) => setTimeout(r, 1600));
+				s.value = v; s.dispatchEvent(new Event("change"));
+			}
 		})()`,
-		Focus: ".ec-controls > label:last-child", Pad: 12, Seconds: 6,
+		Focus: ".ec-legend", Pad: 8, Seconds: 8,
 	},
 	// Each query narrows 283 files to candidates by trigram, then to matches.
 	"grepall": {
@@ -62,7 +62,7 @@ var Showcases = map[string]Showcase{
 			await w(1600); preset("TODO|FIXME");
 			await w(1600); preset("func\\s+New\\w+\\(");
 		})()`,
-		Focus: ".ga-funnel", Pad: 16, Seconds: 8,
+		Focus: ".ga-status", Pad: 8, Seconds: 8,
 	},
 	// Fresh seeded draws, jitter off (every retry waits the full cap), more attempts.
 	"jobrun": {
@@ -79,7 +79,7 @@ var Showcases = map[string]Showcase{
 			await w(1000); set("11");
 			await w(1500); set("8");
 		})()`,
-		Focus: ".jr-legend", Pad: 12, Seconds: 8,
+		Focus: ".jr-legend", Pad: 8, Seconds: 8,
 	},
 	// Overwriting 20 keys turns half the log dead; compaction reclaims it into a
 	// sealed segment, then a put and its tombstone land in the fresh one.
@@ -97,7 +97,7 @@ var Showcases = map[string]Showcase{
 			await w(1700); click("Put");
 			await w(1200); click("Delete");
 		})()`,
-		Focus: ".kv-stats", Pad: 12, Seconds: 7,
+		Focus: ".kv-stats", Pad: 8, Seconds: 7,
 	},
 	// Play sends each client frame through the bridge; packets cross the lanes
 	// and the bridge's translations light up as the conversation builds.
@@ -111,7 +111,7 @@ var Showcases = map[string]Showcase{
 			await new Promise((r) => setTimeout(r, 600));
 			[...document.querySelectorAll(".mb-bar button")].find((b) => b.textContent === "Play").click();
 		})()`,
-		Focus: ".mb-head", Pad: 12, Seconds: 7.5,
+		Focus: ".mb-head", Pad: 8, Seconds: 7.5,
 	},
 	// keel: a new seed every 1.2 s; the digest, fault timeline and totals change.
 	"keel": {
@@ -127,14 +127,13 @@ var Showcases = map[string]Showcase{
 				seed.value = String(s); run.click();
 			}
 		})()`,
-		Focus: ".kl-replay", Pad: 12, Seconds: 7.2,
+		Focus: ".kl-replay", Pad: 8, Seconds: 7.2,
 	},
 	// lobby: you queue twice; players fill rooms on their own meanwhile.
 	"lobby": {
 		Setup: `(async () => {
 			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 			const set = (sel, v, ev) => { const e = document.querySelector(sel); e.value = v; e.dispatchEvent(new Event(ev)); };
-			set("input[name=rate]", "1", "input");
 			set("select[name=speed]", "5", "change");
 			await wait(1500);
 		})()`,
@@ -147,7 +146,7 @@ var Showcases = map[string]Showcase{
 			await wait(4000);
 			skill.value = "1900"; join.click();
 		})()`,
-		Focus: ".lb-acts", Pad: 8, Seconds: 8,
+		Focus: ".lb-canvas", Pad: 4, Seconds: 8,
 	},
 	// netcode: you steer player 0 in a loop and dash while bots move.
 	"netcode": {
@@ -163,18 +162,19 @@ var Showcases = map[string]Showcase{
 			await run("KeyA", 1600);
 			await hold("KeyW", 600);
 		})()`,
-		Focus: ".nc-canvas", Pad: 12, Seconds: 7,
+		Focus: ".nc-canvas", Pad: -140, Seconds: 7,
 	},
-	// ratelimitd: the same traffic seed under each pattern, 2 s apiece.
+	// ratelimitd: the same traffic seed under each pattern, 2 s apiece, back to
+	// bursts, where the sliding window lets more through than the token bucket.
 	"ratelimitd": {
 		Play: `(async () => {
 			const s = document.querySelector("select[name=pattern]");
-			for (const v of ["burst", "ramp", "attack"]) {
+			for (const v of ["ramp", "attack", "burst"]) {
 				await new Promise((r) => setTimeout(r, 2000));
 				s.value = v; s.dispatchEvent(new Event("change"));
 			}
 		})()`,
-		Focus: ".rl-charts", Pad: 12, Seconds: 8,
+		Focus: ".rl-chart[data-algo=token_bucket]", Pad: 8, Seconds: 8,
 	},
 	// raytracer: the marble scene renders from its first pass, then the split sweeps.
 	"raytracer": {
@@ -204,13 +204,13 @@ var Showcases = map[string]Showcase{
 			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 			const btn = (t) => [...document.querySelectorAll(".sh-panel button")].find((b) => b.textContent === t);
 			for (const edit of ["Insert a paragraph", "Delete a line", "Insert a paragraph"]) {
-				await wait(800);
+				await wait(700);
 				btn(edit).click();
-				await wait(1200);
+				await wait(1000);
 				btn("Back up").click();
 			}
 		})()`,
-		Focus: ".sh-edfield", Pad: 12, Seconds: 9,
+		Focus: ".sh-live", Pad: 8, Seconds: 8,
 	},
 	// strata: the layer slider climbs from layer 2 to the top: solid floor,
 	// sparse infill (scrubbed quickly, it repeats), solid roof, top surface.
