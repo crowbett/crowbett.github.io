@@ -20,7 +20,7 @@ const frame = (hit) => {
     s.style.setProperty("--my", `${y - r.top}px`);
     s.dataset.feel = "";
   }
-  const h = t?.closest(".result, .demo, .project-info, .card-shot");
+  const h = t?.closest(".result, .demo, .project-info, .code, .card-shot");
   if (h !== rimmed) { if (rimmed) delete rimmed.dataset.rim; rimmed = h; }
   if (h) {
     const r = h.getBoundingClientRect();

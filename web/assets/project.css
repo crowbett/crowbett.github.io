@@ -60,7 +60,7 @@
 .ph-dm { position: absolute; inset: 0; display: grid; place-items: center; }
 .project-head .led.off { color: var(--screen-dim); }
 .sheet-in { display: grid; gap: var(--sp-6); padding-bottom: var(--sp-6); }
-#demo { scroll-margin-top: calc(var(--top-h) + var(--sp-4)); }
+#demo, #code { scroll-margin-top: calc(var(--top-h) + var(--sp-4)); }
 .demo { box-shadow: var(--lift); }
 .project-head .demo { color: var(--text); }
 .demo > .ph-screen { padding: 0; border-radius: 0; box-shadow: none; background: var(--screen); }
@@ -169,3 +169,45 @@
 
 /* Touch */
 @media (pointer: coarse) { .demo-mount input, .demo-mount select, .demo-mount textarea { font-size: max(16px, 1rem); } }
+
+/* The code: excerpts of the real source on a dark screen. A demo call that runs one sweeps a beam down it and counts on its tab */
+.code { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; border: 1px solid var(--line-strong); border-radius: var(--r-2); overflow: clip; background: radial-gradient(120% 90% at 85% 0%, color-mix(in oklab, var(--accent) 10%, transparent), transparent 60%), var(--screen); color: var(--screen-ink); box-shadow: var(--lift); }
+.code-head { display: grid; gap: var(--sp-2) var(--sp-5); align-items: baseline; padding: var(--sp-5) var(--sp-4) var(--sp-4); }
+.code-head > *, .code-ex { margin: 0; }
+.code h2 { font-size: clamp(1.5rem, 1.2rem + 1.3vw, 2.25rem); }
+.code-src, .cx-why { max-width: var(--measure); color: var(--screen-dim); font-size: var(--t-small); }
+.sha, .cx-t { font-family: var(--mono); color: var(--screen-ink); }
+.code-trace, .code-ex figcaption, .code-tabs [role=tab], .demo-code { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-3); align-items: baseline; font: 400 var(--t-label)/1.5 var(--mono); color: var(--screen-dim); }
+.code .led { color: var(--screen-ok); }
+.code .led.off { color: var(--screen-dim); }
+.code-tabs { display: flex; gap: var(--sp-1); padding: 0 var(--sp-4); overflow-x: auto; border-bottom: 1px solid oklch(1 0 0 / .1); }
+.code-tabs [role=tab] { position: relative; flex-wrap: nowrap; align-items: center; min-height: 44px; padding: var(--sp-2) var(--sp-3); border: 0; border-radius: 6px 6px 0 0; background: none; white-space: nowrap; transition: color var(--d-base), background-color var(--d-base); }
+.code-tabs [role=tab]:hover, .code-tabs [aria-selected=true] { color: var(--screen-ink); background: oklch(1 0 0 / .06); }
+.code-tabs [role=tab]::after { content: ""; position: absolute; inset: auto var(--sp-3) -1px; height: 2px; background: linear-gradient(90deg, var(--accent), var(--screen-signal)); scale: .001 1; opacity: 0; transition: scale var(--d-spring) var(--ease-in), opacity var(--d-base); }
+.code-tabs [aria-selected=true]::after { scale: 1; opacity: 1; }
+.ran:empty, .demo-code[hidden] { display: none; }
+.ran { padding: 0 var(--sp-2); border-radius: 999px; background: color-mix(in oklab, var(--screen-ok) 18%, transparent); color: var(--screen-ok); font-variant-numeric: tabular-nums; }
+.code-ex figcaption { padding: var(--sp-3) var(--sp-4); }
+.cx-t { font-weight: 700; }
+.cx-path { overflow-wrap: anywhere; }
+.cx-calls code { background: none; color: var(--screen-ok); }
+.cx-why { flex-basis: 100%; font-family: var(--sans); }
+.cx-scroll { margin: 0; padding: var(--sp-2) 0 var(--sp-4); font: 400 clamp(.72rem, .68rem + .2vw, .8125rem)/1.7 var(--mono); tab-size: 4; background: linear-gradient(transparent, color-mix(in oklab, var(--accent) 28%, transparent) 50%, transparent) no-repeat 0 -6rem / 100% 6rem; }
+.cx-scroll:focus-visible { outline-offset: -2px; }
+.cx-scroll code { display: block; min-width: max-content; font: inherit; }
+.l { display: block; padding-inline: var(--sp-2) var(--sp-4); }
+.l:hover { background: oklch(1 0 0 / .05); }
+.ln { display: inline-block; width: 4.5ch; margin-right: var(--sp-3); padding-right: var(--sp-2); text-align: right; color: oklch(1 0 0 / .3); user-select: none; }
+.tk { color: oklch(.78 .13 305); } .tt { color: oklch(.82 .1 205); } .ts { color: oklch(.81 .12 145); } .tn { color: oklch(.83 .12 70); } .tf { color: oklch(.85 .09 255); } .ta { color: oklch(.78 .12 25); } .tc { color: oklch(.63 .03 255); }
+.demo-code .led { color: inherit; }
+.demo-code { justify-content: space-between; padding: var(--sp-2) var(--sp-4); background: var(--surface); color: var(--text-2); text-decoration: none; }
+@media (min-width: 48rem) { .code-head { grid-template-columns: auto 1fr; } .code-trace { grid-column: 1 / -1; } .code-head, .code-ex figcaption, .code-tabs { padding-inline: var(--sp-5); } }
+@keyframes beam { to { background-position: 0 calc(100% + 6rem); } }
+@keyframes ping { 50% { box-shadow: inset 0 -2px var(--accent); } }
+.hot .cx-scroll { animation: beam 700ms var(--ease-in); }
+.ping { animation: ping 600ms var(--ease-in); }
+@media (prefers-reduced-motion: no-preference) {
+  .cue .l { transition: opacity 420ms var(--ease-in) calc(var(--i) * 14ms), translate 520ms var(--ease-in) calc(var(--i) * 14ms); }
+  .cue:not(.seen) .l { opacity: 0; translate: -0.75rem 0; }
+}
+@media (prefers-reduced-motion: reduce) { .hot .cx-scroll { animation-duration: 1ms; } }
