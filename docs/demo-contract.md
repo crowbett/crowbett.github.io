@@ -54,4 +54,4 @@ A C++ demo is a directory of sources (e.g. `webdemo/`) built for `wasm32-wasip1`
 5. `make gate && make e2e`, then look at `e2e/out/projects-<slug>-*.jpg`.
 
 ## Home stage (site-owned: `internal/site/stage.go`)
-The home stage runs the raytracer demo with `site.HomeStage` and shows `web/reel/stage.webp` until it renders. The build fails when the raytracer lock entry or `HomeStage` changes without a new poster: run `go run ./cmd/stage` (needs Chrome and ffmpeg) and commit `web/reel`. e2e `stageCheck` waits for live passes and measured dials.
+The home stage runs the raytracer demo with `site.HomeStage` and shows `web/reel/stage.webp` until it renders. The build fails when the raytracer lock entry or `HomeStage` changes without a new poster: run `go run ./cmd/stage` (needs Chrome and ffmpeg) and commit `web/reel`. e2e `stageCheck` waits for live passes and measured dials; `sceneCheck` switches to the glass sphere and waits for it to render. `site.StageScenes` must name scenes the raytracer demo offers, under its labels (`TestStageScenes`).
