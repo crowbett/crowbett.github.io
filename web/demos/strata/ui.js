@@ -34,6 +34,7 @@ const el = (tag, cls, text) => {
 const fmt = (n) => n.toLocaleString("en-US");
 const mm = (n) => n.toLocaleString("en-US", { maximumFractionDigits: 2 });
 const m2 = (n) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const plural = (n, one, many = `${one}s`) => `${fmt(n)} ${n === 1 ? one : many}`;
 const msText = (ms) => (ms < 10 ? ms.toFixed(1) : fmt(Math.round(ms)));
 const ease = (t) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
 
@@ -615,8 +616,8 @@ export async function mount(root, demo) {
     const [sx, sy, sz] = m.size;
     const rp = m.repair;
     const notes = [];
-    if (rp.flipped + rp.holesFilled) notes.push(`Import repair flipped ${fmt(rp.flipped)} triangles and filled ${fmt(rp.holesFilled)} holes.`);
-    if (sl && sl.openChains) notes.push(`${fmt(sl.openChains)} open contours: the mesh has holes repair could not close, and they get no toolpaths.`);
+    if (rp.flipped + rp.holesFilled) notes.push(`Import repair flipped ${plural(rp.flipped, "triangle")} and filled ${plural(rp.holesFilled, "hole")}.`);
+    if (sl && sl.openChains) notes.push(`${plural(sl.openChains, "open contour")}: the mesh has holes repair could not close, and they get no toolpaths.`);
     if (sl && !sl.layers) notes.push("The model is too thin to give a layer at this height.");
     if (was && sl) notes.push(`At ${mm(sl.h)} mm: ${fmt(sl.layers)} layers (${fmt(was.layers)} at ${mm(was.h)} mm), ` +
       `${fmt(sl.paths)} toolpaths (${fmt(was.paths)}), ${m2(sl.extrusionM)} m (${m2(was.extrusionM)} m).`);
@@ -626,8 +627,8 @@ export async function mount(root, demo) {
 
   function tellReceipt() {
     if (!sl) return;
-    const head = `${fmt(sl.layers)} layers, ${fmt(sl.paths)} toolpaths and ${m2(sl.extrusionM)} m of extrusion sliced by strata's engine in ${msText(sl.ms)} ms`;
-    receipt.textContent = fetched < sl.layers ? `${head}; fetching layers…` : `${head}; ${fmt(fetched)} layers fetched in ${msText(fetchMs)} ms, in your browser.`;
+    const head = `${plural(sl.layers, "layer")}, ${plural(sl.paths, "toolpath")} and ${m2(sl.extrusionM)} m of extrusion sliced by strata's engine in ${msText(sl.ms)} ms`;
+    receipt.textContent = fetched < sl.layers ? `${head}; fetching layers…` : `${head}. Fetching the ${plural(fetched, "layer")} to draw took ${msText(fetchMs)} ms.`;
   }
 
   // One frame: move the nozzle along the layer's paths at RATE × speed.

@@ -27,6 +27,7 @@ const el = (tag, cls, text) => {
   return n;
 };
 const fmt = (n) => n.toLocaleString("en-US");
+const plural = (n, one, many = `${one}s`) => `${fmt(n)} ${n === 1 ? one : many}`;
 const num = (n, d) => n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
 const signed = (n, d = 2) => `${n >= 0 ? "+" : "−"}${num(Math.abs(n), d)}`;
 const db = (n, d = 1) => `${n < 0 ? "−" : ""}${num(Math.abs(n), d)}`;
@@ -610,8 +611,8 @@ export async function mount(root, demo) {
     cell.linear.textContent = loud.length ? `${loud.filter((d) => d.loudness.linear).length} of ${loud.length}` : "–";
     cell.replans.textContent = fmt(replans);
     cell.ms.textContent = `${num(lastMs, 1)} ms`;
-    receipt.textContent = `planned ${ds.length} deliverables in ${num(lastMs, 1)} ms: ${plan.anchors.length} anchors from ${plan.samples} detector samples, ` +
-      `${fmt(windows)} crop windows, ${fmt(lines)} caption lines, ${loud.length} loudness ${loud.length === 1 ? "plan" : "plans"}. ${fmt(replans)} plan ${replans === 1 ? "call" : "calls"} so far, ${fmt(Math.round(totalMs))} ms in total, all in your browser.`;
+    receipt.textContent = `planned ${plural(ds.length, "deliverable")} in ${num(lastMs, 1)} ms: ${plural(plan.anchors.length, "anchor")} from ${plural(plan.samples, "detector sample")}, ` +
+      `${plural(windows, "crop window")}, ${plural(lines, "caption line")}, ${plural(loud.length, "loudness plan")}. ${plural(replans, "plan call")} so far, ${fmt(Math.round(totalMs))} ms in all.`;
     canvas.setAttribute("aria-label", `Source frame at ${num(t, 1)} s with the subject, its detector boxes and each crop window; ` +
       `timeline of hook, caption cues, shots and anchors. Arrow keys move the subject. ${n.ready} ready, ${n.advisory} advisory, ${n.refused} refused.`);
   }

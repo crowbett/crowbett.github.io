@@ -5,7 +5,7 @@ lang: Go, Swift
 tags: end-to-end encryption, terminal emulation, prompt detection, Live Activities
 repo:
 demo: live
-demo_try: Watch the agent ask on the phone's Lock Screen, then tap an answer or type a line and follow it, sealed, through the relay into the Mac's terminal.
+demo_try: Play the relay: rewrite a button, replay an answer or inject keystrokes. lj's own checks refuse each one.
 group: tools
 order: 20
 metric: Home with three live jobs went from ~130 ms to ~7 ms of main-thread time per second

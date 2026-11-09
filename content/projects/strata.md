@@ -5,7 +5,7 @@ lang: Rust, Swift
 tags: geometry, slicing, G-code, UniFFI, SwiftUI
 repo:
 demo: live
-demo_try: Watch the XY test piece build up layer by layer, then change the layer height or open your own STL, OBJ or 3MF.
+demo_try: Try 0.12 mm layers, or open an STL, OBJ or 3MF of your own. Your file is sliced on this page and never uploaded.
 group: graphics
 order: 8
 metric: 0 open edges after repairing a 3DBenchy with 5,868 facets removed and 239 flipped, volume within 0.5%

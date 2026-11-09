@@ -591,8 +591,8 @@ export async function mount(root, demo) {
     cell.fit_open.textContent = fmt(src.fit_open || 0);
     cell.fallback.textContent = fmt((src.shape_kinds || 0) + (src.shape_band || 0) + (src.shape_org || 0));
     cell.keys.textContent = fmt(last?.modelKeys || 0);
-    receipt.textContent = `${plural(calls, "call", "calls")} into AnchorFlow's code: ${plural(carts, "cart", "carts")} routed, ` +
-      `${plural(last?.shipped || 0, "order", "orders")} packed and labelled, a shape model of ${plural(last?.modelKeys || 0, "key", "keys")}, in ${fmt(Math.round(callMs))} ms, in your browser.`;
+    receipt.textContent = `${plural(carts, "cart", "carts")} routed and ${plural(last?.shipped || 0, "order", "orders")} packed and labelled by AnchorFlow's code, ` +
+      `${plural(calls, "call", "calls")} in ${fmt(Math.round(callMs))} ms; the shape model holds ${plural(last?.modelKeys || 0, "key", "keys")}.`;
     step.disabled = !!busy;
   }
 

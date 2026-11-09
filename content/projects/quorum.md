@@ -5,7 +5,7 @@ lang: Go
 tags: Raft, consensus, deterministic simulation, linearizability
 repo:
 demo: live
-demo_try: Crash the leader, or click any node, and watch the election timers run out and a new term win.
+demo_try: Press Crash leader. The heartbeats stop, the first follower to time out asks for votes, and a new term begins.
 group: storage
 order: 1
 metric: 10,000 simulated seeds in about 30 s, each one replayable bit for bit

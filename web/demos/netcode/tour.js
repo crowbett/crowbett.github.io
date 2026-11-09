@@ -20,7 +20,7 @@ export const steps = [
       await t.until(() => v(t, "tick") === "180");
       for (const k of ["rollbacks", "depth"]) soak[k] = v(t, k);
     },
-    then: (t) => `After ${v(t, "tick")} ticks your client has rolled back ${v(t, "rollbacks")} times, up to ${v(t, "depth")} deep. ${v(t, "checks")} state hashes compared, ${v(t, "desyncs")} desyncs.`,
+    then: (t) => `After ${v(t, "tick")} ticks your client has rolled back ${v(t, "rollbacks")} ${v(t, "rollbacks") === "1" ? "time" : "times"}, up to ${v(t, "depth")} deep. ${v(t, "checks")} state hashes compared, ${v(t, "desyncs")} desyncs.`,
   },
   {
     say: "Taking over player 0 from the autopilot with the → button. Your client predicts your move at once; the server and bot 1 see it later:",

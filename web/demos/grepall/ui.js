@@ -770,10 +770,10 @@ export async function mount(root, demo) {
     status.textContent = `${fmt(N)} files → ${plural(f.candidates, "candidate")} (index, ${ms(t.index)}) → ` +
       `${m.truncated ? "at least " : ""}${plural(m.files_matched, "matching file")} (verify, ${ms(t.verify)}). ` +
       (f.full_scan ? "Full scan: the index could not rule any file out." :
-        `The index ruled out ${fmt(N - f.candidates)} files without reading them` +
+        `The index ruled out ${plural(N - f.candidates, "file")} without reading them` +
         (early.length ? `; ${plural(early.length, "candidate")} lacking a list got through because the index stops intersecting at 16 or fewer candidates in a shard; ${m.truncated ? "they are left to the verifier" : `the verifier rejected ${early.length === 1 ? "it" : "them"}`}.` : "."));
-    receipt.textContent = `${fmt(N)} files indexed into ${plural(pkgs.length, "shard")} in ${ms(buildMs)}; this query planned, ` +
-      `${t.read ? `${plural(t.read, "new posting list")} read, ` : ""}${plural(f.candidates, "candidate")} verified, ${size(m.bytes_scanned)} scanned, in ${ms(t.total)}, in your browser.`;
+    receipt.textContent = `${fmt(N)} files indexed into ${plural(pkgs.length, "shard")} in ${ms(buildMs)}. This query took ${ms(t.total)}: planned, ` +
+      `${t.read ? `${plural(t.read, "new posting list")} read, ` : ""}${plural(f.candidates, "candidate")} verified, ${size(m.bytes_scanned)} scanned.`;
     canvas.setAttribute("aria-label", `Index board for ${p.q}: ` +
       (lists.length ? `posting lists ${lists.slice(0, 12).map((r) => `${r.label} ${r.count}`).join(", ")}${lists.length > 12 ? ", …" : ""}; ` : "no posting list narrows it; ") +
       `${fmt(f.candidates)} of ${fmt(N)} files are candidates, ${fmt(m.files_matched)} matched.`);
@@ -933,7 +933,7 @@ export async function mount(root, demo) {
       if (b.ready) break;
       if (!reduce.matches) await sleep(Math.max(0, SHARD_MS - (performance.now() - t0)));
     }
-    receipt.textContent = `${fmt(N)} files indexed into ${plural(pkgs.length, "shard")} (${size(srcBytes)} of source, ${size(shardBytes)} of shards) in ${ms(buildMs)} of calls, in your browser.`;
+    receipt.textContent = `${fmt(N)} files indexed into ${plural(pkgs.length, "shard")} in ${ms(buildMs)}, from ${size(srcBytes)} of source to ${size(shardBytes)} of shards.`;
     mode = "plan";
     for (const c of controls) c.disabled = false;
     if (playing) return tour(tourGen);

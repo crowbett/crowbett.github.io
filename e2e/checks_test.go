@@ -113,12 +113,12 @@ const sceneCheck = `(async () => {
 // true (or resolve true) once the demo reports ready. Every live demo adds
 // at least one check that proves it rendered real output from its binary.
 var demoChecks = map[string][]string{
-	"smoke": {`document.querySelector(".demo-out").textContent.includes("answered: hello from the page")`},
+	"smoke": {`document.querySelector(".demo-out").textContent.includes('answered "hello from the page"')`},
 	"recall": {
 		`until(() => document.querySelector(".rc-cells [data-k=docs] .rc-v").textContent === "42" && document.querySelector(".rc-cells [data-k=sources] .rc-v").textContent === "4 of 5" &&
 			document.querySelectorAll(".rc-index .rc-doc").length === 42 && document.querySelectorAll(".rc-index .rc-doc.is-red").length === 3 &&
 			document.querySelectorAll(".rc-row.is-sel").length > 0 && document.querySelectorAll(".rc-line").length > 0 &&
-			/^42 documents from 4 sources indexed in [\d.]+ ms, \d+ quer(y|ies) ranked in [\d.]+ ms, by recall's engine in your browser\.$/.test(document.querySelector(".rc-out").textContent))`,
+			/^recall indexed 42 documents from 4 sources in [\d.]+ ms and ranked \d+ quer(y|ies) in [\d.]+ ms\.$/.test(document.querySelector(".rc-out").textContent))`,
 		`(async () => {
 			const play = document.querySelector(".rc-acts button");
 			if (play.textContent === "Pause") play.click();
@@ -181,7 +181,7 @@ var demoChecks = map[string][]string{
 			document.querySelector(".cg-node[data-spec='src/store.rs:32']").dispatchEvent(new MouseEvent("click", { bubbles: true }));
 			return until(() => sum() === "store::Store::bump (src/store.rs:32): 2 callers; 0 callees, 0 resolved, 0 unresolved." &&
 				hops() === "Store::delete↑1,Store::set↑1,main↑3,run↑2" && v("callers") === "4" && v("depth") === "3" && v("callees") === "0" &&
-				/^\d+ call-tree queries walked from store::Store::bump in [\d.]+ ms; drawing the graph took 17 more in [\d.]+ ms, after indexing 4 files in [\d.]+ ms, in your browser\.$/.test(document.querySelector(".cg-out").textContent));
+				/^\d+ call-tree queries out from store::Store::bump in [\d.]+ ms\. Indexing 4 files took [\d.]+ ms, and drawing the graph 17 queries in [\d.]+ ms\.$/.test(document.querySelector(".cg-out").textContent));
 		})()`,
 		`(async () => {
 			const play = document.querySelector(".cg-acts button");
@@ -212,7 +212,7 @@ var demoChecks = map[string][]string{
 			let ok = await until(() => document.querySelector(".cg-summary").textContent.startsWith("main (src/main.rs:11)"));
 			set("ripple", "callees"); set("depth", "1");
 			ok = ok && await until(() => v("callers") === "–" && v("callees") === "6" && v("unresolved") === "5" && v("depth") === "1" && document.querySelectorAll(".cg-node.is-up").length === 0 &&
-				document.querySelector(".cg-out").textContent.startsWith("2 call-tree queries walked from main in "));
+				document.querySelector(".cg-out").textContent.startsWith("2 call-tree queries out from main in "));
 			set("ripple", "both"); set("depth", "8");
 			return ok && await until(() => v("callers") === "0" && v("callees") === "15" && v("depth") === "3");
 		})()`,
@@ -292,7 +292,7 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"adfactory": {
-		`until(() => /^planned 9 deliverables in [\d.]+ ms: 9 anchors from 60 detector samples, 427 crop windows, 65 caption lines, 7 loudness plans\. [\d,]+ plan calls? so far, [\d,]+ ms in total, all in your browser\.$/.test(document.querySelector("p.demo-out").textContent)
+		`until(() => /^planned 9 deliverables in [\d.]+ ms: 9 anchors from 60 detector samples, 427 crop windows, 65 caption lines, 7 loudness plans\. [\d,]+ plan calls? so far, [\d,]+ ms in all\.$/.test(document.querySelector("p.demo-out").textContent)
 			&& [...document.querySelectorAll(".adf-tile")].map((t) => t.dataset.key + ":" + t.dataset.state).join() === "reels:ready,tiktok:ready,shorts:advisory,feed_4x5:ready,feed_4x5_still:ready,youtube:ready,broadcast_1080i:ready,feed_1x1:ready,feed_1x1_still:ready"
 			&& document.querySelector(".adf-cells [data-k=ready] .adf-v").textContent === "8")`,
 		`until(() => ((() => { const c = document.querySelector(".adf-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,
@@ -373,7 +373,7 @@ var demoChecks = map[string][]string{
 	// package, the same basket again is answered by shape history once it has
 	// shipped 3 times, and the bin parser refuses an even bin in aisle A-01.
 	"anchorflow": {
-		`until(() => Number(document.querySelector(".af-cells [data-k=shipped] .af-v").textContent) >= 1 && /^\d+ calls into AnchorFlow's code: \d+ carts? routed, \d+ orders? packed and labelled, a shape model of \d+ keys?, in [\d,]+ ms, in your browser\.$/.test(document.querySelector(".af-out").textContent))`,
+		`until(() => Number(document.querySelector(".af-cells [data-k=shipped] .af-v").textContent) >= 1 && /^\d+ carts? routed and \d+ orders? packed and labelled by AnchorFlow's code, \d+ calls? in [\d,]+ ms; the shape model holds \d+ keys?\.$/.test(document.querySelector(".af-out").textContent))`,
 		`until(() => ((() => { const colours = (c) => { const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set; }; const l = colours(document.querySelector(".af-label")); return colours(document.querySelector(".af-map")).size > 20 && l.has(0) && l.has(0xffffff); })()))`,
 		`(async () => {
 			const status = () => document.querySelector(".af-status").textContent;
@@ -417,7 +417,7 @@ var demoChecks = map[string][]string{
 			const sp = document.querySelector("select[name=speed]");
 			sp.value = "10"; sp.dispatchEvent(new Event("change"));
 			let ok = await until(() => play.textContent === "Replay" && v("records") === "2,919 / 2,919" && feed() === "2,919,3000,Harriet" &&
-				status() === "Every record the header counts was read and decoded: 2,919 of 2,919 rows, 0 column errors." && /^401 pages mapped and 2,919 rows decoded by btrv in \d+ ms of calls, in your browser\.$/.test(document.querySelector(".demo-out").textContent));
+				status() === "Every record the header counts was read and decoded: 2,919 of 2,919 rows, 0 column errors." && /^btrv mapped 401 pages and decoded 2,919 rows in [\d,]+ ms\.$/.test(document.querySelector(".demo-out").textContent));
 			ok = ok && await until(() => [...document.querySelectorAll(".bt-insp tbody tr")].map((tr) => tr.firstChild.textContent + "=" + tr.lastChild.textContent).includes("Birth=1950-01-25"));
 			ok = ok && cor.textContent === "Corrupt page 164";
 			cor.click();
@@ -519,7 +519,7 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"strata": {
-		`until(() => (/^25 layers, 1,033 toolpaths and 10\.79 m of extrusion sliced by strata's engine in [\d.,]+ ms; 25 layers fetched in [\d.,]+ ms, in your browser\.$/.test(document.querySelector(".st-out").textContent) && document.querySelector(".st-summary").textContent === "XY test piece: 272 triangles, 20 × 20 × 5 mm." && document.querySelector(".st-canvas").getAttribute("aria-label").startsWith("XY test piece sliced into 25 layers; toolpaths drawn up to layer ")))`,
+		`until(() => (/^25 layers, 1,033 toolpaths and 10\.79 m of extrusion sliced by strata's engine in [\d.,]+ ms\. Fetching the 25 layers to draw took [\d.,]+ ms\.$/.test(document.querySelector(".st-out").textContent) && document.querySelector(".st-summary").textContent === "XY test piece: 272 triangles, 20 × 20 × 5 mm." && document.querySelector(".st-canvas").getAttribute("aria-label").startsWith("XY test piece sliced into 25 layers; toolpaths drawn up to layer ")))`,
 		`until(() => ((() => { const c = document.querySelector(".st-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,
 		`(async () => {
 			const text = (sel) => document.querySelector(sel).textContent;
@@ -550,7 +550,7 @@ var demoChecks = map[string][]string{
 			let ok = await until(() => text(".st-where") === "11 of 25 · z 2.2 mm");
 			set("select[name=layerHeight]", "0.12", "change");
 			ok = ok && await until(() => text(".st-summary") === "XY test piece: 272 triangles, 20 × 20 × 5 mm. At 0.12 mm: 41 layers (25 at 0.2 mm), 1,329 toolpaths (1,033), 15.35 m (10.79 m)." &&
-				text(".st-where") === "18 of 41 · z 2.24 mm" && /^41 layers, 1,329 toolpaths and 15\.35 m of extrusion .* 41 layers fetched in/.test(text(".st-out")));
+				text(".st-where") === "18 of 41 · z 2.24 mm" && /^41 layers, 1,329 toolpaths and 15\.35 m of extrusion .* Fetching the 41 layers to draw took /.test(text(".st-out")));
 			let stl = "solid t\n";
 			const v = [[0, 0, 0], [10, 0, 0], [0, 10, 0], [0, 0, 10]];
 			for (const f of [[0, 2, 1], [0, 1, 3], [0, 3, 2], [1, 2, 3]]) stl += "facet normal 0 0 0\nouter loop\n" + f.map((i) => "vertex " + v[i].join(" ") + "\n").join("") + "endloop\nendfacet\n";
@@ -641,7 +641,7 @@ var demoChecks = map[string][]string{
 			if (!await until(() => v("t") === "0.25 s" && v("faults") === "1 / 25" && v("part") === "{5} | {1,2,3,4}" && v("faulty") === "none")) return false;
 			click("Next fault");
 			return await until(() => v("t") === "1.86 s" && v("faulty") === "n5 crashed" && v("part") === "{5} | {1,2,3,4}" &&
-				/^\d+ runs of keel's simulator: [\d,]+ scheduler steps and [\d,]+ traced events over [\d,.]+ s of simulated time, in [\d,]+ ms of calls, in your browser\.$/.test(document.querySelector(".kl-receipt").textContent));
+				/^\d+ runs of keel's simulator covered [\d,.]+ s of simulated time in [\d,]+ ms: [\d,]+ scheduler steps, [\d,]+ traced events\.$/.test(document.querySelector(".kl-receipt").textContent));
 		})()`,
 		`(async () => {
 			const click = (t) => [...document.querySelectorAll(".kl-controls button")].find((b) => b.textContent === t).click();

@@ -5,7 +5,7 @@ lang: Go
 tags: job queue, Postgres, gRPC, cron
 repo: https://github.com/crowbett/jobrun
 demo: live
-demo_try: Press Enqueue flaky job and watch its retries wait out the backoff, then type your own cron expression.
+demo_try: Untick full jitter and press Outage: every retry waits exactly the cap. With jitter on, the same retries scatter.
 group: services
 order: 6
 metric: ~1,030 jobs/s completed at saturation with the default 16 workers

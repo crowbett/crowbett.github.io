@@ -5,7 +5,7 @@ lang: Rust
 tags: content-defined chunking, deduplication, authenticated encryption, backups
 repo:
 demo: live
-demo_try: Press Insert and back up to put your line mid-file, and watch only the chunks around it fly into the repository.
+demo_try: Insert a line mid-file and back up. Only the chunks around your line are new; the rest of the file is linked, not stored again.
 group: storage
 order: 12
 metric: 803.5 MiB backed up in 2.28 s, stored 2.33x smaller; an unchanged rerun takes 0.60 s

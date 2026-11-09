@@ -5,7 +5,7 @@ lang: Rust
 tags: static analysis, MCP, call graphs
 repo: https://github.com/crowbett/codegraph
 demo: live
-demo_try: Tap any function in the graph, or type a name like bump, to watch its callers and callees ripple out hop by hop.
+demo_try: Tap any function, or search for bump, and follow its callers and callees outward one hop at a time.
 group: tools
 order: 7
 metric: 99.5% callers recall, 0.6% false call edges vs SCIP ground truth

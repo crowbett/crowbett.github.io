@@ -23,6 +23,7 @@ const svg = (tag, attrs = {}, cls) => {
   return n;
 };
 const fmt = (n) => n.toLocaleString("en-US");
+const plural = (n, one, many = `${one}s`) => `${fmt(n)} ${n === 1 ? one : many}`;
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 
 function field(label, input, cls) {
@@ -492,7 +493,7 @@ export async function mount(root, demo) {
     cell.flight.textContent = fmt(st.flights.length);
     cell.delivered.textContent = fmt(st.stats.delivered);
     cell.dropped.textContent = fmt(st.stats.dropped);
-    receipt.textContent = `${fmt(st.tick)} ticks of a ${n}-node cluster on quorum's raft core: ${fmt(st.stats.delivered)} messages delivered, ${fmt(st.stats.committed)} entries committed, in ${fmt(Math.round(callMs))} ms of calls, in your browser.`;
+    receipt.textContent = `quorum's raft core has run ${plural(st.tick, "tick")} on ${n} nodes, delivering ${plural(st.stats.delivered, "message")} and committing ${plural(st.stats.committed, "entry", "entries")}; ${fmt(Math.round(callMs))} ms so far.`;
     crashL.disabled = !l;
     cut.disabled = !l;
     heal.disabled = !st.nodes.some((x) => x.side !== 0);

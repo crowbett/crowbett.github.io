@@ -5,7 +5,7 @@ lang: Rust
 tags: search, BM25, hybrid ranking, MCP
 repo:
 demo: live
-demo_try: Watch the corpus stream into the index and the tour's queries rank, then type your own query, filter by source or index a note of yours.
+demo_try: Search postgres password. The documents that held one come back, with the secret redacted before it was ever indexed.
 group: tools
 order: 19
 metric: BM25 query latency p50 1.2–2.2 ms

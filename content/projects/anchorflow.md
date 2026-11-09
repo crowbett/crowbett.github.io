@@ -5,7 +5,7 @@ lang: Go
 tags: warehouse, 3D bin packing, Postgres, WebAssembly
 repo:
 demo: live
-demo_try: Watch carts get picked, packed and labelled, then repeat a coffee basket until shape history answers, or move a product to another bin.
+demo_try: Set orders to Driftwood Coffee, then to the same basket again. The fit engine passes on bags and mugs, so after a few carts shape history names the package.
 group: services
 order: 16
 metric: Shape history accuracy 98.6% on the same basket, 89.1% on the same shape, 67.0% on the same kinds
