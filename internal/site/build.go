@@ -105,6 +105,7 @@ func prepare(cfg Config) (*prepared, error) {
 		"rank": func(slug string) string {
 			return fmt.Sprintf("%02d", slices.IndexFunc(listed, func(p Project) bool { return p.Slug == slug })+1)
 		},
+		"reelWide":  func() string { return ReelWide },
 		"demoAsset": func(slug string) string { return "/demos/" + slug + "/ui.js" },
 		"demoKB":    func(slug string) string { return thousands((sizes[slug].Gzip + 1023) / 1024) },
 		"demoBytes": func(slug string) int { return sizes[slug].Raw },

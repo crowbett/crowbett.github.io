@@ -3,7 +3,7 @@
 // screen until the build runs (demo.js). The glow is sampled from the clip,
 // then from the running demo's canvas. The clip plays only while the screen
 // is in view and not covered; with reduced motion or Save-Data the poster stays.
-import { play, pause } from "/assets/play.js";
+import { play, pause, poster } from "/assets/play.js";
 const head = document.querySelector(".project-head");
 if (head) {
   const sheet = document.querySelector(".sheet");
@@ -31,9 +31,10 @@ if (head) {
     else img.addEventListener("load", () => tint(img), { once: true });
   }
   let update = () => {};
-  if (screen.dataset.clip && !still) {
+  if ("clip" in screen.dataset && !still) {
+    const shot = poster(screen);
     const v = document.createElement("video");
-    Object.assign(v, { muted: true, loop: true, playsInline: true, preload: "none", poster: img.src, src: screen.dataset.clip, disablePictureInPicture: true });
+    Object.assign(v, { muted: true, loop: true, playsInline: true, preload: "none", poster: shot, src: shot.replace(/\.webp$/, ".mp4"), disablePictureInPicture: true });
     v.setAttribute("aria-hidden", "true");
     let tick = 0;
     const paint = () => {

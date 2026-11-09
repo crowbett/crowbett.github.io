@@ -5,15 +5,17 @@ package e2e
 // workCheck walks the home reel by focus, as Tab and j/k do: the focused
 // project's panel comes up over the others and covers the middle of the
 // screen, it is current and plays its recorded clip, no other clip plays,
-// and the panels buried under the one below it are hidden.
+// and the panels buried under the one below it are hidden. The clip is the
+// crop for the screen's width: the desktop one where its <source> matches.
 const workCheck = `(async () => {
 	const items = [...document.querySelectorAll(".it")];
 	const playing = () => [...document.querySelectorAll(".it video")].filter((v) => !v.paused && v.isConnected);
 	const at = async (slug) => {
 		const it = document.querySelector("#p-" + slug);
 		const k = items.indexOf(it);
+		const clip = "/reel/" + slug + (matchMedia(it.querySelector("source").media).matches ? "" : "-n") + ".mp4";
 		it.querySelector("h4 a").focus();
-		return until(() => "now" in it.dataset && playing().length === 1 && playing()[0].src.endsWith("/reel/" + slug + ".mp4") && "on" in playing()[0].dataset
+		return until(() => "now" in it.dataset && playing().length === 1 && playing()[0].src.endsWith(clip) && "on" in playing()[0].dataset
 			&& it.contains(document.elementFromPoint(innerWidth / 2, innerHeight / 2))
 			&& items.every((x, i) => ("gone" in x.dataset) === (k > 0 && i < k - 1)));
 	};
@@ -30,7 +32,7 @@ const refusedCheck = `(async () => {
 	try {
 		P.play = () => Promise.reject(new DOMException("refused", "NotAllowedError"));
 		it.querySelector("h4 a").focus();
-		held = await until(() => "now" in it.dataset && document.querySelector(".it video[src$='/reel/lobby.mp4']") && !playing());
+		held = await until(() => "now" in it.dataset && document.querySelector(".it video[src*='/reel/lobby']") && !playing());
 	} finally {
 		P.play = real;
 	}

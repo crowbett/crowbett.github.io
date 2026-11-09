@@ -83,6 +83,8 @@ func withClip(t *testing.T, src fstest.MapFS) {
 	t.Cleanup(func() { delete(Showcases, "demo") })
 	src["web/reel/demo.mp4"] = &fstest.MapFile{Data: []byte("mp4")}
 	src["web/reel/demo.webp"] = &fstest.MapFile{Data: []byte("webp")}
+	src["web/reel/demo-n.mp4"] = &fstest.MapFile{Data: []byte("mp4")}
+	src["web/reel/demo-n.webp"] = &fstest.MapFile{Data: []byte("webp")}
 	items, err := ReelSources(src)
 	if err != nil {
 		t.Fatal(err)

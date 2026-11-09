@@ -25,7 +25,7 @@ var Showcases = map[string]Showcase{
 			dmg.click();
 			await idle();
 		})()`,
-		Focus: ".bt-map", Pad: 8, Seconds: 7,
+		Focus: ".bt-map", Pad: 8, WideFocus: ".bt-map", WidePad: 8, Seconds: 7,
 	},
 	// The basket changes in place, never adding a line, so the crop holds still:
 	// more supplement bottles beside the shaker, then the shaker counted as a
@@ -41,7 +41,7 @@ var Showcases = map[string]Showcase{
 			await w(1700); cls(lines()[0], "");
 			await w(1700); cls(lines()[0], "SHAKER"); qty(lines()[1], "2");
 		})()`,
-		Focus: ".af-answer-box", Pad: 8, Seconds: 8,
+		Focus: ".af-answer-box", Pad: 8, WideFocus: ".af-answer-box", WidePad: 130, Seconds: 8,
 	},
 	// Walk the call graph from run to a callee, its callee, and back to run.
 	"codegraph": {
@@ -66,7 +66,7 @@ var Showcases = map[string]Showcase{
 				s.value = v; s.dispatchEvent(new Event("change"));
 			}
 		})()`,
-		Focus: ".ec-legend", Pad: 8, Seconds: 8,
+		Focus: ".ec-legend", Pad: 8, WideFocus: ".ec-legend", WidePad: 172, Seconds: 8,
 	},
 	// Each query narrows 283 files to candidates by trigram, then to matches.
 	"grepall": {
@@ -78,7 +78,7 @@ var Showcases = map[string]Showcase{
 			await w(1600); preset("TODO|FIXME");
 			await w(1600); preset("func\\s+New\\w+\\(");
 		})()`,
-		Focus: ".ga-status", Pad: 8, Seconds: 8,
+		Focus: ".ga-status", Pad: 8, WideFocus: ".ga-funnel", WidePad: 8, Seconds: 8,
 	},
 	// Fresh seeded draws, jitter off (every retry waits the full cap), more attempts.
 	"jobrun": {
@@ -95,7 +95,7 @@ var Showcases = map[string]Showcase{
 			await w(1000); set("11");
 			await w(1500); set("8");
 		})()`,
-		Focus: ".jr-legend", Pad: 8, Seconds: 8,
+		Focus: ".jr-legend", Pad: 8, WideFocus: ".jr-legend", WidePad: 150, Seconds: 8,
 	},
 	// Overwriting 20 keys turns half the log dead; compaction reclaims it into a
 	// sealed segment, then a put and its tombstone land in the fresh one.
@@ -113,7 +113,7 @@ var Showcases = map[string]Showcase{
 			await w(1700); click("Put");
 			await w(1200); click("Delete");
 		})()`,
-		Focus: ".kv-stats", Pad: 8, Seconds: 7,
+		Focus: ".kv-stats", Pad: 8, WideFocus: ".kv-stats", WidePad: 10, Seconds: 7,
 	},
 	// Play sends each client frame through the bridge; packets cross the lanes
 	// and the bridge's translations light up as the conversation builds.
@@ -223,7 +223,7 @@ var Showcases = map[string]Showcase{
 			await wait(500);
 			await sweep("ArrowRight", 20);
 		})()`,
-		Focus: ".rt-screen", Seconds: 6.3,
+		Focus: ".rt-screen", WideFocus: ".rt-screen", WidePad: 8, Seconds: 6.3,
 	},
 	// stash: edit, back up, repeat; new chunks show vermilion in the text and the strips.
 	"stash": {
@@ -256,6 +256,6 @@ var Showcases = map[string]Showcase{
 			for (let i = 4; i <= 20; i++) { to(i); await wait(110); }
 			for (let i = 21; i <= 24; i++) { await wait(700); to(i); }
 		})()`,
-		Focus: ".st-canvas", Pad: -45, Seconds: 8,
+		Focus: ".st-canvas", Pad: -45, WideFocus: ".st-scrub", WidePad: -16, Seconds: 8,
 	},
 }
