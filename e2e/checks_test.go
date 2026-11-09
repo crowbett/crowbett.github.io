@@ -178,33 +178,31 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"mcpbridge": {
-		`document.querySelector('.mb-row[data-leg="b2s"] .mb-method').textContent === "server/discover"`,
-		`document.querySelector(".mb-ihead").textContent === "16 · bridge to server · tools/list" && [...document.querySelectorAll(".mb-json .mb-add .mb-k")].some((k) => k.textContent === '"io.modelcontextprotocol/protocolVersion"')`,
-		`document.querySelector(".mb-refused .mb-badge").textContent === "unsupported" && document.querySelector(".mb-status").textContent.startsWith("7 client frames, 26 frames on the wire: 4 translated, 4 made by the bridge, 1 refused")`,
+		`until(() => [...document.querySelectorAll(".mb-c-r .mb-k")].some((k) => k.textContent === '"io.modelcontextprotocol/protocolVersion"') &&
+			Number(document.querySelector(".mb-cells [data-k=messages] .mb-v").textContent) >= 4 && Number(document.querySelector(".mb-cells [data-k=made] .mb-v").textContent) >= 1 &&
+			document.querySelector(".mb-status").textContent.startsWith("session 1 · legacy client, modern server · engine xlate.New"))`,
+		`(() => { const c = document.querySelector(".mb-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
 		`(async () => {
-			const st = () => document.querySelector(".mb-status").textContent;
-			const settled = () => !document.querySelector(".mb-pending");
-			const click = (t) => [...document.querySelectorAll(".mb-bar button")].find((b) => b.textContent.startsWith(t)).click();
-			click("Step");
-			let ok = await until(() => st().startsWith("1 client frame, 6 frames on the wire") && settled());
+			const q = (s) => document.querySelector(s);
+			const v = (k) => q(".mb-cells [data-k=" + k + "] .mb-v").textContent;
+			const st = () => q(".mb-status").textContent;
+			const set = (n, val) => { const e = q("select[name=" + n + "]"); e.value = val; e.dispatchEvent(new Event("change")); };
+			const click = (t) => [...document.querySelectorAll(".mb-controls button")].find((b) => b.textContent === t).click();
+			if (q(".mb-acts button").textContent === "Pause") click("Pause");
+			set("speed", "8");
+			set("scenario", "stateless");
+			let ok = await until(() => v("sessions") === "1" && v("messages") === "0");
+			for (let i = 0; i < 150 && !st().includes("finished"); i++) { click("Step"); await new Promise((r) => setTimeout(r, 60)); }
+			ok = ok && await until(() => st() === "session 1 · modern client, legacy server · engine xlate.NewReverse · finished: 4 client frames, session open" &&
+				["messages", "translated", "passed", "made", "dropped", "refused"].map(v).join() === "17,4,0,4,0,1");
+			set("request", "call");
+			click("Send mine");
+			ok = ok && await until(() => q(".mb-you p").textContent === "Your tools/call reached the server rewritten, 213 B to 100 B (−params._meta); a result came back rewritten, 118 B to 252 B." &&
+				q(".mb-ihead").textContent === "frame 23 · bridge to server · tools/call" && [...document.querySelectorAll(".mb-c-l.mb-del .mb-k")].some((k) => k.textContent === '"_meta"'));
+			set("scenario", "tour");
+			set("server", "legacy");
 			click("Play");
-			ok = ok && await until(() => document.querySelector(".mb-bar button").textContent === "Playing…");
-			ok = ok && await until(() => /^[2-6] client frames/.test(st()));
-			click("Step");
-			return ok && await until(() => /^[3-7] client frames/.test(st()) && settled() && document.querySelector(".mb-bar button").textContent === "Play");
-		})()`,
-		`(async () => {
-			const methods = (leg) => [...document.querySelectorAll('.mb-row[data-leg="' + leg + '"] .mb-method')].map((m) => m.textContent);
-			const d = document.querySelector("select[name=direction]");
-			d.value = "reverse"; d.dispatchEvent(new Event("change"));
-			let ok = await until(() => methods("b2s").includes("initialize") && methods("b2c").includes("prompts/list error -32602"));
-			document.querySelectorAll('.mb-row[data-leg="c2b"] .mb-pkt')[3].click();
-			const ta = document.querySelector(".mb-ed textarea");
-			ta.value = JSON.stringify({ jsonrpc: "2.0", id: 4, method: "prompts/list", params: { _meta: { "io.modelcontextprotocol/protocolVersion": "2026-07-28", "io.modelcontextprotocol/clientCapabilities": {} } } });
-			ta.dispatchEvent(new Event("input"));
-			ok = ok && await until(() => methods("b2c").includes("prompts/list result") && methods("b2s").includes("prompts/list"));
-			d.value = "forward"; d.dispatchEvent(new Event("change"));
-			return ok && await until(() => methods("b2s")[0] === "server/discover" && document.querySelector(".mb-ihead").textContent.startsWith("16 "));
+			return ok && await until(() => st().startsWith("session 1 · legacy client, legacy server · engine passthrough"));
 		})()`,
 	},
 	"ratelimitd": {
