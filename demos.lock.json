@@ -169,6 +169,15 @@
       "gzip_bytes": 1503234
     },
     {
+      "slug": "adfactory",
+      "repo": "adfactory",
+      "ref": "ae4ab9c7fb6540690b702dda58dbb946b73d213f",
+      "pkg": "./cmd/webdemo",
+      "sha256": "2bd356a7bbe21690de15a40834ce0323a0d2fdda33ae3479e9465db15fcbe57c",
+      "bytes": 7293944,
+      "gzip_bytes": 2009516
+    },
+    {
       "slug": "recall",
       "kind": "rust",
       "repo": "recall",
