@@ -148,6 +148,13 @@ main:has(> :is(.stage, .project)) { width: auto; }
 .top { position: sticky; z-index: 30; top: 0; display: flex; align-items: center; justify-content: space-between; height: var(--top-h); padding-inline: max(var(--edge), (100% - 80rem) / 2); background: var(--glass); -webkit-backdrop-filter: blur(16px) saturate(1.6); backdrop-filter: blur(16px) saturate(1.6); border-bottom: 1px solid color-mix(in oklab, var(--line-strong) 60%, transparent); }
 .brand, .top nav :is(a, button) { display: flex; align-items: center; min-height: 44px; color: var(--text); text-decoration: none; }
 .brand { font-family: var(--display); font-weight: 800; letter-spacing: -0.02em; }
+.top::after { content: ""; position: absolute; inset: auto 0 -1px; height: 2px; background: linear-gradient(90deg, var(--accent), var(--screen-signal)); transform-origin: 0 50%; scale: 0.001 1; opacity: 0; }
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .top::after { opacity: 1; animation: read linear both; animation-timeline: scroll(root); }
+  }
+}
+@keyframes read { to { scale: 1 1; } }
 .top nav { display: flex; gap: var(--sp-1); margin-right: calc(-1 * var(--sp-3)); }
 .top nav :is(a, button) { gap: var(--sp-2); padding: 0 var(--sp-3); border: 0; border-radius: 999px; background: none; color: var(--text-2); font-family: var(--mono); font-size: var(--t-label); cursor: pointer; transition: var(--tr); }
 .top nav :is(a, button):hover { background: color-mix(in oklab, var(--text) 8%, transparent); color: var(--text); }
