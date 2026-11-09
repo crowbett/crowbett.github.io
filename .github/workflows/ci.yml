@@ -43,6 +43,7 @@ jobs:
       - run: make -j8 gate
 
   e2e:
+    name: e2e ${{ matrix.shard }}
     # Two runners split the page tabs; the second also runs every other test.
     strategy:
       matrix:
