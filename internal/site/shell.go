@@ -17,7 +17,7 @@ var ShellTries = map[string][]string{
 	"stash":      {`init`, `backup {"text": "hello world, hello world, hello world"}`, `scan {"text": "hello world"}`},
 	"btrv":       {`sample`},
 	"ratelimitd": {`race {"pattern": "burst", "seed": 1, "rate": 10, "periodMs": 1000, "burst": 5, "durationMs": 5000, "buckets": 10}`},
-	"edgecache":  {`timeline {"origin": {"cacheControl": "max-age=60", "etag": "\"v1\""}, "requests": [{"t": 0}, {"t": 30}, {"t": 61}]}`},
+	"edgecache":  {`timeline {"origin": {"cacheControl": "max-age=60", "etag": "\"v1\""}, "requests": [{"at": 0}, {"at": 30}, {"at": 61}]}`},
 	"jobrun":     {`cron {"expr": "*/15 9-17 * * MON-FRI", "tz": "UTC", "start": "2026-11-09T08:00:00Z", "count": 5}`, `backoff {"policy": {"base": "100ms", "max": "10s", "factor": 2, "jitter": true}, "maxAttempts": 6, "seed": 1, "samples": 5}`},
 	"lobby":      {`reset {"mode": "duel", "rate": 1, "sigma": 100, "drop": 0, "refill": true, "seed": 1}`, `advance {"ms": 2000}`},
 	"grepall":    {`corpus`, `build`, `plan {"q": "func New", "regex": false, "case": "auto"}`},
