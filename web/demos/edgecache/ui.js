@@ -401,7 +401,7 @@ export async function mount(root, demo) {
     const left = MAX_REQUESTS - schedule.length - reqs.filter((r) => r.you).length;
     send.disabled = left <= 0;
     sends.textContent = left > 0 ? `${left} of your requests left this run; the engine takes ${MAX_REQUESTS} per run.` : `That is ${MAX_REQUESTS} requests, the most one run takes. Reset to start again.`;
-    if (calls) receipt.textContent = `${fmt(st.n)} requests through edgecache's engine, ${fmt(st.orig)} reached the origin; ${fmt(calls)} calls replayed ${fmt(replayed)} requests on a fresh engine in ${fmt(Math.round(callMs))} ms, in your browser.`;
+    if (calls) receipt.textContent = `${fmt(st.n)} requests through edgecache's engine, ${fmt(st.orig)} reached the origin; ${fmt(calls)} ${calls === 1 ? "call" : "calls"} replayed ${fmt(replayed)} ${replayed === 1 ? "request" : "requests"} on a fresh engine in ${fmt(Math.round(callMs))} ms, in your browser.`;
     canvas.setAttribute("aria-label", `Edge at ${fmt(Math.floor(simT))} s of simulated time: ${fmt(st.n)} requests, ${fmt(st.hits)} served from cache, ${fmt(st.orig)} sent to the origin (${fmt(st.r304)} answered 304).`);
   }
 
