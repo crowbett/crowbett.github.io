@@ -21,10 +21,11 @@ export const steps = [
       await t.set(0, "bursts");
       await t.set(1, "swr");
       await t.click("Reset");
-      await t.until(() => /; 1 calls replayed/.test(t.text(".ec-out")) && Number(v(t, "requests")) >= 1 && t.q(".ec-table tbody .ec-badge"));
+      if (t.text(".ec-acts button") === "Pause") await t.click("Pause");
+      await t.until(() => /; [\d,]+ calls? replayed/.test(t.text(".ec-out")) && Number(v(t, "requests")) >= 1 && t.q(".ec-table tbody .ec-badge"));
       await settled(t);
     },
-    then: (t) => `The first request, at ${row(t, 1)}: ${t.text(".ec-table tbody .ec-badge")}. The origin saw ${row(t, 5)}.`,
+    then: (t) => `The newest request, at ${row(t, 1)}: ${t.text(".ec-table tbody .ec-badge")}. The origin saw ${row(t, 5)}.`,
   },
   {
     say: "Playing all 300 simulated seconds at 40×:",

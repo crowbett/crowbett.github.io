@@ -78,7 +78,7 @@ func TestTours(t *testing.T) {
 
 // tourCost is each tour's seconds in one local run of all of them (2026-11-09);
 // a new tour counts 10 until measured.
-var tourCost = map[string]int{"mcpbridge": 30, "edgecache": 19, "strata": 18, "raytracer": 18, "codegraph": 15, "btrv": 14, "netcode": 13, "kvlite": 13, "grepall": 11, "keel": 11, "lobby": 10, "recall": 9, "jobrun": 8, "ratelimitd": 7, "livejob": 7, "anchorflow": 7, "stash": 6, "adfactory": 6}
+var tourCost = map[string]int{"mcpbridge": 30, "edgecache": 19, "strata": 18, "raytracer": 18, "codegraph": 15, "btrv": 14, "netcode": 13, "kvlite": 13, "grepall": 11, "keel": 11, "lobby": 10, "anchorflow": 10, "recall": 9, "jobrun": 8, "ratelimitd": 7, "livejob": 7, "stash": 6, "adfactory": 6}
 
 // tourShard puts each tour on a runner, longest first onto the least loaded,
 // so the slow ones never share one.
