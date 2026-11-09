@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -51,6 +52,9 @@ var (
 	cssURL  = regexp.MustCompile(`url\("?(/[^)"]+)`)
 	cssLink = regexp.MustCompile(`<link rel="stylesheet" href="(/[^"]+)"`)
 	demoUI  = regexp.MustCompile(`data-ui="(/[^"]+/)ui\.js"`)
+	liveCSS = regexp.MustCompile(`data-live-css="(/[^"]+)"`)
+	liveCap = regexp.MustCompile(`data-live-cap="(\d+)"`)
+	runSlug = regexp.MustCompile(`data-run="([\w-]+)"`)
 	scaleFn = regexp.MustCompile(`\bscale(?:X|Y|Z|3d)?\(([^)]*)\)|(?:^|[\s;{"'])scale\s*:\s*([^;}"']*)`)
 )
 
@@ -80,6 +84,14 @@ func Check(out string) error {
 	fonts := 0
 	cssSize := map[string]int{}
 	pageCSS := map[string][]string{}
+	// A page that starts demos itself (home panels, the live wall) loads its
+	// live stylesheet and the ui.css of each demo it runs, at most cap at once.
+	type lazySheets struct {
+		css   string
+		cap   int
+		sheet []string
+	}
+	lazy := map[string]lazySheets{}
 	var wasmRel []string
 	var wasm [][]byte
 	err := filepath.WalkDir(out, func(p string, d fs.DirEntry, err error) error {
@@ -112,6 +124,17 @@ func Check(out string) error {
 			}
 			for _, m := range demoUI.FindAllSubmatch(b, -1) {
 				pageCSS[rel] = append(pageCSS[rel], string(m[1])+"ui.css")
+			}
+			if m := liveCSS.FindSubmatch(b); m != nil {
+				pageCSS[rel] = append(pageCSS[rel], string(m[1]))
+				l := lazySheets{css: string(m[1]), cap: 1}
+				if c := liveCap.FindSubmatch(b); c != nil {
+					l.cap, _ = strconv.Atoi(string(c[1]))
+				}
+				for _, r := range runSlug.FindAllSubmatch(b, -1) {
+					l.sheet = append(l.sheet, "/demos/"+string(r[1])+"/ui.css")
+				}
+				lazy[rel] = l
 			}
 			for _, m := range ogImage.FindAllSubmatch(b, -1) {
 				if _, err := os.Stat(filepath.Join(out, filepath.FromSlash(string(m[1])))); err != nil {
@@ -176,6 +199,14 @@ func Check(out string) error {
 		if n > Budgets.WASMGzipped {
 			add("%s: %d bytes gzipped, budget %d", wasmRel[i], n, Budgets.WASMGzipped)
 		}
+	}
+	for page, l := range lazy {
+		if _, ok := cssSize[l.css]; !ok {
+			add("%s: data-live-css %s does not exist", page, l.css)
+		}
+		heavy := slices.Clone(l.sheet)
+		slices.SortStableFunc(heavy, func(a, b string) int { return cssSize[b] - cssSize[a] })
+		pageCSS[page] = append(pageCSS[page], heavy[:min(l.cap, len(heavy))]...)
 	}
 	for page, sheets := range pageCSS {
 		n := 0

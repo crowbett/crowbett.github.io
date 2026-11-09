@@ -57,7 +57,12 @@ type pageData struct {
 	Canonical string
 	Stage     *Stage
 	Bins      []binRow // the numbers page: every live demo's binary, largest first
+	LiveCap   int      // the live wall: most demos running at once
 }
+
+// WallCap is the most demos the live wall runs at once on a laptop; wall.js
+// halves it on phones and tablets. Measured in docs/tasks.md (V41).
+const WallCap = 4
 
 // binRow is one demo binary on the numbers page.
 type binRow struct {
@@ -120,7 +125,13 @@ func prepare(cfg Config) (*prepared, error) {
 		"rank": func(slug string) string {
 			return fmt.Sprintf("%02d", slices.IndexFunc(listed, func(p Project) bool { return p.Slug == slug })+1)
 		},
-		"reelWide":  func() string { return ReelWide },
+		"reelWide": func() string { return ReelWide },
+		"focus": func(slug string) string {
+			if f := Showcases[slug].WideFocus; f != "" {
+				return f
+			}
+			return Showcases[slug].Focus
+		},
 		"langs":     func() []string { return languages(listed) },
 		"demoAsset": func(slug string) string { return "/demos/" + slug + "/ui.js" },
 		"demoKB":    func(slug string) string { return thousands((sizes[slug].Gzip + 1023) / 1024) },
@@ -143,6 +154,7 @@ func prepare(cfg Config) (*prepared, error) {
 		},
 		"num": thousands,
 		"add": func(a, b int) int { return a + b },
+		"sub": func(a, b int) int { return a - b },
 		"search": func(p Project) string {
 			return strings.ToLower(strings.Join(append([]string{p.Slug, p.Title, p.Tagline, p.Lang}, p.Tags...), " "))
 		},
@@ -152,7 +164,7 @@ func prepare(cfg Config) (*prepared, error) {
 	}
 	// Home lists projects by group, live demos first within each, then by
 	// order; every page that numbers or walks the projects uses this order.
-	base := pageData{Owner: cfg.Owner, Year: cfg.Now.Year(), Stage: stage}
+	base := pageData{Owner: cfg.Owner, Year: cfg.Now.Year(), Stage: stage, LiveCap: WallCap}
 	for _, g := range Groups {
 		gv := groupView{Group: g}
 		for _, live := range []bool{true, false} {
@@ -242,6 +254,11 @@ func Build(cfg Config) error {
 	if err := render("numbers", "/numbers/", "Numbers", nil); err != nil {
 		return err
 	}
+	if base.LiveCount > 0 {
+		if err := render("live", "/live/", "Live", nil); err != nil {
+			return err
+		}
+	}
 	if err := render("notfound", "/404.html", "Not found", nil); err != nil {
 		return err
 	}
@@ -260,7 +277,7 @@ func Build(cfg Config) error {
 	if err := writeFile(filepath.Join(cfg.Out, ".nojekyll"), nil); err != nil {
 		return err
 	}
-	return writeSitemap(cfg, projects)
+	return writeSitemap(cfg, projects, base.LiveCount > 0)
 }
 
 // writeSearch writes the command palette's index (web/assets/palette.js): every
@@ -417,10 +434,13 @@ func demoSizes(src fs.FS) (map[string]demoSize, error) {
 	return sizes, nil
 }
 
-func writeSitemap(cfg Config, projects []Project) error {
+func writeSitemap(cfg Config, projects []Project, wall bool) error {
 	var b strings.Builder
 	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n" + `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` + "\n")
 	urls := []string{"/", "/numbers/"}
+	if wall {
+		urls = append(urls, "/live/")
+	}
 	for _, p := range projects {
 		urls = append(urls, "/projects/"+p.Slug+"/")
 	}

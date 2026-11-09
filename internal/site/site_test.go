@@ -71,7 +71,8 @@ func testFS(project string) fstest.MapFS {
 {{define "home"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{range .Projects}}<a href="/projects/{{.Slug}}/">x</a>{{end}}{{end}}
 {{define "project"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{if .Project.Live}}{{demoKB .Project.Slug}}KB {{demoBytes .Project.Slug}}B{{end}}<a href="/">home</a>{{end}}
 {{define "notfound"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{end}}
-{{define "numbers"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{range .Bins}}{{.Slug}} {{.Gzip}} {{.Pct}}{{end}}{{end}}`)},
+{{define "numbers"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{range .Bins}}{{.Slug}} {{.Gzip}} {{.Pct}}{{end}}{{end}}
+{{define "live"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{range .Projects}}{{if .Live}}<a href="/projects/{{.Slug}}/">{{.Slug}}</a>{{end}}{{end}}{{end}}`)},
 		"web/assets/site.css":  {Data: []byte("body{}")},
 		"web/demos/demo/ui.js": {Data: []byte("export function mount(){}")},
 		"web/.hidden":          {Data: []byte("skip me")},
@@ -140,10 +141,13 @@ func TestBuildAndCheck(t *testing.T) {
 	if !strings.Contains(string(page), "1,215KB 4194304B") {
 		t.Errorf("demo size not rendered: %s", page)
 	}
-	for _, f := range []string{"404.html", ".nojekyll", "sitemap.xml", "robots.txt", "assets/site.css"} {
+	for _, f := range []string{"404.html", ".nojekyll", "sitemap.xml", "robots.txt", "assets/site.css", "live/index.html"} {
 		if _, err := os.Stat(filepath.Join(out, f)); err != nil {
 			t.Errorf("missing %s", f)
 		}
+	}
+	if b, _ := os.ReadFile(filepath.Join(out, "sitemap.xml")); !strings.Contains(string(b), "/live/</loc>") {
+		t.Errorf("the live wall is not in the sitemap:\n%s", b)
 	}
 	if _, err := os.Stat(filepath.Join(out, ".hidden")); err == nil {
 		t.Error("dotfile copied from web/")
@@ -191,6 +195,37 @@ func TestCheckCountsCSSPerPage(t *testing.T) {
 	}
 	if strings.Contains(err.Error(), "/a/index.html: CSS") || strings.Contains(err.Error(), "/index.html: CSS totals "+fmt.Sprint(Budgets.CSS)) {
 		t.Fatalf("a page within budget was reported:\n%v", err)
+	}
+}
+
+// TestCheckCountsLiveCSS: a page that starts demos itself counts its live
+// stylesheet and the cap heaviest ui.css of the demos it can run.
+func TestCheckCountsLiveCSS(t *testing.T) {
+	out := t.TempDir()
+	write := func(name, s string) {
+		if err := writeFile(filepath.Join(out, name), []byte(s)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	quarter := strings.Repeat("a", Budgets.CSS/4)
+	write("assets/site.css", quarter)
+	write("assets/demo.css", quarter)
+	write("demos/a/ui.css", quarter)
+	write("demos/b/ui.css", quarter+"a")
+	write("demos/c/ui.css", "a")
+	page := `<link rel="stylesheet" href="/assets/site.css"><ol data-live-css="/assets/demo.css" data-live-cap="%d"><li data-run="a"><li data-run="b"><li data-run="c"></ol>`
+	write("index.html", fmt.Sprintf(page, 1))
+	if err := Check(out); err != nil && strings.Contains(err.Error(), "CSS totals") {
+		t.Fatalf("cap 1 is within budget, got %v", err)
+	}
+	write("index.html", fmt.Sprintf(page, 2))
+	err := Check(out)
+	if err == nil || !strings.Contains(err.Error(), "/index.html: CSS totals") || !strings.Contains(err.Error(), "/demos/b/ui.css + /demos/a/ui.css") {
+		t.Fatalf("want the two heaviest demo sheets counted over budget, got %v", err)
+	}
+	write("index.html", `<ol data-live-css="/assets/gone.css" data-live-cap="1"></ol>`)
+	if err := Check(out); err == nil || !strings.Contains(err.Error(), "gone.css does not exist") {
+		t.Fatalf("want a missing live stylesheet reported, got %v", err)
 	}
 }
 
