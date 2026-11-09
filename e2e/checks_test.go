@@ -208,9 +208,28 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"ratelimitd": {
-		`[...document.querySelectorAll(".rl-chart")].map(c => c.dataset.algo).join() === "gcra,token_bucket,sliding_window"`,
-		`[...document.querySelectorAll(".rl-chart")].every(c => c.querySelectorAll("rect.rl-allowed").length > 20 && c.querySelectorAll("rect.rl-denied").length > 0)`,
-		`/^923 requests through 3 algorithms/.test(document.querySelector(".rl-status").textContent)`,
+		`/^Traffic floor at [\d.]+ s of run \d+: [\d,]+ requests offered; gcra allowed [\d,]+, denied [\d,]+; token bucket allowed [\d,]+, denied [\d,]+; sliding window allowed/.test(document.querySelector(".rl-canvas").getAttribute("aria-label")) && document.querySelector(".rl-cells [data-k=emit] .rl-v").textContent === "100 ms"`,
+		`(() => { const c = document.querySelector(".rl-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
+		`(async () => {
+			const click = (t) => [...document.querySelectorAll(".rl-acts button")].find((b) => b.textContent === t).click();
+			const v = (k) => document.querySelector(".rl-cells [data-k=" + k + "] .rl-v").textContent;
+			const steps = async (n) => { for (let i = 0; i < n; i++) { const t = v("t"); click("Step 1 s"); await until(() => v("t") !== t); } };
+			if (document.querySelector(".rl-acts button").textContent === "Pause") click("Pause");
+			click("Reset");
+			let ok = await until(() => v("t") === "0.0 s" && v("offered") === "0" && v("run").endsWith("seed 1"));
+			await steps(5);
+			ok = ok && v("offered") === "36" && v("gcra") === "36 · 100 %" && v("sliding_window") === "33 · 92 %";
+			click("Launch the attack");
+			ok = ok && await until(() => document.querySelector(".rl-status").textContent.match(/^Re-ran run \d+ as 15.000 s of attack traffic, so it hits at 5.0 s/));
+			await steps(3);
+			return ok && await until(() => v("offered") === "349" && v("gcra") === "75 · 21 %" && v("token_bucket") === "75 · 21 %" && v("sliding_window") === "60 · 17 %" &&
+				document.querySelector(".rl-you-tick").textContent === " Yours so far: gcra 274 denied · token bucket 274 denied · sliding window 286 denied.");
+		})()`,
+		`(async () => {
+			const r = document.querySelector("input[name=rate]");
+			r.value = "4"; r.dispatchEvent(new Event("input"));
+			return await until(() => /^Re-ran run \d+: attack traffic .*limit 50 \/s, burst 10/.test(document.querySelector(".rl-status").textContent) && document.querySelector(".rl-cells [data-k=emit] .rl-v").textContent === "20 ms");
+		})()`,
 	},
 	// The floor runs on seed 1: after a reset the engine has packed three
 	// orders; the fourth (a dropper bottle) goes in a box by rule, your cap
@@ -259,46 +278,54 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"jobrun": {
-		`document.querySelectorAll(".jr-run").length === 10 && document.querySelector(".jr-run .jr-mono").textContent === "Sat 2026-03-07 02:30"`,
-		`[...document.querySelectorAll(".jr-table tbody tr")].length === 8 && document.querySelector(".jr-dead td").textContent === "8"`,
-		`document.querySelectorAll(".jr-chart line.jr-dot").length === 7 * 20`,
+		`Number(document.querySelector(".jr-cells [data-k=fires] .jr-v").textContent) >= 20 && /^Scheduler timeline at \d\d:\d\d:\d\d UTC: \d+ fires, \d+ runs, \d+ retries/.test(document.querySelector(".jr-canvas").getAttribute("aria-label"))`,
+		`(() => { const c = document.querySelector(".jr-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
 		`(async () => {
-			const s = document.querySelector("select[name=cronPreset]");
-			const runs = () => [...document.querySelectorAll(".jr-run .jr-mono")].map((r) => r.textContent).slice(0, 2).join();
-			for (let i = 0; i < 100 && runs() !== "Sat 2026-03-07 02:30,Mon 2026-03-09 02:30"; i++) await new Promise((r) => setTimeout(r, 50));
-			const note = () => document.querySelector(".jr-note").textContent;
-			let ok = runs() === "Sat 2026-03-07 02:30,Mon 2026-03-09 02:30" && note().includes("8 March");
-			const z = document.querySelector("select[name=tz]");
-			z.value = "UTC"; z.dispatchEvent(new Event("change"));
-			for (let i = 0; i < 100 && runs() !== "Sat 2026-03-07 02:30,Sun 2026-03-08 02:30"; i++) await new Promise((r) => setTimeout(r, 50));
-			ok = ok && runs() === "Sat 2026-03-07 02:30,Sun 2026-03-08 02:30" && note() === "";
-			s.value = "0"; s.dispatchEvent(new Event("change"));
-			for (let i = 0; i < 100 && runs() !== "Thu 2026-01-01 09:00,Thu 2026-01-01 09:15"; i++) await new Promise((r) => setTimeout(r, 50));
-			return ok && runs() === "Thu 2026-01-01 09:00,Thu 2026-01-01 09:15" && z.value === "Europe/London";
+			const click = (t) => [...document.querySelectorAll(".jr-acts button")].find((b) => b.textContent === t).click();
+			const v = (k) => document.querySelector(".jr-cells [data-k=" + k + "] .jr-v").textContent;
+			if ([...document.querySelectorAll(".jr-acts button")].some((b) => b.textContent === "Pause")) click("Pause");
+			click("Reset");
+			let ok = await until(() => v("t") === "08:59:30 UTC" && v("fires") === "20" && v("runs") === "48" && v("retries") === "27" && v("ok") === "17" && v("maxwait") === "49 s" &&
+				document.querySelector(".jr-runs li").textContent === "Mon 2026-11-09 09:00UTCin 30 s");
+			click("Enqueue flaky job");
+			ok = ok && await until(() => document.querySelector(".jr-you").textContent.startsWith("Your flaky job #36 is queued at priority 1"));
+			for (let i = 0; i < 4; i++) { click("Step 1 min"); await new Promise((r) => setTimeout(r, 150)); }
+			return ok && await until(() => document.querySelector(".jr-you").textContent === "Your flaky job #36 succeeded on attempt 4 after 3 retries and 1 m 57 s of backoff.");
+		})()`,
+		`(async () => {
+			const e = document.querySelector("input[name=expr]");
+			e.value = "61 * * * *"; e.dispatchEvent(new Event("input"));
+			let ok = await until(() => document.querySelector(".jr-status").textContent === "yours: cronx: invalid expression: minute: 61 out of range 0-59");
+			const x = document.querySelector("select[name=example]");
+			x.value = "0 0 29 2 *"; x.dispatchEvent(new Event("change"));
+			return ok && await until(() => document.querySelector(".jr-runs li .jr-mono")?.textContent === "Tue 2028-02-29 00:00" && document.querySelector(".jr-status").textContent === "yours: cronx reads it as 0 0 29 2 *, in UTC.");
 		})()`,
 	},
 	"kvlite": {
-		`[...document.querySelectorAll(".kv-table tbody tr")].map((r) => r.cells[2].textContent + ":" + r.cells[3].textContent).join() === "put:user:1,put:user:2,put:user:1,delete:user:2"`,
+		`(() => { const m = /drawn (\d+) live records? \(([\d,]+ B)\)/.exec(document.querySelector(".kv-canvas").getAttribute("aria-label")); return !!m && Number(m[1]) > 0 && m[2] === document.querySelector(".kv-cells [data-k=live] .kv-v").textContent; })()`,
+		`(() => { const c = document.querySelector(".kv-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
 		`(async () => {
 			const click = (t) => [...document.querySelectorAll(".kv-controls button")].find((b) => b.textContent === t).click();
-			const segs = () => [...document.querySelectorAll(".kv-seg")].map((s) => s.querySelector(".kv-seg-meta").textContent + "|" +
-				[...s.querySelectorAll("tbody tr")].map((r) => r.cells[2].textContent + ":" + r.cells[3].textContent).join());
-			const keys = () => [...document.querySelectorAll(".kv-keys li span:first-child")].map((s) => s.textContent).join();
-			const log = () => document.querySelector(".kv-log").textContent;
-			click("Compact");
-			let ok = await until(() => /^sealed · \d+ B · hint file\|put:user:1;active · 16 B\|$/.test(segs().join(";")));
-			const k = document.querySelector("input[name=key]");
-			k.value = "late";
-			click("Put");
-			ok = ok && await until(() => keys() === "late,user:1");
-			const tear = document.querySelector("select[name=tear]");
-			tear.value = "5";
-			click("Crash and reopen");
+			const v = (k) => document.querySelector(".kv-cells [data-k=" + k + "] .kv-v").textContent;
 			const status = () => document.querySelector(".kv-status").textContent;
-			ok = ok && await until(() => log().includes("truncated torn tail") && keys() === "user:1" && status().includes(", 5 bytes torn off"));
+			const label = () => document.querySelector(".kv-canvas").getAttribute("aria-label");
+			if (document.querySelector(".kv-acts button").textContent === "Pause") click("Pause");
 			click("Reset");
+			let ok = await until(() => status().startsWith("Warmed up with 30 seeded writes") && v("keys") === "9" && v("disk") === "550 B" && v("live") === "248 B" &&
+				v("compactions") === "2" && label().includes("drawn 9 live records (248 B) and 3 dead records (76 B)"));
+			document.querySelector("input[name=key]").value = "my:key";
+			document.querySelector("input[name=value]").value = "hello";
+			click("Put");
+			ok = ok && await until(() => document.querySelector(".kv-you").textContent === "my:key = hello: its newest record is 28 B at byte 92 of 00000006.log (the active segment).");
+			const cut = document.querySelector("select[name=cut]");
+			cut.value = "mid";
+			click("Pull the plug");
+			ok = ok && await until(() => status() === "Plug pulled: 15 B cut off the end of 00000006.log at byte 135. kvlite reopened from its own files and truncated the torn record at byte 120 (its own log line is below); 13 records survive on disk. 1 write lost; rolled back: stock:sku-7 v1 → gone." &&
+				v("lost") === "1 record" && v("recovered") === "13 records" && document.querySelector(".kv-log").textContent.includes("truncated torn tail of active segment seg=6 off=120 dropped=15"));
+			click("Get");
+			ok = ok && await until(() => status() === "Get my:key = hello, the value of its newest record at byte 92 of 00000006.log.");
 			click("Compact");
-			return ok && await until(() => status().startsWith("Nothing to compact") && keys() === "");
+			return ok && await until(() => status().startsWith("kvlite rewrote 10 live records into ") && v("compactions") === "1");
 		})()`,
 	},
 	"edgecache": {
@@ -530,7 +557,10 @@ func feelCheck(t *testing.T, ctx context.Context) {
 	}
 	in := `(() => {
 		const s = document.querySelector(".card:not([hidden]) .card-shot:has(img)");
+		const c = s.closest(".card"), o = [...document.querySelectorAll(".card:not([hidden])")].find((x) => x !== c);
 		return "feel" in s.dataset && parseFloat(s.style.getPropertyValue("--ry")) > 0
+			&& parseFloat(c.style.getPropertyValue("--dx")) > 0 && getComputedStyle(s.querySelector("img")).translate !== "none"
+			&& parseFloat(getComputedStyle(o).opacity) < 0.8
 			&& !!s.querySelector("video[src$='-n.mp4']") && !s.querySelector("video").paused;
 	})()`
 	ok := false
@@ -552,13 +582,13 @@ func feelCheck(t *testing.T, ctx context.Context) {
 		}
 	}
 	if !ok {
-		t.Errorf("hovered card did not tilt and play its clip")
+		t.Errorf("hovered card did not tilt, shift its picture, dim the other cards and play its clip")
 		return
 	}
 	move(1, 1)
 	out := `(async () => {
 		const s = document.querySelector(".card:not([hidden]) .card-shot:has(img)");
-		return until(() => !("feel" in s.dataset) && !s.querySelector("video"));
+		return until(() => !("feel" in s.dataset) && !s.closest(".card").style.getPropertyValue("--dx") && !s.querySelector("video"));
 	})()`
 	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(out), chromedp.EvalAwaitPromise)); err != nil || !ok {
 		t.Errorf("card did not settle after the mouse left (err %v)", err)

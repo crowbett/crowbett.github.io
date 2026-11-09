@@ -83,40 +83,35 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".ga-status", Pad: 8, WideFocus: ".ga-funnel", WidePad: 8, Seconds: 8,
 	},
-	// Fresh seeded draws, jitter off (every retry waits the full cap), more attempts.
+	// The scheduler runs after an outage; a flaky job retries, then a second outage hits.
 	"jobrun": {
 		Play: `(async () => {
 			const w = (ms) => new Promise((r) => setTimeout(r, ms));
-			const btn = [...document.querySelectorAll(".jr-panel button")].find((b) => b.textContent === "New draws");
-			const jit = document.querySelector("input[name=jitter]");
-			const att = document.querySelector("input[name=maxAttempts]");
-			const set = (v) => { att.value = v; att.dispatchEvent(new Event("input")); };
-			await w(700); btn.click();
-			await w(900); btn.click();
-			await w(1000); jit.click();
-			await w(1300); jit.click();
-			await w(1000); set("11");
-			await w(1500); set("8");
+			const click = (t) => [...document.querySelectorAll(".jr-acts button")].find((b) => b.textContent === t).click();
+			await w(700); click("Enqueue flaky job");
+			await w(3300); click("Outage");
 		})()`,
-		Focus: ".jr-legend", Pad: 8, WideFocus: ".jr-legend", WidePad: 150, Seconds: 8,
+		Focus: ".jr-canvas", Pad: 4, Seconds: 8,
 	},
-	// Overwriting 20 keys turns half the log dead; compaction reclaims it into a
-	// sealed segment, then a put and its tombstone land in the fresh one.
+	// The workload writes and compacts; your key flies into the active segment,
+	// then the plug is pulled mid-write and the torn record turns red. The
+	// narrow clip starts a little into the canvas so the segments stay in frame.
 	"kvlite": {
 		Setup: `(async () => {
-			[...document.querySelectorAll(".kv-controls button")].find((b) => b.textContent === "Write 20 keys").click();
-			const done = () => document.querySelector(".kv-status").textContent.startsWith("20 puts");
-			for (let i = 0; i < 200 && !done(); i++) await new Promise((r) => setTimeout(r, 50));
+			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+			const r = document.querySelector("select[name=rate]");
+			r.value = "10"; r.dispatchEvent(new Event("change"));
+			await wait(1200);
 		})()`,
 		Play: `(async () => {
-			const w = (ms) => new Promise((r) => setTimeout(r, ms));
+			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 			const click = (t) => [...document.querySelectorAll(".kv-controls button")].find((b) => b.textContent === t).click();
-			await w(700); click("Write 20 keys");
-			await w(1500); click("Compact");
-			await w(1700); click("Put");
-			await w(1200); click("Delete");
+			await wait(900);
+			click("Put");
+			await wait(2300);
+			click("Pull the plug");
 		})()`,
-		Focus: ".kv-stats", Pad: 8, WideFocus: ".kv-stats", WidePad: 10, Seconds: 7,
+		Focus: ".kv-canvas", Pad: -96, WideFocus: ".kv-canvas", WidePad: 4, Seconds: 7,
 	},
 	// Play sends each client frame through the bridge; packets cross the lanes
 	// and the bridge's translations light up as the conversation builds.
@@ -191,17 +186,14 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".nc-canvas", Pad: 8, WideFocus: ".nc-canvas", WidePad: 8, Seconds: 8,
 	},
-	// ratelimitd: the same traffic seed under each pattern, 2 s apiece, back to
-	// bursts, where the sliding window lets more through than the token bucket.
+	// ratelimitd: calm traffic flows through all three gates; you launch the
+	// attack and the flood piles up red at each gate while the limit holds.
 	"ratelimitd": {
 		Play: `(async () => {
-			const s = document.querySelector("select[name=pattern]");
-			for (const v of ["ramp", "attack", "burst"]) {
-				await new Promise((r) => setTimeout(r, 2000));
-				s.value = v; s.dispatchEvent(new Event("change"));
-			}
+			await new Promise((r) => setTimeout(r, 2200));
+			document.querySelector(".rl-fire").click();
 		})()`,
-		Focus: ".rl-chart[data-algo=token_bucket]", Pad: 8, Seconds: 8,
+		Focus: ".rl-canvas", Pad: 4, Seconds: 7,
 	},
 	// raytracer: the marble scene, held at its third pass, renders on, then the split sweeps.
 	"raytracer": {
