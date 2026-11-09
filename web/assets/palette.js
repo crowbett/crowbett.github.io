@@ -34,6 +34,7 @@ function actions() {
     if (a) out.push({ tag: "go", title: `${word}: ${a.lastChild.textContent.trim()}`, key, href: a.pathname });
   }
   if (location.pathname !== "/") out.push({ tag: "go", title: "Work index", href: "/#work" });
+  out.push({ tag: "shell", title: "Open the terminal", key: "`", run: () => import("/assets/nav.js").then((m) => m.openShell()) });
   const mail = document.querySelector('.top a[href^="mailto:"]');
   if (mail) {
     const addr = mail.href.slice(7);
