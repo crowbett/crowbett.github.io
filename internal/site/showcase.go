@@ -43,17 +43,20 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".af-answer-box", Pad: 8, WideFocus: ".af-answer-box", WidePad: 130, Seconds: 8,
 	},
-	// Walk the call graph from run to a callee, its callee, and back to run.
+	// The tour steps from run to a callee and ripples out from it; then a
+	// search for "bump" ripples its callers out three hops, to main.
 	"codegraph": {
+		Setup: `(async () => {
+			for (let i = 0; i < 200 && !document.querySelector(".cg-node.is-focus"); i++) await new Promise((r) => setTimeout(r, 50));
+		})()`,
 		Play: `(async () => {
 			const w = (ms) => new Promise((r) => setTimeout(r, ms));
-			const s = document.querySelector("select[name=symbol]");
-			const pick = (v) => { s.value = v; s.dispatchEvent(new Event("change")); };
-			await w(900); pick("src/log.rs:24");
-			await w(1600); pick("src/log.rs:2");
-			await w(1600); pick("src/main.rs:32");
+			await w(3800);
+			document.querySelector("input[name=symbol]").value = "bump";
+			document.querySelector(".cg-find button").click();
+			await w(2400);
 		})()`,
-		Focus: ".cg-summary", Pad: 8, Seconds: 6.5,
+		Focus: ".cg-svg", Pad: 8, WideFocus: ".cg-svg", WidePad: 8, Seconds: 7,
 	},
 	// Each preset plays its requests through the cache: a request no-store
 	// bypasses it, stale-while-revalidate serves stale, Vary keeps one entry per

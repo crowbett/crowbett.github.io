@@ -5,7 +5,7 @@ lang: Rust
 tags: static analysis, MCP, call graphs
 repo: https://github.com/crowbett/codegraph
 demo: live
-demo_try: Pick a function in a small Rust sample to see its callers and callees, with each edge's confidence.
+demo_try: Tap any function in the graph, or type a name like bump, to watch its callers and callees ripple out hop by hop.
 group: tools
 order: 7
 metric: 99.5% callers recall, 0.6% false call edges vs SCIP ground truth
@@ -17,4 +17,4 @@ metric_source: 16 repos / 1,079 files, docs/ACCURACY.md
 
 ## How the demo works
 
-codegraph's indexer, resolver and SQLite graph, compiled to WebAssembly, index a four-file Rust sample in your tab. Calls it cannot resolve, such as those into the standard library, are listed as unresolved. Every answer matches native codegraph on the same files (`crates/codegraph-web/check.mjs`).
+codegraph's indexer, resolver and SQLite graph, compiled to WebAssembly, index a four-file Rust sample in your tab. The graph is drawn from one `callees` query per function, and a tour then walks it along those edges. Picking a function, a search or a source line asks the binary for its callers and callees, then asks again for each function reached, one hop at a time; the binary resolves names, `Type::method` and `file:line` itself, and marks calls through a trait as `via`. Calls it cannot resolve, such as those into the standard library, are counted as unresolved. Its callers and callees of every function match native codegraph on the same files (`crates/codegraph-web/check.mjs`).
