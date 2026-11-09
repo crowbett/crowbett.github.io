@@ -35,6 +35,7 @@
   --deny: oklch(0.544 0.023 251);
   --attack: oklch(0.222 0.037 31);
   --grat: oklch(0.237 0.015 257);
+  --grat-lit: oklch(0.5 0.06 265 / 0.55);
 
   --sans: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --display: "Archivo Expanded", "Archivo", system-ui, sans-serif;
@@ -103,6 +104,7 @@
       --danger-tint: oklch(0.255 0.055 15);
       --screen: oklch(0.128 0.006 262);
       --grat: oklch(0.208 0.013 258);
+      --grat-lit: oklch(0.48 0.07 265 / 0.5);
       --lift: 0 30px 80px -24px oklch(0 0 0 / 0.7), 0 12px 24px -12px oklch(0 0 0 / 0.5);
       --paper: radial-gradient(circle at 1px 1px, color-mix(in oklab, var(--text) 7%, transparent) 1px, transparent 0) 0 0 / 22px 22px;
     }
@@ -167,7 +169,7 @@ main:has(> :is(.stage, .project)) { width: auto; }
   padding: var(--sp-2) var(--sp-3); border: 1px solid var(--rule); border-radius: 0;
   background: var(--bg); color: var(--text);
   font: 400 var(--t-label)/1.4 var(--mono); text-decoration: none; cursor: pointer; white-space: nowrap;
-  transition: transform var(--d-spring) var(--spring-snappy), background-color var(--d-fast) var(--ease-in), border-color var(--d-fast) var(--ease-in), color var(--d-fast) var(--ease-in);
+  transition: transform var(--d-spring) var(--spring-snappy), background-color var(--d-fast) var(--ease-in), border-color var(--d-fast) var(--ease-in), color var(--d-fast) var(--ease-in), translate var(--d-spring) var(--ease-in);
 }
 .key:hover { background: var(--block); border-color: var(--block); color: var(--on-block); }
 :is(.key, .demo button, .demo-mount button):active:not(:disabled) { transform: translateY(2px); transition-duration: 40ms; }
@@ -182,6 +184,9 @@ main:has(> :is(.stage, .project)) { width: auto; }
 /* Layers shared by home and project pages: the dark band, glow, HUD chips, the sheet that slides over the band, the screen */
 .stage, .project-head, .notfound, .it { position: relative; isolation: isolate; overflow: clip; color: var(--screen-ink); background: radial-gradient(110% 80% at 72% 45%, transparent 35%, oklch(0 0 0 / 0.6)), linear-gradient(var(--grat) 1px, transparent 1px) 0 0 / 100% 48px, linear-gradient(90deg, var(--grat) 1px, transparent 1px) 0 0 / 48px 100%, var(--screen); }
 :is(.stage, .project-head, .it) .led { color: var(--screen-ok); }
+/* feel.js: the graticule lights up under a mouse pointer. */
+:is(.stage, .project-head, .it)::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(16rem circle at var(--mx) var(--my), color-mix(in oklab, var(--accent) 16%, transparent), transparent), linear-gradient(var(--grat-lit) 1px, transparent 1px) 0 0 / 100% 48px, linear-gradient(90deg, var(--grat-lit) 1px, transparent 1px) 0 0 / 48px 100%; mask: radial-gradient(20rem circle at var(--mx) var(--my), #000, transparent); opacity: 0; transition: opacity 400ms var(--ease-in); }
+[data-feel]:is(.stage, .project-head, .it)::before { opacity: 1; }
 :is(.stage, .notfound, .it) .key { border-color: color-mix(in oklab, var(--screen-ink) 45%, transparent); background: oklch(1 0 0 / 0.04); color: var(--screen-ink); }
 :is(.stage, .notfound, .it) .key:hover { background: var(--block); border-color: var(--block); color: var(--on-block); }
 .glow { position: absolute; z-index: -1; pointer-events: none; filter: blur(56px) saturate(1.7); opacity: 0.8; mask-image: radial-gradient(closest-side, #000 35%, transparent); }
@@ -195,6 +200,14 @@ main:has(> :is(.stage, .project)) { width: auto; }
 :is(.it-glass, .ph-screen) :is(img, video) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
 /* The picture fades into the screen at the bottom, over poster and clip alike. */
 :is(.it-glass, .ph-screen):has(img)::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 80%, var(--screen)); pointer-events: none; }
+/* feel.js: a preview tilts toward the pointer under a glare; a primary key leans to it. */
+@media (prefers-reduced-motion: no-preference) {
+  :is(.it-glass, .card-shot) { transform: perspective(60rem) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 600ms var(--spring-soft); }
+  :is(.it-glass, .card-shot)[data-feel] { transition-duration: 120ms; transition-timing-function: linear; }
+  :is(.it-glass, .card-shot)::before { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: radial-gradient(farthest-corner circle at var(--gx, 50%) var(--gy, 0%), oklch(1 0 0 / 0.16), transparent 55%); mix-blend-mode: plus-lighter; opacity: 0; transition: opacity 400ms var(--ease-in); }
+  [data-feel]:is(.it-glass, .card-shot)::before { opacity: 1; }
+  :is(.stage-go .key, .ph-go .key, .it .key, .dock-go) { translate: var(--lx, 0) var(--ly, 0); }
+}
 :is(.it-glass, .ph-screen) video { opacity: 0; transition: opacity var(--d-base) var(--ease-in); }
 :is(.it-glass, .ph-screen) video[data-on] { opacity: 1; }
 :is(.it-dm, .ph-dm) .dm { width: 224px; height: 108px; --m: var(--ml); color: var(--screen-dim); --dm-acc: var(--screen-signal); scale: 1.4; image-rendering: pixelated; }
