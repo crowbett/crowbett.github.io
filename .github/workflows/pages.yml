@@ -1,6 +1,8 @@
 name: pages
 
-# One job so deploy does not wait for a second runner; CI must stay under 60 s.
+# Gate and e2e run on separate runners at once, and deploy waits for both;
+# push to deploy must stay under 60 s. One job ran both and passed 60 s at
+# 15 projects (55 s of checks plus about 10 s of upload and deploy).
 on:
   push:
     branches: [main]
@@ -16,16 +18,64 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  gate:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Go 1.27.0
+        # setup-go spent ~4 s copying Go into the tool cache on every run (F2).
+        # A stalled download held two F5 test jobs to the 5 min timeout.
+        run: |
+          curl -fsSL --retry 3 --retry-all-errors --connect-timeout 10 --max-time 20 -o "$RUNNER_TEMP/go.tgz" https://go.dev/dl/go1.27.0.linux-amd64.tar.gz
+          echo "675c26c449cbb18fc24b74650de1eabbae6e16f64326fd85a283fb3b58280685  $RUNNER_TEMP/go.tgz" | sha256sum -c --quiet
+          tar -C "$RUNNER_TEMP" -xzf "$RUNNER_TEMP/go.tgz"
+          echo "$RUNNER_TEMP/go/bin" >> "$GITHUB_PATH"
+          echo "GOTOOLCHAIN=local" >> "$GITHUB_ENV"
+      - name: Cache key
+        # Keyed on go.sum alone, the cache kept what the gate built when it was
+        # first saved, and every import added since was rebuilt on each run (F5):
+        # the key also covers each package's imports and the Makefile.
+        id: deps
+        run: |
+          imports=$(git ls-files -z '*.go' | xargs -0 awk '/^import \(/ { f = 1 } f || /^import "/ { d = FILENAME; sub(/\/[^\/]*$/, "", d); print d, $0 } /^\)/ { f = 0 }' | sort -u)
+          echo "hash=$(echo "$imports" | cat go.sum Makefile - | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: go-1.27.0-${{ github.job }}-${{ steps.deps.outputs.hash }}
+          # Each job builds different packages, so each keeps its own cache;
+          # the shared prefix warms a new key from the other's.
+          restore-keys: |
+            go-1.27.0-${{ github.job }}-
+            go-1.27.0-
+      - run: make -j8 gate
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: dist
+
+  e2e:
+    name: e2e ${{ matrix.shard }}
+    # Three runners split the page tabs; the last also runs every other test.
+    strategy:
+      matrix:
+        include:
+          - shard: 0
+            run: ^TestSite$$  # make reads $$ as $
+          - shard: 1
+            run: ^TestSite$$
+          - shard: 2
+            run: .
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      E2E_SHARD: ${{ matrix.shard }}/3
     steps:
       - name: Warm Chrome
         # Chrome's first start on a fresh runner took up to ~13 s inside e2e (F2);
-        # this one runs in the background while Go is fetched and the gate runs.
+        # this one runs in the background while Go is fetched and the cache restored.
         # Reading Chrome's files 16 at a time first got it warm in 2-7 s; on its
         # own the warm start took 8-15 s on some runners and overlapped e2e (F5).
         run: ({ find /opt/google/chrome -type f -size +100k -print0 | xargs -0 -P 16 -n 1 cat; google-chrome --headless=new --no-sandbox --disable-gpu --dump-dom about:blank; } > /dev/null 2>&1 &)
@@ -52,12 +102,21 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: go-1.27.0-${{ steps.deps.outputs.hash }}
-          restore-keys: go-1.27.0-
-      - name: Gate and browser checks
-        run: make -j8 --output-sync=target NICE="nice -n 10" gate e2e
-      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
-        with:
-          path: dist
+          key: go-1.27.0-${{ github.job }}-${{ steps.deps.outputs.hash }}
+          # Each job builds different packages, so each keeps its own cache;
+          # the shared prefix warms a new key from the other's.
+          restore-keys: |
+            go-1.27.0-${{ github.job }}-
+            go-1.27.0-
+      - run: make e2e E2E_FLAGS='-run ${{ matrix.run }}'
+
+  deploy:
+    needs: [gate, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
       - id: deploy
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

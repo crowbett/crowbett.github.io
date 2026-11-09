@@ -19,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -64,10 +65,87 @@ var demoChecks = map[string][]string{
 			return ok && await until(() => document.querySelector(".cg-summary").textContent.startsWith("main "));
 		})()`,
 	},
+	"lobby": {
+		`Number(document.querySelector(".lb-cells [data-k=rooms] .lb-v").textContent) > 0 && /^Matchmaking floor at [\d.]+ s of simulated time: \d+ waiting, \d+ rooms started/.test(document.querySelector(".lb-canvas").getAttribute("aria-label"))`,
+		`(() => { const c = document.querySelector(".lb-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
+		`(async () => {
+			const click = (t) => [...document.querySelectorAll(".lb-acts button")].find((b) => b.textContent === t).click();
+			const v = (k) => document.querySelector(".lb-cells [data-k=" + k + "] .lb-v").textContent;
+			if (document.querySelector(".lb-acts button").textContent === "Pause") click("Pause");
+			click("Reset");
+			let ok = await until(() => v("t") === "8.0 s" && v("rooms") === "12" && v("queue") === "5");
+			const s = document.querySelector("input[name=skill]");
+			s.value = "1500";
+			click("Queue me");
+			ok = ok && await until(() => document.querySelector(".lb-you").textContent.startsWith("You are queued at skill 1,500."));
+			click("Step 1 s");
+			return ok && await until(() => document.querySelector(".lb-you").textContent === "Matched after 0.1 s into m13 with 1,461; skill spread 39." && v("rooms") === "13");
+		})()`,
+		`(async () => {
+			const v = (k) => document.querySelector(".lb-cells [data-k=" + k + "] .lb-v").textContent;
+			const m = document.querySelector("select[name=mode]");
+			m.value = "squad"; m.dispatchEvent(new Event("change"));
+			return await until(() => v("t") === "8.0 s" && v("rooms") === "3" && v("refills") === "1" && v("walkouts") === "1" && v("short") === "0" &&
+				!document.querySelector(".lb-cells [data-k=refills]").hidden && !document.querySelector("input[name=refill]").closest("label").hidden);
+		})()`,
+	},
+	"mcpbridge": {
+		`document.querySelector('.mb-row[data-leg="b2s"] .mb-method').textContent === "server/discover"`,
+		`document.querySelector(".mb-ihead").textContent === "16 · bridge to server · tools/list" && [...document.querySelectorAll(".mb-json .mb-add .mb-k")].some((k) => k.textContent === '"io.modelcontextprotocol/protocolVersion"')`,
+		`document.querySelector(".mb-refused .mb-badge").textContent === "unsupported" && document.querySelector(".mb-status").textContent.startsWith("7 client frames, 26 frames on the wire: 4 translated, 4 made by the bridge, 1 refused")`,
+		`(async () => {
+			const st = () => document.querySelector(".mb-status").textContent;
+			const settled = () => !document.querySelector(".mb-pending");
+			const click = (t) => [...document.querySelectorAll(".mb-bar button")].find((b) => b.textContent.startsWith(t)).click();
+			click("Step");
+			let ok = await until(() => st().startsWith("1 client frame, 6 frames on the wire") && settled());
+			click("Play");
+			ok = ok && await until(() => document.querySelector(".mb-bar button").textContent === "Playing…");
+			ok = ok && await until(() => /^[2-6] client frames/.test(st()));
+			click("Step");
+			return ok && await until(() => /^[3-7] client frames/.test(st()) && settled() && document.querySelector(".mb-bar button").textContent === "Play");
+		})()`,
+		`(async () => {
+			const methods = (leg) => [...document.querySelectorAll('.mb-row[data-leg="' + leg + '"] .mb-method')].map((m) => m.textContent);
+			const d = document.querySelector("select[name=direction]");
+			d.value = "reverse"; d.dispatchEvent(new Event("change"));
+			let ok = await until(() => methods("b2s").includes("initialize") && methods("b2c").includes("prompts/list error -32602"));
+			document.querySelectorAll('.mb-row[data-leg="c2b"] .mb-pkt')[3].click();
+			const ta = document.querySelector(".mb-ed textarea");
+			ta.value = JSON.stringify({ jsonrpc: "2.0", id: 4, method: "prompts/list", params: { _meta: { "io.modelcontextprotocol/protocolVersion": "2026-07-28", "io.modelcontextprotocol/clientCapabilities": {} } } });
+			ta.dispatchEvent(new Event("input"));
+			ok = ok && await until(() => methods("b2c").includes("prompts/list result") && methods("b2s").includes("prompts/list"));
+			d.value = "forward"; d.dispatchEvent(new Event("change"));
+			return ok && await until(() => methods("b2s")[0] === "server/discover" && document.querySelector(".mb-ihead").textContent.startsWith("16 "));
+		})()`,
+	},
 	"ratelimitd": {
 		`[...document.querySelectorAll(".rl-chart")].map(c => c.dataset.algo).join() === "gcra,token_bucket,sliding_window"`,
 		`[...document.querySelectorAll(".rl-chart")].every(c => c.querySelectorAll("rect.rl-allowed").length > 20 && c.querySelectorAll("rect.rl-denied").length > 0)`,
 		`/^1,\d{3} requests through 3 algorithms/.test(document.querySelector(".rl-status").textContent)`,
+	},
+	"btrv": {
+		`[...document.querySelectorAll(".bt-key")].map((k) => k.dataset.kind + ":" + k.querySelector(".bt-count").textContent).filter((t) => /^(fcr|pat|free|unreferenced):/.test(t)).join() === "fcr:2,pat:2,free:5,unreferenced:4"`,
+		`(async () => {
+			const fact = (k) => [...document.querySelectorAll(".bt-facts > div")].find((d) => d.querySelector("dt").textContent === k)?.querySelector("dd").textContent;
+			const cells = () => [...(document.querySelector(".bt-rows tbody tr:not(.bt-spacer)")?.querySelectorAll("td") || [])].map((td) => td.textContent).slice(0, 3).join();
+			let ok = await until(() => fact("rows read") === "2,919" && fact("column errors") === "0" && cells() === "1,1,Ann");
+			const seg = (t) => [...document.querySelectorAll(".bt-seg button")].find((b) => b.textContent === t);
+			seg("Inferred").click();
+			ok = ok && await until(() => document.querySelector(".bt-pair .bt-sub").textContent === "inferred by btrv from the first 1,000 records" && fact("rows read") === "2,919" && !seg("Dictionary").disabled);
+			seg("Dictionary").click();
+			ok = ok && await until(() => document.querySelector(".bt-pair .bt-sub").textContent.startsWith("from the DDF dictionary") && fact("rows read") === "2,919" && !seg("Inferred").disabled);
+			const map = document.querySelector(".bt-map");
+			for (let i = 0; i <= 40; i++) map.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+			const dmg = document.querySelector(".bt-damage");
+			ok = ok && !dmg.hidden && dmg.textContent === "Damage page 40";
+			dmg.click();
+			ok = ok && await until(() => document.querySelector(".bt-key-bad .bt-count")?.textContent === "1" && /^Stopped: /m.test(document.querySelector(".bt-lines").innerText) && !dmg.disabled);
+			dmg.click();
+			ok = ok && await until(() => fact("rows read") === "2,919" && !document.querySelector(".bt-key-bad") && !dmg.disabled);
+			document.querySelector(".bt-export button").click();
+			return ok && await until(() => document.querySelector(".bt-expstatus").textContent.startsWith("PERSON.csv: 2,919 rows written, 0 with column errors"));
+		})()`,
 	},
 	"jobrun": {
 		`document.querySelectorAll(".jr-run").length === 10 && document.querySelector(".jr-run .jr-mono").textContent === "Thu 2026-01-01 09:00"`,
@@ -166,6 +244,54 @@ var demoChecks = map[string][]string{
 			return ok && await until(() => text(".st-where") === "11 of 25 · z 2.2 mm");
 		})()`,
 	},
+	"grepall": {
+		`[...document.querySelectorAll(".ga-fcount")].map((c) => c.textContent).join() === "283,158,23"`,
+		`[...document.querySelectorAll(".ga-chip code")].map((c) => c.textContent).slice(0, 3).join() === "fun,new,unc" && document.querySelector(".ga-ptree .ga-op").textContent === "Concat"`,
+		`document.querySelector(".ga-rh .ga-t").textContent === "34 lines in 23 files" && document.querySelectorAll(".ga-list mark").length > 0`,
+		`/^Index built here in [\d.,]+ ms: 283 files, 1\.84 MiB of source/.test(document.querySelector(".ga-built").textContent)`,
+		`(async () => {
+			const counts = () => [...document.querySelectorAll(".ga-fcount")].map((c) => c.textContent).join();
+			const preset = (q) => [...document.querySelectorAll(".ga-presets button")].find((b) => b.querySelector("code").textContent === q).click();
+			preset("Kelvin");
+			let ok = await until(() => counts() === "283,3,1" && document.querySelector(".ga-list").textContent.includes("Kelvin"));
+			preset(":=.*<-");
+			ok = ok && await until(() => counts() === "283,283,1" && document.querySelector(".ga-all") !== null);
+			const q = document.querySelector("input[name=q]");
+			q.value = "func(";
+			q.dispatchEvent(new Event("input"));
+			ok = ok && await until(() => document.querySelector(".ga-status").textContent.includes("missing closing )"));
+			preset("func\\s+New\\w+\\(");
+			return ok && await until(() => counts() === "283,158,23" && !document.querySelector(".ga-err"));
+		})()`,
+	},
+	"stash": {
+		`[...document.querySelectorAll(".sh-sum")].map((d) => d.textContent).join("|") === "11 chunks: 3 new, 8 reused · 3,513 B → 944 B stored|10 chunks: 10 new, 0 reused · 3,333 B → 3,179 B stored" && [...document.querySelectorAll(".sh-totals .sh-v")].map((d) => d.textContent).join() === "2,6,846 B,4,123 B,1.66×,13,2"`,
+		`document.querySelector(".sh-live").textContent === "No unsaved changes: all 11 chunks of 3,513 B are already in the repository." && document.querySelectorAll(".sh-mirror .sh-c").length === 11 && document.querySelectorAll(".sh-verify .sh-ok").length === 5 && document.querySelector(".sh-kdf").textContent.startsWith("argon2id: 8 MiB, 1 pass, 1 lane, salt c792bc6ffb050e1b67714c1e4814c1e3")`,
+		`(async () => {
+			const q = (s) => document.querySelector(s);
+			const btn = (t) => [...document.querySelectorAll(".sh-panel button")].find((b) => b.textContent === t);
+			btn("Unlock").click();
+			let ok = await until(() => /^Refused in [\d,]+ ms: with that passphrase/.test(q(".sh-result").textContent));
+			q("input[name=try]").value = "correct horse battery staple";
+			btn("Unlock").click();
+			return ok && await until(() => /^Unlocked in [\d,]+ ms: master key 97f0bf7b, the key that sealed every pack below\.$/.test(q(".sh-result").textContent));
+		})()`,
+		`(async () => {
+			const q = (s) => document.querySelector(s);
+			const btn = (t) => [...document.querySelectorAll(".sh-panel button")].find((b) => b.textContent === t);
+			btn("Delete a line").click();
+			let ok = await until(() => q(".sh-live").textContent === "Unsaved: 1 of 10 chunks (489 B) are new; a backup now stores only those.");
+			btn("Back up").click();
+			ok = ok && await until(() => document.querySelectorAll(".sh-row").length === 3 && q(".sh-sum").textContent === "10 chunks: 1 new, 9 reused · 3,379 B → 447 B stored");
+			ok = ok && await until(() => !btn("Flip one bit").disabled && q(".sh-byte").textContent.startsWith("byte 181 of 447: ciphertext of chunk 54c8efa2"));
+			btn("Flip one bit").click();
+			ok = ok && await until(() => q(".sh-verify .sh-bad .sh-why")?.textContent === "integrity error: blob 54c8efa2: authentication failed (MAC mismatch)");
+			q(".sh-row button").click();
+			ok = ok && await until(() => q(".sh-restore").textContent === "Restore refused at chunk 7 (pack 3): integrity error: blob 54c8efa2: authentication failed (MAC mismatch)");
+			btn("Flip it back").click();
+			return ok && await until(() => !document.querySelector(".sh-verify .sh-bad") && /^Restored 3,379 B from 10 chunks; .* identical to what was backed up\.$/.test(q(".sh-restore").textContent));
+		})()`,
+	},
 	"keel": {
 		`[...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join() === "24f2fb94354d9d25,24f2fb94354d9d25" && document.querySelector(".kl-match") !== null`,
 		`[...document.querySelectorAll(".kl-totals dd")].map((d) => d.textContent).join() === "535,0,6,14,linearizable"`,
@@ -181,19 +307,68 @@ var demoChecks = map[string][]string{
 			return ok && document.querySelectorAll(".kl-events li").length === 15;
 		})()`,
 	},
+	"raytracer": {
+		`document.querySelector(".rt-info").textContent === "Cornell box: 300 × 300 px, 8 top-level objects, 1 sampled light, SAH BVH of 9 nodes (depth 5), up to 50 bounces, seed 1."`,
+		`(() => { const lit = (sel) => { const c = document.querySelector(sel); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i + 3] === 255 && d[i] + d[i + 1] + d[i + 2] > 0) n++; return c.width === 300 && c.height === 300 ? n / (c.width * c.height) : 0; }; const m = lit(".rt-canvas-l"), n = lit(".rt-canvas:not(.rt-canvas-l)"); return m > 0.02 && n > 0.6 && n > 2 * m; })()`,
+		`(() => { const v = [...document.querySelectorAll(".rt-cells .rt-v")].map((n) => n.textContent); return Number(v[0]) >= 1 && Number(v[2]) > Number(v[3]) && /^\d+\.\d\d×$/.test(v[4]) && /^[\d,]+k$/.test(v[1]); })()`,
+		`(async () => {
+			const grip = document.querySelector(".rt-grip");
+			const left = document.querySelector(".rt-canvas-l");
+			grip.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+			let ok = grip.getAttribute("aria-valuenow") === "48" && left.style.clipPath === "inset(0px 52% 0px 0px)";
+			grip.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true }));
+			ok = ok && grip.getAttribute("aria-valuenow") === "100";
+			for (const key of ["Home", "PageUp", "PageUp", "PageUp", "PageUp", "PageUp"]) grip.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+			ok = ok && grip.getAttribute("aria-valuenow") === "50";
+			const s = document.querySelector("select[name=scene]");
+			s.value = "cover"; s.dispatchEvent(new Event("change"));
+			const info = () => document.querySelector(".rt-info").textContent;
+			ok = ok && await until(() => info().startsWith("Book 1 cover (sky-lit): 300 × 168 px, 484 top-level objects, 0 sampled lights, SAH BVH of 581 nodes (depth 12)") && document.querySelector(".rt").dataset.split === "off");
+			s.value = "cornell"; s.dispatchEvent(new Event("change"));
+			return ok && await until(() => info().startsWith("Cornell box: ") && document.querySelector(".rt").dataset.split === "on" && /^Cornell box: [1-9]/.test(document.querySelector(".rt-status").textContent));
+		})()`,
+	},
+	"netcode": {
+		`document.querySelector(".nc-lamp").dataset.state === "ok" && /^State hashes match: client [1-6], tick [\d,]+$/.test(document.querySelector(".nc-lamp-text").textContent) && /^[0-9a-f]{16}$/.test(document.querySelector(".nc-lamp-hash").textContent)`,
+		`(() => { const v = [...document.querySelectorAll(".nc-world .nc-v")].map((n) => n.textContent); return v[3] === "0" && Number(v[2].replace(/,/g, "")) > 0; })()`,
+		`[...document.querySelectorAll(".nc-cells")].every((c) => /^[\d,]+$/.test(c.querySelector(".nc-v").textContent))`,
+		`(() => { const c = document.querySelector(".nc-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n > 20000; })()`,
+		`(async () => {
+			const play = document.querySelector(".nc-play");
+			if (play.textContent === "Pause") play.click();
+			const tick = () => Number(document.querySelector(".nc-world .nc-v").textContent.replace(/,/g, ""));
+			await new Promise((r) => setTimeout(r, 100));
+			const before = tick();
+			document.querySelector(".nc-step").click();
+			await until(() => tick() === before + 60);
+			return /^Tick [\d,]+, [\d.]+ s simulated: you rolled back [\d,]+ times?, [\d,]+ frames? resimulated; [\d,]+ hash checks, 0 desyncs\.$/.test(document.querySelector(".nc-status").textContent);
+		})()`,
+	},
 }
 
+// layoutOnly viewports check page layout (overflow, CLS, a screenshot) and
+// leave demos and axe to desktop and phone, which already cover them: running
+// demos on a third width pushed CI past its 60 s budget. Demo behaviour does
+// not depend on the scheme: light tabs run every check, dark tabs mount the
+// demo and run its first check.
 var viewports = []struct {
 	name          string
 	width, height int64
+	layoutOnly    bool
 }{
-	{"desktop", 1280, 900},
-	{"phone", 390, 844},
+	{"desktop", 1280, 900, false},
+	{"tablet", 820, 1180, true},
+	{"phone", 390, 844, false},
 }
 
 // schemes are emulated explicitly: an unset scheme follows the host OS, so a
 // dark machine would never shoot the light theme.
 var schemes = []string{"light", "dark"}
+
+// keepShots is false on CI, which keeps no screenshots: it skips taking them,
+// and skips dark tabs at desktop and tablet, whose layout matches light and
+// whose demo and axe checks run elsewhere (phone dark, desktop light).
+var keepShots = os.Getenv("CI") == "" && os.Getenv("E2E_NOSHOTS") == ""
 
 // The package builds the site once and starts one Chrome for every test:
 // each extra Chrome cost a cold start on CI (F2 in docs/tasks.md).
@@ -293,19 +468,68 @@ func TestSite(t *testing.T) {
 		pages = append(pages, "/projects/"+p.Slug+"/")
 	}
 
-	// One tab per page, viewport and scheme, all in parallel.
-	t.Run("pages", func(t *testing.T) {
-		for _, page := range pages {
-			for _, vp := range viewports {
-				for _, scheme := range schemes {
-					shot := name(page) + "-" + vp.name + "-" + scheme
-					t.Run(name(page)+"/"+vp.name+"/"+scheme, func(t *testing.T) {
-						t.Parallel()
-						visit(t, srv.URL+page, vp.width, vp.height, scheme, filepath.Join(shots, shot))
-					})
+	// One tab per page, viewport and scheme, all in parallel. The slowest tabs
+	// start first so they do not run on alone at the end: desktop and phone
+	// light, which run every demo check, then the pages with the most checks
+	// (home replays the hero).
+	type tab struct {
+		page, scheme string
+		vp           int
+	}
+	var tabs []tab
+	for _, page := range pages {
+		for vi, vp := range viewports {
+			for _, scheme := range schemes {
+				if keepShots || scheme == "light" || vp.name == "phone" {
+					tabs = append(tabs, tab{page, scheme, vi})
 				}
 			}
 		}
+	}
+	cost := func(x tab) int {
+		n := len(demoChecks[strings.TrimSuffix(strings.TrimPrefix(x.page, "/projects/"), "/")])
+		if x.page == "/" {
+			n = 99
+		}
+		if !viewports[x.vp].layoutOnly && x.scheme == "light" {
+			n += 1000
+		}
+		if viewports[x.vp].layoutOnly || x.scheme == "dark" && viewports[x.vp].name != "phone" {
+			n -= 1000
+		}
+		return n
+	}
+	slices.SortStableFunc(tabs, func(a, b tab) int { return cost(b) - cost(a) })
+	// CI splits the tabs across runners: E2E_SHARD=i/n keeps every nth tab.
+	shard, shards := 0, 1
+	if s := os.Getenv("E2E_SHARD"); s != "" {
+		if _, err := fmt.Sscanf(s, "%d/%d", &shard, &shards); err != nil || shard < 0 || shard >= shards {
+			t.Fatalf("E2E_SHARD=%q, want i/n with 0 <= i < n", s)
+		}
+	}
+	// Twelve workers take tabs in that order; t.Parallel starts them in no
+	// particular order.
+	queue := make(chan tab, len(tabs))
+	for i, x := range tabs {
+		if i%shards == shard {
+			queue <- x
+		}
+	}
+	close(queue)
+	t.Run("pages", func(t *testing.T) {
+		var wg sync.WaitGroup
+		for range 12 {
+			wg.Go(func() {
+				for x := range queue {
+					vp := viewports[x.vp]
+					shot := name(x.page) + "-" + vp.name + "-" + x.scheme
+					t.Run(name(x.page)+"/"+vp.name+"/"+x.scheme, func(t *testing.T) {
+						visit(t, srv.URL+x.page, vp.width, vp.height, vp.layoutOnly, x.scheme, filepath.Join(shots, shot))
+					})
+				}
+			})
+		}
+		wg.Wait()
 	})
 }
 
@@ -445,41 +669,44 @@ func TestReducedMotion(t *testing.T) {
 	t.Parallel()
 	for _, page := range []string{"/", "/projects/quorum/", "/demos/smoke/"} {
 		for _, motion := range []string{"no-preference", "reduce"} {
-			ctx, cancel := newTab(t, 60*time.Second)
-			err := chromedp.Do(ctx,
-				chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
-					_, err := cdp.Call(ctx, t, emulation.SetEmulatedMedia, emulation.SetEmulatedMediaParams{
-						Features: []*emulation.MediaFeature{{Name: "prefers-reduced-motion", Value: motion}},
-					})
-					return err
-				}),
-				chromedp.Navigate(srv.URL+page),
-				chromedp.WaitReady(chromedp.CSS("body")),
-			)
-			if err != nil {
-				t.Fatal(err)
-			}
-			n, err := chromedp.Run(ctx, chromedp.Evaluate[int](`(async () => {
-				const s = document.querySelector("[data-demo]");
-				if (s) {
-					s.querySelector("[data-demo-start]").click();
-					await new Promise((r) => { const t = setInterval(() => { if ("demoReady" in s.dataset) { clearInterval(t); r(); } }, 10); });
-				} else {
-					document.querySelector(".row, .facts")?.scrollIntoView({ block: "center" });
-					await new Promise((r) => setTimeout(r, 400));
+			t.Run(name(page)+"/"+motion, func(t *testing.T) {
+				t.Parallel()
+				ctx, cancel := newTab(t, 60*time.Second)
+				err := chromedp.Do(ctx,
+					chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
+						_, err := cdp.Call(ctx, t, emulation.SetEmulatedMedia, emulation.SetEmulatedMediaParams{
+							Features: []*emulation.MediaFeature{{Name: "prefers-reduced-motion", Value: motion}},
+						})
+						return err
+					}),
+					chromedp.Navigate(srv.URL+page),
+					chromedp.WaitReady(chromedp.CSS("body")),
+				)
+				if err != nil {
+					t.Fatal(err)
 				}
-				return document.getAnimations().length;
-			})()`, chromedp.EvalAwaitPromise))
-			cancel()
-			if err != nil {
-				t.Fatal(err)
-			}
-			if motion == "reduce" && n != 0 {
-				t.Errorf("%s: %d animations run with reduced motion", page, n)
-			}
-			if motion != "reduce" && n == 0 {
-				t.Errorf("%s: nothing animates with motion allowed, so the reduced-motion check proves nothing", page)
-			}
+				n, err := chromedp.Run(ctx, chromedp.Evaluate[int](`(async () => {
+					const s = document.querySelector("[data-demo]");
+					if (s) {
+						s.querySelector("[data-demo-start]").click();
+						await new Promise((r) => { const t = setInterval(() => { if ("demoReady" in s.dataset) { clearInterval(t); r(); } }, 10); });
+					} else {
+						document.querySelector(".row .dm, .facts .dm")?.scrollIntoView({ block: "center" });
+						await new Promise((r) => setTimeout(r, 400));
+					}
+					return document.getAnimations().length;
+				})()`, chromedp.EvalAwaitPromise))
+				cancel()
+				if err != nil {
+					t.Fatal(err)
+				}
+				if motion == "reduce" && n != 0 {
+					t.Errorf("%s: %d animations run with reduced motion", page, n)
+				}
+				if motion != "reduce" && n == 0 {
+					t.Errorf("%s: nothing animates with motion allowed, so the reduced-motion check proves nothing", page)
+				}
+			})
 		}
 	}
 }
@@ -603,7 +830,7 @@ func visitTab(t *testing.T, d time.Duration) (ctx context.Context, release func(
 	}
 }
 
-func visit(t *testing.T, url string, w, h int64, scheme, shot string) {
+func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot string) {
 	tab, release := visitTab(t, 90*time.Second)
 	defer func() { release(!t.Failed()) }()
 	ctx, cancel := context.WithCancel(tab)
@@ -659,7 +886,9 @@ func visit(t *testing.T, url string, w, h int64, scheme, shot string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if hasDemo {
+	// Dark tabs start the demo only at phone width, where axe checks its
+	// contrast; desktop dark shares the light layout.
+	if hasDemo && !layoutOnly && (scheme == "light" || w < 1000) {
 		err := chromedp.Do(ctx, chromedp.Click(chromedp.CSS("[data-demo-start]")))
 		if err == nil {
 			_, err = chromedp.Run(ctx, chromedp.Poll[bool](`document.querySelector("[data-demo-ready],[data-demo-error]") !== null`,
@@ -677,6 +906,9 @@ func visit(t *testing.T, url string, w, h int64, scheme, shot string) {
 			t.Fatal(err)
 		}
 		checks := demoChecks[slug]
+		if scheme == "dark" {
+			checks = checks[:min(1, len(checks))]
+		}
 		if len(checks) == 0 {
 			t.Errorf("demo %q has no entry in demoChecks", slug)
 		}
@@ -689,7 +921,7 @@ func visit(t *testing.T, url string, w, h int64, scheme, shot string) {
 	// axe at phone width in both schemes (contrast follows the scheme, reflow
 	// problems show at 390 px); the Tab walk at desktop. Splitting them keeps
 	// CI under its 60 s budget.
-	if w < 1000 {
+	if w < 1000 && !layoutOnly {
 		pageQuality(t, ctx)
 	} else if scheme == "light" {
 		tabOrder(t, ctx)
@@ -701,6 +933,21 @@ func visit(t *testing.T, url string, w, h int64, scheme, shot string) {
 	if overflow {
 		t.Errorf("page scrolls horizontally at %dpx", w)
 	}
+	if keepShots {
+		screenshot(t, ctx, w, shot)
+	}
+	cancel()
+	<-done
+	mu.Lock()
+	defer mu.Unlock()
+	for _, p := range problems {
+		t.Error(p)
+	}
+}
+
+// screenshot saves the whole page at width w to shot.jpg.
+func screenshot(t *testing.T, ctx context.Context, w int64, shot string) {
+	t.Helper()
 	// Shots show diagrams at rest, not wherever a one-shot animation is, and
 	// sticky elements where a visitor first sees them, not where the Tab walk left them.
 	// The viewport grows to the whole page first, so every in-view animation
@@ -738,13 +985,6 @@ func visit(t *testing.T, url string, w, h int64, scheme, shot string) {
 	}
 	if err := os.WriteFile(shot+".jpg", img, 0o644); err != nil {
 		t.Fatal(err)
-	}
-	cancel()
-	<-done
-	mu.Lock()
-	defer mu.Unlock()
-	for _, p := range problems {
-		t.Error(p)
 	}
 }
 

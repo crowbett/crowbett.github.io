@@ -5,18 +5,15 @@ lang: Rust
 tags: static analysis, MCP, call graphs
 repo: https://github.com/crowbett/codegraph
 demo: live
-demo_try: Pick a function in a small Rust sample and see who calls it and what it calls, with each edge's confidence.
+demo_try: Pick a function in a small Rust sample to see its callers and callees, with each edge's confidence.
 order: 7
 metric: 99.5% callers recall, 0.6% false call edges vs SCIP ground truth
 metric_source: 16 repos / 1,079 files, docs/ACCURACY.md
 ---
-codegraph builds a call and reference graph for AI agents and measures every edge's accuracy against
-compiler-grade ground truth (scip-go, rust-analyzer, scip-typescript, scip-python). Edges it marks
-`exact` are 99.9% correct (47,193 of 47,258).
+- A call and reference graph for AI agents, served from a CLI and an MCP server.
+- Every edge's accuracy is measured against compiler-grade ground truth: scip-go, rust-analyzer, scip-typescript and scip-python.
+- Edges it marks `exact` are 99.9% correct (47,193 of 47,258).
 
-The demo runs codegraph's indexer, resolver and SQLite graph compiled to WebAssembly: it indexes a
-four-file Rust sample in your tab and lists the callers and callees the resolver reports for the
-function you pick, each with the confidence codegraph gives it. Calls it cannot resolve, such as those
-into the standard library or `e.is_fatal()`, whose receiver type it does not infer, are listed as
-unresolved. Every answer matches native codegraph's on the same files
-(`crates/codegraph-web/check.mjs` in the repo).
+## How the demo works
+
+codegraph's indexer, resolver and SQLite graph, compiled to WebAssembly, index a four-file Rust sample in your tab. Calls it cannot resolve, such as those into the standard library, are listed as unresolved. Every answer matches native codegraph on the same files (`crates/codegraph-web/check.mjs`).

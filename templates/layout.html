@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>{{if .Title}}{{.Title}} · {{end}}{{.Owner.Name}}</title>
-<meta name="description" content="{{if .Project}}{{.Project.Tagline}}{{else}}{{.Owner.Name}}, {{.Owner.Role}}. Databases, consensus, caches, queues and rate limiters I built and measured.{{end}}">
+<meta name="description" content="{{if .Project}}{{.Project.Tagline}}{{else}}{{.Owner.Name}}, {{.Owner.Role}}. Databases, caches, queues, code search, game netcode and a path tracer I built and measured.{{end}}">
 <link rel="canonical" href="{{.Canonical}}">
 <meta property="og:title" content="{{if .Title}}{{.Title}}{{else}}{{.Owner.Name}}{{end}}">
-<meta property="og:description" content="{{if .Project}}{{.Project.Tagline}}{{else}}Databases, consensus, caches, queues and rate limiters I built and measured.{{end}}">
+<meta property="og:description" content="{{if .Project}}{{.Project.Tagline}}{{else}}Databases, caches, queues, code search, game netcode and a path tracer I built and measured.{{end}}">
 <meta property="og:url" content="{{.Canonical}}">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="{{.Owner.Name}}">
@@ -43,8 +43,8 @@
 {{define "foot"}}
 </main>
 <footer class="foot">
-  <p>Built with a small Go static site generator. No tracking, no cookies.</p>
-  <p>© {{.Year}} {{.Owner.Name}}, <a href="mailto:{{.Owner.Email}}">{{.Owner.Email}}</a></p>
+  <p>No tracking, no cookies.</p>
+  <p>© {{.Year}} {{.Owner.Name}} · <a href="mailto:{{.Owner.Email}}">{{.Owner.Email}}</a></p>
 </footer>
 <script type="module" src="/assets/motion.js"></script>
 </body>
