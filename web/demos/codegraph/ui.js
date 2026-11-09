@@ -47,7 +47,7 @@ export async function mount(root, demo) {
     pick.append(group);
   }
   const field = el("label", "demo-field cg-field");
-  field.append(el("span", "demo-label", "Function or method"), pick);
+  field.append(el("span", "demo-label", "function or method"), pick);
   form.append(field);
 
   const summary = el("p", "cg-summary");
@@ -55,7 +55,7 @@ export async function mount(root, demo) {
 
   const lists = {};
   const graph = el("div", "cg-graph");
-  for (const [dir, title] of [["callers", "Callers"], ["callees", "Callees"]]) {
+  for (const [dir, title] of [["callers", "callers"], ["callees", "callees"]]) {
     const sec = el("section", "cg-col");
     const h = el("h3", "demo-label", title);
     h.id = `cg-${dir}`;

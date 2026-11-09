@@ -1,11 +1,9 @@
 .sh-panel {
-  --sh-new: #bd330b; --sh-new-tint: #f7dcd1; --sh-band: #e2e6eb; --sh-last: #fbebe4;
-  --sh-reused: #9aa1ab; --sh-dup: #5a606a; --sh-ground: var(--sunken);
-  --sh-tag: var(--sh-new); --sh-hdr: var(--sh-reused);
+  --sh-new: var(--signal); --sh-new-tint: color-mix(in oklab, var(--signal) 18%, var(--bg)); --sh-last: color-mix(in oklab, var(--signal) 9%, var(--bg));
+  --sh-band: color-mix(in oklab, var(--line) 50%, var(--bg)); --sh-reused: color-mix(in oklab, var(--text-3) 50%, var(--bg));
+  --sh-dup: var(--text-3); --sh-ground: var(--sunken);
+  --sh-tag: var(--sh-new); --sh-hdr: color-mix(in oklab, var(--text-3) 40%, var(--bg));
   display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0;
-}
-@media (prefers-color-scheme: dark) {
-  .sh-panel { --sh-new: #fe7249; --sh-new-tint: #43200f; --sh-band: #1d2230; --sh-last: #2a1712; --sh-reused: #545c69; --sh-dup: #8f96a3; --sh-hdr: #4b5361; }
 }
 .sh-panel + .sh-panel { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line-strong); }
 .sh-out { margin-top: 24px; }
@@ -42,9 +40,8 @@
 .sh-flash { animation: sh-flash 0.3s; }
 @keyframes sh-flash { from { background: var(--sh-new-tint); } }
 .sh-live, .sh-kdf, .sh-byte { margin: 0; font: 400 0.75rem/1.6 var(--mono); color: var(--text-2); overflow-wrap: anywhere; }
-.sh-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; font: 400 0.6875rem/1.5 var(--mono); color: var(--text-2); }
-.sh-key { --c: var(--text); }
-.sh-key::before { content: ""; display: inline-block; width: 0.75rem; height: 0.75rem; margin-right: 0.35rem; vertical-align: -0.1rem; background: var(--c); }
+.sh-key { --c: var(--text); display: inline-flex; align-items: center; gap: 0.5em; }
+.sh-key::before { content: ""; flex: none; width: 0.75em; height: 0.75em; background: var(--c); }
 [data-s="bad"]::before { background: linear-gradient(var(--sh-ground), var(--sh-ground)) center / 40% 40% no-repeat, var(--c); }
 .sh-rows { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .sh-rowhead { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-bottom: 4px; font: 400 0.75rem/1.5 var(--mono); font-variant-numeric: tabular-nums; }
@@ -58,8 +55,6 @@
 .sh-bad.sh-restore, .sh-result.sh-bad { color: var(--danger); }
 .sh-result { margin: 0; min-height: 1.4em; font-size: 0.875rem; color: var(--text-2); }
 .sh-result.sh-ok { color: var(--live); }
-.sh-cells li { display: flex; flex-direction: column; gap: 2px; }
-.sh-k { color: var(--text-3); }
 .sh-v { font-size: 0.875rem; color: var(--text); }
 .sh-ratio .sh-v { color: var(--accent); font-weight: 600; }
 .sh-hex { margin: 0; padding: 8px 12px; background: var(--sunken); font: 400 0.75rem/1.6 var(--mono); word-break: break-all; }

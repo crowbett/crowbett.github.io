@@ -167,7 +167,7 @@ export async function mount(root, demo) {
   Object.assign(reqs, { name: "requests", rows: 5, spellcheck: false });
   const origin = el("fieldset", "ec-origin-fields");
   origin.append(
-    el("legend", "demo-label", "Origin response headers"),
+    el("legend", "demo-label", "origin response headers"),
     field("Cache-Control", cc, "ec-wide"),
     field("ETag", etag),
     field("Vary", vary),
@@ -178,10 +178,10 @@ export async function mount(root, demo) {
   const about = el("p", "ec-about");
   about.id = "ec-about";
   preset.setAttribute("aria-describedby", about.id);
-  form.append(field("Preset", preset, "ec-wide"), about, origin,
-    field("Requests: one per line, seconds then headers split by ;", reqs, "ec-wide"));
+  form.append(field("preset", preset, "ec-wide"), about, origin,
+    field("requests: one per line, seconds then headers split by ;", reqs, "ec-wide"));
 
-  const legend = el("p", "ec-legend");
+  const legend = el("p", "demo-legend ec-legend");
   for (const o of OUTCOMES) {
     const k = el("span", "ec-key", o);
     k.dataset.outcome = o;
