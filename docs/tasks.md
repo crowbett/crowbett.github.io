@@ -149,6 +149,8 @@ Every live project page opens like the home stage: the demo frame sits in the da
 ### V20 Full-screen project panels on home · status: done 2026-11-09
 The work index and its monitor became a stack of full-screen dark panels, one per project, like the home stage: name, tagline, metric and "Run it live" beside a 16:10 screen playing the project's clip. Each panel pins and the next slides up over it while the covered one sinks (view timelines named by `web/assets/work.js`); buried panels are not drawn; focus brings its panel up. Group pills on the work sheet jump to each group. e2e `workCheck` walks the reel by focus (home tabs emulate a focused page) and checks the panel covers the screen, plays alone and buries the right panels; `refusedCheck` moved to the panels.
 
+### V29 Scroll depth · status: done 2026-11-09
+As a panel slides in on any device, its glow rises from far behind and its name slides in ahead of the text; all settle flat when it pins. Timed on the panel's own view timeline. The home `depth` check scrolls it halfway in, then to where it pins.
 ### V28 Depth layers · status: done 2026-11-09
 Owner: "enhance our features and overall layers, i like the hover and the card moves". Under a mouse with motion allowed, a tilted screen now moves its layers by depth. The glow behind drifts with the pointer, the picture slides against the tilt inside its frame (within the hover zoom, so no edge shows) and the Open chip floats in front. feel.js sets `--dx/--dy` on the screen's parent. In the index, the other cards step back to half opacity while one is under the pointer. e2e `feelCheck` asserts the shift and the dimming (checked by mutation). Dropped: a JS panel sink, since V20's scroll-driven `sink` already does it.
 
