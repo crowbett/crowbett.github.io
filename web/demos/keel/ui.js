@@ -153,7 +153,7 @@ export async function mount(root, demo) {
 
   const form = el("form", "kl-controls");
   const seed = el("input");
-  Object.assign(seed, { type: "number", name: "seed", min: 0, max: MAX_SEED, step: 1, value: 7, required: true });
+  Object.assign(seed, { type: "number", name: "seed", min: 0, max: MAX_SEED, step: 1, value: 2, required: true });
   seed.inputMode = "numeric";
   const field = el("label", "demo-field kl-field");
   field.append(el("span", "demo-label", "seed"), seed);
@@ -237,5 +237,5 @@ export async function mount(root, demo) {
   again.addEventListener("click", () => guard(rerun));
 
   await cssReady;
-  await guard(async () => { await fresh(7); await rerun(); }, true);
+  await guard(async () => { await fresh(Number(seed.value)); await rerun(); }, true);
 }

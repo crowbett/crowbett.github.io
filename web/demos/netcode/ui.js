@@ -10,9 +10,9 @@ const KEYS = {
   ArrowLeft: LEFT, KeyA: LEFT, ArrowRight: RIGHT, KeyD: RIGHT, Space: DASH,
 };
 const LAG = [
-  ["latency_ms", "latency", 0, 300, 10, 100, "ms"],
-  ["jitter_ms", "jitter", 0, 100, 5, 20, "ms"],
-  ["loss_pct", "loss", 0, 20, 1, 2, "%"],
+  ["latency_ms", "latency", 0, 300, 10, 150, "ms"],
+  ["jitter_ms", "jitter", 0, 100, 5, 40, "ms"],
+  ["loss_pct", "loss", 0, 20, 1, 5, "%"],
 ];
 const DEAD = 14;
 const FLASH = 18;

@@ -176,7 +176,7 @@ export async function mount(root, demo) {
       `${callees.roots[0].qname} (${sym.file}:${sym.line}): ${plural(up.length, "caller", "callers")}; ` +
       `${plural(down.length, "callee", "callees")}, ${down.length - open} resolved, ${open} unresolved.`;
     receipt.textContent = `${plural(info.files.length, "file", "files")} indexed in ${Math.round(indexMs)} ms; this lookup of callers and callees took ${Math.round(lookupMs)} ms, in your browser.`;
-    if (focus) pick.focus();
+    if (focus) pick.focus({ preventScroll: true });
   }
 
   pick.addEventListener("change", () => select(pick.value));
