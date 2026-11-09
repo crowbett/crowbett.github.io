@@ -30,11 +30,11 @@
 .js .project-head:not(:has(.demo)) { position: sticky; top: var(--pin-top, var(--top-h)); }
 .ph-in { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-4) var(--sp-7); align-items: start; width: min(80rem, 100% - 2 * var(--edge)); margin-inline: auto; padding-block: var(--sp-5) calc(var(--sp-7) + 28px); }
 .ph-in > * { margin: 0; }
-/* The head sinks as the sheet comes up over it, not as the page scrolls, so a demo in a tall head stays bright while in use */
+/* A pinned head (one without a demo) sinks as the sheet comes up over it. A head with a demo scrolls away unpinned, so nothing covers it and it stays bright while in use */
 @supports (animation-timeline: view()) { @media (prefers-reduced-motion: no-preference) {
   .project { timeline-scope: --sheet; }
   .sheet { view-timeline: --sheet block; }
-  .js .ph-in { animation: sink linear both; animation-timeline: --sheet; animation-range: entry 0% entry 100%; }
+  .js .project-head:not(:has(.demo)) .ph-in { animation: sink linear both; animation-timeline: --sheet; animation-range: entry 0% entry 100%; }
 } }
 .crumb { font-family: var(--mono); font-size: var(--t-label); color: var(--text-3); }
 .crumb a { color: var(--text-2); }
