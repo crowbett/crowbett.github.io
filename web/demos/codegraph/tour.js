@@ -25,7 +25,7 @@ const hops = (t) => [...t.root.querySelectorAll(".cg-node.is-up")]
 
 export const steps = [
   {
-    say: "codegraph indexed this small Rust crate in your browser. Asking who calls bump, all the way up:",
+    say: "codegraph indexed this small Rust crate in this tab. Asking who calls bump, all the way up:",
     run: async (t) => {
       if ([...t.root.querySelectorAll("button")].some((b) => b.textContent === "Pause")) await t.click("Pause");
       if (t.q("select[name=ripple]").value !== "both") await t.set(1, "both");

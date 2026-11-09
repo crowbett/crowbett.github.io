@@ -5,7 +5,7 @@ lang: Go
 tags: storage engine, log-structured, crash safety
 repo: https://github.com/crowbett/kvlite
 demo: live
-demo_try: Press Pull the plug to cut the newest write in half, then watch kvlite recover from its own files and show what survived.
+demo_try: Put a key of your own, then pull the plug. kvlite reopens from its files, and Get shows whether your key survived.
 group: storage
 order: 5
 metric: Get in 3.50 µs sequential / 6.04 µs random (100 B values)

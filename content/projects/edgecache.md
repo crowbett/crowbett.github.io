@@ -5,7 +5,7 @@ lang: Go
 tags: HTTP caching, RFC 9111, reverse proxy
 repo: https://github.com/crowbett/edgecache
 demo: live
-demo_try: Press Send my request to reload through the running edge, then change the origin policy and watch the same traffic replay.
+demo_try: Switch the origin's cache policy. The same requests replay under the new headers, so the hit ratio changes for that reason alone.
 group: services
 order: 4
 metric: 0.65 ms p50 cached against a 50 ms origin (39,253 rps, 99.9% hit ratio)

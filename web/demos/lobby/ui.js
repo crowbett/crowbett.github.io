@@ -532,7 +532,7 @@ export async function mount(root, demo) {
     lastDom = now;
     const s = snap;
     if (!s) return;
-    receipt.textContent = `${secs(simMs)} of matchmaking simulated by the engine in ${fmt(Math.round(callMs))} ms of calls, in your browser.`;
+    receipt.textContent = `lobby's queue ran ${secs(simMs)} of matchmaking and started ${fmt(s.stats.rooms)} ${s.stats.rooms === 1 ? "room" : "rooms"} in ${fmt(Math.round(callMs))} ms.`;
     const st = s.stats;
     const set = (k, v) => { cell[k].v.textContent = v; };
     set("t", secs(s.t_ms));

@@ -5,7 +5,7 @@ lang: Go
 tags: rate limiting, GCRA, Redis, gRPC
 repo: https://github.com/crowbett/ratelimitd
 demo: live
-demo_try: Press Launch the attack and watch GCRA, token bucket and sliding window turn the flood away.
+demo_try: Launch the attack. GCRA and the token bucket turn away almost exactly the same requests; the sliding window lets a different share through.
 group: services
 order: 3
 metric: 43,574 decisions/s at a 6.83 ms p99 over gRPC against Redis

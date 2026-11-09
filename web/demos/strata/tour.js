@@ -1,7 +1,7 @@
 // The strata tour: the XY test piece sliced by the real engine, its layers
 // drawn in the order they were generated, then sliced again finer.
 const v = (t, k) => t.text(`.st-cells [data-k=${k}] .st-v`);
-const sliced = (t) => !/^(Loading|Slicing)/.test(t.text(".st-summary")) && /layers fetched in/.test(t.text(".st-out"));
+const sliced = (t) => !/^(Loading|Slicing)/.test(t.text(".st-summary")) && / to draw took /.test(t.text(".st-out"));
 const kinds = (t) => [...t.root.querySelectorAll(".st-key")].filter((k) => k.dataset.kind !== "nozzle").map((k) => k.textContent).join(", ");
 const load = async (t, value) => { await t.set(0, value); await t.until(() => sliced(t), 60000); };
 

@@ -33,6 +33,7 @@ const el = (tag, cls, text) => {
   return n;
 };
 const fmt = (n) => n.toLocaleString("en-US");
+const plural = (n, one, many = `${one}s`) => `${fmt(n)} ${n === 1 ? one : many}`;
 const sig = (x) => (Number.isFinite(x) ? x.toPrecision(3) : "–");
 const secs = (ms) => `${(ms / 1000).toFixed(1)} s`;
 const msLabel = (ms) => (ms >= 1000 ? `${+(ms / 1000).toPrecision(3)} s` : `${+ms.toPrecision(3)} ms`);
@@ -498,7 +499,7 @@ export async function mount(root, demo) {
     cost.textContent = ss.map((s) => (Number.isFinite(per(s)) ? per(s).toFixed(1) : "–")).join(" / ");
     elapsed.textContent = secs(renderMs);
     const total = ss.reduce((n, s) => n + (last[s]?.samples ?? 0), 0);
-    receipt.textContent = `${fmt(total)} camera samples traced by the renderer in ${fmt(calls)} calls, ${secs(renderMs)}, in your browser.`;
+    receipt.textContent = `${plural(total, "camera sample")} traced in ${plural(calls, "call")}, ${secs(renderMs)} of rendering.`;
     if (lit) {
       errLv.textContent = sig(a);
       errRv.textContent = sig(b);
@@ -769,7 +770,7 @@ export async function mount(root, demo) {
     if (rethrow && failure) throw failure;
     readouts();
     describeChart();
-    say(`${label}: ${fmt(passes)} spp in each half, in your browser.${reduced ? " Press Render to keep sampling." : ""}`);
+    say(`${label}: ${fmt(passes)} spp in each half.${reduced ? " Press Render to keep sampling." : ""}`);
     if (autoplay) start(0);
   }
 

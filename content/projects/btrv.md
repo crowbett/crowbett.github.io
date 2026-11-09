@@ -5,7 +5,7 @@ lang: Go
 tags: file formats, Btrieve, data recovery, CSV and SQLite export
 repo:
 demo: live
-demo_try: Watch btrv map and read the sample, then press Corrupt page and see where the reader stops.
+demo_try: Corrupt a data page and the read stops there with an error. Corrupt an index page and every row still comes through.
 group: storage
 order: 15
 metric: 2,483,585 rows/s read and decoded, 15 columns per record, slowest of 6 runs

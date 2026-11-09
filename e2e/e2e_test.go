@@ -343,7 +343,7 @@ func TestDemoFrame(t *testing.T) {
 	if r.ErrorBg == "" || r.ErrorBg == "rgba(0, 0, 0, 0)" {
 		t.Errorf("error status is unstyled (background %q)", r.ErrorBg)
 	}
-	if !strings.Contains(r.Out, "answered: hello from the page") {
+	if !strings.Contains(r.Out, `answered "hello from the page"`) {
 		t.Errorf("retry did not reach ready: mount %q", r.Out)
 	}
 	if r.Loaded != raw {

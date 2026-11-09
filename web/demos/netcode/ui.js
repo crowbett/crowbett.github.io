@@ -38,6 +38,7 @@ const el = (tag, cls, text) => {
   return n;
 };
 const fmt = (n) => n.toLocaleString("en-US");
+const plural = (n, one, many = `${one}s`) => `${fmt(n)} ${n === 1 ? one : many}`;
 const ease = (t) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
 const put = (node, text) => { if (node.textContent !== text) node.textContent = text; };
 
@@ -707,8 +708,8 @@ export async function mount(root, demo) {
       put(lampText, `${ok ? "State hashes match" : "Desync"}: client ${last.seat}, tick ${fmt(last.tick)}`);
       put(lampHash, `${last.client} ${ok ? "=" : "≠"} ${last.server}`);
     }
-    put(receipt, `${fmt(v.tick)} ticks of a ${PLAYERS}-player match through netcode's server, clients, codec and lag simulator, ${fmt(v.check.matches)} state hashes compared, in ${fmt(Math.round(callMs))} ms of calls, in your browser.`);
-    canvas.setAttribute("aria-label", `Arena at tick ${fmt(v.tick)}: your client has rolled back ${fmt(c.rollbacks)} times, rtt ${c.rtt_ms.toFixed(1)} ms, ${fmt(v.check.desyncs)} desyncs. Arrow keys or WASD steer player 0, Space dashes.`);
+    put(receipt, `netcode's server, clients, codec and lag simulator ran ${plural(v.tick, "tick")} of a ${PLAYERS}-player match in ${fmt(Math.round(callMs))} ms and compared ${plural(v.check.matches, "state hash", "state hashes")}.`);
+    canvas.setAttribute("aria-label", `Arena at tick ${fmt(v.tick)}: your client has rolled back ${plural(c.rollbacks, "time")}, rtt ${c.rtt_ms.toFixed(1)} ms, ${fmt(v.check.desyncs)} desyncs. Arrow keys or WASD steer player 0, Space dashes.`);
   }
 
   function setHint() {

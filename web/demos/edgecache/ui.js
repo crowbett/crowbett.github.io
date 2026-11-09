@@ -58,6 +58,7 @@ const el = (tag, cls, text) => {
   return n;
 };
 const fmt = (n) => n.toLocaleString("en-US");
+const plural = (n, one, many = `${one}s`) => `${fmt(n)} ${n === 1 ? one : many}`;
 const ease = (t) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
 const clamp01 = (t) => Math.min(1, Math.max(0, t));
 
@@ -401,7 +402,8 @@ export async function mount(root, demo) {
     const left = MAX_REQUESTS - schedule.length - reqs.filter((r) => r.you).length;
     send.disabled = left <= 0;
     sends.textContent = left > 0 ? `${left} of your requests left this run; the engine takes ${MAX_REQUESTS} per run.` : `That is ${MAX_REQUESTS} requests, the most one run takes. Reset to start again.`;
-    if (calls) receipt.textContent = `${fmt(st.n)} requests through edgecache's engine, ${fmt(st.orig)} reached the origin; ${fmt(calls)} ${calls === 1 ? "call" : "calls"} replayed ${fmt(replayed)} ${replayed === 1 ? "request" : "requests"} on a fresh engine in ${fmt(Math.round(callMs))} ms, in your browser.`;
+    if (calls) receipt.textContent = `edgecache's engine has answered ${plural(st.n, "request")} and sent ${fmt(st.orig)} to the origin; ` +
+      `replaying the run on a fresh engine at each step took ${plural(calls, "call")}, ${plural(replayed, "request")} and ${fmt(Math.round(callMs))} ms.`;
     canvas.setAttribute("aria-label", `Edge at ${fmt(Math.floor(simT))} s of simulated time: ${fmt(st.n)} requests, ${fmt(st.hits)} served from cache, ${fmt(st.orig)} sent to the origin (${fmt(st.r304)} answered 304).`);
   }
 
@@ -470,7 +472,7 @@ export async function mount(root, demo) {
       const now = performance.now();
       for (let i = 0; i < reqs.length; i++) if (land[i] <= now) land[i] = reduce.matches ? 0 : now - 1;
       apply(r, reqs.length, now, false);
-      status.textContent = `Replayed ${fmt(reqs.length)} requests under the new origin headers. ${note()}`;
+      status.textContent = `Replayed ${plural(reqs.length, "request")} under the new origin headers. ${note()}`;
     } finally {
       if (g0 === gen) busy = false;
     }

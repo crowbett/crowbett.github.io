@@ -242,8 +242,8 @@ export async function mount(root, demo) {
     if (stats) live.textContent = `${plural(stats.docs, "document", "documents")} indexed from ${plural(stats.loaded.length, "source", "sources")}${red ? `, ${red} with a secret redacted` : ""}${stats.loaded.length < sources.length ? "…" : ""}`;
     idx.setAttribute("aria-label", `Index: ${sources.map((s) => `${lanes.get(s).count} ${s}`).join(", ")} documents; ${plural(red, "document", "documents")} with a secret redacted; ${corpus.absent.map((a) => a.source).join(", ")} not indexed.`);
     if (stats) {
-      receipt.textContent = `${plural(stats.docs, "document", "documents")} from ${plural(stats.loaded.length, "source", "sources")} indexed in ${ms(indexMs)}` +
-        (queries ? `, ${plural(queries, "query", "queries")} ranked in ${ms(queryMs)}` : "") + ", by recall's engine in your browser.";
+      receipt.textContent = `recall indexed ${plural(stats.docs, "document", "documents")} from ${plural(stats.loaded.length, "source", "sources")} in ${ms(indexMs)}` +
+        (queries ? ` and ranked ${plural(queries, "query", "queries")} in ${ms(queryMs)}` : "") + ".";
     }
   }
 
