@@ -4,7 +4,7 @@
   <header class="project-head">
     <div class="ph-in">
       <p class="crumb"><a href="/#work">Work</a> <span aria-hidden="true">/</span> <a href="/#g-{{.Kind.Key}}">{{.Kind.Name}}</a> <span aria-hidden="true">/</span> {{.Slug}}</p>
-      <h1><span>{{.Title}}</span></h1>
+      <h1{{if gt (len .Title) 9}} class="long"{{end}}><span>{{.Title}}</span></h1>
       <div class="ph-text">
         <p class="lede">{{.Tagline}}</p>
         {{if .Metric}}<figure class="result">
