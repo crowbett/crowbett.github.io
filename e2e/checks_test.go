@@ -255,24 +255,42 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"btrv": {
-		`until(() => ([...document.querySelectorAll(".bt-key")].map((k) => k.dataset.kind + ":" + k.querySelector(".bt-count").textContent).filter((t) => /^(fcr|pat|free|unreferenced):/.test(t)).join() === "fcr:2,pat:2,free:5,unreferenced:4"))`,
+		`until(() => [...document.querySelectorAll(".bt-key:not([hidden])")].map((k) => k.dataset.kind + ":" + k.querySelector(".bt-count").textContent).filter((t) => /^(fcr|pat|data|free|unreferenced):/.test(t)).join() === "fcr:2,pat:2,data:250,free:5,unreferenced:4")`,
 		`(async () => {
-			const fact = (k) => [...document.querySelectorAll(".bt-facts > li")].find((d) => d.querySelector(".bt-k").textContent === k)?.querySelector(".bt-v").textContent;
-			const cells = () => [...(document.querySelector(".bt-rows tbody tr:not(.bt-spacer)")?.querySelectorAll("td") || [])].map((td) => td.textContent).slice(0, 3).join();
-			let ok = await until(() => fact("rows read") === "2,919" && fact("column errors") === "0" && cells() === "1,1,Ann");
-			const seg = (t) => [...document.querySelectorAll(".bt-seg button")].find((b) => b.textContent === t);
-			seg("Inferred").click();
-			ok = ok && await until(() => document.querySelector(".bt-pair .bt-sub").textContent === "inferred by btrv from the first 1,000 records" && fact("rows read") === "2,919" && !seg("Dictionary").disabled);
-			seg("Dictionary").click();
-			ok = ok && await until(() => document.querySelector(".bt-pair .bt-sub").textContent.startsWith("from the DDF dictionary") && fact("rows read") === "2,919" && !seg("Inferred").disabled);
+			await until(() => document.querySelector(".bt-cells [data-k=records] .bt-v").textContent.endsWith("/ 2,919"));
+			const c = document.querySelector(".bt-map"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set();
+			for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]);
+			return set.size > 6;
+		})()`,
+		`(async () => {
+			const v = (k) => document.querySelector(".bt-cells [data-k=" + k + "] .bt-v").textContent;
+			const play = document.querySelector(".bt-acts button");
+			const cor = document.querySelector(".bt-corrupt");
+			const status = () => document.querySelector(".bt-status").textContent;
+			const feed = () => [...(document.querySelector(".bt-feed tbody tr")?.querySelectorAll("td") || [])].map((td) => td.textContent).slice(0, 3).join();
+			const sp = document.querySelector("select[name=speed]");
+			sp.value = "10"; sp.dispatchEvent(new Event("change"));
+			let ok = await until(() => play.textContent === "Replay" && v("records") === "2,919 / 2,919" && feed() === "2,919,3000,Harriet" &&
+				status() === "Every record the header counts was read and decoded: 2,919 of 2,919 rows, 0 column errors." && /^401 pages mapped and 2,919 rows decoded by btrv in \d+ ms of calls, in your browser\.$/.test(document.querySelector(".demo-out").textContent));
+			ok = ok && await until(() => [...document.querySelectorAll(".bt-insp tbody tr")].map((tr) => tr.firstChild.textContent + "=" + tr.lastChild.textContent).includes("Birth=1950-01-25"));
+			ok = ok && cor.textContent === "Corrupt page 164";
+			cor.click();
+			ok = ok && await until(() => play.textContent === "Replay" && !cor.disabled && v("bad") === "1" && cor.textContent === "Repair page 164" &&
+				status().startsWith("The read stopped at physical page 164 (logical 160) after 1,168 of 2,919 rows rather than skip a page: source error after 1168 rows"));
+			cor.click();
+			ok = ok && await until(() => play.textContent === "Replay" && !cor.disabled && v("bad") === "0" && v("records") === "2,919 / 2,919");
 			const map = document.querySelector(".bt-map");
-			for (let i = 0; i <= 40; i++) map.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
-			const dmg = document.querySelector(".bt-damage");
-			ok = ok && !dmg.hidden && dmg.textContent === "Damage page 40";
-			dmg.click();
-			ok = ok && await until(() => document.querySelector(".bt-key-bad .bt-count")?.textContent === "1" && /^Stopped: /m.test(document.querySelector(".bt-lines").innerText) && !dmg.disabled);
-			dmg.click();
-			ok = ok && await until(() => fact("rows read") === "2,919" && !document.querySelector(".bt-key-bad") && !dmg.disabled);
+			const key = (k) => map.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true }));
+			key("Home"); for (let i = 0; i < 6; i++) key("ArrowRight");
+			ok = ok && cor.textContent === "Corrupt page 6";
+			cor.click();
+			ok = ok && await until(() => play.textContent === "Replay" && !cor.disabled && v("records") === "2,919 / 2,919" &&
+				status() === "Page 6 is flagged: the PAT says index page 3 of key 0, the header says otherwise. The record walk did not need it: 2,919 of 2,919 rows, 0 column errors.");
+			cor.click();
+			ok = ok && await until(() => play.textContent === "Replay" && !cor.disabled && v("bad") === "0");
+			const sc = document.querySelector("select[name=schema]");
+			sc.value = "infer"; sc.dispatchEvent(new Event("change"));
+			ok = ok && await until(() => play.textContent === "Replay" && v("records") === "2,919 / 2,919" && document.querySelector(".bt-feed thead th:nth-child(2)").textContent === "col01");
 			document.querySelector(".bt-export button").click();
 			return ok && await until(() => document.querySelector(".bt-expstatus").textContent.startsWith("PERSON.csv: 2,919 rows written, 0 with column errors"));
 		})()`,
