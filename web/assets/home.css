@@ -75,7 +75,7 @@
 .it-screen { position: relative; display: block; color: inherit; text-decoration: none; }
 .it-screen .glow { left: -14%; top: -20%; width: 128%; height: 140%; opacity: 0.75; }
 .it-glass { display: block; }
-.it-glass > img { transition: scale var(--d-spring) var(--spring-soft); }
+.it-glass img { transition: scale var(--d-spring) var(--spring-soft); }
 .it-dm { position: absolute; inset: 0; display: grid; place-items: center; }
 .it-go, .it-of { position: absolute; z-index: 1; bottom: var(--sp-3); padding: var(--sp-1) var(--sp-3); border-radius: 999px; font: 400 var(--t-label)/1.5 var(--mono); }
 .it-of { left: var(--sp-3); background: oklch(0.1 0.01 262 / 0.55); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: var(--screen-ink); font-variant-numeric: tabular-nums; }
@@ -83,7 +83,7 @@
 .it-go::after { content: " →"; }
 @media (hover: hover) and (pointer: fine) {
   .it-screen:hover .it-go { opacity: 1; translate: 0; }
-  .it-screen:hover .it-glass > :is(img, video) { scale: 1.03; }
+  .it-screen:hover .it-glass :is(img, video) { scale: 1.03; }
 }
 @supports (animation-timeline: view()) { @media (prefers-reduced-motion: no-preference) {
   .js .it-in { animation: none linear both; animation-range: entry 0% entry 100%; }

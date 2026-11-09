@@ -37,7 +37,7 @@
     <nav class="work-toc" aria-label="Groups">{{range .Groups}}<a href="#g-{{.Key}}">{{.Name}} <span>{{len .Projects}}</span></a>{{end}}</nav>
   </header>
   <ol class="reel">{{range $g := .Groups}}{{range $i, $p := .Projects}}
-    <li class="it" id="p-{{.Slug}}"{{if .Live}} data-clip="/reel/{{.Slug}}.mp4"{{end}}>
+    <li class="it" id="p-{{.Slug}}"{{if .Live}} data-clip{{end}}>
       <div class="it-in">
         <div class="it-text">
           {{if eq $i 0}}<h3 class="it-g" id="g-{{$g.Key}}">{{$g.Name}}</h3>{{else}}<p class="it-g">{{$g.Name}}</p>{{end}}
@@ -46,7 +46,7 @@
           {{if .Metric}}<p class="it-metric"><span class="metric">{{bind .Metric}}</span></p>{{end}}
           <p class="it-act">{{if .Live}}<a class="key" href="/projects/{{.Slug}}/#demo">Run it live</a>{{else}}<span class="led off">Source on {{if .Private}}request{{else}}GitHub{{end}}</span>{{end}}<span class="it-lang">{{.Lang}}</span></p>
         </div>
-        <a class="it-screen" href="/projects/{{.Slug}}/" tabindex="-1" aria-hidden="true"><canvas class="glow" width="16" height="10"></canvas><span class="it-glass">{{if .Live}}<img src="/reel/{{.Slug}}.webp" width="1324" height="828" alt="" loading="lazy" decoding="async">{{else}}<span class="it-dm">{{template "dmask" .Slug}}</span>{{end}}</span><span class="it-go">Open</span><span class="it-of">{{rank .Slug}} / {{len $.Projects}}</span></a>
+        <a class="it-screen" href="/projects/{{.Slug}}/" tabindex="-1" aria-hidden="true"><canvas class="glow" width="16" height="10"></canvas><span class="it-glass">{{if .Live}}<picture><source media="{{reelWide}}" srcset="/reel/{{.Slug}}.webp" width="1408" height="880"><img src="/reel/{{.Slug}}-n.webp" width="1324" height="828" alt="" loading="lazy" decoding="async"></picture>{{else}}<span class="it-dm">{{template "dmask" .Slug}}</span>{{end}}</span><span class="it-go">Open</span><span class="it-of">{{rank .Slug}} / {{len $.Projects}}</span></a>
       </div>
     </li>{{end}}{{end}}
   </ol>
