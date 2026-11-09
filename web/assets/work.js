@@ -4,6 +4,7 @@
 // glow taken from the picture. With reduced motion or Save-Data it shows the
 // poster only. The screen opens the project it shows (pointer only: the
 // index links are the keyboard and screen reader path).
+import { play, pause } from "/assets/play.js";
 const work = document.querySelector(".work");
 if (work) {
   const items = [...work.querySelectorAll(".it")];
@@ -43,7 +44,7 @@ if (work) {
         Object.assign(v, { muted: true, loop: true, playsInline: true, preload: "auto", poster: it.dataset.poster, src: it.dataset.clip, disablePictureInPicture: true });
         v.addEventListener("playing", () => { v.dataset.on = ""; if (!tick) paint(); });
         layer.append(v);
-        v.play().catch(() => {});
+        play(v);
       }
       const l = layer;
       screen.append(l);
@@ -55,7 +56,8 @@ if (work) {
       gx.clearRect(0, 0, glow.width, glow.height);
     }
     if (old) {
-      old.querySelector("video")?.pause();
+      const ov = old.querySelector("video");
+      if (ov) pause(ov);
       delete old.dataset.on;
       setTimeout(() => old.remove(), 400);
     }
@@ -105,7 +107,7 @@ if (work) {
   const resume = () => {
     const v = layer?.querySelector("video");
     if (!v) return;
-    if (document.hidden || !near) v.pause(); else v.play().catch(() => {});
+    if (document.hidden || !near) pause(v); else play(v);
   };
   document.addEventListener("visibilitychange", resume);
   new IntersectionObserver(([e]) => {
