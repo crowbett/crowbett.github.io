@@ -177,7 +177,9 @@ export async function mount(root, demo) {
   function render(v) {
     last = v;
     statsBox.replaceChildren(stats(v.stats));
+    const scrolled = new Map([...segs.querySelectorAll(".kv-scroll")].map((s) => [s.getAttribute("aria-label"), s.scrollTop]));
     segs.replaceChildren(...v.segments.map(segmentTable));
+    for (const s of segs.querySelectorAll(".kv-scroll")) s.scrollTop = scrolled.get(s.getAttribute("aria-label")) || 0;
     filesBox.replaceChildren(filesList(v.files));
     keysBox.replaceChildren(keysList(v));
     logBox.textContent = v.log.length ? v.log.join("\n") : "Nothing logged yet.";

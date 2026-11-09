@@ -235,7 +235,7 @@ export async function mount(root, demo) {
     if (opened.dictionaryError) tabs.append(el("p", "bt-bad-file", `Dictionary: ${opened.dictionaryError}`));
   }
 
-  async function select(name, schema) {
+  async function select(name, schema, keep) {
     const g = ++gen;
     const sel = await rpc("select", { name, schema });
     const n = sel.pages;
@@ -268,10 +268,11 @@ export async function mount(root, demo) {
     renderSchema();
     renderSummary();
     resetRows();
-    const want = n > 40 && c.kind[40] === dk ? 40 : data.length ? data[0] : -1;
+    const want = keep ?? (n > 40 && c.kind[40] === dk ? 40 : data.length ? data[0] : -1);
     c.pick = want;
-    c.fresh = true;
+    c.fresh = keep === undefined;
     showPage(want);
+    draw();
     markFirst();
     if (!c.table) {
       status.textContent = describe(sel.file) + (sel.schemaError ? ` No schema: ${sel.schemaError}` : "");
@@ -317,9 +318,7 @@ export async function mount(root, demo) {
     const set = damaged.get(c.name) || new Set();
     if (set.has(p)) set.delete(p); else set.add(p);
     damaged.set(c.name, set);
-    const keep = p;
-    await select(c.name, c.sel.source === "inferred" ? "infer" : "");
-    if (cur) { cur.pick = keep; showPage(keep); draw(); }
+    await select(c.name, c.sel.source === "inferred" ? "infer" : "", p);
   }
 
   // Page map drawing
