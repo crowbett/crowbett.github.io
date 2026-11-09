@@ -206,13 +206,7 @@ func TestSite(t *testing.T) {
 		return n
 	}
 	slices.SortStableFunc(tabs, func(a, b tab) int { return cost(b) - cost(a) })
-	// CI splits the tabs across runners: E2E_SHARD=i/n keeps every nth tab.
-	shard, shards := 0, 1
-	if s := os.Getenv("E2E_SHARD"); s != "" {
-		if _, err := fmt.Sscanf(s, "%d/%d", &shard, &shards); err != nil || shard < 0 || shard >= shards {
-			t.Fatalf("E2E_SHARD=%q, want i/n with 0 <= i < n", s)
-		}
-	}
+	shard, shards := split(t)
 	// Twelve workers take tabs in that order; t.Parallel starts them in no
 	// particular order.
 	queue := make(chan tab, len(tabs))
@@ -815,4 +809,16 @@ func name(page string) string {
 		return "home"
 	}
 	return n
+}
+
+// split reads E2E_SHARD=i/n: CI splits a test's tabs across runners, and each
+// keeps every nth one.
+func split(t *testing.T) (shard, shards int) {
+	shard, shards = 0, 1
+	if s := os.Getenv("E2E_SHARD"); s != "" {
+		if _, err := fmt.Sscanf(s, "%d/%d", &shard, &shards); err != nil || shard < 0 || shard >= shards {
+			t.Fatalf("E2E_SHARD=%q, want i/n with 0 <= i < n", s)
+		}
+	}
+	return shard, shards
 }

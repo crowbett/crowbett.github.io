@@ -19,7 +19,11 @@ func TestTours(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, f := range tours {
+	shard, shards := split(t)
+	for i, f := range tours {
+		if i%shards != shard {
+			continue
+		}
 		slug := filepath.Base(filepath.Dir(f))
 		t.Run(slug, func(t *testing.T) {
 			t.Parallel()
