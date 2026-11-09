@@ -3,6 +3,7 @@ package site
 import (
 	"encoding/json"
 	"html"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -64,4 +65,31 @@ func writeFind(file string, projects []Project) error {
 		return err
 	}
 	return writeFile(file, b)
+}
+
+// writePeek writes /code/<slug>.json for each project with code: its first
+// excerpt, highlighted, which a home panel flips to on request.
+func writePeek(dir string, projects []Project) error {
+	type peek struct {
+		Title string   `json:"t"`
+		Path  string   `json:"p"`
+		From  int      `json:"f"`
+		Why   string   `json:"y"`
+		Lines []string `json:"l"`
+		Of    int      `json:"n"`
+	}
+	for _, p := range projects {
+		if p.Code == nil || len(p.Code.Excerpts) == 0 {
+			continue
+		}
+		e := p.Code.Excerpts[0]
+		b, err := json.Marshal(peek{e.Title, e.Path, e.From, e.Why, e.Lines, len(p.Code.Excerpts)})
+		if err != nil {
+			return err
+		}
+		if err := writeFile(filepath.Join(dir, "code", p.Slug+".json"), b); err != nil {
+			return err
+		}
+	}
+	return nil
 }

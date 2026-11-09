@@ -241,6 +241,9 @@ func Build(cfg Config) error {
 	if err := writeFind(filepath.Join(cfg.Out, "find.json"), base.Projects); err != nil {
 		return err
 	}
+	if err := writePeek(cfg.Out, base.Projects); err != nil {
+		return err
+	}
 	if err := copyTree(cfg.Src, "web", cfg.Out); err != nil {
 		return err
 	}

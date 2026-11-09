@@ -256,3 +256,35 @@ func jsString(s string) string {
 	b, _ := json.Marshal(s)
 	return string(b)
 }
+
+// TestPeek flips the first home panel to its code at phone width: the face
+// shows the excerpt's numbered lines and links to the project's code, axe
+// runs with it open, and Escape flips it back with focus on the button.
+func TestPeek(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := newTab(t, 60*time.Second)
+	defer cancel()
+	if err := chromedp.Do(ctx, chromedp.EmulateViewport(390, 844, chromedp.EmulateTouch), chromedp.Navigate(srv.URL+"/"), chromedp.WaitReady(chromedp.CSS("body"))); err != nil {
+		t.Fatal(err)
+	}
+	open := `(async () => {
+		const b = document.querySelector(".it-peek");
+		b.click();
+		const f = document.getElementById(b.getAttribute("aria-controls"));
+		return until(() => b.getAttribute("aria-pressed") === "true" && !f.hidden && f.offsetHeight > 200 &&
+			f.querySelectorAll(".pk-c .l").length >= 5 && f.querySelector(".pk-c .ln").textContent === String(Number(f.querySelector(".pk-h span").textContent.split(":").pop().split("–")[0])) &&
+			f.querySelector(".pk-more").pathname === "/projects/" + b.dataset.peek + "/");
+	})()`
+	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(open), chromedp.EvalAwaitPromise)); err != nil || !ok {
+		t.Fatalf("peek did not open: %v", err)
+	}
+	pageQuality(t, ctx)
+	shut := `(async () => {
+		const b = document.querySelector(".it-peek"), f = document.getElementById(b.getAttribute("aria-controls"));
+		f.querySelector(".pk-c").dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+		return until(() => f.hidden && b.getAttribute("aria-pressed") === "false" && document.activeElement === b && !b.closest(".it").querySelector("[data-peek].it-view"));
+	})()`
+	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(shut), chromedp.EvalAwaitPromise)); err != nil || !ok {
+		t.Fatalf("Escape did not close the peek: %v", err)
+	}
+}
