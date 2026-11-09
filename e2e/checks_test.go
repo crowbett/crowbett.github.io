@@ -144,6 +144,16 @@ var demoChecks = map[string][]string{
 		`[...document.querySelectorAll(".rl-chart")].every(c => c.querySelectorAll("rect.rl-allowed").length > 20 && c.querySelectorAll("rect.rl-denied").length > 0)`,
 		`/^923 requests through 3 algorithms/.test(document.querySelector(".rl-status").textContent)`,
 	},
+	// The opening basket (a shaker and two supplement bottles) must go in a box;
+	// removing the shaker frees the bottles for a mailer.
+	"anchorflow": {
+		`document.querySelector(".af-verdict .af-pkg").textContent === "9 x 7 x 5" && document.querySelectorAll(".af-view").length === 2`,
+		`document.querySelector(".af-status").textContent.startsWith("3 units judged against 31 packages in ")`,
+		`(async () => {
+			document.querySelector(".af-rm").click();
+			return await until(() => document.querySelector(".af-verdict .af-pkg").textContent === "7 1/4 x 12");
+		})()`,
+	},
 	"btrv": {
 		`[...document.querySelectorAll(".bt-key")].map((k) => k.dataset.kind + ":" + k.querySelector(".bt-count").textContent).filter((t) => /^(fcr|pat|free|unreferenced):/.test(t)).join() === "fcr:2,pat:2,free:5,unreferenced:4"`,
 		`(async () => {
