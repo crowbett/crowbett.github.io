@@ -177,6 +177,26 @@ var demoChecks = map[string][]string{
 			return ok && await until(() => document.querySelector(".lb-you").textContent === "Matched after 0.1 s into m13 with 1,461; skill spread 39." && v("rooms") === "13");
 		})()`,
 	},
+	"adfactory": {
+		`/^planned 9 deliverables in [\d.]+ ms: 9 anchors from 60 detector samples, 427 crop windows, 65 caption lines, 7 loudness plans\. [\d,]+ plan calls? so far, [\d,]+ ms in total, all in your browser\.$/.test(document.querySelector("p.demo-out").textContent)
+			&& [...document.querySelectorAll(".adf-tile")].map((t) => t.dataset.key + ":" + t.dataset.state).join() === "reels:ready,tiktok:ready,shorts:advisory,feed_4x5:ready,feed_4x5_still:ready,youtube:ready,broadcast_1080i:ready,feed_1x1:ready,feed_1x1_still:ready"
+			&& document.querySelector(".adf-cells [data-k=ready] .adf-v").textContent === "8"`,
+		`(() => { const c = document.querySelector(".adf-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
+		`(async () => {
+			const tile = (k) => document.querySelector(".adf-tile[data-key=" + k + "]");
+			const pick = (sel, v) => { const s = document.querySelector("select[name=" + sel + "]"); s.value = v; s.dispatchEvent(new Event("change")); };
+			pick("source", "1280x720");
+			let ok = await until(() => tile("reels").dataset.state === "advisory");
+			tile("reels").click();
+			ok = ok && await until(() => document.querySelector(".adf-reasons").textContent.includes("callout"));
+			pick("cut", "10");
+			ok = ok && await until(() => tile("broadcast_1080i").dataset.state === "refused" && document.querySelector(".adf-cells [data-k=refused] .adf-v").textContent === "1");
+			tile("broadcast_1080i").click();
+			ok = ok && await until(() => document.querySelector(".adf-reasons").textContent.includes("below broadcast_1080i floor"));
+			[...document.querySelectorAll(".adf-acts button")].find((b) => b.textContent === "Reset").click();
+			return ok && await until(() => tile("broadcast_1080i").dataset.state === "ready" && tile("shorts").dataset.state === "advisory");
+		})()`,
+	},
 	"mcpbridge": {
 		`document.querySelector('.mb-row[data-leg="b2s"] .mb-method').textContent === "server/discover"`,
 		`document.querySelector(".mb-ihead").textContent === "16 · bridge to server · tools/list" && [...document.querySelectorAll(".mb-json .mb-add .mb-k")].some((k) => k.textContent === '"io.modelcontextprotocol/protocolVersion"')`,
