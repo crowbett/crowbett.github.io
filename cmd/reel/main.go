@@ -37,8 +37,8 @@ import (
 
 const (
 	out    = "web/reel"
-	width  = 960 // CSS px of the recorded page; the clip is the demo mount
-	scale  = 1.5
+	width  = 480 // CSS px of the recorded page: narrow, so a clip reads at phone width
+	scale  = 2
 	aspect = 10.0 / 16
 )
 
@@ -64,7 +64,7 @@ func run(only []string) error {
 	srv := httptest.NewServer(http.FileServer(http.Dir(dist)))
 	defer srv.Close()
 
-	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.Flag("mute-audio", true), chromedp.DisableGPU, chromedp.WindowSize(width, 1400))
+	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.Flag("mute-audio", true), chromedp.Flag("force-device-scale-factor", fmt.Sprint(scale)), chromedp.DisableGPU, chromedp.WindowSize(width, 1400))
 	actx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
 	defer cancel()
 	browser, cancel := chromedp.NewContext(actx)
@@ -173,8 +173,8 @@ func record(browser context.Context, base, slug string, show site.Showcase) erro
 		const m = document.querySelector(sel);
 		document.activeElement?.blur();
 		scrollTo(0, m.getBoundingClientRect().top + scrollY - pad);
-		const r = m.getBoundingClientRect();
-		return {x: Math.max(r.x - pad, 0), y: Math.max(r.y - pad, 0), w: Math.min(r.width + 2 * pad, innerWidth)};
+		const r = m.getBoundingClientRect(), b = document.querySelector("[data-demo-mount]").getBoundingClientRect();
+		return {x: b.x, y: Math.max(r.y - pad, 0), w: b.width};
 	})(%q, %d)`, focus, show.Pad)))
 	if err != nil {
 		return err
