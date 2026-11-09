@@ -139,6 +139,14 @@ func TestShell(t *testing.T) {
 		{"refuses a typo", `(async () => { ` + run + ` run("cd ..");
 			await until(() => idle() && document.querySelector(".tty-p").textContent.endsWith("~$")); run("lss");
 			return until(() => idle() && text().includes("lss: no such command")); })()`},
+		{"pipes", `(async () => { ` + run + ` run("ls | grep live | wc");
+			await until(() => idle() && /\n?\d+ lines, \d+ words, \d+ chars$/.test(document.querySelector(".tty-out > p:last-child").textContent));
+			const live = (await (await fetch("/search.json")).json()).filter((p) => p.live).length;
+			if (document.querySelector(".tty-out > p:last-child").textContent !== (live + 1) + " lines, " + document.querySelector(".tty-out > p:last-child").textContent.split(" lines, ")[1]) return false;
+			run("code keel 1 | tail 1");
+			return until(() => idle() && /^\s*\d+  /.test(document.querySelector(".tty-out > :last-child").textContent) && document.querySelector(".tty-out > :last-child").textContent.trim().split("\n").length === 1); })()`},
+		{"greps the site", `(async () => { ` + run + ` run("grep lease");
+			return until(() => idle() && /jobrun\s+jobs\.sql:\d+\s+--/.test(text())); })()`},
 	}
 	for _, s := range steps {
 		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(s.js), chromedp.EvalAwaitPromise)); err != nil || !ok {
