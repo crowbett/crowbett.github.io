@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 )
@@ -147,5 +148,41 @@ func TestShell(t *testing.T) {
 		document.querySelector(".tty").close(); return until(() => !document.querySelector(".tty[open]")); })()`
 	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(closed), chromedp.EvalAwaitPromise)); err != nil || !ok {
 		t.Fatalf("shell did not close: %v", err)
+	}
+}
+
+// TestTheme flips the header switch on a light page: the dark tokens apply,
+// the choice survives a reload, and switching back to the system's theme
+// clears it.
+func TestTheme(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := newTab(t, 60*time.Second)
+	defer cancel()
+	light := chromedp.Func(func(ctx context.Context, tg *chromedp.Target) error {
+		_, err := cdp.Call(ctx, tg, emulation.SetEmulatedMedia, emulation.SetEmulatedMediaParams{
+			Features: []*emulation.MediaFeature{{Name: "prefers-color-scheme", Value: "light"}},
+		})
+		return err
+	})
+	if err := chromedp.Do(ctx, light, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(srv.URL+"/projects/kvlite/"), chromedp.WaitReady(chromedp.CSS("body"))); err != nil {
+		t.Fatal(err)
+	}
+	bg := `getComputedStyle(document.body).backgroundColor`
+	steps := []struct{ name, js string }{
+		{"goes dark", `(async () => { const light = ` + bg + `; document.querySelector("[data-mode]").click();
+			return until(() => document.documentElement.dataset.theme === "dark" && localStorage.getItem("theme") === "dark" && ` + bg + ` !== light && document.querySelector("[data-mode]").ariaPressed === "true" && !("flip" in document.documentElement.dataset)); })()`},
+		{"applies before paint after a reload", `(async () => until(() => document.readyState !== "loading" && document.documentElement.dataset.theme === "dark" && document.querySelector('meta[name="theme-color"]').content === "#0a0d13"))()`},
+		{"goes back to the system's", `(async () => { document.dispatchEvent(new KeyboardEvent("keydown", { key: "t", bubbles: true, cancelable: true }));
+			return until(() => !("theme" in document.documentElement.dataset) && localStorage.getItem("theme") === null && document.querySelector("[data-mode]").ariaPressed === "false"); })()`},
+	}
+	for _, s := range steps {
+		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(s.js), chromedp.EvalAwaitPromise)); err != nil || !ok {
+			t.Fatalf("theme %s: %v", s.name, err)
+		}
+		if s.name == "goes dark" {
+			if err := chromedp.Do(ctx, chromedp.Reload(), chromedp.WaitReady(chromedp.CSS("body"))); err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
 }

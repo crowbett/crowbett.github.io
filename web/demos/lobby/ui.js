@@ -694,6 +694,7 @@ export async function mount(root, demo) {
   new IntersectionObserver(([en]) => { visible = en.isIntersecting; kick(); }).observe(canvas);
   document.addEventListener("visibilitychange", kick);
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { readColors(); draw(performance.now()); });
+  addEventListener("themechange", () => { readColors(); draw(performance.now()); });
   reduce.addEventListener("change", () => setPlaying(playing && !reduce.matches));
 
   await cssReady;

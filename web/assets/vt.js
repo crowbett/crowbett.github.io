@@ -4,6 +4,14 @@
 // the page. Classic and in the head: pagereveal fires before modules run.
 (() => {
   document.documentElement.classList.add("js");
+  // A theme chosen with the header switch (nav.js), applied before first paint.
+  try {
+    const t = localStorage.getItem("theme");
+    if (t === "light" || t === "dark") {
+      document.documentElement.dataset.theme = t;
+      for (const m of document.querySelectorAll('meta[name="theme-color"]')) m.content = t === "dark" ? "#0a0d13" : "#f2f5f7";
+    }
+  } catch {}
   const slugOf = (url) => url && /^\/projects\/([a-z0-9-]+)\/$/.exec(new URL(url).pathname)?.[1];
   const here = slugOf(location.href);
   // The screen flies too: the current panel's screen on home becomes the
