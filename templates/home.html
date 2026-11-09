@@ -31,31 +31,25 @@
   </div>
 </section>
 <section id="work" class="work" aria-labelledby="work-h">
-  <div class="work-in">
-    <header class="work-head"><h2 id="work-h">Work</h2><p class="count">{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} with a live demo{{end}}</p></header>
-    <div class="work-grid">
-      <div class="mon" aria-hidden="true">
-        <div class="mon-box">
-          <canvas class="glow" width="16" height="10"></canvas>
-          <a class="mon-screen" href="/projects/quorum/" tabindex="-1"><span class="mon-dm">{{template "dmask" "quorum"}}</span><span class="mon-go">Open</span></a>
-          <p class="mon-hud"><b></b><span></span></p>
+  <header class="work-head work-in">
+    <h2 id="work-h">Work</h2>
+    <p class="count">{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} with a live demo{{end}}</p>
+    <nav class="work-toc" aria-label="Groups">{{range .Groups}}<a href="#g-{{.Key}}">{{.Name}} <span>{{len .Projects}}</span></a>{{end}}</nav>
+  </header>
+  <ol class="reel">{{range $g := .Groups}}{{range $i, $p := .Projects}}
+    <li class="it" id="p-{{.Slug}}"{{if .Live}} data-clip="/reel/{{.Slug}}.mp4"{{end}}>
+      <div class="it-in">
+        <div class="it-text">
+          {{if eq $i 0}}<h3 class="it-g" id="g-{{$g.Key}}">{{$g.Name}}</h3>{{else}}<p class="it-g">{{$g.Name}}</p>{{end}}
+          <h4><a href="/projects/{{.Slug}}/"><span class="it-n">{{rank .Slug}}</span> <span class="it-name">{{.Title}}</span></a></h4>
+          <p class="it-tag">{{.Tagline}}</p>
+          {{if .Metric}}<p class="it-metric"><span class="metric">{{bind .Metric}}</span></p>{{end}}
+          <p class="it-act">{{if .Live}}<a class="key" href="/projects/{{.Slug}}/#demo">Run it live</a>{{else}}<span class="led off">Source on {{if .Private}}request{{else}}GitHub{{end}}</span>{{end}}<span class="it-lang">{{.Lang}}</span></p>
         </div>
+        <a class="it-screen" href="/projects/{{.Slug}}/" tabindex="-1" aria-hidden="true"><canvas class="glow" width="16" height="10"></canvas><span class="it-glass">{{if .Live}}<img src="/reel/{{.Slug}}.webp" width="882" height="552" alt="" loading="lazy" decoding="async">{{else}}<span class="it-dm">{{template "dmask" .Slug}}</span>{{end}}</span><span class="it-go">Open</span><span class="it-of">{{rank .Slug}} / {{len $.Projects}}</span></a>
       </div>
-      <div class="idx">{{range .Groups}}
-        <section class="idx-g" aria-labelledby="g-{{.Key}}-h">
-          <h3 id="g-{{.Key}}-h">{{.Name}} <span>{{len .Projects}}</span></h3>
-          <ol>{{range .Projects}}
-            <li class="it" id="p-{{.Slug}}"{{if .Live}} data-clip="/reel/{{.Slug}}.mp4" data-poster="/reel/{{.Slug}}.webp"{{end}}>
-              <h4><a href="/projects/{{.Slug}}/"><span class="it-n">{{rank .Slug}}</span> <span class="it-name">{{.Title}}</span></a></h4>
-              <p class="it-tag">{{.Tagline}}</p>
-              <p class="it-meta"><span>{{.Lang}}</span>{{if .Metric}}<span class="metric">{{bind .Metric}}</span>{{end}}</p>
-              <p class="it-act">{{if .Live}}<a class="led" href="/projects/{{.Slug}}/#demo">Run it live</a>{{else}}<span class="led off">Source on {{if .Private}}request{{else}}GitHub{{end}}</span>{{end}}</p>
-            </li>{{end}}
-          </ol>
-        </section>{{end}}
-      </div>
-    </div>
-  </div>
+    </li>{{end}}{{end}}
+  </ol>
 </section>
 <script type="module" src="/assets/work.js"></script>
 {{template "foot" .}}{{end}}

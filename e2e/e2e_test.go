@@ -397,7 +397,7 @@ func TestReducedMotion(t *testing.T) {
 						await new Promise((r) => setTimeout(r, 400));
 					}
 					const f = document.querySelector("[data-stage]");
-					return document.getAnimations().length + document.querySelectorAll(".mon video").length + (f && "live" in f.dataset ? 1 : 0);
+					return document.getAnimations().length + document.querySelectorAll(".it video").length + (f && "live" in f.dataset ? 1 : 0);
 				})()`, chromedp.EvalAwaitPromise))
 				cancel()
 				if err != nil {
@@ -550,7 +550,7 @@ const clsJS = `new Promise((resolve) => {
 			for (const e of l.getEntries()) {
 				if (e.hadRecentInput) continue;
 				out.Sum += e.value;
-				for (const s of e.sources) out.Moved.push((s.node?.outerHTML ?? "#text").slice(0, 80) + " " + box(s.previousRect) + " -> " + box(s.currentRect) + " at " + Math.round(e.startTime) + " ms");
+				for (const s of e.sources) out.Moved.push((s.node?.outerHTML ?? (s.node ? "#text in " + s.node.parentElement?.outerHTML : "#gone")).slice(0, 120) + " " + box(s.previousRect) + " -> " + box(s.currentRect) + " at " + Math.round(e.startTime) + " ms");
 			}
 		}).observe({ type: "layout-shift", buffered: true });
 		setTimeout(() => resolve(out), 50);
@@ -589,8 +589,15 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 	if auto || !strings.Contains(url, "/projects/") {
 		n = 8
 	}
+	// Home walks its reel by focus. A tab Chrome runs in the background gets
+	// no focus events, so the home tabs act as the focused tab a visitor has.
+	home := url == srv.URL+"/"
 	err := chromedp.Do(ctx,
 		cores(n),
+		chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
+			_, err := cdp.Call(ctx, t, emulation.SetFocusEmulationEnabled, emulation.SetFocusEmulationEnabledParams{Enabled: home})
+			return err
+		}),
 		chromedp.EmulateViewport(w, h, touch(w)...),
 		chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
 			_, err := cdp.Call(ctx, t, emulation.SetEmulatedMedia, emulation.SetEmulatedMediaParams{

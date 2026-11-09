@@ -2,34 +2,35 @@
 
 package e2e
 
-// workCheck scrolls the home index to a live project: it becomes current at
-// the reading line, the monitor names it and plays its recorded clip, and no
-// other clip plays; moving on to another project swaps the clip, and the
-// screen links to the project it shows.
+// workCheck walks the home reel by focus, as Tab and j/k do: the focused
+// project's panel comes up over the others and covers the middle of the
+// screen, it is current and plays its recorded clip, no other clip plays,
+// and the panels buried under the one below it are hidden.
 const workCheck = `(async () => {
 	const items = [...document.querySelectorAll(".it")];
-	const playing = () => [...document.querySelectorAll(".mon video")].filter((v) => !v.paused && v.isConnected);
+	const playing = () => [...document.querySelectorAll(".it video")].filter((v) => !v.paused && v.isConnected);
 	const at = async (slug) => {
 		const it = document.querySelector("#p-" + slug);
-		it.scrollIntoView({ block: "center" });
-		return until(() => "now" in it.dataset && document.querySelector(".mon-hud").textContent === slug + String(items.indexOf(it) + 1).padStart(2, "0") + " / " + items.length
-			&& playing().length === 1 && playing()[0].src.endsWith("/reel/" + slug + ".mp4") && playing()[0].dataset.on !== undefined);
+		const k = items.indexOf(it);
+		it.querySelector("h4 a").focus();
+		return until(() => "now" in it.dataset && playing().length === 1 && playing()[0].src.endsWith("/reel/" + slug + ".mp4") && "on" in playing()[0].dataset
+			&& it.contains(document.elementFromPoint(innerWidth / 2, innerHeight / 2))
+			&& items.every((x, i) => ("gone" in x.dataset) === (k > 0 && i < k - 1)));
 	};
-	return await at("netcode") && await at("keel") && document.querySelector(".mon-screen").pathname === "/projects/keel/";
+	return await at("netcode") && await at("keel");
 })()`
 
-// refusedCheck plays the monitor as iOS Low Power Mode does: every play()
-// is refused, so the clip holds its poster, and the visitor's next tap
-// starts it.
+// refusedCheck plays the reel as iOS Low Power Mode does: every play() is
+// refused, so the clip holds its poster, and the visitor's next tap starts it.
 const refusedCheck = `(async () => {
 	const P = HTMLMediaElement.prototype, real = P.play;
 	const it = document.querySelector("#p-lobby");
-	const playing = () => [...document.querySelectorAll(".mon video")].some((v) => !v.paused && v.isConnected);
+	const playing = () => [...document.querySelectorAll(".it video")].some((v) => !v.paused && v.isConnected);
 	let held = false;
 	try {
 		P.play = () => Promise.reject(new DOMException("refused", "NotAllowedError"));
-		scrollBy(0, it.getBoundingClientRect().top - innerHeight * 0.3);
-		held = await until(() => "now" in it.dataset && document.querySelector(".mon video[src$='/reel/lobby.mp4']") && !playing());
+		it.querySelector("h4 a").focus();
+		held = await until(() => "now" in it.dataset && document.querySelector(".it video[src$='/reel/lobby.mp4']") && !playing());
 	} finally {
 		P.play = real;
 	}

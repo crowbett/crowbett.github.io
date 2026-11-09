@@ -133,6 +133,11 @@
 .demo-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .demo-label { font-family: var(--mono); font-size: var(--t-label); color: var(--text-3); }
 .demo-note, .demo-status { font-family: var(--mono); font-size: var(--t-label); color: var(--text-3); margin: 0; }
+/* Both notes share one cell, so switching to the autostart one moves nothing. */
+.demo-note { display: inline-grid; }
+.demo-note > * { grid-area: 1 / 1; }
+.demo-note > :last-child, .demo-note[data-auto] > :first-child { visibility: hidden; }
+.demo-note[data-auto] > :last-child { visibility: visible; }
 .demo[data-demo-ready] .demo-bar { display: none; }
 .demo[data-demo-ready] .demo-mount, .demo[data-demo-error] .demo-status, .demo-load { animation: rise var(--d-spring) var(--spring-soft); }
 .demo-out { margin: 0; padding: var(--sp-2) var(--sp-3); border: 1px solid var(--line-strong); background: var(--sunken); font-family: var(--mono); font-size: var(--t-small); font-variant-numeric: tabular-nums; white-space: pre-wrap; overflow-x: auto; }
