@@ -40,9 +40,9 @@ import (
 // throw counts as not yet (the element may not be mounted), and every check
 // without side effects polls through until, so none races a slow mount.
 func untilJS(check string) string {
-	return "((until) => (" + check + `))(async (f) => {
+	return "((until) => (" + check + `))(async (f, ms = 20000) => {
 		const ok = () => { try { return f(); } catch { return false; } };
-		for (const end = Date.now() + 20000; !ok(); await new Promise((r) => setTimeout(r, 50)))
+		for (const end = Date.now() + ms; !ok(); await new Promise((r) => setTimeout(r, 50)))
 			if (Date.now() > end) { f(); throw new Error("timed out: " + f); }
 		return true;
 	})`

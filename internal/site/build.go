@@ -126,8 +126,14 @@ func prepare(cfg Config) (*prepared, error) {
 		"demoKB":    func(slug string) string { return thousands((sizes[slug].Gzip + 1023) / 1024) },
 		"demoBytes": func(slug string) int { return sizes[slug].Raw },
 		"demo":      func(slug string) demoSize { return sizes[slug] },
-		"bind":      bindNumbers,
-		"figures":   figures,
+		"demoTour": func(slug string) string {
+			if _, err := fs.Stat(cfg.Src, "web/demos/"+slug+"/tour.js"); err != nil {
+				return ""
+			}
+			return "/demos/" + slug + "/tour.js"
+		},
+		"bind":    bindNumbers,
+		"figures": figures,
 		"pg": func(rel, label string, p *Project) pagerLink {
 			return pagerLink{Rel: rel, Label: label, P: p}
 		},

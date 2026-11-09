@@ -16,7 +16,7 @@
       </div>
       {{if .Live}}<div class="ph-fig">
         <canvas class="glow" width="16" height="10" aria-hidden="true"></canvas>
-        <section class="demo" id="demo" data-demo="{{.Slug}}" data-ui="{{demoAsset .Slug}}" data-bytes="{{demoBytes .Slug}}"{{with demo .Slug}} data-gz="{{.Gzip}}" data-built="{{.Built}}" data-sha="{{.SHA}}" data-ref="{{.Ref}}"{{end}} data-autostart aria-labelledby="demo-title">
+        <section class="demo" id="demo" data-demo="{{.Slug}}" data-ui="{{demoAsset .Slug}}" data-bytes="{{demoBytes .Slug}}"{{with demo .Slug}} data-gz="{{.Gzip}}" data-built="{{.Built}}" data-sha="{{.SHA}}" data-ref="{{.Ref}}"{{end}}{{with demoTour .Slug}} data-tour="{{.}}"{{end}} data-autostart aria-labelledby="demo-title">
           <div class="demo-head">
             <h2 id="demo-title">Live demo</h2>
             <span class="demo-spec"><span class="demo-kind">WebAssembly, </span>~{{demoKB .Slug}} KB</span>
@@ -28,6 +28,11 @@
             <button type="button" data-demo-start>Run the live demo</button>
             <span class="demo-note" data-demo-note><span>Above: a recording. Runs live in your browser; nothing downloads until you start.</span><span>Above: a recording. The live build starts on its own while this is on screen.</span></span>
           </div>
+          {{if demoTour .Slug}}<div class="demo-acts" data-acts hidden>
+            <button type="button" data-tour-go aria-pressed="false">Show me</button>
+            <button type="button" class="secondary" data-share>Copy a link to these settings</button>
+            <p class="tour-cap" data-tour-cap aria-live="polite" hidden></p>
+          </div>{{end}}
           <div class="demo-mount" data-demo-mount></div>
           <p class="demo-status" data-demo-status role="status" aria-live="polite"></p>
           <a class="demo-code" href="#code" data-code-link hidden><span class="led">The code it runs</span><span class="dc-n"><span data-code-total></span> ↓</span></a>
@@ -38,7 +43,7 @@
           </div>
         </section>
       </div>
-      <script type="module" src="/assets/demo.js"></script><script type="module" src="/assets/timeline.js"></script>{{else}}<figure class="ph-fig">
+      <script type="module" src="/assets/demo.js"></script><script type="module" src="/assets/timeline.js"></script><script type="module" src="/assets/tour.js"></script>{{else}}<figure class="ph-fig">
         <canvas class="glow" width="16" height="10" aria-hidden="true"></canvas>
         <div class="ph-screen"><span class="ph-dm" aria-hidden="true">{{template "dmask" .Slug}}</span></div>
         <p class="ph-hud" aria-hidden="true"><span class="led off">{{.Slug}}</span><span>diagram</span></p>
