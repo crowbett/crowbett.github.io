@@ -179,14 +179,27 @@ var demoChecks = map[string][]string{
 		`[...document.querySelectorAll(".rl-chart")].every(c => c.querySelectorAll("rect.rl-allowed").length > 20 && c.querySelectorAll("rect.rl-denied").length > 0)`,
 		`/^923 requests through 3 algorithms/.test(document.querySelector(".rl-status").textContent)`,
 	},
-	// The opening basket (a shaker and two supplement bottles) must go in a box;
-	// removing the shaker frees the bottles for a mailer.
+	// The floor runs on seed 1: after a reset the engine has packed three
+	// orders; the fourth (a dropper bottle) goes in a box by rule, your cap
+	// order too, and taking its box off the shelf re-judges the shift.
 	"anchorflow": {
-		`document.querySelector(".af-verdict .af-pkg").textContent === "9 x 7 x 5" && document.querySelectorAll(".af-view").length === 2`,
-		`document.querySelector(".af-status").textContent.startsWith("3 units judged against 31 packages in ")`,
+		`Number(document.querySelector(".af-cells [data-k=orders] .af-v").textContent) >= 3 && /^Packing floor at [\d:]+ of floor time: \d+ orders packed, \d+ in boxes and \d+ in mailers, latest #\d{3} in /.test(document.querySelector(".af-canvas").getAttribute("aria-label")) && /^\d+ orders packed by AnchorFlow's fit engine: \d+ calls judged [\d,]+ packages in [\d,]+ ms, in your browser\.$/.test(document.querySelector(".af-out").textContent)`,
+		`(() => { const c = document.querySelector(".af-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
 		`(async () => {
-			document.querySelector(".af-rm").click();
-			return await until(() => document.querySelector(".af-verdict .af-pkg").textContent === "7 1/4 x 12");
+			const click = (t) => [...document.querySelectorAll(".af-controls button, .af-shelfhead button")].find((b) => b.textContent === t).click();
+			const label = () => document.querySelector(".af-canvas").getAttribute("aria-label");
+			const you = () => document.querySelector(".af-youline").textContent;
+			if (document.querySelector(".af-acts button").textContent === "Pause") click("Pause");
+			click("Reset");
+			let ok = await until(() => label() === "Packing floor at 0:01:27 of floor time: 3 orders packed, 2 in boxes and 1 in mailers, latest #003 in 7 1/4 x 12.");
+			click("Next order");
+			ok = ok && await until(() => label().endsWith("latest #004 in Multi Box.") && document.querySelector(".af-now").textContent.includes("7 this basket needs a box"));
+			click("Drop on the line");
+			ok = ok && await until(() => you() === "Your order #Y1 (Cap, Folded T-shirt ×2) went in 9 x 7 x 5, box, $0.62 all in, 83 % full. Warehouse rule first: Cap ships only in a box.");
+			[...document.querySelectorAll(".af-pkg")].find((b) => b.firstChild.textContent === "9 x 7 x 5").click();
+			ok = ok && await until(() => document.querySelector(".af-status").textContent.startsWith("9 x 7 x 5 is off the shelf. The engine re-judged all 5 orders packed so far: 1 pick changed, cost ") && you().startsWith("Your order #Y1 (Cap, Folded T-shirt ×2) now goes in "));
+			click("Restock");
+			return ok && await until(() => document.querySelector(".af-status").textContent.startsWith("Every package is back on the shelf. The engine re-judged all 5 orders packed so far: 1 pick changed"));
 		})()`,
 	},
 	"btrv": {
