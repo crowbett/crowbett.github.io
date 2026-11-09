@@ -154,6 +154,8 @@ pre code { background: none; padding: 0; }
 .replay-run button, .demo button, .demo-mount button { border-color: var(--block); background: var(--block); color: var(--on-block); font-size: var(--t-small); }
 .replay-run button:hover, .demo button:hover, .demo-mount button:hover { background: var(--block-hover); border-color: var(--block-hover); color: var(--on-block); }
 .keys { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+/* Phones: the Work list right below has a Run it button per demo. */
+@media (width < 40rem) { .hero .keys { display: none; } }
 
 /* Indicator lamp: the only round thing */
 .led { display: inline-flex; align-items: center; gap: var(--sp-2); font-family: var(--mono); font-size: var(--t-label); line-height: 1.4; color: var(--live); text-decoration: none; }
@@ -341,7 +343,7 @@ pre code { background: none; padding: 0; }
 .metric { font-family: var(--mono); font-size: 0.8125rem; line-height: 1.6; font-variant-numeric: tabular-nums; }
 .source { display: block; color: var(--text-3); font-size: var(--t-small); }
 .lang { font-family: var(--mono); font-size: var(--t-label); }
-.tag { font-family: var(--mono); font-size: var(--t-label); line-height: 1.5; padding: 2px var(--sp-2); border: 1px solid var(--line-strong); color: var(--text-2); white-space: nowrap; }
+.tag { font-family: var(--mono); font-size: var(--t-label); line-height: 1.5; padding: 2px var(--sp-2); border: 1px solid var(--line-strong); color: var(--text-2); overflow-wrap: anywhere; }
 
 /* Project page: head, demo, then write-up beside facts; every panel shares the frame's edges */
 .project { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-6); margin-top: var(--sp-5); }
