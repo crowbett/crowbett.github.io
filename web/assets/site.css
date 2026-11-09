@@ -81,7 +81,7 @@
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme=light]) {
       --bg: oklch(0.160 0.014 264);
       --surface: oklch(0.200 0.016 263);
       --sunken: oklch(0.245 0.019 264);
@@ -109,6 +109,8 @@
       --paper: radial-gradient(circle at 1px 1px, color-mix(in oklab, var(--text) 7%, transparent) 1px, transparent 0) 0 0 / 22px 22px;
     }
 }
+:root[data-theme=dark] { color-scheme: dark; --bg: oklch(0.160 0.014 264); --surface: oklch(0.200 0.016 263); --sunken: oklch(0.245 0.019 264); --line: oklch(0.288 0.018 262); --line-strong: oklch(0.370 0.022 263); --rule: oklch(0.440 0.025 263); --control-line: oklch(0.585 0.024 260); --text: oklch(0.936 0.006 258); --text-2: oklch(0.752 0.017 261); --text-3: oklch(0.672 0.021 261); --accent: oklch(0.730 0.135 276); --accent-hover: oklch(0.810 0.090 278); --accent-tint: oklch(0.279 0.082 275); --block: oklch(0.500 0.215 269); --block-hover: oklch(0.560 0.200 269); --signal: oklch(0.715 0.180 37); --live: oklch(0.766 0.151 156); --live-tint: oklch(0.250 0.037 159); --danger: oklch(0.720 0.160 15); --danger-tint: oklch(0.255 0.055 15); --screen: oklch(0.128 0.006 262); --grat: oklch(0.208 0.013 258); --grat-lit: oklch(0.48 0.07 265 / 0.5); --lift: 0 30px 80px -24px oklch(0 0 0 / 0.7), 0 12px 24px -12px oklch(0 0 0 / 0.5); --paper: radial-gradient(circle at 1px 1px, color-mix(in oklab, var(--text) 7%, transparent) 1px, transparent 0) 0 0 / 22px 22px; }
+:root[data-theme=light] { color-scheme: light; }
 
 /* Page to page: the header holds still while the page slides in */
 @view-transition { navigation: auto; }
@@ -162,7 +164,7 @@ main:has(> :is(.stage, .project)) { width: auto; }
 .top nav :is(a, button):hover { background: color-mix(in oklab, var(--text) 8%, transparent); color: var(--text); }
 .find kbd { display: inline-block; width: 7ch; height: calc(1.6em + 2px); line-height: 1.6; border: 1px solid currentColor; border-radius: 6px; font-size: 0.6875rem; text-align: center; opacity: 0.7; }
 @media (hover: none) { .find kbd { display: none; } }
-@media (max-width: 23rem) { .top nav { gap: 0; } .top nav :is(a, button) { padding-inline: var(--sp-2); } }
+@media (max-width: 23rem) { .top nav { gap: 0; } .top nav :is(a, button) { padding-inline: 0.4rem; } }
 
 /* Keys: flat and square; a press sinks 2px and springs back */
 .key, .demo button, .demo-mount button {
@@ -305,6 +307,16 @@ body:has(.notfound) main { flex: 1 0 auto; }
 }
 @media (hover: none) { .pal-foot, .pal kbd { display: none; } }
 /* The terminal (shell.js): a dark screen in both schemes that drops from the top. */
+.mode-key svg { width: 1.125rem; height: 1.125rem; overflow: visible; }
+.mode-key :is(.mode-cut, .mode-core, .mode-rays) { transform-box: fill-box; transform-origin: center; transition: transform 500ms var(--spring-soft), opacity var(--d-base) var(--ease-in); }
+.mode-cut { transform: translate(9px, -9px); }
+.mode-key[aria-pressed=true] .mode-cut { transform: none; }
+.mode-key[aria-pressed=true] .mode-core { transform: scale(1.55); }
+.mode-key[aria-pressed=true] .mode-rays { transform: rotate(-60deg) scale(0.4); opacity: 0; }
+:root[data-flip]::view-transition-old(root) { animation: none; }
+:root[data-flip]::view-transition-new(root) { animation: flip 620ms var(--ease-in); }
+:root[data-flip] .top { view-transition-name: none; }
+@keyframes flip { from { clip-path: circle(0 at var(--fx) var(--fy)); } to { clip-path: circle(var(--fr) at var(--fx) var(--fy)); } }
 .top .tty-key { font-weight: 700; letter-spacing: -0.05em; }
 .tty { width: min(58rem, 100% - 2 * var(--edge)); height: min(36rem, 100dvh - var(--top-h) - 3rem); margin: calc(var(--top-h) + 1rem) auto auto; padding: 0; border: 1px solid oklch(1 0 0 / 0.14); border-radius: var(--r-2); background: var(--screen); color: var(--screen-ink); box-shadow: var(--lift), 0 0 90px -30px color-mix(in oklab, var(--accent) 70%, transparent); font: 400 0.8125rem/1.6 var(--mono); opacity: 0; translate: 0 -2rem; transition: opacity 180ms var(--ease-in), translate 420ms var(--spring-snappy), display 420ms allow-discrete, overlay 420ms allow-discrete; }
 .tty[open] { display: grid; grid-template: auto minmax(0, 1fr) auto / minmax(0, 1fr); opacity: 1; translate: 0; }
