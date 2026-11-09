@@ -1,6 +1,7 @@
 package site
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand/v2"
 	"os"
@@ -73,7 +74,19 @@ func testFS(project string) fstest.MapFS {
 		"web/assets/site.css":  {Data: []byte("body{}")},
 		"web/demos/demo/ui.js": {Data: []byte("export function mount(){}")},
 		"web/.hidden":          {Data: []byte("skip me")},
+		"code/demo.json":       {Data: testCode()},
 	}
+}
+
+// testCode is the fixture project's code, filled as cmd/code would.
+func testCode() []byte {
+	c := CodeSet{Slug: "demo", Repo: "demo", Ref: strings.Repeat("a", 40), Excerpts: []Excerpt{{
+		Path: "main.go", From: 3, To: 4, Title: "Main", Why: "Where it starts.", Calls: []string{"run"},
+		Text: []string{"func main() {", "}"}, Lines: []string{`<span class="tk">func</span> main() {`, "}"},
+	}}}
+	c.Sum = c.Digest()
+	b, _ := json.Marshal(c)
+	return b
 }
 
 // withClip gives the fixture's live demo a showcase and a reel clip recorded
@@ -334,5 +347,60 @@ func TestShellTries(t *testing.T) {
 	}
 	if bad := checkTries([]Project{{Slug: "kvlite"}}); len(bad) == 0 {
 		t.Error("checkTries accepted tries for a project that is not live")
+	}
+}
+
+func TestUnpublishable(t *testing.T) {
+	for s, bad := range map[string]bool{
+		"func (n *Node) step() {}":            false,
+		"// see corbett.Jouett for details":   true,
+		"author: someone@example.com":         true,
+		"-----BEGIN PRIVATE KEY-----":         true,
+		`token = "abcdefghijkl"`:              true,
+		"tokens := lex(src) // secret sauce":  false,
+		"github.com/corbettjouett00-sudo/kit": true,
+	} {
+		if got := Unpublishable(s) != ""; got != bad {
+			t.Errorf("Unpublishable(%q) = %v, want %v", s, got, bad)
+		}
+	}
+}
+
+func TestCodeLines(t *testing.T) {
+	for l, ok := range map[string]bool{
+		`<span class="tk">fn</span> main() {`:    true,
+		`a &lt; b &amp;&amp; c`:                  true,
+		`<span class="tk" onclick="x">fn</span>`: false,
+		`<b>bold</b>`:                            false,
+	} {
+		if codeTag.MatchString(l) != ok {
+			t.Errorf("codeTag(%q) = %v, want %v", l, !ok, ok)
+		}
+	}
+}
+
+func TestCodeStale(t *testing.T) {
+	p := Project{Slug: "demo", Demo: "live"}
+	fresh := func() CodeSet {
+		var c CodeSet
+		_ = json.Unmarshal(testCode(), &c)
+		return c
+	}
+	if err := fresh().check(p, ""); err != nil {
+		t.Fatalf("fresh code rejected: %v", err)
+	}
+	edited := fresh()
+	edited.Excerpts[0].To = 5
+	if err := edited.check(p, ""); err == nil || !strings.Contains(err.Error(), "changed since") {
+		t.Errorf("hand-edited range: got %v", err)
+	}
+	if err := fresh().check(p, strings.Repeat("b", 40)); err == nil || !strings.Contains(err.Error(), "demo runs") {
+		t.Errorf("code from another commit than the demo: got %v", err)
+	}
+	unlit := fresh()
+	unlit.Excerpts[0].Calls = nil
+	unlit.Sum = unlit.Digest()
+	if err := unlit.check(p, ""); err == nil {
+		t.Error("live demo whose code no call lights: accepted")
 	}
 }

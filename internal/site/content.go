@@ -39,6 +39,7 @@ type Project struct {
 	MetricSource string
 	Group        string
 	Body         template.HTML
+	Code         *CodeSet // its published excerpts
 }
 
 // Group is one section of the home index, in display order.

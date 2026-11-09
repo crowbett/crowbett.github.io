@@ -762,3 +762,35 @@ func feelCheck(t *testing.T, ctx context.Context) {
 		t.Errorf("card did not settle after the mouse left (err %v)", err)
 	}
 }
+
+// codeCheck: a project's code panel shows its excerpts with their real line
+// numbers, one at a time behind tabs that the arrow keys, Home and End move.
+const codeCheck = `(async () => {
+	const c = document.querySelector("[data-code]");
+	if (!c) return false;
+	const panels = [...c.querySelectorAll(".code-ex")], tabs = [...c.querySelectorAll('[role="tab"]')];
+	const shown = () => panels.filter((p) => !p.hidden);
+	for (const p of panels) {
+		const n = [...p.querySelectorAll(".ln")].map((l) => Number(l.textContent));
+		const [from, to] = p.querySelector(".cx-lines").textContent.slice(1).split("–").map(Number);
+		if (!n.length || n[0] !== from || n.at(-1) !== to || n.some((x, i) => x !== from + i)) return false;
+	}
+	if (!tabs.length) return shown().length === panels.length;
+	const key = (t, k) => t.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true }));
+	const on = (i) => document.activeElement === tabs[i] && tabs[i].getAttribute("aria-selected") === "true" && shown().length === 1 && shown()[0].id === tabs[i].getAttribute("aria-controls");
+	tabs[0].focus();
+	key(tabs[0], "ArrowRight");
+	if (!on(1)) return false;
+	key(tabs[1], "End");
+	if (!on(tabs.length - 1)) return false;
+	key(tabs.at(-1), "Home");
+	return on(0);
+})()`
+
+// traceCheck: the demo calls its checks made lit the code that runs them.
+const traceCheck = `until(() => {
+	if (!location.pathname.startsWith("/projects/")) return true;
+	const l = document.querySelector("[data-code-link]");
+	return !l.hidden && Number(l.querySelector("[data-code-total]").textContent.replace(/k$/, "e3")) > 0 &&
+		[...document.querySelectorAll("[data-ran]")].some((r) => r.textContent !== "") === (document.querySelector('[role="tab"]') !== null);
+})`

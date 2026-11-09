@@ -96,6 +96,13 @@ func prepare(cfg Config) (*prepared, error) {
 			return nil, fmt.Errorf("%s: demo is live but web/demos/%s/ui.js is missing", p.Slug, p.Slug)
 		}
 	}
+	code, err := loadCode(cfg.Src, projects)
+	if err != nil {
+		return nil, err
+	}
+	for i := range projects {
+		projects[i].Code = code[projects[i].Slug]
+	}
 	var stage *Stage
 	if slices.ContainsFunc(projects, func(p Project) bool { return p.Slug == HomeStage.Slug && p.Live() }) {
 		stage = &HomeStage
@@ -115,6 +122,7 @@ func prepare(cfg Config) (*prepared, error) {
 			return pagerLink{Rel: rel, Label: label, P: p}
 		},
 		"num": thousands,
+		"add": func(a, b int) int { return a + b },
 		"search": func(p Project) string {
 			return strings.ToLower(strings.Join(append([]string{p.Slug, p.Title, p.Tagline, p.Lang}, p.Tags...), " "))
 		},

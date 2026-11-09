@@ -694,6 +694,11 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 				t.Errorf("demo check failed: %s (err %v)", js, err)
 			}
 		}
+		if scheme == "light" && !layoutOnly {
+			if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(traceCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
+				t.Errorf("demo %q: its calls lit no code in the code panel (err %v)", slug, err)
+			}
+		}
 		// The demo's receipt, read mid-screen, is still at full strength:
 		// a head with a demo is not pinned, so nothing sinks it while in use.
 		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(`(async () => {
@@ -714,6 +719,11 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 		// A tablet tab only starts its demo for screenshots and does not wait
 		// for it to settle; desktop walks the same DOM order.
 		tabOrder(t, ctx)
+	}
+	if isProject, _ := chromedp.Run(ctx, chromedp.Evaluate[bool](`location.pathname.startsWith("/projects/")`)); isProject && !layoutOnly && scheme == "light" {
+		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(codeCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
+			t.Errorf("code panel check failed (err %v)", err)
+		}
 	}
 	if isHome, _ := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector(".work") !== null`)); isHome && !layoutOnly && scheme == "light" {
 		for _, c := range []struct{ name, js string }{{"stage", stageCheck}, {"scene", sceneCheck}, {"depth", depthCheck}, {"work", workCheck}, {"refused", refusedCheck}, {"index", indexCheck}} {
