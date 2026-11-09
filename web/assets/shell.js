@@ -6,6 +6,9 @@
 import { connect } from "/assets/demo.js";
 
 const data = fetch("/search.json").then((r) => r.json());
+let findP = null; // /find.json, every page's text and code, on first need
+const found = () => (findP ??= fetch("/find.json").then((r) => r.json()).catch((e) => { findP = null; throw e; }));
+let sink = null; // a pipe's first command writes here, not to the screen
 const calm = matchMedia("(prefers-reduced-motion: reduce)");
 const MAX_LIVE = 3;
 let dlg, out, input, label, opener;
@@ -31,12 +34,13 @@ const dur = (ms) => (ms < 10 ? `${ms.toFixed(1)} ms` : ms < 1000 ? `${Math.round
 function line(...parts) {
   const p = el("p");
   for (const x of parts) p.append(Array.isArray(x) ? el("span", x[0], x[1]) : x);
-  out.append(p);
+  (sink ?? out).append(p);
   out.scrollTop = out.scrollHeight;
   return p;
 }
 const dim = (t) => line(["tty-dim", t]);
-const fail = (t) => line(["tty-err", "✗ "], t);
+// fail always reaches the screen, so a filter in a pipe cannot hide it.
+const fail = (t) => { const s = sink; sink = null; line(["tty-err", "✗ "], t); sink = s; };
 
 // json prints a value as indented JSON, trimmed to stay readable: long
 // strings and arrays are cut with a count of what was left out, and the whole
@@ -77,7 +81,7 @@ function json(v) {
     pre.append("\n");
   }
   if (lines.length > 48) pre.append(el("span", "tty-dim", `… ${lines.length - 48} more lines; copy copies it all\n`));
-  out.append(pre);
+  (sink ?? out).append(pre);
   out.scrollTop = out.scrollHeight;
 }
 
@@ -172,25 +176,119 @@ async function trace(scene = "cornell", n = "32") {
 }
 
 const word = (s) => s.trim().split(/\s+/)[0] || "";
+const excerpts = async (slug) => (await found()).filter((d) => d.s === slug && d.k === "c");
+// around is the part of a long passage around its first hit.
+function around(text, w, n = 88) {
+  let from = Math.max(0, text.toLowerCase().indexOf(w) - 24);
+  if (from) from = text.indexOf(" ", from) + 1 || from;
+  return (from ? "…" : "") + text.slice(from, from + n) + (from + n < text.length ? "…" : "");
+}
+
+// A pipe: the first command's output, as lines, through filters.
+const FILTERS = {
+  grep: (rows, a) => {
+    const inv = /(^|\s)-v(?=\s|$)/.test(a);
+    const w = a.replace(/(^|\s)-[vi](?=\s|$)/g, " ").trim().toLowerCase();
+    if (!w) throw new Error("usage: … | grep [-v] <text>");
+    return rows.filter((r) => r.text.toLowerCase().includes(w) !== inv);
+  },
+  head: (rows, a) => rows.slice(0, count(a)),
+  tail: (rows, a) => rows.slice(-count(a)),
+  wc: (rows) => [{ text: `${rows.length} lines, ${rows.reduce((n, r) => n + (r.text.match(/\S+/g)?.length ?? 0), 0)} words, ${rows.reduce((n, r) => n + r.text.length + 1, 0)} chars` }],
+};
+function count(a) {
+  const n = Number.parseInt(a.replace(/^-n\s*/, "").replace(/^-/, ""), 10);
+  return Number.isFinite(n) && n > 0 ? n : 10;
+}
+// stages splits a command line at each | outside quotes and JSON.
+function stages(t) {
+  const parts = [];
+  let cur = "", q = null, depth = 0, esc = false;
+  for (const ch of t) {
+    if (q) { if (esc) esc = false; else if (ch === "\\") esc = true; else if (ch === q) q = null; }
+    else if (ch === '"' || ch === "'") q = ch;
+    else if (ch === "{" || ch === "[") depth++;
+    else if (ch === "}" || ch === "]") depth--;
+    else if (ch === "|" && depth <= 0) { parts.push(cur.trim()); cur = ""; continue; }
+    cur += ch;
+  }
+  return [...parts, cur.trim()];
+}
+// rows reads what a command wrote as lines: a printed line keeps its colours,
+// JSON comes back as plain text lines.
+function rows(box) {
+  const rs = [];
+  for (const n of box.children) {
+    if (n.tagName === "PRE") for (const t of n.textContent.replace(/\n$/, "").split("\n")) rs.push({ text: t, pre: true });
+    else if (n.tagName === "P") rs.push({ text: n.textContent, node: n });
+  }
+  return rs;
+}
+function print(rs) {
+  let pre = null;
+  for (const r of rs) {
+    if (r.pre) { if (!pre) { pre = el("pre", "tty-j"); out.append(pre); } pre.append(r.text + "\n"); continue; }
+    pre = null;
+    out.append(r.node ?? el("p", null, r.text));
+  }
+  out.scrollTop = out.scrollHeight;
+}
 const need = (slug) => slug || cwd || (() => { throw new Error("name a project, or cd into one first"); })();
 
 const commands = {
   help: [() => {
     for (const [name, [, args, what]] of Object.entries(commands)) line(["tty-c", name.padEnd(8)], ["tty-dim", (args ? args + " " : "").padEnd(22)], what);
     dim("inside a project (cd <project>), type a method and optional JSON: state, or put {\"key\": \"a\", \"value\": \"b\"}");
+    dim("pipes: ls | grep live | wc · grep lease | head 5 · code keel 1 | grep seed (grep [-v], head [n], tail [n], wc)");
   }, "", "this list"],
   ls: [() => {
     for (const p of projects) line(["tty-dim", String(p.n).padStart(2, "0") + "  "], ["tty-c", p.slug.padEnd(12)], p.lang.padEnd(13), [p.live ? "tty-ok" : "tty-dim", p.live ? "live" : "page"]);
     dim(`${projects.length} projects, ${projects.filter((p) => p.live).length} with a live binary`);
   }, "", "every project"],
-  cat: [(a) => {
+  cat: [async (a) => {
     const p = bySlug.get(need(word(a)));
     if (!p) throw new Error(`no project named ${word(a)}; ls lists them`);
     line(["tty-c", p.title], ` · ${p.lang} · ${p.group}`);
     line(p.tagline);
     dim(p.tags.join(" · "));
+    const m = (await found().catch(() => [])).find((d) => d.s === p.slug && d.k === "m");
+    if (m) { line(["tty-n", m.t]); dim(`measured: ${m.y}`); }
     if (p.live) dim(`try ${p.slug} runs it here`);
-  }, "<project>", "what a project is"],
+  }, "<project>", "what a project is, and its measured result"],
+  code: [async (a) => {
+    const [s, n] = a.trim().split(/\s+/);
+    const p = bySlug.get(need(s && !/^\d+$/.test(s) ? s : ""));
+    if (!p) throw new Error(`no project named ${s}; ls lists them`);
+    const xs = await excerpts(p.slug);
+    if (!xs.length) throw new Error(`${p.slug} has no published code`);
+    const i = Number(/^\d+$/.test(s ?? "") ? s : n || (xs.length === 1 ? 1 : 0)) - 1;
+    if (i < 0) {
+      xs.forEach((x, j) => line(["tty-dim", ` ${j + 1}  `], ["tty-c", x.t], ["tty-dim", `  ${x.p}:${x.f}–${x.f + x.l.length - 1}`]));
+      dim(`code ${p.slug} <n> prints one; pipe it to grep to search it`);
+      return;
+    }
+    const x = xs[i];
+    if (!x) throw new Error(`${p.slug} has ${xs.length} excerpts`);
+    line(["tty-c", x.t], ["tty-dim", `  ${x.p}:${x.f}–${x.f + x.l.length - 1}`]);
+    dim(x.y);
+    const pre = el("pre", "tty-j");
+    x.l.forEach((l, j) => pre.append(el("span", "tty-dim", String(x.f + j).padStart(4) + "  "), l + "\n"));
+    (sink ?? out).append(pre);
+    out.scrollTop = out.scrollHeight;
+  }, "[project] [n]", "print the real source an excerpt shows"],
+  grep: [async (a) => {
+    const w = a.trim().toLowerCase();
+    if (!w) throw new Error("usage: grep <text>");
+    const hits = [];
+    for (const d of await found()) {
+      if (d.k === "c") d.l.forEach((l, j) => { if (l.toLowerCase().includes(w)) hits.push([d.s, `${d.p.split("/").pop()}:${d.f + j}`, l.trim()]); });
+      else if (`${d.t} ${d.y ?? ""}`.toLowerCase().includes(w)) hits.push([d.s, { m: "result", d: "demo", w: "write-up" }[d.k], around(d.t, w)]);
+    }
+    const shown = sink ? hits : hits.slice(0, 30);
+    for (const [slug, where, text] of shown) line(["tty-c", slug.padEnd(11)], ["tty-dim", where.padEnd(18) + " "], text);
+    if (shown.length < hits.length) dim(`… ${hits.length - shown.length} more; pipe to grep or head to narrow`);
+    if (!hits.length) dim(`no write-up, result or code on the site says "${a.trim()}"`);
+  }, "<text>", "search every write-up and code excerpt"],
   cd: [(a) => {
     const s = word(a);
     if (!s || s === "~" || s === ".." || s === "/") { cwd = null; prompt(); return; }
@@ -268,18 +366,29 @@ async function exec(text) {
   if (!t) return;
   hist.push(t);
   hi = hist.length;
-  const name = word(t), rest = t.slice(name.length).trim();
+  const [first, ...pipe] = stages(t);
+  const name = word(first), rest = first.slice(name.length).trim();
   busy = true;
   stop = false;
   dlg.dataset.busy = "";
   try {
+    const bad = pipe.find((f) => !Object.hasOwn(FILTERS, word(f)));
+    if (bad !== undefined) throw new Error(`${word(bad) || "an empty command"} can't read a pipe; grep, head, tail and wc can`);
+    if (pipe.length) sink = el("div");
     if (Object.hasOwn(commands, name)) await commands[name][0](rest);
     else if (cwd && bySlug.get(cwd)?.live) await call(cwd, name, rest);
     else if (bySlug.has(name)) await commands.cd[0](name);
     else throw new Error(`${name}: no such command; help lists them`);
+    if (pipe.length) {
+      const box = sink;
+      sink = null;
+      print(pipe.reduce((rs, f) => FILTERS[word(f)](rs, f.slice(word(f).length).trim()), rows(box)));
+    }
   } catch (e) {
+    sink = null;
     fail(e.message);
   } finally {
+    sink = null;
     busy = false;
     delete dlg.dataset.busy;
     input.value = "";
