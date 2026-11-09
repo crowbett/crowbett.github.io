@@ -2,6 +2,15 @@
 
 package e2e
 
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/chromedp/cdproto/input"
+	"github.com/chromedp/chromedp"
+)
+
 // workCheck walks the home reel by focus, as Tab and j/k do: the focused
 // project's panel comes up over the others and covers the middle of the
 // screen, it is current and plays its recorded clip, no other clip plays,
@@ -399,4 +408,60 @@ var demoChecks = map[string][]string{
 			return /^Tick [\d,]+, [\d.]+ s simulated: you rolled back [\d,]+ times?, [\d,]+ frames? resimulated; [\d,]+ hash checks, 0 desyncs\.$/.test(document.querySelector(".nc-status").textContent);
 		})()`,
 	},
+}
+
+// feelCheck moves a real mouse onto an index card where the page has a fine
+// pointer: its preview tilts under a glare and plays its clip, and leaving
+// the card settles it and drops the clip. The page may still be settling a
+// scroll, so the mouse is re-aimed until it lands on the card.
+func feelCheck(t *testing.T, ctx context.Context) {
+	t.Helper()
+	type pt struct{ X, Y float64 }
+	aim := `(() => {
+		if (!matchMedia("(hover: hover) and (pointer: fine)").matches) return { X: -1, Y: -1 };
+		const s = document.querySelector(".card:not([hidden]) .card-shot:has(img)");
+		s.scrollIntoView({ block: "center", behavior: "instant" });
+		const r = s.getBoundingClientRect();
+		return { X: r.left + r.width * 0.7, Y: r.top + r.height * 0.3 };
+	})()`
+	move := func(x, y float64) {
+		if err := chromedp.Do(ctx, chromedp.MouseEvent(input.DispatchMouseEventTypeMouseMoved, x, y)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	in := `(() => {
+		const s = document.querySelector(".card:not([hidden]) .card-shot:has(img)");
+		return "feel" in s.dataset && parseFloat(s.style.getPropertyValue("--ry")) > 0
+			&& !!s.querySelector("video[data-on]") && !s.querySelector("video").paused;
+	})()`
+	ok := false
+	for end := time.Now().Add(15 * time.Second); !ok && time.Now().Before(end); {
+		at, err := chromedp.Run(ctx, chromedp.Evaluate[pt](aim))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if at.X < 0 {
+			return
+		}
+		move(at.X-20, at.Y)
+		move(at.X, at.Y)
+		for i := 0; i < 10 && !ok; i++ {
+			time.Sleep(100 * time.Millisecond)
+			if ok, err = chromedp.Run(ctx, chromedp.Evaluate[bool](in)); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	if !ok {
+		t.Errorf("hovered card did not tilt and play its clip")
+		return
+	}
+	move(1, 1)
+	out := `(async () => {
+		const s = document.querySelector(".card:not([hidden]) .card-shot:has(img)");
+		return until(() => !("feel" in s.dataset) && !s.querySelector("video"));
+	})()`
+	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(out), chromedp.EvalAwaitPromise)); err != nil || !ok {
+		t.Errorf("card did not settle after the mouse left (err %v)", err)
+	}
 }
