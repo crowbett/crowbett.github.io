@@ -218,9 +218,14 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"livejob": {
-		`until(() => [...document.querySelectorAll(".lj-card[data-state=waiting] .lj-tap")].map((b) => b.textContent).join("/") === "Yes/Always/No" &&
+		// 4×, as the visitor can pick: at 1× a loaded CI runner takes over 20 s to the first prompt.
+		`(async () => {
+			const speed = document.querySelector("select[name=speed]");
+			if (speed.value !== "4") { speed.value = "4"; speed.dispatchEvent(new Event("change")); }
+			return until(() => [...document.querySelectorAll(".lj-card[data-state=waiting] .lj-tap")].map((b) => b.textContent).join("/") === "Yes/Always/No" &&
 			/proof32 B, checked.*swapped keyrefused.*session keywrapped in 60 B, opened/.test(document.querySelector(".lj-pair").textContent) &&
-			/^\d[\d,]* frames sealed and opened, \d+ prompts? read off the screen/.test(document.querySelector(".lj-out").textContent))`,
+			/^\d[\d,]* frames sealed and opened, \d+ prompts? read off the screen/.test(document.querySelector(".lj-out").textContent));
+		})()`,
 		`(async () => {
 			const v = (k) => document.querySelector(".lj-cells [data-k=" + k + "] .lj-v").textContent;
 			const tap = (t) => [...document.querySelectorAll(".lj-card[data-state=waiting] .lj-tap")].find((b) => b.textContent === t);
