@@ -52,7 +52,7 @@ function button(text, cls, onClick) {
 }
 
 function cellsList(pairs) {
-  const ul = el("ul", "cells bt-facts");
+  const ul = el("ul", "cells stack bt-facts");
   for (const [k, v, cls] of pairs) {
     const li = el("li", cls);
     li.append(el("span", "bt-k", k), el("span", "bt-v", v));
@@ -88,7 +88,7 @@ export async function mount(root, demo) {
   Object.assign(pick, { type: "file", multiple: true, name: "files" });
   const pickKey = el("label", "key bt-open");
   pickKey.append(el("span", null, "Open a file"), pick);
-  const picked = el("span", "bt-picked", "no file chosen");
+  const picked = el("span", "demo-note bt-picked", "no file chosen");
   const controls = el("div", "bt-controls");
   controls.append(sampleBtn, pickKey, picked);
   const privacy = el("p", "bt-note", "Drop files anywhere on this panel. They are read inside this tab by the WebAssembly build; nothing is uploaded.");
@@ -110,7 +110,7 @@ export async function mount(root, demo) {
   canvas.setAttribute("role", "img");
   const mapWrap = el("div", "bt-mapwrap");
   mapWrap.append(canvas);
-  const legend = el("ul", "bt-legend");
+  const legend = el("ul", "demo-legend bt-legend");
   const readout = el("div", "bt-readout");
   const readText = el("p", "bt-read");
   readText.id = "bt-read";
@@ -343,7 +343,7 @@ export async function mount(root, demo) {
   function colours() {
     const cs = getComputedStyle(wrap);
     const v = (n) => cs.getPropertyValue(n).trim();
-    return { fcr: v("--bt-sig"), pat: v("--accent"), reserved: v("--line-strong"), data: v("--bt-blk"), tint: v("--accent-tint"), variable: v("--text"),
+    return { fcr: v("--signal"), pat: v("--accent"), reserved: v("--line-strong"), data: v("--block"), tint: v("--accent-tint"), variable: v("--text"),
       index: v("--text-2"), free: v("--control-line"), ground: v("--sunken"), ink: v("--text"), bad: v("--danger"), other: v("--text-3") };
   }
 

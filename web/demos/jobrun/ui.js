@@ -78,7 +78,7 @@ function cronPanel(demo) {
   const preset = select("cronPreset", CRON_PRESETS.map((p, i) => [String(i), p[3]]));
   const form = el("form", "jr-controls");
   form.addEventListener("submit", (e) => e.preventDefault());
-  form.append(field("Cron expression", expr, "jr-wide"), field("Time zone", zone), field("After (UTC, RFC 3339)", start, "jr-wide"), field("Example", preset));
+  form.append(field("cron expression", expr, "jr-wide"), field("time zone", zone), field("after (UTC, RFC 3339)", start, "jr-wide"), field("example", preset));
   const note = el("p", "jr-note");
   const list = el("ol", "jr-runs");
   const status = el("p", "demo-out jr-status");
@@ -177,12 +177,12 @@ function backoffPanel(demo) {
   form.addEventListener("submit", (e) => e.preventDefault());
   const jit = el("label", "jr-check");
   jit.append(jitter, el("span", null, "Full jitter"));
-  form.append(field("Base", base), field("Max", max), field("Factor", factor), field("Max attempts", attempts), field("Seed", seed), jit, reseed);
+  form.append(field("base", base), field("max", max), field("factor", factor), field("max attempts", attempts), field("seed", seed), jit, reseed);
   const fig = el("figure", "jr-chart");
   fig.setAttribute("aria-label", "Retry delay chart");
   const axis = el("p", "jr-axis");
-  const legend = el("p", "jr-legend");
-  legend.append(el("span", "jr-key jr-key-cap", "cap: Base × Factor^(n−1), at most Max"), el("span", "jr-key jr-key-dot", `${SAMPLES} seeded draws per attempt`));
+  const legend = el("p", "demo-legend jr-legend");
+  legend.append(el("span", "jr-key jr-key-cap", "cap: base × factor^(n−1), at most max"), el("span", "jr-key jr-key-dot", `${SAMPLES} seeded draws per attempt`));
   const table = el("div", "jr-scroll");
   table.setAttribute("aria-label", "Retry delays by attempt");
   const status = el("p", "demo-out jr-status");

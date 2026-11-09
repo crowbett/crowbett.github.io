@@ -1,5 +1,5 @@
-.rt { --rt-screen: #0b0d10; --rt-ink: #dde3e8; --rt-dim: #8b96a2; --rt-signal: #fb6b44; --rt-grat: #252b33; --rt-key-l: #66717d; --rt-key-r: #bd330b; }
-@media (prefers-color-scheme: dark) { .rt { --rt-screen: #060709; --rt-grat: #1c2128; --rt-key-l: #8b96a2; --rt-key-r: #fe7249; } }
+.rt { --rt-screen: #0b0d10; --rt-ink: #dde3e8; --rt-dim: #8b96a2; --rt-signal: #fb6b44; --rt-grat: #252b33; }
+@media (prefers-color-scheme: dark) { .rt { --rt-screen: #060709; --rt-grat: #1c2128; } }
 
 .rt-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 16px; }
 .rt-controls button { height: 2.25rem; min-width: 6.5rem; }
@@ -42,15 +42,15 @@
 .rt-pass i { position: absolute; inset: 0; background: var(--rt-signal); transform-origin: 0 50%; transform: scaleX(0.001); }
 
 .rt-side { display: grid; gap: 16px; align-content: start; min-width: 0; }
-.rt-cells li { display: flex; flex-direction: column; gap: 2px; min-width: 8.5rem; }
-.rt-k { color: var(--text-3); white-space: normal; }
+.rt-cells li { min-width: 8.5rem; }
+.rt-k { white-space: normal; }
 .rt-v { font-size: 1rem; color: var(--text); }
 .rt-status { margin: 0; min-height: 2.8em; font-size: 0.875rem; color: var(--text); }
 .rt-info { margin: 0; font-family: var(--mono); font-size: 0.6875rem; line-height: 1.6; color: var(--text-2); }
 .rt-legend { display: grid; gap: 10px; margin: 0; font-size: 0.875rem; }
-.rt-key dt { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 0.6875rem; font-weight: 600; color: var(--text); }
-.rt-key dt::before { content: ""; width: 8px; height: 8px; background: var(--text-3); }
-.rt-key-l dt::before { background: var(--rt-key-l); }
-.rt-key-r dt::before { background: var(--rt-key-r); }
-.rt-key-n dt::before { background: transparent; border: 1px solid var(--text-3); width: 6px; height: 6px; }
-.rt-key dd { margin: 2px 0 0 16px; color: var(--text-2); }
+.rt-key dt { display: flex; align-items: center; gap: 0.5em; font-family: var(--mono); font-size: 0.6875rem; font-weight: 600; color: var(--text); }
+.rt-key dt::before { content: ""; flex: none; width: 0.75em; height: 0.75em; box-sizing: border-box; background: var(--text-3); }
+.rt-key-l dt::before { background: var(--text-3); }
+.rt-key-r dt::before { background: var(--signal); }
+.rt-key-n dt::before { background: transparent; border: 1px solid var(--text-3); }
+.rt-key dd { margin: 2px 0 0 calc(0.75em + 0.5em); color: var(--text-2); }

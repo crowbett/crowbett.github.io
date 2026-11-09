@@ -85,17 +85,17 @@ export async function mount(root, demo) {
   const reseed = el("button", "secondary", "New traffic");
   reseed.type = "button";
   form.append(
-    field("Traffic", pattern),
-    field("Limit (requests/s)", rate),
-    field("Burst", burst),
-    field("Seed", seed),
+    field("traffic", pattern),
+    field("limit (requests/s)", rate),
+    field("burst", burst),
+    field("seed", seed),
     reseed,
   );
 
   const charts = el("div", "rl-charts");
   const axis = el("p", "rl-axis");
   axis.append(el("span", null, "0 s"), el("span", null, `${DURATION_MS / 1000} s, in ${DURATION_MS / BUCKETS / 1000} s buckets`));
-  const legend = el("p", "rl-legend");
+  const legend = el("p", "demo-legend rl-legend");
   legend.append(
     el("span", "rl-key rl-key-allowed", "allowed"),
     el("span", "rl-key rl-key-denied", "denied"),
