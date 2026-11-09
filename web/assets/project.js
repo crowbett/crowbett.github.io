@@ -2,6 +2,7 @@
 // sheet slides over it, with the demo's recorded clip on a screen that casts
 // a glow sampled from its frames. The clip plays only while the screen is in
 // view and not covered; with reduced motion or Save-Data the poster stays.
+import { play, pause } from "/assets/play.js";
 const head = document.querySelector(".project-head");
 if (head) {
   const sheet = document.querySelector(".sheet");
@@ -40,8 +41,8 @@ if (head) {
     const update = () => {
       if (seen && !covered && !document.hidden) {
         v.preload = "auto";
-        v.play().catch(() => {});
-      } else v.pause();
+        play(v);
+      } else pause(v);
     };
     new IntersectionObserver(([e]) => { seen = e.isIntersecting; update(); }, { threshold: 0.2 }).observe(screen);
     if (sheet) new IntersectionObserver(([e]) => { covered = e.isIntersecting; update(); }, { rootMargin: "0px 0px -55% 0px" }).observe(sheet);

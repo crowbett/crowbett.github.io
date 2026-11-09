@@ -406,11 +406,13 @@ export async function mount(root, demo) {
     const more = cards.length - shown;
     if (more) shown = fit(G.W - G.padR - 64);
     const hidden = cards.length - shown;
-    for (let i = 0; i < shown; i++) {
+    // Oldest first, so the newest room is drawn over the ones sliding out from under it.
+    const xs = [];
+    for (let i = 0; i < shown; i++) { xs.push(x); x += cardW(cards[i].size) + 8; }
+    for (let i = shown - 1; i >= 0; i--) {
       const k = cards[i];
       const off = k.slide ? (1 - ease((now - k.slide) / SLIDE_MS)) * -k.from : 0;
-      drawCard(ctx, k, x + off, now, font);
-      x += cardW(k.size) + 8;
+      drawCard(ctx, k, xs[i] + off, now, font);
     }
     if (hidden) {
       ctx.fillStyle = c.text2;
@@ -425,8 +427,13 @@ export async function mount(root, demo) {
       ctx.fillText("no rooms yet", G.padL, G.laneTop + 20);
     }
 
-    // Flights from the floor into their room.
+    // Flights from the floor into their room, passing behind the rooms' header strip.
     flights = flights.filter((f) => now - f.t0 < FLY_MS);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, G.W, G.laneTop);
+    ctx.rect(0, G.laneTop + 21, G.W, G.H);
+    ctx.clip();
     for (const f of flights) {
       const t = ease((now - f.t0) / FLY_MS);
       let px, py;
@@ -442,6 +449,7 @@ export async function mount(root, demo) {
       dot(ctx, px, py, f.kind === "left" ? "player" : f.kind, f.seats, font);
       ctx.globalAlpha = 1;
     }
+    ctx.restore();
   }
 
   function dot(ctx, x, y, kind, seats, font) {
