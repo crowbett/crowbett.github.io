@@ -365,23 +365,35 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"grepall": {
-		`[...document.querySelectorAll(".ga-fcount")].map((c) => c.textContent).join() === "283,158,23"`,
-		`[...document.querySelectorAll(".ga-chip code")].map((c) => c.textContent).slice(0, 3).join() === "fun,new,unc" && document.querySelector(".ga-ptree .ga-op").textContent === "Concat"`,
-		`document.querySelector(".ga-rh .ga-t").textContent === "34 lines in 23 files" && document.querySelectorAll(".ga-list mark").length > 0`,
-		`/^Index built here in [\d.,]+ ms: 283 files, 1\.84 MiB of source/.test(document.querySelector(".ga-built").textContent)`,
+		`[...document.querySelectorAll(".ga-cells .ga-v")].slice(0, 3).map((v) => v.textContent).join("|") === "283|1.84 MiB|143,027" && /^283 files indexed into 34 shards/.test(document.querySelector(".ga-out").textContent) && document.querySelector(".ga-canvas").getAttribute("aria-label").startsWith("Index board for ")`,
+		`(() => { const c = document.querySelector(".ga-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
 		`(async () => {
-			const counts = () => [...document.querySelectorAll(".ga-fcount")].map((c) => c.textContent).join();
+			const label = () => document.querySelector(".ga-canvas").getAttribute("aria-label");
+			const reset = [...document.querySelectorAll(".ga-acts button")].find((b) => b.textContent === "Reset");
+			reset.click();
+			return await until(() => label().startsWith("Index board for Kel: posting lists kel 14;") && document.querySelector(".ga-presets button[aria-pressed=true] code").textContent === "Kelvin") &&
+				await until(() => label() === "Index board for Kelvin: posting lists elv 12, kel 14, lvi 8, vin 42; 3 of 283 files are candidates, 1 matched." && document.querySelector(".ga-canvas").dataset.early === "2");
+		})()`,
+		`(async () => {
+			const play = document.querySelector(".ga-acts button");
+			if (play.textContent === "Pause") play.click();
+			const v = (k) => document.querySelector(".ga-cells [data-k=" + k + "] .ga-v").textContent;
+			const label = () => document.querySelector(".ga-canvas").getAttribute("aria-label");
 			const preset = (q) => [...document.querySelectorAll(".ga-presets button")].find((b) => b.querySelector("code").textContent === q).click();
-			preset("Kelvin");
-			let ok = await until(() => counts() === "283,3,1" && document.querySelector(".ga-list").textContent.includes("Kelvin"));
+			preset("func\\s+New\\w+\\(");
+			let ok = await until(() => v("cand") === "158 · 1.62 MiB" && v("hit") === "23 files · 34 lines" && v("tri") === "13" && document.querySelector(".ga-canvas").dataset.early === "16" &&
+				label().startsWith("Index board for func\\s+New\\w+\\(: posting lists fun 262, new 162, unc 265, nc\\t 0, nc\\n 19,") &&
+				document.querySelector(".ga-status").textContent.includes("16 candidates lacking a list got through") && document.querySelectorAll(".ga-list mark").length > 0);
 			preset(":=.*<-");
-			ok = ok && await until(() => counts() === "283,283,1" && document.querySelector(".ga-all") !== null);
+			ok = ok && await until(() => label() === "Index board for :=.*<-: no posting list narrows it; 283 of 283 files are candidates, 1 matched." && v("read") === "1.84 MiB · 100%");
+			preset("TODO|FIXME");
+			ok = ok && await until(() => label() === "Index board for TODO|FIXME: posting lists fix 78, ixm 1, xme 0, odo 26, tod 30; 25 of 283 files are candidates, 25 matched.");
 			const q = document.querySelector("input[name=q]");
 			q.value = "func(";
 			q.dispatchEvent(new Event("input"));
 			ok = ok && await until(() => document.querySelector(".ga-status").textContent.includes("missing closing )"));
-			preset("func\\s+New\\w+\\(");
-			return ok && await until(() => counts() === "283,158,23" && !document.querySelector(".ga-err"));
+			preset("Kelvin");
+			return ok && await until(() => document.querySelector(".ga-list").textContent.includes("Kelvin") && !document.querySelector(".ga-err"));
 		})()`,
 	},
 	"stash": {

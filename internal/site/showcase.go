@@ -71,17 +71,18 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".ec-canvas", Pad: 4, WideFocus: ".ec-canvas", WidePad: 4, Seconds: 8,
 	},
-	// Each query narrows 283 files to candidates by trigram, then to matches.
+	// The index builds shard by shard, the tour types Kelvin and its posting
+	// lists intersect; then you type your own query and the board re-runs.
 	"grepall": {
 		Play: `(async () => {
 			const w = (ms) => new Promise((r) => setTimeout(r, ms));
-			const preset = (q) => [...document.querySelectorAll(".ga-presets button")].find((b) => b.querySelector("code").textContent === q).click();
-			await w(800); preset("Kelvin");
-			await w(1600); preset(":=.*<-");
-			await w(1600); preset("TODO|FIXME");
-			await w(1600); preset("func\\s+New\\w+\\(");
+			await w(4600);
+			const q = document.querySelector("input[name=q]");
+			q.value = "";
+			for (const ch of "Mutex") { q.value += ch; q.dispatchEvent(new Event("input")); await w(180); }
+			await w(1600);
 		})()`,
-		Focus: ".ga-status", Pad: 8, WideFocus: ".ga-funnel", WidePad: 8, Seconds: 8,
+		Focus: ".ga-canvas", Pad: 4, WideFocus: ".ga-canvas", WidePad: 4, Seconds: 8,
 	},
 	// Fresh seeded draws, jitter off (every retry waits the full cap), more attempts.
 	"jobrun": {
