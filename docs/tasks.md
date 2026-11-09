@@ -67,6 +67,26 @@ The resolver runs unchanged on bundled SQLite in memory. First call ~76 ms, over
 ### D7b Re-pin codegraph after PR #1 lands · status: done 2026-10-25 (codegraph 0dbef57; site 2b1506b)
 ### F4 CSS budget headroom · status: done 2026-10-25 (bab8955, 54ebd9d; decision in PLAN.md)
 
+## Wave 2 demos (2026-11-08, each with a `webdemo` PR in its repo)
+
+### D9 lobby: matchmaking floor · status: done 2026-11-08 (lobby 3ed17da, PR #1; site 187bbbc)
+### D10 raytracer: split-view sampling · status: done 2026-11-08 (raytracer e79a188, PR #1; site 0a8db95)
+Adds the `cpp` kind to `cmd/wasm` (wasi-sdk 34.0 via `make wasi-sdk`; no imports allowed).
+### D11 grepall: trigram search over Go's source · status: done 2026-11-08 (grepall e2806b0, PR #1; site 0335505)
+2,244,121 B gzip against the 2,359,296 B wasm budget: no room left for a bigger corpus.
+### D12 mcpbridge: protocol era translator · status: done 2026-11-08 (mcpbridge 5cc4eb5, PR #5; site 7bcab80)
+### D13 netcode: rollback arena · status: done 2026-11-08 (netcode 8f311f5, PR #1; site 6d39eb2)
+### D14 stash: encrypted dedup backups · status: done 2026-11-08 (stash 35f7189, PR #1; site c7e248a)
+### D15 btrv: page map and export · status: done 2026-11-08 (btrv 0519b75, PR #3; site 5f1b16a)
+Product teaser: the LICENSE stays proprietary and the page never draws on btrv's business or legal docs.
+
+### P1 Re-pin wave 2 after their PRs land · order 38 · deps: D9-D15 · status: todo
+Every pin above is a PR head. A merge commit keeps it reachable from main; a squash or rebase merge needs a re-pin to the merged commit (`go run ./cmd/wasm pin <slug> <sha>`, `make wasm`), as D6b-D8b did.
+Done when: each of the seven pins is an ancestor of its repo's main.
+
+### F8 CI over 60 s at 15 projects · status: done 2026-11-08 (e53cc6d and the e2e commits before it)
+One job ran gate and e2e at ~55 s plus ~10 s of upload and deploy. Now `gate` and three `e2e` shards (`E2E_SHARD=i/3`) run on separate runners and `deploy` waits for them: PR CI wall 37 s (measured). CI skips screenshots and the dark desktop and tablet tabs; tablet tabs check layout only; the slowest tabs start first.
+
 ### F7 Does the Tab walk still need its timeline pause · order 37 · deps: none · status: todo
 From F6: the home Tab walk's 15-25 s stalls (F5) and the GPU freeze were inferred to be the same fault, so the walk may be fast without F5's animation-timeline pause. Not measured on CI.
 Done when: three `ci` runs with the pause removed are timed and the pause is kept or dropped on that evidence, recorded here.
@@ -79,6 +99,7 @@ Left open in done tasks; each needs the owner, another repo, or is outside this 
 - D8 (keel repo): clippy on keel's main fails on `clippy::unused_async_trait_impl`, a lint unknown to clippy 1.96, 1.98.1 and 1.99; keel-web's PR ran with `-A unknown_lints`.
 - V8 polish (demo track): the edgecache, jobrun and kvlite notes keep their own `max-width: 40rem` inside the wider frame.
 - V11 review (owner call): Doto for the evidence lines too; Doto is a numerals face here and metrics are sentences.
+- Wave 2 (owner calls): grepall and stash LICENSE files name the surname; lobby, netcode and raytracer have no LICENSE. mcpbridge's docs/demo.gif predates its 101 / 289/291 numbers. btrv's 2,483,585 rows/s was measured under load (load average ~30); an idle rerun would replace it. stash's `crates/webdemo/.cargo/config.toml` names Homebrew's llvm-ar, so its wasm builds only on this Mac.
 
 ## Design track
 
@@ -101,10 +122,8 @@ Owner: the design session. It owns `templates/`, `web/assets/` (site.css, demo.j
 V8 rounds 1-7 (2026-10-25) all said "maybe", the last ones "leaning yes for engineers" since the hero re-runs in the browser. What reviewers say is left is owner copy, published identity and the house style.
 Done when: a fresh-eyes reviewer rates home "would remember this site" (yes, not maybe) and the screenshots back it.
 
-### V13 Tighten copy and tablet layout · order 112 · deps: V12 · status: doing (branch tighten-layout)
-Project pages cut to bullets plus a short demo note, evidence moved into the page header, write-up and facts in one panel split 7fr/5fr from 48rem; the home index becomes 2-column cards from 40rem to 64rem.
-44px touch targets and 16px demo fields on coarse pointers, safe-area gutters, and e2e gains an 820×1180 tablet viewport.
-Done when: `make gate && make e2e` pass and every changed page's screenshots are reviewed at all three viewports in both themes.
+### V13 Tighten copy and tablet layout · status: done 2026-11-08 (083e2e3, 7fb2184, 3c2a6e1, 42541b5, e6a9555)
+Project pages are bullets plus a demo note with evidence in the header; the home index is 2-column cards from 40rem to 64rem, filterable by live demo and language.
 
 ## Owner only
 
