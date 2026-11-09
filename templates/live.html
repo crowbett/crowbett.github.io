@@ -5,7 +5,7 @@
       <p class="crumb"><a href="/">Home</a> <span aria-hidden="true">/</span> live</p>
       <h1>Live</h1>
       <p class="lede">Every demo on one page. Each tile is its project's real code, compiled to WebAssembly and running in this tab: {{with $b := .Bins}}~{{demoKB (index $b (sub (len $b) 1)).Slug}} KB to ~{{demoKB (index $b 0).Slug}} KB per binary, gzipped, as the build's lock file records them.{{end}}</p>
-      <p class="wall-note" data-wall-note><span>Nothing downloads until you press Run on a tile. Up to <b data-cap>{{.LiveCap}}</b> run at once; starting another stops the one least in view.</span><span>Tiles start as they come into view, up to <b data-cap>{{.LiveCap}}</b> at once, and stop as they leave, which frees their memory. Until then each shows a recording.</span></p>
+      <p class="wall-note" data-wall-note><span>Nothing downloads until you press Run on a tile. Up to <b data-cap>{{.LiveCap}}</b> run at once; starting another stops the one least in view.</span><span>Tiles start as they come into view, up to <b data-cap>{{.LiveCap}}</b> at once, and stop as they leave, which frees their memory. Until then each shows a still from its recording.</span></p>
     </div>
   </header>
   <div class="sheet">
@@ -16,7 +16,7 @@
           <div class="wt-meta">
             <h2><a href="/projects/{{.Slug}}/">{{.Title}}</a></h2>
             <p class="wt-tag">{{.Tagline}}</p>
-            <p class="wt-bar"><button type="button" class="key wt-go">Run</button><span class="wt-st">recording · ~{{demoKB .Slug}} KB</span></p>
+            <p class="wt-bar"><button type="button" class="key wt-go">Run</button><span class="wt-st">still · ~{{demoKB .Slug}} KB</span></p>
           </div>
         </li>{{end}}{{end}}
       </ol>
