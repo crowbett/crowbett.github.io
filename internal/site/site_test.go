@@ -322,3 +322,17 @@ func TestLanguages(t *testing.T) {
 		t.Errorf("languages = %v, want %v", got, want)
 	}
 }
+
+// Every live project has terminal tries, each `method [json object]`.
+func TestShellTries(t *testing.T) {
+	projects, err := LoadProjects(os.DirFS("../.."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, b := range checkTries(projects) {
+		t.Error(b)
+	}
+	if bad := checkTries([]Project{{Slug: "kvlite"}}); len(bad) == 0 {
+		t.Error("checkTries accepted tries for a project that is not live")
+	}
+}

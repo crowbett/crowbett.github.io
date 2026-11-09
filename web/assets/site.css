@@ -303,6 +303,34 @@ body:has(.notfound) main { flex: 1 0 auto; }
   .pal-o small { display: block; margin: 0; }
 }
 @media (hover: none) { .pal-foot, .pal kbd { display: none; } }
+/* The terminal (shell.js): a dark screen in both schemes that drops from the top. */
+.top .tty-key { font-weight: 700; letter-spacing: -0.05em; }
+.tty { width: min(58rem, 100% - 2 * var(--edge)); height: min(36rem, 100dvh - var(--top-h) - 3rem); margin: calc(var(--top-h) + 1rem) auto auto; padding: 0; border: 1px solid oklch(1 0 0 / 0.14); border-radius: var(--r-2); background: var(--screen); color: var(--screen-ink); box-shadow: var(--lift), 0 0 90px -30px color-mix(in oklab, var(--accent) 70%, transparent); font: 400 0.8125rem/1.6 var(--mono); opacity: 0; translate: 0 -2rem; transition: opacity 180ms var(--ease-in), translate 420ms var(--spring-snappy), display 420ms allow-discrete, overlay 420ms allow-discrete; }
+.tty[open] { display: grid; grid-template: auto minmax(0, 1fr) auto / minmax(0, 1fr); opacity: 1; translate: 0; }
+@starting-style { .tty[open] { opacity: 0; translate: 0 -2rem; } }
+.tty::backdrop { background: oklch(0.1 0.01 262 / 0.5); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.tty-bar { display: flex; justify-content: space-between; align-items: center; padding: var(--sp-1) var(--sp-1) var(--sp-1) var(--sp-4); border-bottom: 1px solid oklch(1 0 0 / 0.08); color: var(--screen-dim); font-size: var(--t-label); }
+.tty-x { padding: var(--sp-1) var(--sp-3); border: 0; border-radius: 8px; background: none; color: inherit; font: inherit; cursor: pointer; }
+.tty-x:hover { background: oklch(1 0 0 / 0.08); color: var(--screen-ink); }
+.tty-out { overflow-y: auto; overscroll-behavior: contain; padding: var(--sp-3) var(--sp-4); scrollbar-width: thin; scrollbar-color: oklch(1 0 0 / 0.2) transparent; }
+.tty-out > * { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.tty-out pre { margin-block: var(--sp-1); padding: var(--sp-2) var(--sp-3); border: 0; border-radius: 8px; background: oklch(1 0 0 / 0.035); color: var(--screen-ink); font: inherit; }
+.tty-out > .tty-e { margin-top: var(--sp-2); }
+.tty-in { display: flex; align-items: baseline; gap: 1ch; padding: var(--sp-3) var(--sp-4); border-top: 1px solid oklch(1 0 0 / 0.08); }
+.tty-p { white-space: nowrap; color: var(--screen-dim); }
+.tty-p b, .tty-ok { font-weight: 400; color: var(--screen-ok); }
+.tty-in input { flex: 1; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; caret-color: var(--screen-signal); outline: 0; }
+.tty[data-busy] .tty-in { opacity: 0.55; }
+.tty-dim { color: var(--screen-dim); }
+.tty-c { color: var(--screen-ink); font-weight: 700; }
+.tty-err { color: oklch(0.72 0.16 15); }
+.tty-k { color: color-mix(in oklab, var(--accent) 55%, var(--screen-ink)); }
+.tty-s { color: var(--screen-ok); }
+.tty-n { color: var(--screen-signal); }
+.tty-b { color: color-mix(in oklab, var(--accent) 80%, var(--screen-ink)); }
+.tty-img { display: block; width: min(384px, 100%); margin: var(--sp-2) 0; border-radius: 6px; image-rendering: pixelated; box-shadow: 0 0 0 1px oklch(1 0 0 / 0.12); }
+@media (max-width: 39.99rem) { .tty { width: 100%; max-width: none; height: min(70dvh, 100dvh - var(--top-h)); margin: 0 0 auto; border-width: 0 0 1px; border-radius: 0 0 var(--r-2) var(--r-2); } }
+@media (pointer: coarse) { .tty-in input { font-size: 16px; } }
 .toast { position: fixed; z-index: 10; inset: auto var(--edge) var(--sp-5) auto; margin: 0; padding: var(--sp-2) var(--sp-4); background: var(--block); color: var(--on-block); font: 400 var(--t-label)/1.4 var(--mono); transition: opacity var(--d-fast), translate var(--d-base) var(--ease-in); }
 @starting-style { .toast { opacity: 0; translate: 0 0.5rem; } }
 @media (pointer: coarse) { .pager a, .stage .key, .project-head .key, .pal-o, .demo button, .demo-mount button, .demo-mount select, .demo-mount input:not([type="range"], [type="checkbox"], [type="radio"]) { min-height: 44px; } }

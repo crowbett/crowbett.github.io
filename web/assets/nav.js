@@ -1,11 +1,19 @@
 // Site-wide keys and speed. The Search link goes to the home work index without
-// JS. ⌘K, Ctrl+K or "/" opens the palette anywhere; j and k walk the index;
-// [ and ] step between projects. A link the pointer or focus rests on is
+// JS. ⌘K, Ctrl+K or "/" opens the palette anywhere and ` the terminal; j and k
+// walk the index; [ and ] step between projects. A link the pointer or focus rests on is
 // prefetched, so the next page is usually there before the click lands.
 const button = document.querySelector("[data-palette]");
 const mac = /mac|iphone|ipad/i.test(navigator.userAgentData?.platform ?? navigator.platform);
-let palette;
+let palette, shell;
 const open = async () => (palette ??= await import("/assets/palette.js")).open(button);
+// The terminal (shell.js) opens from its header key, the ` key or the palette.
+const term = document.querySelector("[data-shell]");
+export const openShell = async (from) => (shell ??= await import("/assets/shell.js")).open(from);
+if (term) {
+  term.hidden = false;
+  term.addEventListener("click", () => openShell(term));
+  term.addEventListener("pointerenter", () => import("/assets/shell.js"), { once: true });
+}
 
 if (button) {
   button.querySelector("kbd").textContent = mac ? "⌘K" : "Ctrl K";
@@ -22,7 +30,10 @@ document.addEventListener("keydown", (e) => {
     return;
   }
   if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented || typing(e.target)) return;
-  if (e.key === "/") {
+  if (e.key === "`") {
+    e.preventDefault();
+    openShell(term);
+  } else if (e.key === "/") {
     e.preventDefault();
     open();
   } else if (e.key === "j" || e.key === "k") {
