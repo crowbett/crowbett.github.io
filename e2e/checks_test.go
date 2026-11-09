@@ -102,20 +102,53 @@ const sceneCheck = `(async () => {
 var demoChecks = map[string][]string{
 	"smoke": {`document.querySelector(".demo-out").textContent.includes("answered: hello from the page")`},
 	"codegraph": {
-		`document.querySelector(".cg-summary").textContent === "run (src/main.rs:32): 1 caller; 7 callees, 6 resolved, 1 unresolved."`,
-		`[...document.querySelectorAll("[aria-labelledby=cg-callees] .cg-edge")].map((li) => li.firstChild.textContent + ":" + li.querySelector(".cg-conf").textContent).filter((t) => /^(store::Store::set|store\.len\(\)\.to_string):/.test(t)).join() === "store::Store::set:exact,store.len().to_string:unresolved"`,
-		`document.querySelector(".cg-foot").textContent.includes("99 edges (imports excluded), 50 resolved to a definition: 44 exact, 6 likely, 0 name_only")`,
+		`until(() => document.querySelectorAll(".cg-node").length === 17 && document.querySelectorAll(".cg-e:not(.cg-via)").length === 19 && document.querySelectorAll(".cg-likely.cg-e").length === 1 &&
+			[...document.querySelectorAll(".cg-cells .cg-v")].slice(0, 3).map((v) => v.textContent).join() === "26,17,99" &&
+			document.querySelectorAll(".cg-node.is-focus").length > 0 && document.querySelectorAll(".cg-e.is-up, .cg-e.is-down").length > 0 &&
+			document.querySelector(".cg-foot").textContent.includes("99 edges (imports excluded), 50 resolved to a definition: 44 exact, 6 likely, 0 name_only"))`,
 		`(async () => {
-			const callers = () => [...document.querySelectorAll("[aria-labelledby=cg-callers] .cg-go")].map((b) => b.textContent).join();
-			[...document.querySelectorAll("[aria-labelledby=cg-callers] .cg-go")].find((b) => b.textContent === "main").click();
+			const v = (k) => document.querySelector(".cg-cells [data-k=" + k + "] .cg-v").textContent;
+			const sum = () => document.querySelector(".cg-summary").textContent;
+			const hops = () => [...document.querySelectorAll(".cg-node.is-up")].map((g) => g.querySelector(".cg-name").textContent + g.querySelector(".cg-hop").textContent).sort().join();
+			const play = document.querySelector(".cg-acts button");
+			if (play.textContent === "Pause") play.click();
+			document.querySelector(".cg-node[data-spec='src/store.rs:32']").dispatchEvent(new MouseEvent("click", { bubbles: true }));
+			return until(() => sum() === "store::Store::bump (src/store.rs:32): 2 callers; 0 callees, 0 resolved, 0 unresolved." &&
+				hops() === "Store::delete↑1,Store::set↑1,main↑3,run↑2" && v("callers") === "4" && v("depth") === "3" && v("callees") === "0" &&
+				/^\d+ call-tree queries walked from store::Store::bump in [\d.]+ ms; drawing the graph took 17 more in [\d.]+ ms, after indexing 4 files in [\d.]+ ms, in your browser\.$/.test(document.querySelector(".cg-out").textContent));
+		})()`,
+		`(async () => {
+			const play = document.querySelector(".cg-acts button");
+			if (play.textContent === "Pause") play.click();
+			const search = (q) => { document.querySelector("input[name=symbol]").value = q; document.querySelector(".cg-find button").click(); };
+			const sum = () => document.querySelector(".cg-summary").textContent;
+			const st = () => document.querySelector(".cg-status").textContent;
+			search("write");
+			let ok = await until(() => sum().startsWith("write names log::Stdout::write (src/log.rs:11) and log::Sink::write (src/log.rs:2): 3 callers;") &&
+				document.querySelectorAll(".cg-node.is-focus").length === 2 && document.querySelectorAll(".cg-via.is-up").length === 2 &&
+				[...document.querySelectorAll("[aria-labelledby=cg-callers] .cg-where")].some((w) => w.textContent.includes("via log::Sink::write")));
+			search("tokenize");
+			ok = ok && await until(() => sum().startsWith("parse::tokenize (src/parse.rs:30)") && document.querySelector(".cg-code").dataset.file === "src/parse.rs");
+			document.querySelector(".cg-line[data-n='36']").click();
+			ok = ok && await until(() => sum().startsWith("parse::key (src/parse.rs:34): 1 caller; 4 callees, 1 resolved, 3 unresolved.") && st() === "src/parse.rs:36 is inside parse::key.");
+			search("Store");
+			ok = ok && await until(() => st() === "Store resolves to struct store::Store (src/store.rs:4); the graph draws functions and methods.");
+			search("nope");
+			return ok && await until(() => st() === "no symbol named ` + "`nope` (try `codegraph find nope`)" + `" && sum().startsWith("parse::key "));
+		})()`,
+		`(async () => {
+			const play = document.querySelector(".cg-acts button");
+			if (play.textContent === "Pause") play.click();
+			const v = (k) => document.querySelector(".cg-cells [data-k=" + k + "] .cg-v").textContent;
+			const set = (n, x) => { const s = document.querySelector("select[name=" + n + "]"); s.value = x; s.dispatchEvent(new Event("change")); };
+			document.querySelector("input[name=symbol]").value = "main";
+			document.querySelector(".cg-find button").click();
 			let ok = await until(() => document.querySelector(".cg-summary").textContent.startsWith("main (src/main.rs:11)"));
-			[...document.querySelectorAll(".cg-go")].find((b) => b.textContent === "parse::parse_line").click();
-			ok = ok && await until(() => document.querySelector(".cg-summary").textContent.startsWith("parse::parse_line (src/parse.rs:19)") && callers() === "main");
-			const s = document.querySelector("select[name=symbol]");
-			s.value = "src/store.rs:32"; s.dispatchEvent(new Event("change"));
-			ok = ok && await until(() => callers() === "store::Store::set,store::Store::delete" && document.querySelectorAll(".cg-def").length === 3);
-			s.value = "src/main.rs:11"; s.dispatchEvent(new Event("change"));
-			return ok && await until(() => document.querySelector(".cg-summary").textContent.startsWith("main "));
+			set("ripple", "callees"); set("depth", "1");
+			ok = ok && await until(() => v("callers") === "–" && v("callees") === "6" && v("unresolved") === "5" && v("depth") === "1" && document.querySelectorAll(".cg-node.is-up").length === 0 &&
+				document.querySelector(".cg-out").textContent.startsWith("2 call-tree queries walked from main in "));
+			set("ripple", "both"); set("depth", "8");
+			return ok && await until(() => v("callers") === "0" && v("callees") === "15" && v("depth") === "3");
 		})()`,
 	},
 	"lobby": {
