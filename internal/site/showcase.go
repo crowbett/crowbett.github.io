@@ -71,7 +71,7 @@ var Showcases = map[string]Showcase{
 			await w(2600); p.value = "no-cache"; p.dispatchEvent(new Event("change"));
 			await w(2000); send.click();
 		})()`,
-		Focus: ".ec-canvas", Pad: 4, Seconds: 8,
+		Focus: ".ec-canvas", Pad: 4, WideFocus: ".ec-canvas", WidePad: 4, Seconds: 8,
 	},
 	// Each query narrows 283 files to candidates by trigram, then to matches.
 	"grepall": {
