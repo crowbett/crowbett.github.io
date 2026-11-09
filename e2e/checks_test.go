@@ -539,7 +539,10 @@ func feelCheck(t *testing.T, ctx context.Context) {
 	}
 	in := `(() => {
 		const s = document.querySelector(".card:not([hidden]) .card-shot:has(img)");
+		const c = s.closest(".card"), o = [...document.querySelectorAll(".card:not([hidden])")].find((x) => x !== c);
 		return "feel" in s.dataset && parseFloat(s.style.getPropertyValue("--ry")) > 0
+			&& parseFloat(c.style.getPropertyValue("--dx")) > 0 && getComputedStyle(s.querySelector("img")).translate !== "none"
+			&& parseFloat(getComputedStyle(o).opacity) < 0.8
 			&& !!s.querySelector("video[src$='-n.mp4']") && !s.querySelector("video").paused;
 	})()`
 	ok := false
@@ -561,13 +564,13 @@ func feelCheck(t *testing.T, ctx context.Context) {
 		}
 	}
 	if !ok {
-		t.Errorf("hovered card did not tilt and play its clip")
+		t.Errorf("hovered card did not tilt, shift its picture, dim the other cards and play its clip")
 		return
 	}
 	move(1, 1)
 	out := `(async () => {
 		const s = document.querySelector(".card:not([hidden]) .card-shot:has(img)");
-		return until(() => !("feel" in s.dataset) && !s.querySelector("video"));
+		return until(() => !("feel" in s.dataset) && !s.closest(".card").style.getPropertyValue("--dx") && !s.querySelector("video"));
 	})()`
 	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(out), chromedp.EvalAwaitPromise)); err != nil || !ok {
 		t.Errorf("card did not settle after the mouse left (err %v)", err)
