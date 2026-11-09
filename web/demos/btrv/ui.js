@@ -1,10 +1,19 @@
-// btrv demo: btrv's page reader, dictionary loader, inference and export loop,
-// compiled to WebAssembly. Files are read in this tab and handed to the binary in
-// chunks; nothing is uploaded anywhere.
+// btrv demo: btrv's page reader, page map, dictionary loader, inference and export
+// loop, compiled to WebAssembly. On a simulated clock the binary first describes the
+// file page by page (Map.Describe), then walks its data pages in the reader's order
+// (export.Copy over Records), and each decoded row comes back from the same binary.
+// Files you open are read inside this tab and are never uploaded.
 const CHUNK = 768 << 10;
 const MAX_BYTES = 32 << 20;
-const ROW = 28;
-const BLOCK = 100;
+const SPEEDS = [1, 2, 5, 10];
+const MAP_MS = 1800; // simulated ms the page map takes at 1×
+const READ_MS = 7000; // the most the read takes at 1×
+const FEED = 8;
+const FLUSH_MS = 300;
+const FADE_MS = 260;
+const FILL_MS = 220;
+const TRAIL = 10;
+const GUT = 34;
 
 const el = (tag, cls, text) => {
   const n = document.createElement(tag);
@@ -15,26 +24,47 @@ const el = (tag, cls, text) => {
 const fmt = (n) => Number(n).toLocaleString("en-US");
 const mib = (b) => `${(b / 1048576).toFixed(1)} MiB`;
 const hex = (n) => `0x${n.toString(16)}`;
-const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
-const still = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+const ease = (t) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
 
 const LEGEND = ["fcr", "pat", "reserved", "data", "variable", "index", "free", "freed", "acs", "unreferenced", "other"];
 const LABEL = { fcr: "FCR", pat: "PAT", acs: "ACS" };
 const WHAT = {
-  fcr: "file control record, the header (two copies)",
-  pat: "page allocation table: logical to physical",
-  reserved: "special page the reader skips",
-  data: "fixed-length records; fill = live slots",
-  variable: "variable-length parts of records",
-  index: "B-tree node of a key",
-  free: "listed in the PAT as free",
-  freed: "retired page",
-  acs: "alternate collating sequence",
-  unreferenced: "no PAT entry lists it; skipped",
-  other: "PAT type the reader does not know",
+  fcr: "File control record: the file's header, kept in two copies.",
+  pat: "Page allocation table: maps logical pages to physical ones.",
+  reserved: "Special page the reader skips.",
+  data: "Fixed-length records. The fill rises as the reader decodes them.",
+  variable: "Variable-length parts of records.",
+  index: "A B-tree node of one key. Reading the records does not need it.",
+  free: "Listed in the PAT as free; holds stale bytes.",
+  freed: "A retired page.",
+  acs: "Alternate collating sequence.",
+  unreferenced: "No PAT entry lists this page: an older shadow copy. The reader skips it.",
+  other: "A PAT type the reader does not know.",
 };
+const DAMAGEABLE = new Set(["data", "variable", "index"]);
 const label = (k) => LABEL[k] || k;
 
+function button(text, cls) {
+  const b = el("button", cls, text);
+  b.type = "button";
+  return b;
+}
+function field(text, input, cls) {
+  const w = el("label", `demo-field${cls ? ` ${cls}` : ""}`);
+  w.append(el("span", "demo-label", text), input);
+  return w;
+}
+function choose(name, options, value) {
+  const s = el("select");
+  s.name = name;
+  for (const [v, t] of options) {
+    const o = el("option", null, t);
+    o.value = String(v);
+    o.selected = v === value;
+    s.append(o);
+  }
+  return s;
+}
 function b64(blob) {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
@@ -42,23 +72,6 @@ function b64(blob) {
     r.onerror = () => reject(r.error || new Error("could not read the file"));
     r.readAsDataURL(blob);
   });
-}
-
-function button(text, cls, onClick) {
-  const b = el("button", cls, text);
-  b.type = "button";
-  b.addEventListener("click", onClick);
-  return b;
-}
-
-function cellsList(pairs) {
-  const ul = el("ul", "cells stack bt-facts");
-  for (const [k, v, cls] of pairs) {
-    const li = el("li", cls);
-    li.append(el("span", "bt-k", k), el("span", "bt-v", v));
-    ul.append(li);
-  }
-  return ul;
 }
 
 export async function mount(root, demo) {
@@ -71,672 +84,883 @@ export async function mount(root, demo) {
     cssReady = new Promise((r) => { css.onload = r; css.onerror = r; });
     document.head.append(css);
   }
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+  const coarse = matchMedia("(pointer: coarse)");
 
-  let work = 0;
-  const rpc = async (method, params) => {
-    const t0 = performance.now();
-    try {
-      return await demo.call(method, params);
-    } finally {
-      work += performance.now() - t0;
-    }
-  };
-
-  // Controls
-  const sampleBtn = button("Load the sample file", null, () => guard(() => load(null)));
+  // Controls.
+  const fileSel = choose("file", [], "");
+  const schemaSel = choose("schema", [["", "DDF dictionary"], ["infer", "inferred by btrv"]], "");
+  const schemaField = field("schema", schemaSel);
+  const speed = choose("speed", SPEEDS.map((s) => [s, `${s}×`]), 1);
   const pick = el("input", "vh");
   Object.assign(pick, { type: "file", multiple: true, name: "files" });
-  const pickKey = el("label", "key bt-open");
-  pickKey.append(el("span", null, "Open a file"), pick);
-  const picked = el("span", "demo-note bt-picked", "no file chosen");
-  const controls = el("div", "bt-controls");
-  controls.append(sampleBtn, pickKey, picked);
-  const privacy = el("p", "bt-note", "Drop files anywhere on this panel. They are read inside this tab by the WebAssembly build; nothing is uploaded.");
-  const status = el("p", "bt-status");
-  status.setAttribute("aria-live", "polite");
-  const bar = el("progress", "demo-progress bt-progress");
-  bar.max = 1;
-  bar.value = 0;
-  bar.classList.add("bt-idle");
-  const tabs = el("div", "bt-tabs");
-  tabs.setAttribute("aria-label", "Files");
-  tabs.setAttribute("role", "group");
+  const openKey = el("label", "key bt-open");
+  openKey.append(el("span", null, "Open files"), pick);
+  const sampleBtn = button("Back to the sample", "secondary");
+  sampleBtn.hidden = true;
+  const knobs = el("div", "bt-knobs");
+  knobs.append(field("file", fileSel), schemaField, field("speed", speed), openKey, sampleBtn);
+  const play = button("Pause");
+  const step = button("Step", "secondary");
+  const reset = button("Reset", "secondary");
+  const corrupt = button("Corrupt a page", "bt-corrupt");
+  const acts = el("div", "bt-acts");
+  acts.append(play, step, reset, corrupt);
+  const form = el("form", "bt-controls");
+  form.addEventListener("submit", (e) => e.preventDefault());
+  form.append(knobs, acts);
 
-  // Page map
+  // Hero: the page map.
   const mapHead = el("div", "bt-head");
-  mapHead.append(el("h3", "bt-h", "page map"), el("span", "bt-sub", "one cell per page, in file order"));
+  const mapTitle = el("h3", "bt-h", "page map");
+  const mapSub = el("span", "bt-sub", "");
+  mapHead.append(mapTitle, mapSub);
   const canvas = el("canvas", "bt-map");
   canvas.tabIndex = 0;
   canvas.setAttribute("role", "img");
-  const mapWrap = el("div", "bt-mapwrap");
-  mapWrap.append(canvas);
+  const now = el("p", "bt-now");
   const legend = el("ul", "demo-legend bt-legend");
-  const readout = el("div", "bt-readout");
-  const readText = el("p", "bt-read");
-  readText.id = "bt-read";
-  readText.setAttribute("aria-live", "polite");
-  canvas.setAttribute("aria-describedby", "bt-read");
-  const damageBtn = button("Damage page", "secondary bt-damage", () => guard(damage));
-  damageBtn.hidden = true;
-  readout.append(readText, damageBtn);
-  const mapSec = el("section", "bt-sec bt-mapsec");
-  mapSec.append(mapHead, mapWrap, readout, legend);
+  const mapSec = el("section", "bt-sec");
+  mapSec.append(mapHead, canvas, now, legend);
 
-  // Schema and summary
-  const schemaSec = el("section", "bt-sec");
-  const sumSec = el("section", "bt-sec");
+  // Decoded rows feed and the page inspector.
+  const feedHead = el("div", "bt-head");
+  feedHead.append(el("h3", "bt-h", "decoded rows"), el("span", "bt-sub", "newest first, as export.Copy reads them"));
+  const feedBox = el("div", "bt-feedbox");
+  feedBox.setAttribute("role", "region");
+  feedBox.setAttribute("aria-label", "Decoded rows");
+  const feedTable = el("table", "bt-table bt-feed");
+  const feedHeadRow = el("thead");
+  const feedBody = el("tbody");
+  feedTable.append(feedHeadRow, feedBody);
+  feedBox.append(feedTable);
+  const feedSec = el("section", "bt-sec");
+  feedSec.append(feedHead, feedBox);
+  const insp = el("section", "bt-sec bt-insp");
+  insp.setAttribute("aria-live", "polite");
   const pair = el("div", "bt-pair");
-  pair.append(schemaSec, sumSec);
+  pair.append(insp, feedSec);
 
-  // Rows and export
-  const rowsHead = el("div", "bt-head");
-  const rowsTitle = el("h3", "bt-h", "rows");
-  const rowsSub = el("span", "bt-sub", "");
-  rowsHead.append(rowsTitle, rowsSub);
-  const rowsBox = el("div", "bt-rows");
-  rowsBox.setAttribute("aria-label", "Decoded rows");
-  rowsBox.setAttribute("role", "region");
-  rowsBox.tabIndex = 0;
-  const table = el("table", "bt-table");
-  const thead = el("thead");
-  const tbody = el("tbody");
-  table.append(thead, tbody);
-  rowsBox.append(table);
-  const exportRow = el("div", "bt-export");
-  const csvBtn = button("Download CSV", null, () => guard(() => exportAs("csv")));
-  const jsonBtn = button("Download JSON Lines", "secondary", () => guard(() => exportAs("jsonl")));
-  const expStatus = el("p", "bt-status bt-expstatus");
+  const cells = el("ul", "cells stack bt-cells");
+  const cell = {};
+  for (const [k, t] of [["format", "format"], ["pagesize", "page size"], ["pages", "pages"], ["records", "records"], ["keys", "keys"],
+    ["free", "free pages"], ["bad", "bad pages"], ["time", "call time"]]) {
+    const li = el("li");
+    li.dataset.k = k;
+    const v = el("span", "bt-v", "–");
+    li.append(el("span", "bt-k", t), v);
+    cell[k] = { li, v };
+    cells.append(li);
+  }
+  const status = el("p", "bt-status");
+  status.setAttribute("aria-live", "polite");
+  const csvBtn = button("Download CSV", "secondary");
+  const jsonBtn = button("Download JSON Lines", "secondary");
+  const expStatus = el("p", "bt-note bt-expstatus", "SQLite export is in the btrv command; its SQLite driver does not build for WebAssembly.");
   expStatus.setAttribute("aria-live", "polite");
+  const exportRow = el("div", "bt-export");
   exportRow.append(csvBtn, jsonBtn, expStatus);
-  const sqliteNote = el("p", "bt-note", "SQLite export is in the btrv command; its SQLite driver does not build for WebAssembly.");
-  const rowsSec = el("section", "bt-sec");
-  rowsSec.append(rowsHead, rowsBox, exportRow, sqliteNote);
-
-  const wrap = el("div", "bt");
   const receipt = el("p", "demo-out bt-out");
-  wrap.append(controls, privacy, status, bar, tabs, mapSec, pair, rowsSec, receipt);
+  receipt.setAttribute("aria-live", "polite");
+  const wrap = el("div", "bt");
+  wrap.append(form, mapSec, status, cells, pair, exportRow, receipt);
   root.replaceChildren(wrap);
 
-  // State
-  let markFirst;
-  const shown = new Promise((r) => { markFirst = r; });
+  // State.
+  let opened = null; // the answer of sample or open
+  let onSample = true;
+  let w = null; // the current walk
   let gen = 0;
+  let playing = !reduce.matches;
+  let visible = true;
+  let raf = 0;
+  let last = 0;
+  let pending = 0;
   let busy = false;
-  let opened = null; // answer of open/sample
-  let cur = null; // the selected file
-  const damaged = new Map(); // file name -> Set of pages
-  const setDisabled = (v) => { for (const c of wrap.querySelectorAll("button, input")) c.disabled = v; };
+  let blocked = 0; // file loads, resets and exports hold the walk
+  let animUntil = 0;
+  let colors = null;
+  let G = null;
+  let hover = -1;
+  let picked = -1;
+  let legendFocus = null;
+  let rec = 0; // the record shown in the inspector, by row number
+  let field_ = -1; // the column highlighted in it
+  const damaged = new Map(); // file name -> Set of physical pages
+  const dmg = () => damaged.get(w?.name) || new Set();
 
-  const guard = async (f, rethrow) => {
-    if (busy) return;
-    busy = true;
-    work = 0;
-    setDisabled(true);
+  const rpc = async (method, params) => {
+    const t0 = performance.now();
+    const ww = w;
     try {
-      await f();
-    } catch (err) {
-      if (rethrow) throw err;
-      status.textContent = err.message;
-      bar.classList.add("bt-idle");
+      return await demo.call(method, params);
     } finally {
-      busy = false;
-      setDisabled(false);
-      if (cur && !cur.table) csvBtn.disabled = jsonBtn.disabled = true;
+      if (ww) ww.ms += performance.now() - t0;
     }
   };
+  const fail = (err) => { status.textContent = err.message; };
 
-  // Loading files
+  function readColors() {
+    const s = getComputedStyle(wrap);
+    const v = (n) => s.getPropertyValue(n).trim();
+    colors = {
+      ground: v("--sunken"), line: v("--line"), strong: v("--line-strong"), ctl: v("--control-line"), ink: v("--text"), ink2: v("--text-2"), ink3: v("--text-3"),
+      accent: v("--accent"), tint: v("--accent-tint"), block: v("--block"), signal: v("--signal"), live: v("--live"), bad: v("--danger"), mono: v("--mono") || "monospace",
+    };
+  }
+
+  // A walk: one file mapped and then read.
+  async function begin(name, schema) {
+    const g = ++gen;
+    const sel = await rpc("select", { name, schema });
+    if (g !== gen) return false;
+    const n = sel.pages;
+    w = {
+      name, sel, n, kinds: sel.kinds, kind: new Uint8Array(n), lp: new Float64Array(n), a: new Int32Array(n), b: new Int32Array(n), x: new Int32Array(n), ty: new Int32Array(n),
+      seen: new Float64Array(n).fill(-1), fill: new Float64Array(n).fill(-1), desc: 0, problems: new Map(), phase: "map", order: [], cum: new Float64Array(n), at: 0, read: 0,
+      trail: [], feed: [], report: null, stopPage: -1, ms: 0, table: !!sel.names, step: Math.max(4, Math.ceil(n / 60)), file: sel.file,
+    };
+    pending = 0;
+    queued = [];
+    feedBody.replaceChildren();
+    renderFeedHead();
+    if (picked >= n) picked = -1;
+    hover = -1;
+    layout();
+    mapSub.textContent = `${w.name}: ${fmt(n)} pages of ${fmt(sel.file.pageSize)} bytes, in file order`;
+    syncSchema();
+    renderTiles();
+    renderLegend();
+    renderInspector();
+    caption();
+    return true;
+  }
+
+  function apply(from, cells_, problems, t) {
+    cells_.forEach((cl, i) => {
+      const j = from + i;
+      w.kind[j] = cl[0]; w.lp[j] = cl[1]; w.a[j] = cl[2]; w.b[j] = cl[3]; w.x[j] = cl[4]; w.ty[j] = cl[5];
+      w.seen[j] = t;
+    });
+    for (const pr of problems || []) w.problems.set(pr.page, pr.text);
+    w.desc = from + cells_.length;
+  }
+
+  function endMap() {
+    const dk = w.kinds.indexOf("data");
+    const order = [];
+    for (let i = 0; i < w.n; i++) if (w.kind[i] === dk) order.push(i);
+    // The reader walks data pages in physical order before 6.x and logical order after.
+    if (w.file.format !== "5.x") order.sort((p, q) => w.lp[p] - w.lp[q]);
+    let run = 0;
+    for (const p of order) { w.cum[p] = run; run += w.a[p]; }
+    w.order = order;
+    w.phase = w.table ? "read" : "done";
+    if (picked < 0 || picked >= w.n) picked = order.length ? order[Math.floor(order.length * 0.4)] : -1;
+    renderLegend();
+    renderInspector();
+    if (!w.table) finish();
+  }
+
+  async function mapOp(k, t) {
+    const ww = w, g = gen;
+    const from = ww.desc;
+    const p = await rpc("pages", { from, n: Math.min(4096, ww.n - from, ww.step * k) });
+    if (g !== gen) return;
+    apply(from, p.cells, p.problems, t ?? performance.now());
+    animUntil = performance.now() + FADE_MS;
+    if (ww.desc >= ww.n) endMap();
+    renderTiles();
+    renderLegendCounts();
+  }
+
+  // stopAt is the index in walk order of the page the reader was on when it stopped
+  // before row r: the page holding row r, or a bad page before it whose header the map
+  // could not count slots in.
+  function stopAt(r) {
+    for (let j = 0; j < w.order.length; j++) {
+      const p = w.order[j];
+      if (w.cum[p] + w.a[p] > r || (w.problems.has(p) && w.cum[p] >= r)) return j;
+    }
+    return w.order.length;
+  }
+
+  async function readOp(k, t) {
+    const ww = w, g = gen;
+    const before = ww.read;
+    let end = ww.at, want = 0;
+    // The bridge reads at most 4,000 records a step.
+    while (end < ww.order.length && end - ww.at < k && (end === ww.at || want + ww.a[ww.order[end]] < 4000)) want += ww.a[ww.order[end++]];
+    const last_ = end >= ww.order.length;
+    let r = null;
+    if (want > 0 || last_) r = await rpc("scan", { n: want + (last_ ? 1 : 0) });
+    while (r && last_ && !r.done && g === gen) r = await rpc("scan", { n: 4000 });
+    if (g !== gen) return;
+    const tt = t ?? performance.now();
+    if (r) { ww.read = r.read; ww.bytes = r.bytes; ww.full = r.full; ww.note = r.note; }
+    const stopped = r && r.done && (r.report?.stopped || r.errorText);
+    const to = stopped ? stopAt(ww.read) : end;
+    for (let i = ww.at; i < to; i++) { ww.fill[ww.order[i]] = tt; ww.trail.push(ww.order[i]); }
+    if (ww.trail.length > TRAIL) ww.trail.splice(0, ww.trail.length - TRAIL);
+    ww.at = to;
+    if (stopped && to < ww.order.length) { ww.stopPage = ww.order[to]; ww.fill[ww.stopPage] = tt; }
+    animUntil = performance.now() + Math.max(FADE_MS, FILL_MS);
+    if (ww.read > before) {
+      const from = Math.max(before, ww.read - FEED);
+      const rows = await rpc("rows", { from, n: ww.read - from });
+      if (g !== gen) return;
+      pushFeed(rows, t === undefined);
+    }
+    if (r && r.done) { ww.report = r.report; ww.errorText = r.errorText || ""; finish(); }
+    renderTiles();
+    if (picked >= 0 && ww.kinds[ww.kind[picked]] === "data" && ww.fill[picked] === tt) renderInspector();
+  }
+
+  function finish() {
+    w.phase = "done";
+    flush(false);
+    setPlaying(playing);
+    const f = w.file, r = w.report;
+    const probs = [...w.problems];
+    if (!w.table) {
+      status.textContent = `${w.name}: no schema to decode it with${w.sel.schemaError ? `: ${w.sel.schemaError}` : ""}. The page map is complete.`;
+    } else if (r && r.stopped) {
+      const p = w.stopPage;
+      const where = p >= 0 ? `at physical page ${fmt(p)}${w.lp[p] >= 0 ? ` (logical ${fmt(w.lp[p])})` : ""} ` : "";
+      status.textContent = `The read stopped ${where}after ${fmt(r.rowsRead)} of ${fmt(f.records)} rows rather than skip a page: ${r.stopped}`;
+    } else if (r) {
+      const flagged = probs.length ? `${probs.map(([p, t]) => `Page ${fmt(p)} is flagged: ${t}.`).join(" ")} The record walk did not need it: ` : "Every record the header counts was read and decoded: ";
+      status.textContent = `${flagged}${fmt(r.rowsRead)} of ${fmt(f.records)} rows, ${fmt(r.columnErrors)} column errors.${w.note ? ` ${w.note}.` : ""}`;
+    }
+    const rows = r ? ` and ${fmt(r.rowsRead)} rows decoded` : "";
+    receipt.setAttribute("aria-live", "polite");
+    receipt.textContent = `${fmt(w.n)} pages mapped${rows} by btrv in ${Math.round(w.ms)} ms of calls, in your browser.`;
+    renderTiles();
+    renderInspector();
+    caption();
+    syncButtons();
+  }
+
+  // One tick's work: k map chunks or k data pages, in one or two calls.
+  function cost() {
+    if (!w) return Infinity;
+    if (w.phase === "map") return MAP_MS / Math.ceil(w.n / w.step);
+    return Math.min(60, Math.max(6, READ_MS / Math.max(1, w.order.length)));
+  }
+  async function op(k) {
+    if (busy || !w || w.phase === "done") return;
+    busy = true;
+    try {
+      if (w.phase === "map") await mapOp(k);
+      else await readOp(k);
+      caption();
+    } finally {
+      busy = false;
+    }
+  }
+
+  // Runs the rest of the walk at once: reduced motion, or a walk nobody is watching.
+  async function runOut() {
+    const g = gen;
+    while (w.phase === "map" && g === gen) await mapOp(4096 / w.step, 0);
+    while (w.phase === "read" && g === gen) await readOp(1e9, 0);
+  }
+
+  async function restart(name, schema) {
+    blocked++;
+    syncButtons();
+    try {
+      if (!(await begin(name ?? w.name, schema ?? schemaSel.value))) return;
+      if (reduce.matches && !playing) await runOut();
+      else { await op(1); kick(); }
+    } finally {
+      blocked--;
+      syncButtons();
+    }
+  }
+
+  // Loading files.
   async function upload(list) {
     const total = list.reduce((a, f) => a + f.size, 0);
     if (total > MAX_BYTES) throw new Error(`These files hold ${mib(total)}; the demo takes up to 32 MiB at once (the btrv command has no such limit).`);
-    await rpc("reset");
+    await demo.call("reset", {});
     let sent = 0;
-    bar.classList.remove("bt-idle");
     for (const f of list) {
-      await rpc("begin", { name: f.name, size: f.size });
+      await demo.call("begin", { name: f.name, size: f.size });
       for (let off = 0; off < f.size; off += CHUNK) {
-        await rpc("chunk", { b64: await b64(f.slice(off, off + CHUNK)) });
+        await demo.call("chunk", { b64: await b64(f.slice(off, off + CHUNK)) });
         sent += Math.min(CHUNK, f.size - off);
-        bar.value = total ? sent / total : 1;
-        status.textContent = `Handing ${f.name} to btrv: ${mib(sent)} of ${mib(total)}`;
+        status.textContent = `Handing ${f.name} to btrv: ${mib(sent)} of ${mib(total)}.`;
       }
     }
-    return rpc("open");
+    return demo.call("open", {});
   }
-
   async function load(list) {
-    damaged.clear();
-    picked.textContent = list ? list.map((f) => f.name).join(", ") : "the sample file";
-    opened = list ? await upload(list) : await rpc("sample");
-    renderTabs();
-    if (!opened.selected) {
-      cur = null;
-      status.textContent = "None of these files is a Btrieve file btrv can open.";
-      bar.classList.add("bt-idle");
-      return;
-    }
-    await select(opened.selected);
-  }
-
-  function renderTabs() {
-    tabs.replaceChildren();
-    const fs = opened.files;
-    for (const f of fs) {
-      if (f.error) {
-        const p = el("p", "bt-bad-file", `${f.name}: ${f.error}`);
-        tabs.append(p);
-        continue;
+    blocked++;
+    syncButtons();
+    gen++;
+    try {
+      damaged.clear();
+      picked = -1;
+      opened = list ? await upload(list) : await demo.call("sample", {});
+      onSample = !list;
+      sampleBtn.hidden = onSample;
+      fileSel.replaceChildren();
+      const bad = [];
+      for (const f of opened.files) {
+        if (f.error) { bad.push(`${f.name}: ${f.error}`); continue; }
+        const o = el("option", null, f.ddf ? `${f.name} (dictionary)` : f.name);
+        o.value = f.name;
+        fileSel.append(o);
       }
-      const b = button(f.name, "secondary bt-tab", () => guard(() => select(f.name)));
-      b.dataset.name = f.name;
-      b.setAttribute("aria-pressed", "false");
-      tabs.append(b);
+      if (opened.dictionaryError) bad.push(`Dictionary: ${opened.dictionaryError}`);
+      status.textContent = bad.join(" ");
+      if (!opened.selected) throw new Error(`None of these files is a Btrieve file btrv can open. ${bad.join(" ")}`);
+      fileSel.value = opened.selected;
+      schemaSel.value = "";
+    } finally {
+      blocked--;
     }
-    if (opened.dictionaryError) tabs.append(el("p", "bt-bad-file", `Dictionary: ${opened.dictionaryError}`));
+    await restart(opened.selected, "");
   }
 
-  async function select(name, schema, keep) {
-    const g = ++gen;
-    const sel = await rpc("select", { name, schema });
-    const n = sel.pages;
-    const c = { name, sel, n, kinds: sel.kinds, kind: new Uint8Array(n), lp: new Float64Array(n), a: new Int32Array(n), b: new Int32Array(n),
-      x: new Int32Array(n), problems: new Map(), read: 0, done: false, scan: null, table: !!sel.names, sel2: null, hover: -1, pick: -1 };
-    cur = c;
-    sampleBtn.classList.add("secondary");
-    for (const b of tabs.querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.name === name));
-    for (let from = 0; from < n; from += 4096) {
-      const p = await rpc("pages", { from, n: 4096 });
-      if (g !== gen) return;
-      p.cells.forEach((cell, i) => {
-        const k = from + i;
-        c.kind[k] = cell[0]; c.lp[k] = cell[1]; c.a[k] = cell[2]; c.b[k] = cell[3]; c.x[k] = cell[4];
-      });
-      for (const pr of p.problems || []) c.problems.set(pr.page, pr.text);
-      if (n > 4096) status.textContent = `Mapping pages: ${fmt(Math.min(n, from + 4096))} of ${fmt(n)}`;
-    }
-    // Data pages in walk order (logical order from 6.x, physical before), with cumulative live slots.
-    const data = [];
-    const dk = c.kinds.indexOf("data");
-    for (let i = 0; i < n; i++) if (c.kind[i] === dk) data.push(i);
-    if (sel.file.format !== "5.x") data.sort((p, q) => c.lp[p] - c.lp[q]);
-    c.order = data;
-    c.cum = new Float64Array(n);
-    let run = 0;
-    for (const p of data) { c.cum[p] = run; run += c.a[p]; }
-    layout();
-    renderLegend();
-    renderSchema();
-    renderSummary();
-    resetRows();
-    const want = keep ?? (n > 40 && c.kind[40] === dk ? 40 : data.length ? data[0] : -1);
-    c.pick = want;
-    c.fresh = keep === undefined;
-    showPage(want);
-    draw();
-    markFirst();
-    if (!c.table) {
-      status.textContent = describe(sel.file) + (sel.schemaError ? ` No schema: ${sel.schemaError}` : "");
-      bar.classList.add("bt-idle");
-      receipt.textContent = `${fmt(n)} pages mapped by btrv in ${Math.round(work)} ms, in your browser.`;
-      return;
-    }
-    await scan(g);
+  function syncSchema() {
+    const f = opened.files.find((x) => x.name === w.name);
+    schemaField.hidden = !(f && f.table);
+    schemaSel.value = w.sel.source === "inferred" && f && f.table ? "infer" : "";
   }
 
-  function describe(f) {
-    return `${f.name}: Btrieve ${f.format}, ${fmt(f.pageSize)}-byte pages, ${fmt(cur.n)} pages, ${fmt(f.records)} records of ${fmt(f.recordLength)} bytes in the header.`;
-  }
-
-  async function scan(g) {
-    const c = cur;
-    const total = Math.max(1, c.sel.file.records);
-    const step = still() ? 4000 : Math.max(120, Math.ceil(total / 90));
-    bar.classList.remove("bt-idle");
-    for (;;) {
-      const r = await rpc("scan", { n: step });
-      if (g !== gen) return;
-      c.read = r.read;
-      c.bytes = r.bytes;
-      c.full = r.full;
-      c.note = r.note;
-      bar.value = Math.min(1, r.read / total);
-      status.textContent = `${describe(c.sel.file)} Read ${fmt(r.read)}.`;
-      draw();
-      if (r.done) { c.done = true; c.scan = r; break; }
-      if (!still()) await frame();
-    }
-    bar.classList.add("bt-idle");
-    renderSummary();
-    initRows();
-    receipt.textContent = `${fmt(c.n)} pages mapped and ${fmt(c.scan.report.rowsRead)} rows decoded by btrv in ${Math.round(work)} ms, in your browser.`;
-  }
-
-  async function damage() {
-    const c = cur;
-    const p = c.pick;
-    await rpc("damage", { name: c.name, from: p });
-    const set = damaged.get(c.name) || new Set();
-    if (set.has(p)) set.delete(p); else set.add(p);
-    damaged.set(c.name, set);
-    await select(c.name, c.sel.source === "inferred" ? "infer" : "", p);
-  }
-
-  // Page map drawing
-  const coarse = matchMedia("(pointer: coarse)");
-  let geo = { size: 10, gap: 2, cols: 1, rows: 1, w: 0, h: 0 };
+  // Geometry, in CSS pixels.
   function layout() {
-    if (!cur) return;
-    const w = Math.max(1, mapWrap.clientWidth);
-    const maxH = Math.min(340, Math.max(180, innerHeight * 0.45));
-    let size = Math.floor(Math.sqrt((w * maxH) / Math.max(1, cur.n))) - 1;
-    size = Math.max(2, Math.min(22, size));
-    if (coarse.matches && size < 24 && Math.ceil(cur.n / Math.floor((w + 2) / 26)) <= 42) size = 24;
+    if (!w) return;
+    const W = Math.max(240, canvas.clientWidth || 600);
+    const avail = W - GUT - 8;
+    const maxH = Math.min(360, Math.max(200, innerHeight * 0.42));
+    let size = Math.floor(Math.sqrt((avail * maxH) / Math.max(1, w.n))) - 2;
+    size = Math.max(2, Math.min(30, size));
+    if (coarse.matches && size < 22 && Math.ceil(w.n / Math.floor((avail + 2) / 24)) <= 16) size = 22;
     const gap = size >= 9 ? 2 : 1;
-    const cols = Math.max(1, Math.floor((w + gap) / (size + gap)));
-    const rows = Math.ceil(cur.n / cols);
-    geo = { size, gap, cols, rows, w, h: rows * (size + gap) - gap };
-    canvas.style.height = `${geo.h}px`;
-    draw();
-  }
-
-  function colours() {
-    const cs = getComputedStyle(wrap);
-    const v = (n) => cs.getPropertyValue(n).trim();
-    return { fcr: v("--signal"), pat: v("--accent"), reserved: v("--line-strong"), data: v("--block"), tint: v("--accent-tint"), variable: v("--text"),
-      index: v("--text-2"), free: v("--control-line"), ground: v("--sunken"), ink: v("--text"), bad: v("--danger"), other: v("--text-3") };
-  }
-
-  function draw() {
-    const c = cur;
-    if (!c) return;
+    const cols = Math.max(1, Math.floor((avail + gap) / (size + gap)));
+    const rows = Math.ceil(w.n / cols);
+    const H = rows * (size + gap) - gap + 16;
+    G = { W, H, size, gap, cols, rows, x0: GUT, y0: 8 };
+    canvas.style.height = `${H}px`;
     const dpr = devicePixelRatio || 1;
-    const W = Math.round(geo.w * dpr), H = Math.max(1, Math.round(geo.h * dpr));
-    if (canvas.width !== W || canvas.height !== H) Object.assign(canvas, { width: W, height: H });
+    const cw = Math.round(W * dpr), ch = Math.round(H * dpr);
+    if (canvas.width !== cw || canvas.height !== ch) Object.assign(canvas, { width: cw, height: ch });
+  }
+  const at = (i) => ({ x: G.x0 + (i % G.cols) * (G.size + G.gap), y: G.y0 + Math.floor(i / G.cols) * (G.size + G.gap) });
+
+  function draw(t) {
+    if (!w || !G || !colors) return;
+    const dpr = devicePixelRatio || 1;
     const ctx = canvas.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const col = colours();
-    ctx.clearRect(0, 0, geo.w, geo.h);
-    const { size: s, gap } = geo;
-    const K = c.kinds;
-    const focus = legendFocus;
-    for (let i = 0; i < c.n; i++) {
-      const x = (i % geo.cols) * (s + gap), y = Math.floor(i / geo.cols) * (s + gap);
-      const k = K[c.kind[i]];
-      ctx.globalAlpha = focus && focus !== k ? 0.18 : 1;
-      if (c.problems.has(i)) {
-        ctx.fillStyle = col.bad;
-        ctx.fillRect(x, y, s, s);
-        if (s >= 6) { ctx.strokeStyle = col.ground; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x + 1.5, y + 1.5); ctx.lineTo(x + s - 1.5, y + s - 1.5); ctx.moveTo(x + s - 1.5, y + 1.5); ctx.lineTo(x + 1.5, y + s - 1.5); ctx.stroke(); }
+    const c = colors, s = G.size, K = w.kinds, still = reduce.matches;
+    ctx.fillStyle = c.ground;
+    ctx.fillRect(0, 0, G.W, G.H);
+    // Row labels: the physical page number each row starts at.
+    ctx.font = `400 10px ${c.mono}`;
+    ctx.fillStyle = c.ink3;
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    const every = Math.max(1, Math.ceil(14 / (s + G.gap)));
+    for (let r = 0; r < G.rows; r += every) ctx.fillText(fmt(r * G.cols), G.x0 - 6, G.y0 + r * (s + G.gap) + s / 2);
+    const thin = s < 6;
+    for (let i = 0; i < w.n; i++) {
+      const { x, y } = at(i);
+      if (w.seen[i] < 0) {
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = c.line;
+        ctx.lineWidth = 1;
+        if (thin) { ctx.fillStyle = c.line; ctx.fillRect(x, y, s, s); } else ctx.strokeRect(x + 0.5, y + 0.5, s - 1, s - 1);
         continue;
       }
-      switch (k) {
-        case "data": {
-          const live = c.a[i], slots = Math.max(1, c.b[i]);
-          const got = c.table ? Math.max(0, Math.min(live, c.read - c.cum[i])) : live;
-          ctx.fillStyle = col.tint;
-          ctx.fillRect(x, y, s, s);
-          const fh = (s * got) / slots;
-          ctx.fillStyle = col.data;
-          ctx.fillRect(x, y + s - fh, s, fh);
-          break;
-        }
-        case "fcr": case "pat": case "reserved":
-          if (c.x[i] || k === "reserved") {
-            ctx.fillStyle = col[k];
-            ctx.fillRect(x, y, s, s);
-            if (k === "pat" && s >= 6) { ctx.fillStyle = col.ground; ctx.fillRect(x, y + Math.floor(s / 2) - 1, s, 2); }
-          }
-          else { ctx.strokeStyle = col[k]; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, s - 1, s - 1); }
-          break;
-        case "variable":
-          ctx.fillStyle = col.variable;
-          ctx.fillRect(x, y, s, s);
-          break;
-        case "index":
-          ctx.fillStyle = col.index;
-          ctx.fillRect(x, y, s, s);
-          if (!c.x[i] && s >= 6) { const q = Math.max(1, Math.round(s / 4)); ctx.fillStyle = col.ground; ctx.fillRect(x + q, y + q, s - 2 * q, s - 2 * q); }
-          else if (s >= 6) { ctx.fillStyle = col.ground; for (let d = 2; d < s; d += 4) ctx.fillRect(x + d, y, 1, s); }
-          break;
-        case "free": case "freed":
-          ctx.fillStyle = col.ground;
-          ctx.fillRect(x, y, s, s);
-          ctx.strokeStyle = col.free;
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          for (let d = -s; d < s; d += 4) { ctx.moveTo(x + Math.max(0, d), y + Math.max(0, -d)); ctx.lineTo(x + Math.min(s, s + d), y + Math.min(s, s - d)); }
-          ctx.stroke();
-          ctx.strokeRect(x + 0.5, y + 0.5, s - 1, s - 1);
-          break;
-        case "unreferenced":
-          ctx.strokeStyle = col.free;
-          ctx.lineWidth = 1;
-          ctx.setLineDash([2, 2]);
-          ctx.strokeRect(x + 0.5, y + 0.5, s - 1, s - 1);
-          ctx.setLineDash([]);
-          break;
-        default:
-          ctx.fillStyle = col.other;
-          ctx.fillRect(x, y, s, s);
-          if (s >= 6) { ctx.fillStyle = col.ground; ctx.fillRect(x + Math.floor(s / 2) - 1, y + Math.floor(s / 2) - 1, 2, 2); }
-      }
+      const k = K[w.kind[i]];
+      const age = still || !w.seen[i] ? 1 : (t - w.seen[i]) / FADE_MS;
+      ctx.globalAlpha = legendFocus && legendFocus !== k ? 0.18 : 1;
+      if (w.problems.has(i)) {
+        ctx.fillStyle = c.bad;
+        ctx.fillRect(x, y, s, s);
+        if (!thin) { ctx.strokeStyle = c.ground; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x + 2, y + 2); ctx.lineTo(x + s - 2, y + s - 2); ctx.moveTo(x + s - 2, y + 2); ctx.lineTo(x + 2, y + s - 2); ctx.stroke(); }
+      } else cellShape(ctx, c, k, i, x, y, s, t, still);
+      if (age < 1) { ctx.globalAlpha = (1 - ease(age)) * 0.85; ctx.fillStyle = c.signal; ctx.fillRect(x, y, s, s); }
     }
     ctx.globalAlpha = 1;
-    for (const [i, w] of [[c.pick, 2], [c.hover, 1.5]]) {
-      if (i < 0) continue;
-      const x = (i % geo.cols) * (s + gap), y = Math.floor(i / geo.cols) * (s + gap);
-      ctx.strokeStyle = col.ink;
-      ctx.lineWidth = w;
-      ctx.strokeRect(x - w / 2 - 0.5, y - w / 2 - 0.5, s + w + 1, s + w + 1);
+    // The reader's trail and cursor.
+    const ctr = (i) => { const p = at(i); return [p.x + s / 2, p.y + s / 2]; };
+    if (w.phase === "read") {
+      // The reader's wake: the last pages it read, fading.
+      ctx.fillStyle = c.signal;
+      w.trail.forEach((p, j) => {
+        const q = at(p);
+        ctx.globalAlpha = ((j + 1) / w.trail.length) * 0.55;
+        ctx.fillRect(q.x, q.y, s, s);
+      });
+      ctx.globalAlpha = 1;
     }
-    canvas.setAttribute("aria-label", `Page map of ${c.name}: ${fmt(c.n)} pages. ${counts().map(([k, v]) => `${fmt(v)} ${label(k)}`).join(", ")}.`);
+    const box = (i, col, lw) => {
+      const p = at(i);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = lw;
+      ctx.strokeRect(p.x - lw / 2 - 0.5, p.y - lw / 2 - 0.5, s + lw + 1, s + lw + 1);
+    };
+    if (w.phase === "map" && w.desc < w.n) {
+      const p = at(w.desc);
+      ctx.fillStyle = c.signal;
+      ctx.fillRect(p.x - 1, p.y - 2, 2, s + 4);
+    }
+    if (w.stopPage >= 0) {
+      const [sx, sy] = ctr(w.stopPage);
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = c.bad;
+      ctx.lineWidth = 1.5;
+      for (const [p] of w.problems) if (p !== w.stopPage) { ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(...ctr(p)); ctx.stroke(); }
+      ctx.setLineDash([]);
+      box(w.stopPage, c.bad, 3);
+    } else if (w.phase === "read" && w.at > 0) box(w.order[w.at - 1], c.signal, 3);
+    if (picked >= 0) box(picked, c.ink, 2);
+    if (hover >= 0 && hover !== picked) box(hover, c.ink, 1.5);
+  }
+
+  function cellShape(ctx, c, k, i, x, y, s, t, still) {
+    const box = (col) => { ctx.fillStyle = col; ctx.fillRect(x, y, s, s); };
+    const edge = (col, dash) => { ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.setLineDash(dash ? [2, 2] : []); ctx.strokeRect(x + 0.5, y + 0.5, s - 1, s - 1); ctx.setLineDash([]); };
+    if (k === "data") {
+      const live = w.a[i], slots = Math.max(1, w.b[i]);
+      let got = !w.table ? live : w.phase === "map" ? 0 : Math.max(0, Math.min(live, w.read - w.cum[i]));
+      if (w.fill[i] > 0 && !still) got *= ease((t - w.fill[i]) / FILL_MS);
+      box(c.tint);
+      const fh = (s * got) / slots;
+      ctx.fillStyle = c.block;
+      ctx.fillRect(x, y + s - fh, s, fh);
+      if (w.table && w.phase !== "map" && got < live && s >= 6) edge(c.block);
+    } else if (k === "fcr" || k === "pat") {
+      const col = k === "fcr" ? c.live : c.accent;
+      if (!w.x[i]) { ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.strokeRect(x + 1, y + 1, s - 2, s - 2); return; }
+      box(col);
+      ctx.fillStyle = c.ground;
+      if (s >= 6) { if (k === "pat") ctx.fillRect(x, y + Math.floor(s / 2) - 1, s, 2); else ctx.fillRect(x + s / 3, y + s / 3, s / 3, s / 3); }
+    } else if (k === "index") {
+      box(c.ink2);
+      ctx.fillStyle = c.ground;
+      const q = Math.max(1, Math.round(s / 4));
+      if (s >= 6 && !w.x[i]) ctx.fillRect(x + q, y + q, s - 2 * q, s - 2 * q);
+      else if (s >= 6) for (let d = 2; d < s; d += 4) ctx.fillRect(x + d, y, 1, s);
+    } else if (k === "free" || k === "freed") {
+      ctx.strokeStyle = c.ctl;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let d = -s; d < s; d += 4) { ctx.moveTo(x + Math.max(0, d), y + Math.max(0, -d)); ctx.lineTo(x + Math.min(s, s + d), y + Math.min(s, s - d)); }
+      ctx.stroke();
+      edge(c.ctl);
+    } else if (k === "unreferenced") edge(c.ctl, true);
+    else box(k === "reserved" ? c.strong : k === "variable" ? c.ink : c.ink3);
   }
 
   function counts() {
     const m = new Map();
-    for (let i = 0; i < cur.n; i++) { const k = cur.kinds[cur.kind[i]]; m.set(k, (m.get(k) || 0) + 1); }
-    return LEGEND.filter((k) => m.has(k)).map((k) => [k, m.get(k)]);
+    for (let i = 0; i < w.desc; i++) { const k = w.kinds[w.kind[i]]; m.set(k, (m.get(k) || 0) + 1); }
+    return m;
   }
 
-  let legendFocus = null;
+  // Legend: a swatch, a name and a count per kind the map has found so far.
+  const legendItems = new Map();
   function renderLegend() {
     legend.replaceChildren();
-    for (const [k, v] of counts()) {
+    legendItems.clear();
+    for (const k of [...LEGEND, "bad"]) {
       const li = el("li", "bt-key");
       li.dataset.kind = k;
       const sw = el("span", "bt-sw");
       sw.setAttribute("aria-hidden", "true");
-      li.append(sw, el("span", "bt-kname", label(k)), el("span", "bt-count", fmt(v)), el("span", "bt-what", WHAT[k] || ""));
-      li.addEventListener("pointerenter", () => { legendFocus = k; draw(); });
-      li.addEventListener("pointerleave", () => { legendFocus = null; draw(); });
+      const n = el("span", "bt-count", "0");
+      li.append(sw, el("span", "bt-kname", k === "bad" ? "bad" : label(k)), n);
+      li.hidden = true;
+      if (k !== "bad") {
+        li.addEventListener("pointerenter", () => { legendFocus = k; draw(performance.now()); });
+        li.addEventListener("pointerleave", () => { legendFocus = null; draw(performance.now()); });
+      }
+      legendItems.set(k, { li, n });
       legend.append(li);
     }
-    if (cur.problems.size) {
-      const li = el("li", "bt-key bt-key-bad");
-      li.dataset.kind = "bad";
-      const sw = el("span", "bt-sw");
-      sw.setAttribute("aria-hidden", "true");
-      li.append(sw, el("span", "bt-kname", "bad"), el("span", "bt-count", fmt(cur.problems.size)), el("span", "bt-what", "header disagrees with the PAT"));
-      legend.append(li);
+    renderLegendCounts();
+  }
+  function renderLegendCounts() {
+    if (!w) return;
+    const m = counts();
+    m.set("bad", w.problems.size);
+    for (const [k, { li, n }] of legendItems) {
+      const v = m.get(k) || 0;
+      li.hidden = !v;
+      n.textContent = fmt(v);
     }
+    const parts = LEGEND.filter((k) => m.get(k)).map((k) => `${fmt(m.get(k))} ${label(k)}`);
+    canvas.setAttribute("aria-label", `Page map of ${w.name}: ${fmt(w.desc)} of ${fmt(w.n)} pages described${parts.length ? `: ${parts.join(", ")}` : ""}${w.problems.size ? `; ${fmt(w.problems.size)} bad` : ""}. Arrow keys pick a page.`);
   }
 
-  function pageText(i) {
-    const c = cur;
-    const k = c.kinds[c.kind[i]];
-    const ps = c.sel.file.pageSize;
-    const parts = [`page ${fmt(i)}`, label(k), `offset ${hex(i * ps)}`];
-    if (c.lp[i] >= 0) parts.push(`logical ${fmt(c.lp[i])}`);
-    if (k === "data") parts.push(`${fmt(c.a[i])} of ${fmt(c.b[i])} slots live`);
-    if (k === "variable") parts.push(`${fmt(c.a[i])} fragments`);
-    if (k === "index") parts.push(`key ${c.b[i]}`, c.x[i] ? "leaf" : "interior node", ...(c.a[i] ? [`${fmt(c.a[i])} entries`] : []));
-    if (k === "fcr" || k === "pat") parts.push(`copy ${c.b[i] + 1}`, `usage count ${fmt(c.a[i])}`, c.x[i] ? "active: the reader uses this copy" : "older copy");
-    if (k === "free") parts.push("listed in the PAT as free, holding stale bytes");
-    if (k === "unreferenced") parts.push("no PAT entry lists this page; the reader skips it");
-    const pr = c.problems.get(i);
-    return parts.join(" · ") + (pr ? `. Problem: ${pr}` : "");
+  function renderTiles() {
+    if (!w) return;
+    const f = w.file, m = counts();
+    const set = (k, v, alarm) => { cell[k].v.textContent = v; cell[k].li.classList.toggle("bt-alarm", !!alarm); };
+    set("format", `Btrieve ${f.format}`);
+    set("pagesize", `${fmt(f.pageSize)} B`);
+    set("pages", w.desc < w.n ? `${fmt(w.desc)} / ${fmt(w.n)}` : fmt(w.n));
+    set("records", w.table ? `${fmt(w.read)} / ${fmt(f.records)}` : fmt(f.records), w.report && w.report.stopped);
+    set("keys", fmt(f.keys));
+    set("free", fmt((m.get("free") || 0) + (m.get("freed") || 0)));
+    set("bad", fmt(w.problems.size), w.problems.size);
+    set("time", `${Math.round(w.ms)} ms`);
   }
 
-  function showPage(i) {
-    readText.textContent = i < 0 ? "Select a page for its header; arrow keys move between pages." : pageText(i);
-    const k = i >= 0 ? cur.kinds[cur.kind[i]] : "";
-    const can = k === "data";
-    const set = damaged.get(cur.name);
-    damageBtn.hidden = !can;
-    damageBtn.textContent = set && set.has(i) ? `Undo the damage to page ${fmt(i)}` : `Damage page ${fmt(i)}`;
+  // The line under the map: what the cursor is doing, or the page under the pointer.
+  function pageLine(i) {
+    const k = w.kinds[w.kind[i]];
+    const parts = [`page ${fmt(i)}`, label(k)];
+    if (w.lp[i] >= 0) parts.push(`logical ${fmt(w.lp[i])}`);
+    if (k === "data") parts.push(`${fmt(w.a[i])} of ${fmt(w.b[i])} slots live`);
+    if (k === "variable") parts.push(`${fmt(w.a[i])} fragments`);
+    if (k === "index") parts.push(`key ${w.b[i]}`, w.x[i] ? "leaf" : "interior");
+    if (k === "fcr" || k === "pat") parts.push(`copy ${w.b[i] + 1}`, w.x[i] ? "active" : "older copy");
+    if (w.problems.has(i)) parts.push("bad");
+    return parts.join(" · ");
+  }
+  function caption() {
+    if (!w) return;
+    if (hover >= 0 && w.seen[hover] >= 0) { now.textContent = pageLine(hover); return; }
+    if (w.phase === "map") now.textContent = `Map.Describe: ${fmt(w.desc)} of ${fmt(w.n)} page headers read`;
+    else if (w.phase === "read" && w.at > 0) {
+      const p = w.order[w.at - 1];
+      now.textContent = `reading logical page ${fmt(w.lp[p])} at physical page ${fmt(p)}: rows ${fmt(w.cum[p] + 1)}–${fmt(w.cum[p] + w.a[p])}`;
+    } else if (w.phase === "read") now.textContent = `walking ${fmt(w.order.length)} data pages in logical order`;
+    else if (w.stopPage >= 0) now.textContent = `stopped at page ${fmt(w.stopPage)} after ${fmt(w.read)} rows`;
+    else now.textContent = w.table ? `walk done: ${fmt(w.read)} rows from ${fmt(w.order.length)} data pages` : `map done: ${fmt(w.n)} pages`;
   }
 
-  const cellAt = (e) => {
-    const r = canvas.getBoundingClientRect();
-    const col = Math.floor((e.clientX - r.left) / (geo.size + geo.gap));
-    const row = Math.floor((e.clientY - r.top) / (geo.size + geo.gap));
-    const i = row * geo.cols + col;
-    return col >= 0 && col < geo.cols && row >= 0 && i < (cur ? cur.n : 0) ? i : -1;
-  };
-  canvas.addEventListener("pointermove", (e) => {
-    if (!cur || e.pointerType === "touch") return;
-    const i = cellAt(e);
-    if (i === cur.hover) return;
-    cur.hover = i;
-    showPage(i >= 0 ? i : cur.pick);
-    draw();
-  });
-  canvas.addEventListener("pointerleave", () => { if (cur) { cur.hover = -1; showPage(cur.pick); draw(); } });
-  canvas.addEventListener("pointerdown", (e) => {
-    if (!cur) return;
-    const i = cellAt(e);
-    if (i < 0) return;
-    cur.pick = i;
-    cur.fresh = false;
-    showPage(i);
-    draw();
-  });
-  canvas.addEventListener("keydown", (e) => {
-    if (!cur) return;
-    const d = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: geo.cols, ArrowUp: -geo.cols, Home: -Infinity, End: Infinity }[e.key];
-    if (d === undefined) return;
-    e.preventDefault();
-    const start = cur.fresh;
-    cur.fresh = false;
-    const from = start ? 0 : cur.pick;
-    cur.pick = Math.max(0, Math.min(cur.n - 1, d === -Infinity ? 0 : d === Infinity ? cur.n - 1 : from + (start ? 0 : d)));
-    showPage(cur.pick);
-    draw();
-  });
-
-  // Schema
-  function renderSchema() {
-    const c = cur, sel = c.sel;
-    schemaSec.replaceChildren();
-    const head = el("div", "bt-head");
-    head.append(el("h3", "bt-h", "schema"));
-    const file = opened.files.find((f) => f.name === c.name);
-    let src = "";
-    if (sel.source === "dictionary") src = `from the DDF dictionary: table ${file.table}`;
-    else if (sel.source === "inferred") src = `inferred by btrv from the first ${fmt(sel.inferredFrom)} records`;
-    else src = "none";
-    head.append(el("span", "bt-sub", src));
-    schemaSec.append(head);
-    if (file.table) {
-      const seg = el("div", "bt-seg");
-      seg.setAttribute("role", "group");
-      seg.setAttribute("aria-label", "Schema source");
-      for (const [t, v] of [["Dictionary", ""], ["Inferred", "infer"]]) {
-        const b = button(t, "secondary", () => guard(() => select(c.name, v)));
-        b.setAttribute("aria-pressed", String((sel.source === "inferred") === (v === "infer")));
-        seg.append(b);
-      }
-      schemaSec.append(seg);
-    }
-    if (!sel.columns) {
-      schemaSec.append(el("p", "bt-note", sel.schemaError || "No schema."));
-      return;
-    }
-    const recLen = sel.file.recordLength;
-    const ruler = el("div", "bt-ruler");
-    ruler.setAttribute("aria-hidden", "true");
-    sel.columns.forEach((col, i) => {
-      const seg = el("span", `bt-span bt-span-${i % 2}`);
-      seg.style.left = `${(100 * col.offset) / recLen}%`;
-      seg.style.width = `${(100 * col.size) / recLen}%`;
-      seg.title = `${col.name}: ${col.type}, bytes ${col.offset}–${col.offset + col.size - 1}`;
-      ruler.append(seg);
-    });
-    const scale = el("p", "bt-scale");
-    scale.setAttribute("aria-hidden", "true");
-    scale.append(el("span", null, "byte 0"), el("span", null, `${fmt(recLen)} bytes per record`));
-    const box = el("div", "bt-cols");
-    box.setAttribute("role", "region");
-    box.setAttribute("aria-label", "Columns");
-    box.tabIndex = 0;
-    const t = el("table", "bt-table bt-coltable");
-    const hr = el("tr");
-    const inferred = sel.source === "inferred";
-    for (const h of ["column", "type", "offset", "size", ...(inferred ? ["confidence"] : [])]) hr.append(el("th", null, h));
-    const th = el("thead");
-    th.append(hr);
-    const tb = el("tbody");
-    for (const col of sel.columns) {
-      const tr = el("tr");
-      const type = col.type + (col.dec ? ` (${col.dec})` : "") + (col.nullable ? " null" : "") + (col.key ? " · key" : "");
-      tr.append(el("td", null, col.name), el("td", null, type), el("td", "bt-num", fmt(col.offset)), el("td", "bt-num", fmt(col.size)));
-      if (inferred) {
-        const td = el("td", "bt-num", `${Math.round(col.confidence * 100)}%`);
-        td.title = col.evidence || "";
-        tr.append(td);
-      }
-      tb.append(tr);
-    }
-    t.append(th, tb);
-    box.append(t);
-    schemaSec.append(ruler, scale, box);
-    if (sel.indexes && sel.indexes.length) {
-      schemaSec.append(el("p", "bt-note", `Index ${sel.indexes.map((x) => `${x.number} on ${x.column}`).join(", ")} (INDEX.DDF).`));
-    }
-  }
-
-  // Decode summary
-  function renderSummary() {
-    const c = cur, f = c.sel.file;
-    sumSec.replaceChildren();
-    const head = el("div", "bt-head");
-    head.append(el("h3", "bt-h", "decode summary"), el("span", "bt-sub", c.done ? "export.Copy's report, as btrv dump prints it" : c.table ? "reading…" : ""));
-    sumSec.append(head);
-    const r = c.scan && c.scan.report;
-    const pairs = [
-      ["format", `Btrieve ${f.format}`],
-      ["page size", `${fmt(f.pageSize)} B`],
-      ["pages", fmt(c.n)],
-      ["records in header", fmt(f.records)],
-      ["keys", fmt(f.keys)],
-      ["bad pages", fmt(c.problems.size + (c.sel.mapProblems || []).length), c.problems.size ? "bt-alarm" : ""],
-    ];
-    if (r) {
-      pairs.push(["rows read", fmt(r.rowsRead)], ["rows with column errors", fmt(r.rowsWithErrors), r.rowsWithErrors ? "bt-alarm" : ""],
-        ["column errors", fmt(r.columnErrors), r.columnErrors ? "bt-alarm" : ""]);
-      if (c.full) pairs.push(["variable-part bytes", fmt(c.bytes - r.rowsRead * f.recordLength)]);
-    }
-    sumSec.append(cellsList(pairs));
-    const lines = [];
-    if (f.owner) lines.push(["Owner name: " + f.owner, true]);
-    for (const [p, t] of c.problems) lines.push([`Page ${fmt(p)}: ${t}`, true]);
-    for (const t of c.sel.mapProblems || []) lines.push([t, true]);
-    if (r) {
-      if (r.stopped) lines.push([`Stopped: ${r.stopped}`, true]);
-      for (const w of r.warnings || []) lines.push([`Warning: ${w}`, false]);
-      for (const e of r.errors || []) lines.push([e, true]);
-      if (!r.stopped && !r.rowsWithErrors && !c.problems.size) lines.push([`Every record the header counts was read and decoded: ${fmt(r.rowsRead)} of ${fmt(f.records)}.`, false]);
-    }
-    if (c.note) lines.push([c.note, false]);
-    if (lines.length) {
-      const ul = el("ul", "bt-lines");
-      for (const [t, bad] of lines) ul.append(el("li", bad ? "bt-alarm" : null, t));
-      sumSec.append(ul);
-    }
-  }
-
-  // Rows
-  let cache = new Map();
-  let total = 0;
-  function resetRows() {
-    cache = new Map();
-    total = 0;
-    thead.replaceChildren();
-    tbody.replaceChildren();
-    rowsSub.textContent = cur.table ? "reading…" : "no schema to decode with";
-    rowsBox.scrollTop = 0;
-  }
-  function initRows() {
-    const c = cur;
-    total = c.read;
-    rowsSub.textContent = `${fmt(total)} decoded rows, scroll for more`;
+  // Decoded rows, newest first.
+  function feedCols() { return w.sel.names ? Math.min(w.sel.names.length, 5) : 0; }
+  function renderFeedHead() {
     const tr = el("tr");
     tr.append(el("th", "bt-num", "#"));
-    c.sel.columns.forEach((col, i) => {
-      const th = el("th");
-      th.append(el("span", "bt-cname", c.sel.names[i]), el("span", "bt-ctype", col.type));
-      tr.append(th);
-    });
-    if (c.full) { const th = el("th"); th.append(el("span", "bt-cname", "variable part"), el("span", "bt-ctype", "RecordsFull")); tr.append(th); }
-    thead.replaceChildren(tr);
-    table.setAttribute("aria-rowcount", String(total + 1));
-    paintRows();
+    for (let i = 0; i < feedCols(); i++) tr.append(el("th", null, w.sel.names[i]));
+    if (w.full || (w.file.flags & 1)) tr.append(el("th", "bt-num", "variable"));
+    feedHeadRow.replaceChildren(tr);
+    feedSec.hidden = !w.table;
   }
-  function block(b) {
-    if (!cache.has(b)) cache.set(b, rpc("rows", { from: b * BLOCK, n: BLOCK }));
-    return cache.get(b);
+  // Rows arrive with every step; the feed shows them at most every FLUSH_MS so it can be read.
+  let queued = [];
+  let flushed = 0;
+  function pushFeed(res, animate) {
+    queued.push(res);
+    if (!animate) flush(false);
   }
-  let painting = 0;
-  async function paintRows() {
-    if (!cur || !total) return;
-    const ticket = ++painting;
-    const first = Math.max(0, Math.floor(rowsBox.scrollTop / ROW) - 4);
-    const last = Math.min(total, first + Math.ceil((rowsBox.clientHeight || 320) / ROW) + 8);
-    const blocks = [];
-    for (let b = Math.floor(first / BLOCK); b <= Math.floor((last - 1) / BLOCK); b++) blocks.push(block(b));
-    const got = await Promise.all(blocks);
-    if (ticket !== painting) return;
-    const width = cur.sel.columns.length + 1 + (cur.full ? 1 : 0);
-    const spacer = (h) => { const tr = el("tr", "bt-spacer"); tr.setAttribute("aria-hidden", "true"); const td = el("td"); td.colSpan = width; tr.append(td); tr.style.height = `${h}px`; return tr; };
-    const out = [spacer(first * ROW)];
-    for (let i = first; i < last; i++) {
-      const res = got[Math.floor(i / BLOCK) - Math.floor(first / BLOCK)];
-      const k = i - res.from;
-      const row = res.rows[k];
-      if (!row) continue;
-      const bad = new Set((res.bad || []).filter((x) => x[0] === i).map((x) => x[1]));
-      const tr = el("tr");
-      tr.setAttribute("aria-rowindex", String(i + 2));
+  function flush(animate) {
+    flushed = performance.now();
+    const qs = queued;
+    queued = [];
+    for (const res of qs) addRows(res, animate);
+    if (w && w.phase !== "done") receipt.setAttribute("aria-live", "off");
+    if (w && w.phase !== "done") receipt.textContent = `${fmt(w.desc)} pages mapped and ${fmt(w.read)} rows decoded by btrv so far, in ${Math.round(w.ms)} ms of calls, in your browser.`;
+  }
+  function addRows(res, animate) {
+    const out = [];
+    res.rows.forEach((row, k) => {
+      const i = res.from + k;
+      const bad = new Set((res.bad || []).filter((b) => b[0] === i).map((b) => b[1]));
+      const tr = el("tr", animate && !reduce.matches ? "bt-new" : null);
       tr.append(el("td", "bt-num bt-rn", fmt(i + 1)));
-      row.forEach((v, ci) => {
+      tr.addEventListener("click", () => { const j = stopAt(i); if (j < w.order.length) choosePage(w.order[j], i); });
+      for (let ci = 0; ci < feedCols(); ci++) {
+        const v = row[ci];
         if (bad.has(ci)) tr.append(el("td", "bt-alarm", "error"));
         else if (v === null) tr.append(el("td", "bt-null", "null"));
         else tr.append(el("td", /^-?[\d.]+$/.test(v) ? "bt-num" : null, v));
-      });
-      if (cur.full) {
-        const t = (res.tails || [])[k];
-        const td = el("td", "bt-tail", t ? `${fmt(t[0])} B · ${t[1]}` : "none");
-        tr.append(td);
       }
-      out.push(tr);
-    }
-    out.push(spacer((total - last) * ROW));
-    tbody.replaceChildren(...out);
+      if (feedHeadRow.querySelectorAll("th").length > feedCols() + 1) {
+        const tl = (res.tails || [])[k];
+        tr.append(el("td", "bt-num bt-tail", tl ? `${fmt(tl[0])} B` : "–"));
+      }
+      out.unshift(tr);
+    });
+    feedBody.prepend(...out.slice(0, FEED));
+    while (feedBody.children.length > FEED) feedBody.lastChild.remove();
   }
-  rowsBox.addEventListener("scroll", () => requestAnimationFrame(paintRows), { passive: true });
 
-  // Export
+  // The inspector: what the binary says the picked page is, and for a data page its
+  // records, one of them taken apart byte range by byte range.
+  let inspTicket = 0;
+  async function renderInspector() {
+    const ticket = ++inspTicket;
+    if (!w) return;
+    const p = picked;
+    const head = el("div", "bt-head");
+    const title = el("h3", "bt-h", p >= 0 ? `page ${fmt(p)}` : "page");
+    head.append(title);
+    if (p < 0 || w.seen[p] < 0) {
+      head.append(el("span", "bt-sub", p < 0 ? "pick a page on the map" : "not described yet"));
+      insp.replaceChildren(head);
+      syncButtons();
+      return;
+    }
+    const k = w.kinds[w.kind[p]];
+    head.append(el("span", `bt-tag bt-tag-${k}`, label(k)));
+    const ps = w.file.pageSize;
+    const facts = [["offset", `${hex(p * ps)}–${hex(p * ps + ps - 1)}`]];
+    if (w.lp[p] >= 0) facts.push(["logical", fmt(w.lp[p])]);
+    if (w.ty[p]) facts.push(["PAT type", hex(w.ty[p])]);
+    if (k === "data") facts.push(["live slots", `${fmt(w.a[p])} / ${fmt(w.b[p])}`]);
+    if (k === "variable") facts.push(["fragments", fmt(w.a[p])]);
+    if (k === "index") facts.push(["key", fmt(w.b[p])], ["node", w.x[p] ? "leaf" : "interior"], ...(w.a[p] ? [["entries", fmt(w.a[p])]] : []));
+    if (k === "fcr" || k === "pat") facts.push(["copy", fmt(w.b[p] + 1)], ["usage", fmt(w.a[p])], ["in use", w.x[p] ? "yes" : "no"]);
+    const dl = el("dl", "bt-kv");
+    for (const [a, b] of facts) { const d = el("div"); d.append(el("dt", null, a), el("dd", null, b)); dl.append(d); }
+    const parts = [head, dl, el("p", "bt-what", WHAT[k] || "")];
+    if (w.problems.has(p)) parts.push(el("p", "bt-alarm", `Map.Describe: ${w.problems.get(p)}.`));
+    if (dmg().has(p)) parts.push(el("p", "bt-note", `Byte ${hex(p * ps + 2)} of this tab's copy is flipped. Press Repair to flip it back.`));
+    insp.replaceChildren(...parts);
+    syncButtons();
+    if (k !== "data" || !w.table) return;
+    const first = w.cum[p], have = Math.min(w.a[p], Math.max(0, w.read - first));
+    if (w.phase === "map") return;
+    if (!have) {
+      const j = w.order.indexOf(p);
+      let note = `Not read yet. Its rows are ${fmt(first + 1)}–${fmt(first + w.a[p])} in the reader's order.`;
+      if (!w.a[p]) note = "Its header counts no live slots.";
+      if (w.stopPage === p) note = `The read stopped on this page after ${fmt(w.read)} rows.`;
+      else if (w.stopPage >= 0 && w.at <= j) note = "The read stopped before this page.";
+      insp.append(el("p", w.stopPage === p ? "bt-alarm" : "bt-note", note));
+      return;
+    }
+    const res = await rpc("rows", { from: first, n: Math.min(have, 200) });
+    if (ticket !== inspTicket) return;
+    if (rec < first || rec >= first + res.rows.length) rec = first;
+    const list = el("div", "bt-recs");
+    list.setAttribute("role", "group");
+    list.setAttribute("aria-label", `Rows on page ${fmt(p)}`);
+    res.rows.forEach((row, j) => {
+      const i = first + j;
+      const b = button(`#${fmt(i + 1)}`, "secondary bt-rec");
+      b.setAttribute("aria-pressed", String(i === rec));
+      b.title = row.slice(0, 3).filter((v) => v !== null).join(" · ");
+      b.addEventListener("click", () => { rec = i; field_ = -1; renderInspector().catch(fail); });
+      list.append(b);
+    });
+    const sub = el("p", "bt-sub", `rows ${fmt(first + 1)}–${fmt(first + res.rows.length)}, in the reader's order`);
+    insp.append(sub, list, anatomy(res, rec - first));
+  }
+
+  function anatomy(res, j) {
+    const cols = w.sel.columns || [];
+    const row = res.rows[j];
+    const tail = (res.tails || [])[j];
+    const bad = new Set((res.bad || []).filter((b) => b[0] === res.from + j).map((b) => b[1]));
+    const recLen = w.file.recordLength;
+    const total = recLen + (tail ? tail[0] : 0);
+    const box = el("div", "bt-anat");
+    const ruler = el("div", "bt-ruler");
+    ruler.setAttribute("aria-hidden", "true");
+    const segs = [];
+    cols.forEach((col, ci) => {
+      const sg = el("span", `bt-seg bt-seg-${ci % 2}`);
+      sg.style.left = `${(100 * col.offset) / total}%`;
+      sg.style.width = `${(100 * col.size) / total}%`;
+      sg.addEventListener("click", () => mark(ci));
+      segs.push(sg);
+      ruler.append(sg);
+    });
+    if (tail) {
+      const sg = el("span", "bt-seg bt-seg-var");
+      sg.style.left = `${(100 * recLen) / total}%`;
+      sg.style.width = `${(100 * tail[0]) / total}%`;
+      sg.addEventListener("click", () => mark(cols.length));
+      segs.push(sg);
+      ruler.append(sg);
+    }
+    const scale = el("p", "bt-scale");
+    scale.setAttribute("aria-hidden", "true");
+    scale.append(el("span", null, "byte 0"), el("span", null, tail ? `${fmt(recLen)} fixed + ${fmt(tail[0])} variable` : `${fmt(recLen)} bytes`));
+    const tbox = el("div", "bt-fields");
+    tbox.setAttribute("role", "region");
+    tbox.setAttribute("aria-label", `Row ${fmt(rec + 1)}, field by field`);
+    const t = el("table", "bt-table");
+    const hr = el("tr");
+    const inferred = w.sel.source === "inferred";
+    for (const h of ["column", "bytes", "type", "value", ...(inferred ? ["confidence"] : [])]) hr.append(el("th", null, h));
+    const th = el("thead");
+    th.append(hr);
+    const tb = el("tbody");
+    const trs = [];
+    const add = (ci, name, bytes, type, value, cls, extra) => {
+      const tr = el("tr");
+      tr.append(el("td", null, name), el("td", "bt-num", bytes), el("td", "bt-type", type), el("td", cls, value));
+      if (extra !== undefined) tr.append(el("td", "bt-num", extra));
+      tr.addEventListener("pointerenter", () => mark(ci));
+      tr.addEventListener("pointerleave", () => mark(-1));
+      trs.push(tr);
+      tb.append(tr);
+    };
+    cols.forEach((col, ci) => {
+      const v = row[ci];
+      const type = col.type + (col.dec ? `(${col.dec})` : "") + (col.key ? " key" : "");
+      add(ci, w.sel.names[ci], col.size > 1 ? `${col.offset}–${col.offset + col.size - 1}` : `${col.offset}`, type, bad.has(ci) ? "error" : v === null ? "null" : v,
+        bad.has(ci) ? "bt-alarm" : v === null ? "bt-null" : null, inferred ? `${Math.round(col.confidence * 100)}%` : undefined);
+    });
+    if (tail) add(cols.length, "variable part", `${recLen}–${recLen + tail[0] - 1}`, "RecordsFull", tail[1], "bt-tail", inferred ? "" : undefined);
+    t.append(th, tb);
+    tbox.append(t);
+    function mark(ci) {
+      field_ = ci;
+      segs.forEach((sg, k) => sg.classList.toggle("bt-on", k === ci));
+      trs.forEach((tr, k) => tr.classList.toggle("bt-on", k === ci));
+    }
+    box.append(ruler, scale, tbox);
+    if (field_ >= 0) mark(field_);
+    return box;
+  }
+
+  function syncButtons() {
+    const hold = blocked > 0;
+    for (const b of [play, step, reset, corrupt, csvBtn, jsonBtn, fileSel, schemaSel, pick, sampleBtn]) b.disabled = hold;
+    openKey.classList.toggle("bt-off", hold);
+    if (!w) return;
+    const done = w.phase === "done";
+    step.disabled = hold || done;
+    play.textContent = done ? "Replay" : playing ? "Pause" : "Play";
+    play.setAttribute("aria-pressed", String(playing && !done));
+    const k = picked >= 0 && w.seen[picked] >= 0 ? w.kinds[w.kind[picked]] : "";
+    const can = DAMAGEABLE.has(k);
+    corrupt.disabled = hold || !can;
+    corrupt.textContent = !can ? "Corrupt a page" : dmg().has(picked) ? `Repair page ${fmt(picked)}` : `Corrupt page ${fmt(picked)}`;
+    csvBtn.disabled = jsonBtn.disabled = hold || !w.table;
+  }
+
+  // The loop.
+  function frame(t) {
+    raf = 0;
+    const dt = last ? Math.min(100, t - last) : 16;
+    last = t;
+    if (playing && w && w.phase !== "done" && !blocked) {
+      const c = cost();
+      pending = Math.min(pending + dt * Number(speed.value), c * 64);
+      if (!busy && pending >= c) {
+        const k = Math.max(1, Math.floor(pending / c));
+        pending -= k * c;
+        op(k).then(() => kick()).catch(fail);
+      }
+    }
+    if (t - flushed > FLUSH_MS) flush(true);
+    draw(t);
+    const moving = playing && w && w.phase !== "done";
+    if ((moving || t < animUntil) && visible && !document.hidden) raf = requestAnimationFrame(frame);
+    else last = 0;
+  }
+  const kick = () => { if (!raf && visible && !document.hidden) raf = requestAnimationFrame(frame); };
+  function setPlaying(v) { playing = v; syncButtons(); if (v) kick(); }
+
+  play.addEventListener("click", () => {
+    if (w && w.phase === "done") { playing = true; restart().catch(fail); return; }
+    setPlaying(!playing);
+  });
+  step.addEventListener("click", () => {
+    setPlaying(false);
+    op(1).then(() => { animUntil = performance.now() + FADE_MS; kick(); }).catch(fail);
+  });
+  reset.addEventListener("click", () => restart().catch(fail));
+  corrupt.addEventListener("click", async () => {
+    const p = picked, name = w.name;
+    try {
+      blocked++;
+      syncButtons();
+      await demo.call("damage", { name, from: p });
+      const set = damaged.get(name) || new Set();
+      if (set.has(p)) set.delete(p); else set.add(p);
+      damaged.set(name, set);
+    } catch (err) {
+      fail(err);
+      return;
+    } finally {
+      blocked--;
+    }
+    status.textContent = dmg().has(p) ? `Flipped the bits of byte ${hex(p * w.file.pageSize + 2)}, in page ${fmt(p)}'s header. btrv maps and reads the file again.` : `Page ${fmt(p)} is repaired. btrv maps and reads the file again.`;
+    if (!reduce.matches) playing = true;
+    restart().catch(fail);
+  });
+  fileSel.addEventListener("change", () => { picked = -1; restart(fileSel.value, "").catch(fail); });
+  schemaSel.addEventListener("change", () => restart(w.name, schemaSel.value).catch(fail));
+  sampleBtn.addEventListener("click", () => load(null).catch(fail));
+
+  // Picking pages on the map.
+  const cellAt = (e) => {
+    if (!G) return -1;
+    const r = canvas.getBoundingClientRect();
+    const col = Math.floor((e.clientX - r.left - G.x0) / (G.size + G.gap));
+    const row = Math.floor((e.clientY - r.top - G.y0) / (G.size + G.gap));
+    const i = row * G.cols + col;
+    return col >= 0 && col < G.cols && row >= 0 && i < w.n ? i : -1;
+  };
+  const choosePage = (i, r = -1) => { picked = i; rec = r; field_ = -1; renderInspector().catch(fail); draw(performance.now()); };
+  canvas.addEventListener("pointermove", (e) => {
+    if (!w || e.pointerType === "touch") return;
+    const i = cellAt(e);
+    if (i === hover) return;
+    hover = i;
+    caption();
+    if (!raf) draw(performance.now());
+  });
+  canvas.addEventListener("pointerleave", () => { hover = -1; caption(); if (!raf) draw(performance.now()); });
+  canvas.addEventListener("pointerdown", (e) => { const i = w ? cellAt(e) : -1; if (i >= 0) choosePage(i); });
+  canvas.addEventListener("keydown", (e) => {
+    if (!w || !G) return;
+    const d = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: G.cols, ArrowUp: -G.cols }[e.key];
+    let i;
+    if (e.key === "Home") i = 0;
+    else if (e.key === "End") i = w.n - 1;
+    else if (d !== undefined) i = Math.max(0, Math.min(w.n - 1, (picked < 0 ? 0 : picked) + d));
+    else return;
+    e.preventDefault();
+    choosePage(i);
+  });
+
+  // Export: the same export.Copy loop as btrv dump and export.
   async function exportAs(format) {
-    const c = cur;
-    if (!c || !c.table) return;
-    const parts = [];
-    let bytes = 0;
-    await rpc("export", { format, n: 0 });
-    for (;;) {
-      const r = await rpc("export", { format, n: 2000 });
-      parts.push(r.chunk);
-      bytes += r.chunk.length;
-      expStatus.textContent = `Writing ${format === "csv" ? "CSV" : "JSON Lines"}: ${mib(bytes)}`;
-      if (r.done) {
-        const rep = r.report;
-        const blob = new Blob(parts, { type: format === "csv" ? "text/csv" : "application/x-ndjson" });
-        const a = el("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = `${c.name.replace(/\.[^.]*$/, "")}.${format}`;
-        a.hidden = true;
-        wrap.append(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(a.href), 30000);
-        expStatus.textContent = `${a.download}: ${fmt(rep.rowsWritten)} rows written, ${fmt(rep.rowsWithErrors)} with column errors, ${fmt(blob.size)} bytes.` +
-          (rep.stopped ? ` Stopped: ${rep.stopped}` : "");
-        return;
+    if (!w || !w.table) return;
+    blocked++;
+    syncButtons();
+    try {
+      const parts = [];
+      let bytes = 0;
+      await demo.call("export", { format, n: 0 });
+      for (;;) {
+        const r = await demo.call("export", { format, n: 2000 });
+        parts.push(r.chunk);
+        bytes += r.chunk.length;
+        expStatus.textContent = `Writing ${format === "csv" ? "CSV" : "JSON Lines"}: ${mib(bytes)}`;
+        if (r.done) {
+          const rep = r.report;
+          const blob = new Blob(parts, { type: format === "csv" ? "text/csv" : "application/x-ndjson" });
+          const a = el("a");
+          Object.assign(a, { href: URL.createObjectURL(blob), download: `${w.name.replace(/\.[^.]*$/, "")}.${format}`, hidden: true });
+          wrap.append(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+          expStatus.textContent = `${a.download}: ${fmt(rep.rowsWritten)} rows written, ${fmt(rep.rowsWithErrors)} with column errors, ${fmt(blob.size)} bytes.` +
+            (rep.stopped ? ` Stopped: ${rep.stopped}` : "");
+          return;
+        }
+        if (!reduce.matches) await new Promise((r) => requestAnimationFrame(r));
       }
-      if (!still()) await frame();
+    } finally {
+      blocked--;
+      syncButtons();
+      kick();
     }
   }
+  csvBtn.addEventListener("click", () => exportAs("csv").catch(fail));
+  jsonBtn.addEventListener("click", () => exportAs("jsonl").catch(fail));
 
-  // Drag and drop
+  // Your own files: picked or dropped anywhere on the panel.
+  const take = (list) => { if (list.length) load(list).catch(fail); };
   const isFiles = (e) => [...(e.dataTransfer?.types || [])].includes("Files");
   wrap.addEventListener("dragover", (e) => { if (!isFiles(e)) return; e.preventDefault(); wrap.classList.add("bt-drop"); });
   wrap.addEventListener("dragleave", (e) => { if (e.target === wrap || !wrap.contains(e.relatedTarget)) wrap.classList.remove("bt-drop"); });
@@ -744,19 +968,20 @@ export async function mount(root, demo) {
     if (!isFiles(e)) return;
     e.preventDefault();
     wrap.classList.remove("bt-drop");
-    const list = [...e.dataTransfer.files];
-    if (list.length) guard(() => load(list));
+    take([...e.dataTransfer.files]);
   });
-  pick.addEventListener("change", () => {
-    const list = [...pick.files];
-    if (list.length) guard(() => load(list));
-  });
+  pick.addEventListener("change", () => { const list = [...pick.files]; pick.value = ""; take(list); });
 
-  new ResizeObserver(() => layout()).observe(mapWrap);
-  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => draw());
+  const recolor = () => { readColors(); draw(performance.now()); };
+  new ResizeObserver(() => { if (!root.isConnected || !w) return; layout(); recolor(); }).observe(canvas);
+  new IntersectionObserver(([en]) => { visible = en.isIntersecting; kick(); }).observe(canvas);
+  document.addEventListener("visibilitychange", kick);
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", recolor);
+  addEventListener("themechange", recolor);
+  reduce.addEventListener("change", () => setPlaying(playing && !reduce.matches));
 
   await cssReady;
-  const first = guard(() => load(null), true);
-  await Promise.race([first, shown]);
-  first.catch((err) => { status.textContent = err.message; bar.classList.add("bt-idle"); });
+  readColors();
+  await load(null);
+  draw(performance.now());
 }

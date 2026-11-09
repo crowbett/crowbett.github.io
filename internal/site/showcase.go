@@ -2,30 +2,34 @@ package site
 
 // Showcases drive each live demo for its home reel clip (cmd/reel).
 var Showcases = map[string]Showcase{
-	// The cursor walks down the page map to a data page and damages it: the
-	// read stops at that red cell; undoing the damage lets the map fill again.
+	// The map fills page by page and the reader walks the data pages; then a
+	// header byte of a data page is flipped and the read stops at that red page.
 	"btrv": {
 		Setup: `(async () => {
-			const done = () => [...document.querySelectorAll(".bt-facts .bt-k")].some((k) => k.textContent === "rows read");
-			for (let i = 0; i < 400 && !done(); i++) await new Promise((r) => setTimeout(r, 50));
+			const w = (ms) => new Promise((r) => setTimeout(r, ms));
+			const play = document.querySelector(".bt-acts button");
+			for (let i = 0; i < 400 && play.textContent !== "Replay"; i++) await w(50);
+			const sp = document.querySelector("select[name=speed]");
+			sp.value = "5"; sp.dispatchEvent(new Event("change"));
+			const reset = [...document.querySelectorAll(".bt-acts button")].find((b) => b.textContent === "Reset");
+			play.click();
+			for (let i = 0; i < 100 && (play.disabled || play.textContent !== "Pause"); i++) await w(50);
+			play.click();
+			reset.click();
+			for (let i = 0; i < 100 && reset.disabled; i++) await w(50);
+			await w(300);
 		})()`,
 		Play: `(async () => {
 			const w = (ms) => new Promise((r) => setTimeout(r, ms));
-			const map = document.querySelector(".bt-map");
-			const dmg = document.querySelector(".bt-damage");
-			const key = (k) => map.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true }));
-			const idle = async () => { await w(100); for (let i = 0; i < 200 && dmg.disabled; i++) await w(50); };
+			const play = document.querySelector(".bt-acts button");
+			const cor = document.querySelector(".bt-corrupt");
+			await w(300);
+			play.click();
+			for (let i = 0; i < 200 && play.textContent !== "Replay"; i++) await w(50);
 			await w(600);
-			for (let i = 0; i < 7; i++) { key("ArrowDown"); await w(160); }
-			for (let i = 0; i < 40 && dmg.hidden; i++) { key("ArrowRight"); await w(120); }
-			await w(500);
-			dmg.click();
-			await idle();
-			await w(1600);
-			dmg.click();
-			await idle();
+			cor.click();
 		})()`,
-		Focus: ".bt-map", Pad: 8, WideFocus: ".bt-map", WidePad: 8, Seconds: 7,
+		Focus: ".bt-map", Pad: 8, WideFocus: ".bt-map", WidePad: 8, Seconds: 8,
 	},
 	// The floor packs orders on its own; you drop your cap order on the line,
 	// then take the top pick off the shelf and the shift is re-judged.
