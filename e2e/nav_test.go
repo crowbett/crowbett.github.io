@@ -5,7 +5,6 @@ package e2e
 import (
 	"context"
 	"encoding/json"
-	"strings"
 	"testing"
 	"time"
 
@@ -197,9 +196,8 @@ func TestTheme(t *testing.T) {
 	}
 }
 
-// TestFind searches the write-ups and code from the palette: a word from a
-// code excerpt opens that excerpt with the line marked, and words from a
-// write-up open its page with the passage marked.
+// TestFind searches the write-ups from the palette: words from a write-up
+// open its page with the passage marked.
 func TestFind(t *testing.T) {
 	t.Parallel()
 	ctx, cancel := newTab(t, 60*time.Second)
@@ -224,30 +222,15 @@ func TestFind(t *testing.T) {
 			t.Fatalf("search %q found no %s hit: %v", q, tag, err)
 		}
 	}
-	// A token from the first code line that has one of 6+ letters, and three
-	// words from the middle of the first write-up passage.
-	pick, err := chromedp.Run(ctx, chromedp.Evaluate[[]string](`fetch("/find.json").then((r) => r.json()).then((d) => {
-		let code = "";
-		for (const x of d) if (x.k === "c") for (const l of x.l) { const m = /[A-Za-z]{6,}/.exec(l); if (m && !code) code = m[0]; }
-		const w = d.find((x) => x.k === "w").t.split(" ");
-		return [code, w.slice(2, 5).join(" ")];
-	})`, chromedp.EvalAwaitPromise))
-	if err != nil || len(pick) != 2 || pick[0] == "" {
-		t.Fatalf("find.json: %v %v", pick, err)
+	// Three words from the middle of the first write-up passage.
+	pick, err := chromedp.Run(ctx, chromedp.Evaluate[string](`fetch("/find.json").then((r) => r.json()).then((d) => d.find((x) => x.k === "w").t.split(" ").slice(2, 5).join(" "))`, chromedp.EvalAwaitPromise))
+	if err != nil || pick == "" {
+		t.Fatalf("find.json: %q %v", pick, err)
 	}
-	search(pick[0], "code")
-	ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(`until(() => {
-		const m = /#code-(\d+)-L(\d+)$/.exec(location.hash);
-		const l = document.querySelector(".l.hit");
-		return m && l && !l.closest(".code-ex").hidden && l.querySelector(".ln").textContent === m[2] && l.textContent.toLowerCase().includes(`+jsString(strings.ToLower(pick[0]))+`);
-	})`), chromedp.EvalAwaitPromise))
+	search(pick, "text")
+	ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(`until(() => /#find=/.test(location.hash) && document.querySelector(".found")?.textContent.replace(/\s+/g, " ").includes(`+jsString(pick)+`))`), chromedp.EvalAwaitPromise))
 	if err != nil || !ok {
-		t.Fatalf("code hit for %q did not mark its line: %v", pick[0], err)
-	}
-	search(pick[1], "text")
-	ok, err = chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(`until(() => /#find=/.test(location.hash) && document.querySelector(".found")?.textContent.replace(/\s+/g, " ").includes(`+jsString(pick[1])+`))`), chromedp.EvalAwaitPromise))
-	if err != nil || !ok {
-		t.Fatalf("text hit for %q did not mark its passage: %v", pick[1], err)
+		t.Fatalf("text hit for %q did not mark its passage: %v", pick, err)
 	}
 }
 
@@ -258,7 +241,8 @@ func jsString(s string) string {
 }
 
 // TestPeek flips the first home panel to its code at phone width: the face
-// shows the excerpt's numbered lines and links to the project's code, axe
+// shows the excerpt's numbered lines and, for a public repository, links to
+// those lines on GitHub; axe
 // runs with it open, and Escape flips it back with focus on the button.
 func TestPeek(t *testing.T) {
 	t.Parallel()
@@ -273,7 +257,7 @@ func TestPeek(t *testing.T) {
 		const f = document.getElementById(b.getAttribute("aria-controls"));
 		return until(() => b.getAttribute("aria-pressed") === "true" && !f.hidden && f.offsetHeight > 200 &&
 			f.querySelectorAll(".pk-c .l").length >= 5 && f.querySelector(".pk-c .ln").textContent === String(Number(f.querySelector(".pk-h span").textContent.split(":").pop().split("–")[0])) &&
-			f.querySelector(".pk-more").pathname === "/projects/" + b.dataset.peek + "/");
+			(!f.querySelector(".pk-more") || (f.querySelector(".pk-more").hostname === "github.com" && f.querySelector(".pk-more").hash.startsWith("#L"))));
 	})()`
 	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(open), chromedp.EvalAwaitPromise)); err != nil || !ok {
 		t.Fatalf("peek did not open: %v", err)
