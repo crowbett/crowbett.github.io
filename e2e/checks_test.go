@@ -22,6 +22,30 @@ const workCheck = `(async () => {
 	return await at("netcode") && await at("keel");
 })()`
 
+// indexCheck uses the dock and the index at the end of the reel: "All"
+// reaches the index and hides the dock, an area and a language narrow the
+// cards and say how many are left, and a tick jumps to its panel pinned under
+// the header, playing only its clip.
+const indexCheck = `(async () => {
+	const dock = document.querySelector(".dock"), n = document.querySelector("[data-all-n]");
+	const shown = () => [...document.querySelectorAll(".card")].filter((c) => !c.hidden).length;
+	const press = (f, v) => document.querySelector("[data-f=" + f + "][data-v='" + v + "']").click();
+	dock.querySelector(".dock-all").click();
+	if (!await until(() => !("on" in dock.dataset) && !document.querySelector(".it[data-now]"))) return false;
+	const langs = [...document.querySelectorAll("[data-f=lang]")].map((b) => b.dataset.v).filter(Boolean);
+	const go = [...document.querySelectorAll(".card")].filter((c) => c.dataset.lang.split(", ").includes(langs[0])).length;
+	press("lang", langs[0]);
+	if (!await until(() => shown() === go && n.textContent.startsWith(go + " of "))) return false;
+	press("lang", "");
+	if (!await until(() => shown() === document.querySelectorAll(".card").length)) return false;
+	const tick = dock.querySelectorAll(".dock-ticks a")[2];
+	tick.click();
+	const it = document.querySelector("#p-" + tick.dataset.slug);
+	return until(() => "now" in it.dataset && "on" in dock.dataset && "now" in tick.dataset
+		&& Math.abs(it.getBoundingClientRect().top - document.querySelector(".top").offsetHeight) < 2
+		&& document.querySelectorAll(".it video").length <= 2);
+})()`
+
 // refusedCheck plays the reel as iOS Low Power Mode does: every play() is
 // refused, so the clip holds its poster, and the visitor's next tap starts it.
 const refusedCheck = `(async () => {
