@@ -53,9 +53,9 @@
 
 {{define "row"}}
   <a href="/projects/{{.Slug}}/{{if .Live}}#demo{{end}}">
-    <span class="row-n" aria-hidden="true"></span>
+    <span class="row-n" aria-hidden="true">{{rank .Slug}}</span>
     <div class="row-fig" aria-hidden="true">{{template "dmask" .Slug}}</div>
-    <h3 class="row-name">{{.Title}}</h3>
+    <h4 class="row-name">{{.Title}}</h4>
     <span class="row-lang">{{.Lang}}</span>
     <p class="row-tag">{{.Tagline}}</p>
     <p class="metric">{{if .Metric}}{{bind .Metric}}{{end}}</p>

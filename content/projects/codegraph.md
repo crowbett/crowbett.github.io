@@ -6,6 +6,7 @@ tags: static analysis, MCP, call graphs
 repo: https://github.com/crowbett/codegraph
 demo: live
 demo_try: Pick a function in a small Rust sample to see its callers and callees, with each edge's confidence.
+group: tools
 order: 7
 metric: 99.5% callers recall, 0.6% false call edges vs SCIP ground truth
 metric_source: 16 repos / 1,079 files, docs/ACCURACY.md

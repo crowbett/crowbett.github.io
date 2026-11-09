@@ -48,9 +48,16 @@ type pageData struct {
 	Project   *Project
 	Year      int
 	LiveCount int
-	Langs     []string
+	Groups    []groupView
+	Prev      *Project
+	Next      *Project
 	Canonical string
 	Hero      *heroTrace
+}
+
+type groupView struct {
+	Group
+	Projects []Project
 }
 
 // prepared is everything a render needs: parsed templates and the data shared by every page.
@@ -87,37 +94,44 @@ func prepare(cfg Config) (*prepared, error) {
 	if hero != nil && !slices.ContainsFunc(projects, func(p Project) bool { return p.Slug == hero.Slug && p.Live() }) {
 		return nil, fmt.Errorf("data/hero-trace.json replays %s, which has no live demo", hero.Slug)
 	}
+	var listed []Project
 	tmpl, err := template.New("").Funcs(template.FuncMap{
+		"rank": func(slug string) string {
+			return fmt.Sprintf("%02d", slices.IndexFunc(listed, func(p Project) bool { return p.Slug == slug })+1)
+		},
 		"demoAsset": func(slug string) string { return "/demos/" + slug + "/ui.js" },
 		"demoKB":    func(slug string) string { return thousands((sizes[slug].Gzip + 1023) / 1024) },
 		"demoBytes": func(slug string) int { return sizes[slug].Raw },
 		"bind":      bindNumbers,
 		"num":       thousands,
-		"langs":     func(l string) string { return strings.ToLower(strings.ReplaceAll(l, ",", "")) },
+		"search": func(p Project) string {
+			return strings.ToLower(strings.Join(append([]string{p.Slug, p.Title, p.Tagline, p.Lang}, p.Tags...), " "))
+		},
 	}).ParseFS(cfg.Src, "templates/*.html")
 	if err != nil {
 		return nil, fmt.Errorf("templates: %w", err)
 	}
-	// Home lists live demos first, then by order: the runnable proof leads.
-	listed := slices.Clone(projects)
-	slices.SortStableFunc(listed, func(a, b Project) int {
-		if a.Live() == b.Live() {
-			return 0
+	// Home lists projects by group, live demos first within each, then by
+	// order; every page that numbers or walks the projects uses this order.
+	base := pageData{Owner: cfg.Owner, Year: cfg.Now.Year(), Hero: hero}
+	for _, g := range Groups {
+		gv := groupView{Group: g}
+		for _, live := range []bool{true, false} {
+			for _, p := range projects {
+				if p.Group == g.Key && p.Live() == live {
+					gv.Projects = append(gv.Projects, p)
+				}
+			}
 		}
-		if a.Live() {
-			return -1
+		if len(gv.Projects) > 0 {
+			base.Groups = append(base.Groups, gv)
+			listed = append(listed, gv.Projects...)
 		}
-		return 1
-	})
-	base := pageData{Owner: cfg.Owner, Projects: listed, Year: cfg.Now.Year(), Hero: hero}
+	}
+	base.Projects = listed
 	for _, p := range projects {
 		if p.Live() {
 			base.LiveCount++
-		}
-		for _, l := range strings.Split(p.Lang, ", ") {
-			if !slices.Contains(base.Langs, l) {
-				base.Langs = append(base.Langs, l)
-			}
 		}
 	}
 	return &prepared{tmpl: tmpl, base: base, projects: projects}, nil
@@ -142,6 +156,10 @@ func Build(cfg Config) error {
 	render := func(name, urlPath, title string, p *Project) error {
 		d := base
 		d.Title, d.Path, d.Project = title, urlPath, p
+		if i := slices.IndexFunc(base.Projects, func(q Project) bool { return p != nil && q.Slug == p.Slug }); i >= 0 {
+			n := len(base.Projects)
+			d.Prev, d.Next = &base.Projects[(i+n-1)%n], &base.Projects[(i+1)%n]
+		}
 		d.Canonical = cfg.Owner.URL + urlPath
 		var b bytes.Buffer
 		if err := tmpl.ExecuteTemplate(&b, name, d); err != nil {
