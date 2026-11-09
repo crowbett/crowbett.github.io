@@ -23,7 +23,10 @@ if (reel) {
     reel.style.setProperty("timeline-scope", items.map((_, i) => `--it${i}`).join(", "));
     items.forEach((it, i) => {
       it.style.setProperty("view-timeline", `--it${i} block`);
-      if (i > 0) items[i - 1].querySelector(".it-in").style.setProperty("animation-timeline", `--it${i}`);
+      if (i === 0) return;
+      const covered = items[i - 1].querySelector(".it-in").style;
+      covered.setProperty("animation-name", "sink");
+      covered.setProperty("animation-timeline", `--it${i}`);
     });
   }
 

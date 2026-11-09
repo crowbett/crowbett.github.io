@@ -150,6 +150,9 @@ Every live project page opens like the home stage: the demo frame sits in the da
 ### V20 Full-screen project panels on home · status: done 2026-11-09
 The work index and its monitor became a stack of full-screen dark panels, one per project, like the home stage: name, tagline, metric and "Run it live" beside a 16:10 screen playing the project's clip. Each panel pins and the next slides up over it while the covered one sinks (view timelines named by `web/assets/work.js`); buried panels are not drawn; focus brings its panel up. Group pills on the work sheet jump to each group. e2e `workCheck` walks the reel by focus (home tabs emulate a focused page) and checks the panel covers the screen, plays alone and buries the right panels; `refusedCheck` moved to the panels.
 
+### V21 Clip and panel polish · status: done 2026-11-09
+Every home and project clip re-recorded (`cmd/reel`): 3x and 30 fps instead of 2x and 24 fps, site header and pinned chrome hidden (4 clips had it over their top), scroll-linked animations stopped and entrances finished before the cast (5 opened on a grey frame), crop scale taken from each frame's metadata (the crop ran 17 px past the demo), CRF stepped up only past 90% of the budget. strata frames the whole part; the raytracer is held at pass 3 so the clip shows the noise clearing; its "One more sample" key and btrv's progress bar keep their space instead of shifting the demo. Home: the last panel sank (opacity 0.25) with nothing over it, because a `none` timeline applied the finished sink; names wrapped ("raytrac/er"); the "NN / 15" chip covered clip content.
+
 ## Owner only
 
 ### U1 Make more repos public · status: user

@@ -56,10 +56,11 @@
 .js .it { position: sticky; top: var(--pin, var(--top-h)); }
 .it[data-gone] { opacity: 0; }
 .it-in { display: grid; align-content: center; gap: var(--sp-5); width: min(80rem, 100% - 2 * var(--edge)); margin-inline: auto; padding-block: var(--sp-6); transform-origin: 50% 0; }
-.it-text { display: grid; gap: var(--sp-3); align-content: start; }
+.it-text { display: grid; gap: var(--sp-3); align-content: start; container-type: inline-size; }
 .it-text > * { margin: 0; }
 .it-g { font: 400 var(--t-label)/1.4 var(--mono); letter-spacing: 0; color: var(--screen-dim); }
-.it h4 { font: 800 clamp(2.75rem, 1.2rem + 6vw, 6.5rem)/0.88 var(--display); letter-spacing: -0.05em; }
+/* One size for every name: the widest (edgecache, 6.5em) fits beside its number. */
+.it h4 { font: 800 min(clamp(2.75rem, 1.2rem + 6vw, 6.5rem), (100cqi - 2.5rem) / 6.6)/0.88 var(--display); letter-spacing: -0.05em; }
 .it h4 a { display: flex; align-items: baseline; gap: var(--sp-3); color: var(--screen-ink); text-decoration: none; text-shadow: 0 0 48px color-mix(in oklab, var(--accent) 45%, transparent); }
 .it h4 a:hover .it-name { text-decoration: underline; text-decoration-thickness: 0.06em; text-underline-offset: 0.08em; }
 .it-n { font: 400 var(--t-label)/1 var(--mono); letter-spacing: 0; color: var(--screen-dim); font-variant-numeric: tabular-nums; text-shadow: none; }
@@ -76,16 +77,16 @@
 .it-glass { display: block; }
 .it-glass > img { transition: scale var(--d-spring) var(--spring-soft); }
 .it-dm { position: absolute; inset: 0; display: grid; place-items: center; }
-.it-go, .it-of { position: absolute; z-index: 1; top: var(--sp-3); padding: var(--sp-1) var(--sp-3); border-radius: 999px; font: 400 var(--t-label)/1.5 var(--mono); }
+.it-go, .it-of { position: absolute; z-index: 1; bottom: var(--sp-3); padding: var(--sp-1) var(--sp-3); border-radius: 999px; font: 400 var(--t-label)/1.5 var(--mono); }
 .it-of { left: var(--sp-3); background: oklch(0.1 0.01 262 / 0.55); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: var(--screen-ink); font-variant-numeric: tabular-nums; }
-.it-go { right: var(--sp-3); background: var(--block); color: var(--on-block); opacity: 0; translate: 0 -4px; transition: opacity var(--d-base) var(--ease-in), translate var(--d-spring) var(--spring-soft); }
+.it-go { right: var(--sp-3); background: var(--block); color: var(--on-block); opacity: 0; translate: 0 4px; transition: opacity var(--d-base) var(--ease-in), translate var(--d-spring) var(--spring-soft); }
 .it-go::after { content: " →"; }
 @media (hover: hover) and (pointer: fine) {
   .it-screen:hover .it-go { opacity: 1; translate: 0; }
   .it-screen:hover .it-glass > :is(img, video) { scale: 1.03; }
 }
 @supports (animation-timeline: view()) { @media (prefers-reduced-motion: no-preference) {
-  .js .it-in { animation: sink linear both; animation-timeline: none; animation-range: entry 0% entry 100%; }
+  .js .it-in { animation: none linear both; animation-range: entry 0% entry 100%; }
   .js .it-screen { animation: it-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 90%; }
   .js .it-text { animation: it-lift linear both; animation-timeline: view(); animation-range: entry 10% entry 100%; }
 } }
