@@ -243,6 +243,28 @@ var demoChecks = map[string][]string{
 			return await until(() => v("blocked") === "1" && [...document.querySelectorAll(".lj-ev[data-kind=bad] .lj-ev-note")].some((n) => n.textContent.includes("failed authentication")));
 		})()`,
 	},
+	"quorum": {
+		`until(() => /^node \d$/.test(document.querySelector(".qr-cells [data-k=leader] .qr-v").textContent) && document.querySelectorAll(".qr-logs .qr-c[data-tc]").length >= 10 &&
+			/^5-node cluster at tick \d+: node \d leads term \d+/.test(document.querySelector(".qr-ring").getAttribute("aria-label")) && document.querySelectorAll(".qr-node").length === 5)`,
+		`(async () => {
+			const btn = (t) => [...document.querySelectorAll(".qr-acts button, .qr-put button")].find((b) => b.textContent === t);
+			const v = (k) => document.querySelector(".qr-cells [data-k=" + k + "] .qr-v").textContent;
+			const status = () => document.querySelector(".qr-status").textContent;
+			const step = async () => { const t = v("tick"); btn("Step").click(); await until(() => v("tick") !== t); };
+			if (btn("Pause")) btn("Pause").click();
+			btn("Reset").click();
+			let ok = await until(() => status() === "Warmed up 40 ticks: node 3 leads term 1. Crash it, or click any node." && v("tick") === "40" && v("commit") === "3");
+			btn("Put").click();
+			ok = ok && await until(() => status() === "x=1 went to leader node 3, appended at index 4 in term 1. It commits once a majority has it.");
+			while (ok && document.querySelector(".qr-writes li")?.dataset.st !== "committed") await step();
+			ok = ok && v("tick") === "44" && status() === "x=1 committed at index 4, term 1: a majority holds it.";
+			btn("Crash leader").click();
+			ok = ok && await until(() => document.querySelector(".qr-node:nth-child(3)").dataset.role === "down");
+			for (let i = 0; ok && i < 40 && v("leader") !== "node 2"; i++) await step();
+			return ok && v("tick") === "66" && v("term") === "2" && v("leaders") === "2" && status().startsWith("Node 2 won term 2 with a majority of votes.") &&
+				[...document.querySelectorAll(".qr-trace li")].some((li) => li.textContent === "t57 timeout 2 after 11 ticks: pre-vote for t2");
+		})()`,
+	},
 	"lobby": {
 		`until(() => (Number(document.querySelector(".lb-cells [data-k=rooms] .lb-v").textContent) > 0 && /^Matchmaking floor at [\d.]+ s of simulated time: \d+ waiting, \d+ rooms started/.test(document.querySelector(".lb-canvas").getAttribute("aria-label"))))`,
 		`until(() => ((() => { const c = document.querySelector(".lb-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,

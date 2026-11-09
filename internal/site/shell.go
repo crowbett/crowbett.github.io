@@ -29,6 +29,7 @@ var ShellTries = map[string][]string{
 	"raytracer":  {`load {"scene": "cornell", "width": 64, "seed": 1}`, `render {"sampling": "nee", "y0": 0, "rows": 8}`},
 	"strata":     {`models`, `load {"model": "xy"}`, `slice {"layerHeight": 0.2}`, `layer {"index": 10}`},
 	"recall":     {`corpus`, `ingest {"source": "notes"}`, `search {"q": "postmortem lease", "limit": 3, "top": 3}`},
+	"quorum":     {`new {"seed": 1, "nodes": 5}`, `tick {"n": 40}`, `put {"key": "x", "value": "1"}`, `tick {"n": 10}`},
 	"livejob":    {`start {"seed": 1}`, `advance {"ms": 5000}`, `advance {"ms": 5000}`, `answer {"i": 0}`},
 }
 
