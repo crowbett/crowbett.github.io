@@ -1,7 +1,8 @@
-// Command reel records the home page's preview clips: headless Chrome opens
-// each live demo from dist, starts the real WebAssembly build, plays the
-// demo's showcase (internal/site/showcase.go) and screencasts its frame.
-// ffmpeg encodes web/reel/<slug>.mp4 plus a first-frame poster, and
+// Command reel records the preview clips: headless Chrome opens each live
+// demo from dist, starts the real WebAssembly build, plays the demo's
+// showcase (internal/site/showcase.go) and screencasts its frame, once laid
+// out as wide as a desktop panel's screen (web/reel/<slug>.mp4) and once at
+// phone width (<slug>-n.mp4). ffmpeg encodes each plus a first-frame poster, and
 // web/reel/.sums ties each clip to its pinned binary, UI and showcase so the
 // build fails when one goes stale.
 //
@@ -37,12 +38,22 @@ import (
 
 const (
 	out    = "web/reel"
-	width  = 480 // CSS px of the recorded page: narrow, so a clip reads at phone width
 	height = 900
-	scale  = 3 // device px per CSS px: a clip stays sharp filling a desktop panel
 	fps    = 30
 	aspect = 10.0 / 16
 )
+
+// A variant is one recording of a demo. Wide lays the page out so the mount
+// is as wide as a home panel's screen at 1440 px (705 CSS px), so on a
+// desktop the clip plays at the demo's own size; narrow is the phone layout,
+// drawn at 3x since a phone shows it at about 0.75.
+type variant struct {
+	suffix       string
+	width, scale int
+	wide         bool
+}
+
+var variants = []variant{{"", 752, 2, true}, {"-n", 480, 3, false}}
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
@@ -66,14 +77,6 @@ func run(only []string) error {
 	srv := httptest.NewServer(http.FileServer(http.Dir(dist)))
 	defer srv.Close()
 
-	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.Flag("mute-audio", true), chromedp.Flag("force-device-scale-factor", fmt.Sprint(scale)), chromedp.DisableGPU, chromedp.WindowSize(width, height))
-	actx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
-	defer cancel()
-	browser, cancel := chromedp.NewContext(actx)
-	defer cancel()
-	if err := chromedp.Do(browser); err != nil {
-		return err
-	}
 	if err := os.MkdirAll(out, 0o755); err != nil {
 		return err
 	}
@@ -86,19 +89,41 @@ func run(only []string) error {
 		slugs = slices.Sorted(maps.Keys(sources))
 	}
 	for _, slug := range slugs {
-		show, ok := site.Showcases[slug]
-		if _, live := sources[slug]; !ok || !live {
+		if _, ok := site.Showcases[slug]; !ok || sources[slug] == nil {
 			return fmt.Errorf("%s: not a live demo with a showcase", slug)
 		}
-		start := time.Now()
-		if err := record(browser, srv.URL, slug, show); err != nil {
-			return fmt.Errorf("%s: %w", slug, err)
+	}
+	// The screencast is drawn at the browser's device scale, so each variant
+	// gets a browser of its own.
+	for _, v := range variants {
+		if err := recordAll(srv.URL, slugs, v); err != nil {
+			return err
 		}
-		fi, _ := os.Stat(filepath.Join(out, slug+".mp4"))
-		log.Printf("%s: %d B in %v", slug, fi.Size(), time.Since(start).Round(time.Millisecond))
+	}
+	for _, slug := range slugs {
 		if err := writeSum(slug, sources[slug]); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func recordAll(base string, slugs []string, v variant) error {
+	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.Flag("mute-audio", true), chromedp.Flag("force-device-scale-factor", fmt.Sprint(v.scale)), chromedp.DisableGPU, chromedp.WindowSize(v.width, height))
+	actx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
+	defer cancel()
+	browser, cancel := chromedp.NewContext(actx)
+	defer cancel()
+	if err := chromedp.Do(browser); err != nil {
+		return err
+	}
+	for _, slug := range slugs {
+		start := time.Now()
+		if err := record(browser, base, slug, site.Showcases[slug], v); err != nil {
+			return fmt.Errorf("%s%s: %w", slug, v.suffix, err)
+		}
+		fi, _ := os.Stat(filepath.Join(out, slug+v.suffix+".mp4"))
+		log.Printf("%s%s: %d B in %v", slug, v.suffix, fi.Size(), time.Since(start).Round(time.Millisecond))
 	}
 	return nil
 }
@@ -132,7 +157,7 @@ type frame struct {
 	dip  float64 // the frame's width in CSS px
 }
 
-func record(browser context.Context, base, slug string, show site.Showcase) error {
+func record(browser context.Context, base, slug string, show site.Showcase, v variant) error {
 	ctx, cancel := chromedp.NewContext(browser)
 	defer cancel()
 	ctx, cancelT := context.WithTimeout(ctx, 3*time.Minute)
@@ -145,7 +170,7 @@ func record(browser context.Context, base, slug string, show site.Showcase) erro
 	defer os.RemoveAll(tmp)
 
 	err = chromedp.Do(ctx,
-		chromedp.EmulateViewport(width, height, chromedp.EmulateScale(scale)),
+		chromedp.EmulateViewport(int64(v.width), height, chromedp.EmulateScale(float64(v.scale))),
 		chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
 			_, err := cdp.Call(ctx, t, emulation.SetEmulatedMedia, emulation.SetEmulatedMediaParams{
 				Features: []*emulation.MediaFeature{{Name: "prefers-color-scheme", Value: "dark"}},
@@ -168,7 +193,10 @@ func record(browser context.Context, base, slug string, show site.Showcase) erro
 			return fmt.Errorf("setup: %w", err)
 		}
 	}
-	focus := show.Focus
+	focus, pad := show.Focus, show.Pad
+	if v.wide {
+		focus, pad = show.WideFocus, show.WidePad
+	}
 	if focus == "" {
 		focus = "[data-demo-mount]"
 	}
@@ -183,7 +211,7 @@ func record(browser context.Context, base, slug string, show site.Showcase) erro
 		scrollTo(0, m.getBoundingClientRect().top + scrollY - pad);
 		const r = m.getBoundingClientRect(), b = document.querySelector("[data-demo-mount]").getBoundingClientRect();
 		return {x: b.x, y: Math.max(r.y - pad, 0), w: b.width};
-	})(%q, %d)`, focus, show.Pad)))
+	})(%q, %d)`, focus, pad)))
 	if err != nil {
 		return err
 	}
@@ -222,7 +250,7 @@ func record(browser context.Context, base, slug string, show site.Showcase) erro
 				_, err := cdp.Call(ctx, t, page.StopScreencast, cdp.Empty{})
 				return err
 			}
-			_, err := cdp.Call(ctx, t, page.StartScreencast, page.StartScreencastParams{Format: page.StartScreencastFormatPng, EveryNthFrame: 1, MaxWidth: 2 * width * scale, MaxHeight: 2 * height * scale})
+			_, err := cdp.Call(ctx, t, page.StartScreencast, page.StartScreencastParams{Format: page.StartScreencastFormatPng, EveryNthFrame: 1, MaxWidth: int64(2 * v.width * v.scale), MaxHeight: int64(2 * height * v.scale)})
 			return err
 		}))
 	}
@@ -253,7 +281,7 @@ func record(browser context.Context, base, slug string, show site.Showcase) erro
 	if len(got) == 0 {
 		return errors.New("no frames")
 	}
-	return encode(tmp, slug, got, rect.X, rect.Y, rect.W, show.Seconds)
+	return encode(tmp, slug+v.suffix, got, rect.X, rect.Y, rect.W, show.Seconds)
 }
 
 type box struct{ X, Y, W float64 }

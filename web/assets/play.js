@@ -10,3 +10,10 @@ for (const t of ["touchend", "click", "keydown"]) addEventListener(t, retry, { c
 
 export const play = (v) => v.play().catch((e) => { if (e.name === "NotAllowedError") refused.add(v); });
 export const pause = (v) => { refused.delete(v); v.pause(); };
+
+// poster is the recording a screen shows at its current width: the
+// <source> whose media matches (the desktop crop), else the <img> (phone).
+export const poster = (box) => {
+  const s = box.querySelector("source");
+  return s && matchMedia(s.media).matches ? s.srcset : box.querySelector("img").getAttribute("src");
+};
