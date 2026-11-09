@@ -141,10 +141,11 @@ export async function mount(root, demo) {
   const note = el("input");
   Object.assign(note, { type: "text", name: "note", value: NOTE, autocomplete: "off", maxLength: 400 });
   const add = button("Index my note");
-  const acts = el("div", "rc-acts");
-  acts.append(play, step, reset, field("tour speed", speed));
+  speed.setAttribute("aria-label", "Tour speed");
+  const acts = el("div", "rc-acts rc-transport");
+  acts.append(play, step, reset, speed);
   const form = el("form", "rc-controls");
-  form.append(find, knobs, acts);
+  form.append(find);
   const mineRow = el("div", "rc-acts rc-mine");
   mineRow.append(field("your note", note, "rc-note"), add);
 
@@ -166,7 +167,13 @@ export async function mount(root, demo) {
     idx.append(row);
   }
 
+  const live = el("p", "rc-live");
   const plan = el("p", "rc-plan");
+  const setup = el("section", "rc-setup");
+  const setupH = el("h3", "rc-h", "Index and ranking");
+  setupH.id = "rc-setup-h";
+  setup.setAttribute("aria-labelledby", setupH.id);
+  setup.append(setupH, idx, knobs);
   const svg = sv("svg", "rc-svg", { role: "group" });
   const legend = el("p", "demo-legend rc-legend");
   for (const [k, t] of [["b", "bm25 lane"], ["v", `vector lane (${corpus.embedder.name})`], ["sel", "explained below"], ["you", "your note"], ["red", "secret redacted"]]) {
@@ -201,7 +208,7 @@ export async function mount(root, demo) {
     cells.append(li);
   }
   const receipt = el("p", "demo-out rc-out");
-  root.replaceChildren(form, idx, plan, svg, legend, status, mineRow, why, cells, receipt);
+  root.replaceChildren(form, live, plan, svg, legend, status, acts, why, setup, mineRow, cells, receipt);
 
   // State.
   let gen = 0, tourGen = 0, ti = 0, seq = 0;
@@ -230,6 +237,7 @@ export async function mount(root, demo) {
     cell.query.textContent = queries ? ms(lastMs) : "–";
     cell.index.textContent = stats ? ms(indexMs) : "–";
     const red = [...squares.values()].filter((s) => s.classList.contains("is-red")).length;
+    if (stats) live.textContent = `${plural(stats.docs, "document", "documents")} indexed from ${plural(stats.loaded.length, "source", "sources")}${red ? `, ${red} with a secret redacted` : ""}${stats.loaded.length < sources.length ? "…" : ""}`;
     idx.setAttribute("aria-label", `Index: ${sources.map((s) => `${lanes.get(s).count} ${s}`).join(", ")} documents; ${plural(red, "document", "documents")} with a secret redacted; ${corpus.absent.map((a) => a.source).join(", ")} not indexed.`);
     if (stats) {
       receipt.textContent = `${plural(stats.docs, "document", "documents")} from ${plural(stats.loaded.length, "source", "sources")} indexed in ${ms(indexMs)}` +
@@ -686,6 +694,7 @@ export async function mount(root, demo) {
     rows.clear(); lines.clear(); squares.clear();
     for (const lane of lanes.values()) { lane.docs.replaceChildren(); lane.count = 0; lane.n.textContent = "0"; }
     why.hidden = true;
+    live.textContent = "";
     qIn.value = "";
     status.textContent = "";
     ti = 0;
