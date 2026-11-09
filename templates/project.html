@@ -16,7 +16,7 @@
   <section class="demo" id="demo" data-demo="{{.Slug}}" data-ui="{{demoAsset .Slug}}" data-bytes="{{demoBytes .Slug}}" aria-labelledby="demo-title">
     <div class="demo-head">
       <h2 id="demo-title">Live demo</h2>
-      <span class="demo-spec">WebAssembly, ~{{demoKB .Slug}} KB</span>
+      <span class="demo-spec"><span class="demo-kind">WebAssembly, </span>~{{demoKB .Slug}} KB</span>
       <button type="button" class="demo-full" data-demo-full>Full screen</button>
     </div>
     <p class="demo-try">{{.DemoTry}}</p>

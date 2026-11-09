@@ -60,6 +60,7 @@ func run() error {
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Write(sheet)
+		w.Write([]byte(passCSS[r.URL.Query().Get("pass")]))
 	})
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
@@ -84,15 +85,26 @@ func run() error {
 	var files []string
 	for _, name := range names {
 		size := sizeOf(name)
-		shot, err := screenshot(ctx, srv.URL+"/sheet/"+name, int64(2*size.W), int64(2*size.H))
-		if err != nil {
-			return fmt.Errorf("%s: %w", name, err)
+		shoot := func(pass string, scale float64) (image.Image, error) {
+			shot, err := screenshot(ctx, srv.URL+"/sheet/"+name+"?pass="+pass, int64(2*size.W), int64(2*size.H), scale)
+			if err != nil {
+				return nil, fmt.Errorf("%s: %w", name, err)
+			}
+			return png.Decode(bytes.NewReader(shot))
 		}
-		src, err := png.Decode(bytes.NewReader(shot))
+		art, err := shoot("art", 1)
 		if err != nil {
-			return fmt.Errorf("%s: %w", name, err)
+			return err
 		}
-		mask := toMask(src, bayer.DitherPaletted(src))
+		mask := toMask(art, bayer.DitherPaletted(art))
+		if size.Labels {
+			labels, err := shoot("labels", 2)
+			if err != nil {
+				return err
+			}
+			mask = double(mask)
+			addLabels(mask, labels)
+		}
 		file := filepath.Join(out, name+".png")
 		var b bytes.Buffer
 		if err := png.Encode(&b, mask); err != nil {
@@ -125,6 +137,40 @@ func run() error {
 	return os.WriteFile(site.MaskSums, []byte(sums.String()), 0o644)
 }
 
+// passCSS splits a sheet into the drawing and its labels. 7 px glyphs are
+// unreadable at one mask pixel per CSS pixel ("redis" came out "eedis"), so a
+// labelled mask is twice the size: the dithered drawing scaled up 2x, and its
+// labels drawn at 2x, antialiased and thresholded. On a 2x screen they are
+// crisp; the dither keeps its chunky one-CSS-pixel grain.
+var passCSS = map[string]string{
+	"art":    `<style>.dg .t { display: none !important; }</style>`,
+	"labels": `<style>html, body { -webkit-font-smoothing: antialiased !important; } .dg :not(.t, g, text, tspan) { fill: transparent !important; stroke: transparent !important; }</style>`,
+}
+
+// double scales a mask up 2x, nearest neighbour.
+func double(m *image.Paletted) *image.Paletted {
+	b := m.Bounds()
+	d := image.NewPaletted(image.Rect(0, 0, 2*b.Dx(), 2*b.Dy()), m.Palette)
+	for y := range d.Rect.Dy() {
+		for x := range d.Rect.Dx() {
+			d.Pix[d.PixOffset(x, y)] = m.Pix[m.PixOffset(b.Min.X+x/2, b.Min.Y+y/2)]
+		}
+	}
+	return d
+}
+
+// addLabels sets every pixel the label pass drew darker than mid-grey.
+func addLabels(m *image.Paletted, labels image.Image) {
+	b := m.Bounds()
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			if color.GrayModel.Convert(labels.At(x, y)).(color.Gray).Y < 128 {
+				m.Pix[m.PixOffset(x, y)] = 1
+			}
+		}
+	}
+}
+
 func sizeOf(name string) site.MaskSize {
 	for _, m := range site.MaskSizes {
 		if strings.HasSuffix(name, "-"+m.Name) {
@@ -134,11 +180,11 @@ func sizeOf(name string) site.MaskSize {
 	panic("no mask size for " + name)
 }
 
-func screenshot(ctx context.Context, url string, w, h int64) ([]byte, error) {
+func screenshot(ctx context.Context, url string, w, h int64, scale float64) ([]byte, error) {
 	tab, cancel := chromedp.NewContext(ctx)
 	defer cancel()
 	err := chromedp.Do(tab,
-		chromedp.EmulateViewport(w, h),
+		chromedp.EmulateViewport(w, h, chromedp.EmulateScale(scale)),
 		chromedp.Func(func(ctx context.Context, tg *chromedp.Target) error {
 			if _, err := cdp.Call(ctx, tg, emulation.SetEmulatedMedia, emulation.SetEmulatedMediaParams{Features: []*emulation.MediaFeature{{Name: "prefers-color-scheme", Value: "light"}}}); err != nil {
 				return err

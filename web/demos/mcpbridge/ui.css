@@ -106,5 +106,8 @@
 
 .mb-status { margin: 12px 0 0; font-size: 0.875rem; color: var(--text-2); }
 .mb-cells { margin-top: 8px; }
+.mb-cells li { display: flex; flex-direction: column; gap: 2px; min-width: 5.5rem; }
 .mb-ck { color: var(--text-3); }
+.mb-cv { font-size: 0.875rem; }
+.mb-out { margin-top: 12px; }
 .mb-fine { margin: 8px 0 0; }

@@ -12,7 +12,8 @@ import (
 const MaskSums = "web/assets/dg/.sums"
 
 // MaskSize is one tile of a project's diagram mask, in CSS pixels: one mask
-// pixel per CSS pixel, so it is only ever drawn at whole multiples.
+// pixel per CSS pixel (two with Labels, see cmd/dither), so it is only ever
+// drawn at whole multiples.
 type MaskSize struct {
 	Name   string
 	W, H   int

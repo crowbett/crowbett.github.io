@@ -114,7 +114,8 @@ export async function mount(root, demo) {
     cell[k] = { li, v };
     cells.append(li);
   }
-  root.replaceChildren(form, canvas, legend, youLine, cells, status);
+  const receipt = el("p", "demo-out lb-out");
+  root.replaceChildren(form, canvas, legend, youLine, cells, status, receipt);
 
   // State.
   let rule = null;
@@ -131,6 +132,8 @@ export async function mount(root, demo) {
   let last = 0;
   let busy = 0;
   let chain = Promise.resolve();
+  let simMs = 0;
+  let callMs = 0;
   let raf = 0;
   let hover = null;
   let colors = null;
@@ -139,7 +142,15 @@ export async function mount(root, demo) {
   const exec = (method, params) => {
     busy++;
     const g = gen;
-    const run = chain.then(() => demo.call(method, params)).finally(() => { busy--; });
+    const run = chain.then(async () => {
+      const t0 = performance.now();
+      try {
+        return await demo.call(method, params);
+      } finally {
+        callMs += performance.now() - t0;
+        if (method === "advance") simMs += params.ms;
+      }
+    }).finally(() => { busy--; });
     chain = run.catch(() => {});
     return run.then((r) => ({ r, g }));
   };
@@ -513,6 +524,7 @@ export async function mount(root, demo) {
     lastDom = now;
     const s = snap;
     if (!s) return;
+    receipt.textContent = `${secs(simMs)} of matchmaking simulated by the engine in ${fmt(Math.round(callMs))} ms of calls, in your browser.`;
     const st = s.stats;
     const set = (k, v) => { cell[k].v.textContent = v; };
     set("t", secs(s.t_ms));
@@ -557,6 +569,8 @@ export async function mount(root, demo) {
   }
   async function warm() {
     gen++;
+    simMs = 0;
+    callMs = 0;
     for (const k in cell) cell[k].v.textContent = "–";
     cards = []; flights = []; pos = new Map(); born = new Map(); you = null; pending = 0;
     youLine.textContent = "";

@@ -20,7 +20,7 @@ function toast(msg) {
   setTimeout(() => t.remove(), 2400);
 }
 
-// What this page can do, ahead of the projects when nothing is typed.
+// What this page can do (ahead of the projects) and how to reach me (after).
 function actions() {
   const out = [];
   const start = document.querySelector("[data-demo-start]");
@@ -37,8 +37,8 @@ function actions() {
   const mail = document.querySelector('.top a[href^="mailto:"]');
   if (mail) {
     const addr = mail.href.slice(7);
-    out.push({ tag: "copy", title: "Copy email address", run: () => navigator.clipboard.writeText(addr).then(() => toast(`Copied ${addr}`), () => toast(addr)) });
-    out.push({ tag: "mail", title: "Write an email", href: mail.href });
+    out.push({ tag: "copy", contact: true, title: "Copy email address", run: () => navigator.clipboard.writeText(addr).then(() => toast(`Copied ${addr}`), () => toast(addr)) });
+    out.push({ tag: "mail", contact: true, title: "Write an email", href: mail.href });
   }
   return out;
 }
@@ -97,8 +97,10 @@ function render() {
   const hits = projects.map((p) => [score(p, words), p]).filter(([s]) => s >= 0);
   if (words.length) hits.sort((a, b) => b[0] - a[0] || a[1].n - b[1].n);
   const nodes = [];
-  if (acts.length) nodes.push(el("li", "pal-h", "This page"), ...acts.map((a) => option(a, words)));
+  const page = acts.filter((a) => !a.contact), contact = acts.filter((a) => a.contact);
+  if (page.length) nodes.push(el("li", "pal-h", "This page"), ...page.map((a) => option(a, words)));
   if (hits.length) nodes.push(el("li", "pal-h", `Projects · ${hits.length}`), ...hits.map(([, p]) => option(p, words)));
+  if (contact.length) nodes.push(el("li", "pal-h", "Contact"), ...contact.map((a) => option(a, words)));
   if (!nodes.length) nodes.push(el("li", "pal-h", "Nothing matches. Try a language or a topic."));
   for (const n of nodes) if (n.className === "pal-h") n.setAttribute("role", "presentation");
   list.replaceChildren(...nodes);
@@ -129,15 +131,18 @@ function build() {
   dlg = el("dialog", "pal");
   dlg.setAttribute("aria-label", "Go to a project or action");
   dlg.setAttribute("closedby", "any");
+  const plate = el("p", "pal-p");
+  plate.setAttribute("aria-hidden", "true");
+  plate.append(el("span", null, "Go to"), el("kbd", null, "esc"));
   const bar = el("div", "pal-in");
   input = el("input");
-  Object.assign(input, { type: "text", placeholder: "Jump to a project, language or topic", autocomplete: "off", spellcheck: false, enterKeyHint: "go" });
+  Object.assign(input, { type: "text", placeholder: "Project, language or topic", autocomplete: "off", spellcheck: false, enterKeyHint: "go" });
   input.setAttribute("role", "combobox");
   input.setAttribute("aria-label", "Search projects and actions");
   input.setAttribute("aria-expanded", "true");
   input.setAttribute("aria-controls", "pal-list");
   input.setAttribute("aria-autocomplete", "list");
-  bar.append(input, el("kbd", null, "esc"));
+  bar.append(input);
   list = el("ul");
   list.id = "pal-list";
   list.setAttribute("role", "listbox");
@@ -145,7 +150,7 @@ function build() {
   count = el("p", "vh");
   count.setAttribute("role", "status");
   const foot = el("p", "pal-foot", "↑↓ move · ↵ open · esc close · j k walk the index · [ ] step projects");
-  dlg.append(bar, list, foot, count);
+  dlg.append(plate, bar, list, foot, count);
   document.body.append(dlg);
 
   input.addEventListener("input", render);

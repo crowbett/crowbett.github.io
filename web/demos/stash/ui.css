@@ -2,19 +2,20 @@
   --sh-new: #bd330b; --sh-new-tint: #f7dcd1; --sh-band: #e2e6eb; --sh-last: #fbebe4;
   --sh-reused: #9aa1ab; --sh-dup: #5a606a; --sh-ground: var(--sunken);
   --sh-tag: var(--sh-new); --sh-hdr: var(--sh-reused);
-  display: grid; gap: 12px; min-width: 0;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0;
 }
 @media (prefers-color-scheme: dark) {
   .sh-panel { --sh-new: #fe7249; --sh-new-tint: #43200f; --sh-band: #1d2230; --sh-last: #2a1712; --sh-reused: #545c69; --sh-dup: #8f96a3; --sh-hdr: #4b5361; }
 }
 .sh-panel + .sh-panel { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line-strong); }
+.sh-out { margin-top: 24px; }
 .sh-h { margin: 0; font: 600 0.8125rem/1.4 var(--mono); color: var(--text); }
 .sh-note { margin: 0; max-width: 46rem; font-size: 0.875rem; color: var(--text-2); }
 .sh-controls { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; }
 .sh-controls :is(button, select, .sh-pick, input:not(.vh)) { height: 2.25rem; box-sizing: border-box; }
 .sh-grow { flex: 1 1 14rem; }
-.sh-grow input { width: 100%; box-sizing: border-box; font-family: var(--mono); }
-.sh-num input { width: 7rem; font-family: var(--mono); }
+.sh-grow input { width: 100%; box-sizing: border-box; }
+.sh-num input { width: 7rem; }
 .sh-pick { display: inline-flex; align-items: center; padding: 0 12px; border: 1px solid var(--control-line); background: var(--bg); color: var(--text); cursor: pointer; }
 .sh-pick, .sh-fname { font: 400 0.6875rem/1.4 var(--mono); }
 .sh-pick:hover { background: var(--accent-tint); color: var(--accent); }

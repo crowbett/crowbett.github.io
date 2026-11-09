@@ -2,14 +2,17 @@
 
 package e2e
 
-// finderCheck drives the home search and group chips: matches keep their
-// fixed numbers, the URL carries the filter, "/" focuses the box and the
-// no-match button resets everything.
+// finderCheck checks the desktop table gives its text columns room (a
+// full-width row once sized the name column), then drives the home search and
+// group chips: matches keep their fixed numbers, the URL carries the filter,
+// "/" focuses the box and the no-match button resets everything.
 const finderCheck = `(async () => {
 	const q = document.querySelector(".finder input"), count = document.querySelector(".count");
 	const shown = () => [...document.querySelectorAll(".row:not([hidden])")].map((r) => r.querySelector(".row-name").textContent + r.querySelector(".row-n").textContent).join();
 	const groups = () => [...document.querySelectorAll(".group:not([hidden])")].map((g) => g.dataset.g).join();
 	const type = (v) => { q.value = v; q.dispatchEvent(new Event("input")); };
+	const index = document.querySelector(".index").getBoundingClientRect().width;
+	if (innerWidth >= 1024 && document.querySelector(".row-tag").getBoundingClientRect().width < index / 5) throw new Error("the tagline column is under a fifth of the table");
 	type("rust");
 	let ok = await until(() => shown() === "keel01,stash03,codegraph10,strata13,netcode14" && groups() === "storage,tools,graphics" && count.textContent === "5 of 15 shown" && location.search === "?q=rust");
 	document.querySelector('.filter [data-g="tools"]').click();
@@ -31,13 +34,15 @@ const finderCheck = `(async () => {
 var demoChecks = map[string][]string{
 	"smoke": {`document.querySelector(".demo-out").textContent.includes("answered: hello from the page")`},
 	"codegraph": {
-		`document.querySelector(".cg-summary").textContent === "main (src/main.rs:11): 0 callers; 11 callees, 6 resolved, 5 unresolved."`,
-		`[...document.querySelectorAll("[aria-labelledby=cg-callees] .cg-edge")].map((li) => li.firstChild.textContent + ":" + li.querySelector(".cg-conf").textContent).filter((t) => /^(parse::parse_line|e\.is_fatal):/.test(t)).join() === "parse::parse_line:likely,e.is_fatal:unresolved"`,
+		`document.querySelector(".cg-summary").textContent === "run (src/main.rs:32): 1 caller; 7 callees, 6 resolved, 1 unresolved."`,
+		`[...document.querySelectorAll("[aria-labelledby=cg-callees] .cg-edge")].map((li) => li.firstChild.textContent + ":" + li.querySelector(".cg-conf").textContent).filter((t) => /^(store::Store::set|store\.len\(\)\.to_string):/.test(t)).join() === "store::Store::set:exact,store.len().to_string:unresolved"`,
 		`document.querySelector(".cg-foot").textContent.includes("99 edges (imports excluded), 50 resolved to a definition: 44 exact, 6 likely, 0 name_only")`,
 		`(async () => {
 			const callers = () => [...document.querySelectorAll("[aria-labelledby=cg-callers] .cg-go")].map((b) => b.textContent).join();
+			[...document.querySelectorAll("[aria-labelledby=cg-callers] .cg-go")].find((b) => b.textContent === "main").click();
+			let ok = await until(() => document.querySelector(".cg-summary").textContent.startsWith("main (src/main.rs:11)"));
 			[...document.querySelectorAll(".cg-go")].find((b) => b.textContent === "parse::parse_line").click();
-			let ok = await until(() => document.querySelector(".cg-summary").textContent.startsWith("parse::parse_line (src/parse.rs:19)") && callers() === "main");
+			ok = ok && await until(() => document.querySelector(".cg-summary").textContent.startsWith("parse::parse_line (src/parse.rs:19)") && callers() === "main");
 			const s = document.querySelector("select[name=symbol]");
 			s.value = "src/store.rs:32"; s.dispatchEvent(new Event("change"));
 			ok = ok && await until(() => callers() === "store::Store::set,store::Store::delete" && document.querySelectorAll(".cg-def").length === 3);
@@ -107,7 +112,7 @@ var demoChecks = map[string][]string{
 	"btrv": {
 		`[...document.querySelectorAll(".bt-key")].map((k) => k.dataset.kind + ":" + k.querySelector(".bt-count").textContent).filter((t) => /^(fcr|pat|free|unreferenced):/.test(t)).join() === "fcr:2,pat:2,free:5,unreferenced:4"`,
 		`(async () => {
-			const fact = (k) => [...document.querySelectorAll(".bt-facts > div")].find((d) => d.querySelector("dt").textContent === k)?.querySelector("dd").textContent;
+			const fact = (k) => [...document.querySelectorAll(".bt-facts > li")].find((d) => d.querySelector(".bt-k").textContent === k)?.querySelector(".bt-v").textContent;
 			const cells = () => [...(document.querySelector(".bt-rows tbody tr:not(.bt-spacer)")?.querySelectorAll("td") || [])].map((td) => td.textContent).slice(0, 3).join();
 			let ok = await until(() => fact("rows read") === "2,919" && fact("column errors") === "0" && cells() === "1,1,Ann");
 			const seg = (t) => [...document.querySelectorAll(".bt-seg button")].find((b) => b.textContent === t);
@@ -274,7 +279,7 @@ var demoChecks = map[string][]string{
 	},
 	"keel": {
 		`[...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join() === "24f2fb94354d9d25,24f2fb94354d9d25" && document.querySelector(".kl-match") !== null`,
-		`[...document.querySelectorAll(".kl-totals dd")].map((d) => d.textContent).join() === "535,0,6,14,linearizable"`,
+		`[...document.querySelectorAll(".kl-cells .kl-v")].map((d) => d.textContent).join() === "535,0,6,14,linearizable"`,
 		`document.querySelectorAll(".kl-events li").length === 13 && document.querySelectorAll(".kl-timeline rect.kl-bar").length > 0`,
 		`/^Seed 7: 118,095 scheduler steps and 148,245 traced events over 35\.00 s of simulated time, run in [\d,]+ ms in your browser\.$/.test(document.querySelector(".kl-status").textContent)`,
 		`(async () => {

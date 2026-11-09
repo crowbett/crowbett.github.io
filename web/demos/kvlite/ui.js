@@ -30,7 +30,7 @@ function field(label, input, cls) {
 
 function input(name, value, max) {
   const i = el("input");
-  Object.assign(i, { type: "text", name, value, maxLength: max, spellcheck: false, autocomplete: "off", className: "kv-mono" });
+  Object.assign(i, { type: "text", name, value, maxLength: max, spellcheck: false, autocomplete: "off" });
   return i;
 }
 
@@ -48,20 +48,20 @@ function stats(s) {
   const live = total ? (100 * s.liveBytes) / total : 0;
   bar.append(svg("rect", { class: "kv-live", x: 0, y: 0, width: live, height: 8 }),
     svg("rect", { class: "kv-dead", x: live, y: 0, width: 100 - live, height: 8 }));
-  const dl = el("dl", "kv-facts");
+  const cells = el("ul", "cells kv-cells");
   for (const [k, v] of [
-    ["Keys", String(s.keys)],
-    ["Segments", String(s.segments)],
-    ["Live", bytes(s.liveBytes)],
-    ["Dead", `${bytes(s.deadBytes)} (${Math.round(100 * s.deadRatio)}%)`],
-    ["Compactions", String(s.compactions)],
-    ["Reclaimed", bytes(s.reclaimedBytes)],
+    ["keys", String(s.keys)],
+    ["segments", String(s.segments)],
+    ["live", bytes(s.liveBytes)],
+    ["dead", `${bytes(s.deadBytes)} (${Math.round(100 * s.deadRatio)}%)`],
+    ["compactions", String(s.compactions)],
+    ["reclaimed", bytes(s.reclaimedBytes)],
   ]) {
-    const d = el("div");
-    d.append(el("dt", null, k), el("dd", "kv-mono", v));
-    dl.append(d);
+    const li = el("li");
+    li.append(el("span", "kv-k", k), el("span", "kv-v", v));
+    cells.append(li);
   }
-  wrap.append(bar, dl);
+  wrap.append(bar, cells);
   return wrap;
 }
 
@@ -84,7 +84,7 @@ function segmentTable(seg) {
   scroll.setAttribute("aria-label", `Records in ${name}`);
   const t = el("table", "kv-table");
   const tr = el("tr");
-  for (const c of ["Offset", "Bytes", "Record", "Key", "Value"]) tr.append(el("th", null, c));
+  for (const c of ["offset", "bytes", "record", "key", "value"]) tr.append(el("th", null, c));
   const thead = el("thead");
   thead.append(tr);
   const tbody = el("tbody");
@@ -168,10 +168,10 @@ export async function mount(root, demo) {
   const filesBox = el("div");
   const keysBox = el("div");
   const logBox = el("pre", "kv-log");
-  side.append(el("h4", "kv-sub", "Files"), filesBox, el("h4", "kv-sub", "Keys (snapshot)"), keysBox, el("h4", "kv-sub", "Engine log"), logBox);
+  side.append(el("h4", "kv-sub", "files"), filesBox, el("h4", "kv-sub", "keys (snapshot)"), keysBox, el("h4", "kv-sub", "engine log"), logBox);
   const body = el("div", "kv-body");
   body.append(segs, side);
-  root.replaceChildren(form, maint, note, status, statsBox, body);
+  root.replaceChildren(form, maint, note, statsBox, body, status);
 
   let last = null;
   function render(v) {

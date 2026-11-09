@@ -126,18 +126,18 @@ function schedule(events) {
 }
 
 function totals(r) {
-  const dl = el("dl", "kl-totals");
+  const ul = el("ul", "cells kl-cells");
   const add = (k, v, cls) => {
-    const d = el("div", cls);
-    d.append(el("dt", null, k), el("dd", null, v));
-    dl.append(d);
+    const li = el("li", cls);
+    li.append(el("span", "kl-k", k), el("span", "kl-v", v));
+    ul.append(li);
   };
   add("ok ops", fmt(r.ok));
   add("failed ops", fmt(r.fail));
   add("indeterminate", fmt(r.info));
   add("membership changes", fmt(r.conf_changes));
   add("history", r.linearizable ? "linearizable" : "not linearizable", r.linearizable ? "kl-pass" : "kl-fail");
-  return dl;
+  return ul;
 }
 
 export async function mount(root, demo) {
@@ -164,12 +164,12 @@ export async function mount(root, demo) {
   again.disabled = true;
   form.append(field, run, again);
 
-  const status = el("p", "kl-status");
+  const status = el("p", "demo-out kl-status");
   status.setAttribute("aria-live", "polite");
   const replay = el("div", "kl-replay");
   replay.setAttribute("aria-live", "polite");
   const results = el("div", "kl-results");
-  root.replaceChildren(form, status, replay, results);
+  root.replaceChildren(form, replay, results, status);
 
   let first = null;
   let replays = 0;
@@ -195,7 +195,7 @@ export async function mount(root, demo) {
     replays = 0;
     status.textContent = `Seed ${fmt(r.seed)}: ${fmt(r.steps)} scheduler steps and ${fmt(r.trace_len)} traced events over ` +
       `${secs(r.sim_ns)} of simulated time, run in ${fmt(Math.round(ms))} ms in your browser.`;
-    replay.replaceChildren(digestRow("Run", r, ms));
+    replay.replaceChildren(digestRow("run", r, ms));
     results.replaceChildren(timeline(r), totals(r), schedule(r.events));
   }
 
@@ -204,8 +204,8 @@ export async function mount(root, demo) {
     const [r, ms] = await call(base.r.seed);
     if (first !== base) return;
     replays++;
-    replay.replaceChildren(digestRow("Run", base.r, base.ms),
-      digestRow(replays === 1 ? "Run again" : `Run again ×${replays}`, r, ms, r.digest === base.r.digest));
+    replay.replaceChildren(digestRow("run", base.r, base.ms),
+      digestRow(replays === 1 ? "run again" : `run again ×${replays}`, r, ms, r.digest === base.r.digest));
   }
 
   // One run at a time; the first (from mount) rethrows so the frame shows its error.
