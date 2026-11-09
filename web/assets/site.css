@@ -162,6 +162,7 @@ main:has(> :is(.stage, .project)) { width: auto; }
 .top nav :is(a, button):hover { background: color-mix(in oklab, var(--text) 8%, transparent); color: var(--text); }
 .find kbd { display: inline-block; width: 7ch; height: calc(1.6em + 2px); line-height: 1.6; border: 1px solid currentColor; border-radius: 6px; font-size: 0.6875rem; text-align: center; opacity: 0.7; }
 @media (hover: none) { .find kbd { display: none; } }
+@media (max-width: 23rem) { .top nav { gap: 0; } .top nav :is(a, button) { padding-inline: var(--sp-2); } }
 
 /* Keys: flat and square; a press sinks 2px and springs back */
 .key, .demo button, .demo-mount button {

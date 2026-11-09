@@ -166,6 +166,10 @@ func TestSite(t *testing.T) {
 	for _, p := range projects {
 		pages = append(pages, "/projects/"+p.Slug+"/")
 	}
+	// E2E_PAGE=/projects/<slug>/ runs one page, for iterating on one demo.
+	if only := os.Getenv("E2E_PAGE"); only != "" {
+		pages = slices.DeleteFunc(pages, func(p string) bool { return p != only })
+	}
 
 	// One tab per page, viewport and scheme, all in parallel. The slowest tabs
 	// start first so they do not run on alone at the end: desktop and phone
