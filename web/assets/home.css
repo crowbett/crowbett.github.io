@@ -188,3 +188,11 @@ html:active-view-transition-type(filter)::view-transition-old(root), html:active
   .card { transition: opacity var(--d-base) var(--ease-in); }
   .all-grid:has(.card[data-feel]) .card:not([data-feel]) { opacity: 0.5; }
 }
+/* Scroll depth: a panel's layers arrive at their own speeds as it slides in (the glow from far behind, the name sliding in ahead of the text) and settle flat once it pins, so touch screens get the depth a mouse gets from tilt. Timed on the panel, not each layer; transform composes with the tilt's translate. */
+@supports (animation-timeline: view()) { @media (prefers-reduced-motion: no-preference) {
+  .js .it-in { view-timeline: --panel block; }
+  .js .it-screen .glow { animation: it-far linear both; animation-timeline: --panel; animation-range: entry 0% entry 100%; }
+  .js .it h4 { animation: it-lead linear both; animation-timeline: --panel; animation-range: entry 0% entry 85%; }
+} }
+@keyframes it-far { from { transform: translateY(30vh) scale(0.6); opacity: 0; } }
+@keyframes it-lead { from { transform: translateX(5vw); } }

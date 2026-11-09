@@ -31,6 +31,19 @@ const workCheck = `(async () => {
 	return await at("netcode") && await at("keel");
 })()`
 
+// depthCheck scrolls a panel halfway in, where its glow still trails far
+// behind and its name leads the text, then to where it pins, where both
+// settle flat (the scroll-depth layers in home.css).
+const depthCheck = `(async () => {
+	const it = document.querySelector("#p-stash"), m = (s) => new DOMMatrix(getComputedStyle(it.querySelector(s)).transform);
+	scrollTo(0, 0);
+	const top = it.getBoundingClientRect().top + scrollY;
+	scrollTo(0, top - innerHeight * 0.5);
+	if (!await until(() => m(".it-screen .glow").f > 1 && m(".it-screen .glow").a < 1 && m("h4").e > 1)) return false;
+	scrollTo(0, top);
+	return until(() => m(".it-screen .glow").isIdentity && m("h4").isIdentity);
+})()`
+
 // indexCheck uses the dock and the index at the end of the reel: "All"
 // reaches the index and hides the dock, an area and a language narrow the
 // cards and say how many are left, and a tick jumps to its panel pinned under
