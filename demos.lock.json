@@ -88,6 +88,76 @@
       "sha256": "558823a3efcb847b76ced22aa6982fcca8509fb61f4e42022724cf14483b0546",
       "bytes": 12408806,
       "gzip_bytes": 2077179
+    },
+    {
+      "slug": "lobby",
+      "repo": "lobby",
+      "ref": "3ed17da7f366cba223045bb9f4d95fdca2db2335",
+      "pkg": "./cmd/webdemo",
+      "sha256": "9d7466e64399e94ed17afa6270077da049c0820b7134e7512f79da5d838c521d",
+      "bytes": 5026616,
+      "gzip_bytes": 1399796
+    },
+    {
+      "slug": "raytracer",
+      "kind": "cpp",
+      "repo": "raytracer",
+      "ref": "e79a1884fad3901e10fe6d39eca583ff775ba5c5",
+      "pkg": "./webdemo",
+      "clang": "clang version 23.1.0-wasi-sdk (https://github.com/llvm/llvm-project 895aa2c896ada719451be2e3673c83da8ddf1141)",
+      "wasi_sdk": "wasi-sdk 34.0, wasi-libc 2e6fb9d8ee0c",
+      "sha256": "abdd6768535684e33bfb8f1c7440a0c97d1eb018bc6f06f9d4c47cc51b792c7a",
+      "bytes": 280179,
+      "gzip_bytes": 112204
+    },
+    {
+      "slug": "grepall",
+      "repo": "grepall",
+      "ref": "e2806b0b283311c3d5cd2c7008e1a280231636f3",
+      "pkg": "./cmd/webdemo",
+      "sha256": "fea45d9dba53fd93a4ce18a14fc820f2888d1bbb7993a51a148e99dba56d2657",
+      "bytes": 8199239,
+      "gzip_bytes": 2244121
+    },
+    {
+      "slug": "mcpbridge",
+      "repo": "mcpbridge",
+      "ref": "5cc4eb5f0b825a674f10a409bb2337281bb49ce1",
+      "pkg": "./cmd/webdemo",
+      "sha256": "dc47dc17bac0515b356ec8a53ac6ebfd575838b28e4803237720ade2cc8eea23",
+      "bytes": 5583959,
+      "gzip_bytes": 1504610
+    },
+    {
+      "slug": "netcode",
+      "kind": "rust",
+      "repo": "netcode",
+      "ref": "8f311f54d715e41558031c7835506717f1707669",
+      "pkg": "./crates/webdemo",
+      "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+      "sha256": "3d475b6a5fc33ad89af48590441de1b3fd81244c67f514544b66b8769203e025",
+      "bytes": 216604,
+      "gzip_bytes": 91677
+    },
+    {
+      "slug": "stash",
+      "kind": "rust",
+      "repo": "stash",
+      "ref": "35f7189f4205be711b72f758fc06bef7ca7ed316",
+      "pkg": "./crates/webdemo",
+      "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+      "sha256": "6693d11c40cd23ab6a7c6b3da8e2bfe36cee4f8c527b8c2c7dcd253f692b0398",
+      "bytes": 919943,
+      "gzip_bytes": 255315
+    },
+    {
+      "slug": "btrv",
+      "repo": "btrv",
+      "ref": "0519b757dd0898b5d92103a8f03fde0976693d47",
+      "pkg": "./cmd/webdemo",
+      "sha256": "62f84a7623760a7b6b3e9795b8f9e384137bb5a35537607ec0483e7038cc1483",
+      "bytes": 5320344,
+      "gzip_bytes": 1471365
     }
   ]
 }

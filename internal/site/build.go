@@ -27,7 +27,7 @@ type Owner struct {
 // DefaultOwner is the published identity.
 var DefaultOwner = Owner{
 	Name:  "Corbett",
-	Role:  "Software engineer (Go, Rust)",
+	Role:  "Software engineer (Go, Rust, C++)",
 	Email: "corbettjouett00@gmail.com",
 	URL:   "https://crowbett.github.io",
 }
@@ -48,6 +48,7 @@ type pageData struct {
 	Project   *Project
 	Year      int
 	LiveCount int
+	Langs     []string
 	Canonical string
 	Hero      *heroTrace
 }
@@ -92,6 +93,7 @@ func prepare(cfg Config) (*prepared, error) {
 		"demoBytes": func(slug string) int { return sizes[slug].Raw },
 		"bind":      bindNumbers,
 		"num":       thousands,
+		"langs":     func(l string) string { return strings.ToLower(strings.ReplaceAll(l, ",", "")) },
 	}).ParseFS(cfg.Src, "templates/*.html")
 	if err != nil {
 		return nil, fmt.Errorf("templates: %w", err)
@@ -111,6 +113,11 @@ func prepare(cfg Config) (*prepared, error) {
 	for _, p := range projects {
 		if p.Live() {
 			base.LiveCount++
+		}
+		for _, l := range strings.Split(p.Lang, ", ") {
+			if !slices.Contains(base.Langs, l) {
+				base.Langs = append(base.Langs, l)
+			}
 		}
 	}
 	return &prepared{tmpl: tmpl, base: base, projects: projects}, nil

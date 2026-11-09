@@ -57,10 +57,65 @@
 <circle class="n" cx="58" cy="26" r="8"/><circle class="n" cx="58" cy="60" r="8"/><circle class="n" cx="58" cy="94" r="8"/>
 <circle class="af mp" cx="120" cy="60" r="12"/>
 <circle class="n s" cx="190" cy="30" r="8"/><circle class="n s" cx="190" cy="90" r="8"/>
+{{else if eq . "lobby"}}
+<path class="s" d="M20 100h200M20 100V24"/>
+<path class="n" d="M74 100 30 40h100L86 100z"/><path class="n" d="M154 100 110 40h100l-44 60z"/>
+<circle class="ff" cx="80" cy="40" r="3"/><circle class="ff" cx="160" cy="40" r="3"/>
+<path class="af mp" d="M110 40h20l-10 13.6z"/>
+<text class="t" x="120" y="27">match</text><text class="t" x="120" y="111">skill</text><text class="t" x="32" y="17">wait</text>
+{{else if eq . "grepall"}}
+<path class="s" d="M56 33h154M56 57h154M56 81h154"/>
+<rect x="14" y="26" width="32" height="14" rx="2"/><rect x="14" y="50" width="32" height="14" rx="2"/><rect x="14" y="74" width="32" height="14" rx="2"/>
+<path d="M46 33h10M46 57h10M46 81h10"/>
+<rect class="ff" x="58" y="29" width="8" height="8"/><rect class="ff" x="78" y="29" width="8" height="8"/><rect class="ff" x="118" y="29" width="8" height="8"/><rect class="ff" x="158" y="29" width="8" height="8"/><rect class="ff" x="178" y="29" width="8" height="8"/><rect class="ff" x="78" y="53" width="8" height="8"/><rect class="ff" x="118" y="53" width="8" height="8"/><rect class="ff" x="138" y="53" width="8" height="8"/><rect class="ff" x="158" y="53" width="8" height="8"/><rect class="ff" x="198" y="53" width="8" height="8"/><rect class="ff" x="58" y="77" width="8" height="8"/><rect class="ff" x="118" y="77" width="8" height="8"/><rect class="ff" x="158" y="77" width="8" height="8"/><rect class="ff" x="178" y="77" width="8" height="8"/>
+<g class="mn"><rect class="a" x="152" y="22" width="20" height="70" rx="2"/><circle class="af" cx="162" cy="101" r="3.5"/></g>
+<text class="t" x="30" y="35.5">fun</text><text class="t" x="30" y="59.5">unc</text><text class="t" x="30" y="83.5">new</text>
+<text class="t" x="30" y="16">trigrams</text><text class="t" x="110" y="16">posting lists</text><text class="t" x="196" y="104">candidate</text>
+{{else if eq . "stash"}}
+<rect class="n" x="20" y="26" width="36" height="18"/><rect class="n" x="56" y="26" width="28" height="18"/><rect class="n" x="84" y="26" width="40" height="18"/><rect class="n" x="124" y="26" width="36" height="18"/><rect class="n" x="160" y="26" width="48" height="18"/>
+<path class="s d" d="M38 44v32M70 44v32M142 44l8 32M184 44l8 32"/>
+<rect class="n" x="20" y="76" width="36" height="18"/><rect class="n" x="56" y="76" width="28" height="18"/><rect class="af mp" x="84" y="76" width="48" height="18"/><rect class="n" x="132" y="76" width="36" height="18"/><rect class="n" x="168" y="76" width="48" height="18"/>
+<text class="t" x="114" y="18">backup 1</text><text class="t" x="118" y="108">backup 2 stores one chunk</text>
 {{else if eq . "strata"}}
 <path class="s" d="M36 104h168"/>
 <rect class="n" x="60" y="92" width="120" height="12" rx="1"/><rect class="n" x="70" y="80" width="100" height="12" rx="1"/><rect class="n" x="80" y="68" width="80" height="12" rx="1"/>
 <path class="a" d="M90 63h40"/><path class="s d" d="M130 63h20"/>
 <g class="mn"><path class="af" d="M124 46h12l-6 12z"/><path class="a" d="M130 30v16"/></g>
+{{else if eq . "raytracer"}}
+<path class="s" d="M12 104h216"/>
+<circle class="n" cx="196" cy="86" r="18"/>
+<rect class="n" x="14" y="50" width="18" height="14" rx="2"/><path class="n" d="M32 54l7-4v14l-7-4z"/>
+<rect class="n" x="140" y="14" width="50" height="5" rx="1"/><path class="s" d="M150 22v5M165 22v5M180 22v5"/>
+<path d="M39 57 120 104"/>
+<path class="s d" d="M120 104 60 30"/>
+<path class="a d mm" d="M120 104 165 19"/>
+<circle class="af mp" cx="120" cy="104" r="3.5"/>
+<text class="t" x="165" y="11">light</text><text class="t" x="178" y="56">shadow ray</text><text class="t" x="94" y="42">bounce</text><text class="t" x="24" y="76">camera</text>
+{{else if eq . "mcpbridge"}}
+<rect class="n" x="14" y="34" width="40" height="36" rx="3"/><rect class="n" x="186" y="34" width="40" height="36" rx="3"/>
+<rect class="a n" x="100" y="22" width="40" height="60" rx="3"/>
+<path d="M54 46h46M140 46h46M95 42l5 4-5 4M181 42l5 4-5 4"/>
+<path class="s d" d="M186 60h-46M100 60H54"/><path class="s" d="M145 56l-5 4 5 4M59 56l-5 4 5 4"/>
+<g class="mk"><rect class="n" x="64" y="41" width="16" height="10"/></g>
+<g class="mk"><rect class="n" x="150" y="41" width="16" height="10"/><rect class="af" x="166" y="41" width="7" height="10"/></g>
+<g class="ms"><rect class="n" x="152" y="26" width="16" height="10"/><rect class="af" x="168" y="26" width="7" height="10"/></g>
+<text class="t" x="34" y="83">2024-11</text><text class="t" x="206" y="83">2026-07-28</text><text class="t" x="120" y="94">bridge</text><text class="t" x="170" y="36">_meta</text>
+{{else if eq . "netcode"}}
+<rect class="n" x="92" y="12" width="56" height="20" rx="3"/><text class="t" x="120" y="24.5">server</text>
+<path d="M102 32 76 57M138 32 164 57"/>
+<rect class="n" x="20" y="58" width="72" height="44" rx="2"/><rect class="n" x="148" y="58" width="72" height="44" rx="2"/>
+<circle class="s d" cx="42" cy="82" r="6"/><path class="a" d="M48 82h10"/><circle class="af mp" cx="64" cy="82" r="6"/>
+<circle class="s d" cx="178" cy="76" r="5"/><circle class="ff" cx="172" cy="78" r="4"/><circle class="ff" cx="200" cy="88" r="4"/>
+<circle class="af mw" cx="142" cy="36" r="2.5"/><g transform="matrix(-1 0 0 1 240 0)"><circle class="af mw" cx="142" cy="36" r="2.5"/></g>
+<text class="t" x="56" y="111">you</text><text class="t" x="184" y="111">bot</text>
+{{else if eq . "btrv"}}
+<path class="n" d="M16 30h11v11h-11zM30 30h11v11h-11zM44 30h11v11h-11zM58 30h11v11h-11zM72 30h11v11h-11zM86 30h11v11h-11zM100 30h11v11h-11zM114 30h11v11h-11zM16 44h11v11h-11zM30 44h11v11h-11zM44 44h11v11h-11zM58 44h11v11h-11zM72 44h11v11h-11zM86 44h11v11h-11zM100 44h11v11h-11zM16 58h11v11h-11zM30 58h11v11h-11zM44 58h11v11h-11zM58 58h11v11h-11zM72 58h11v11h-11zM86 58h11v11h-11zM114 58h11v11h-11zM16 72h11v11h-11zM30 72h11v11h-11zM72 72h11v11h-11zM86 72h11v11h-11zM100 72h11v11h-11zM114 72h11v11h-11z"/>
+<path class="s d" d="M100 58h11v11h-11zM44 72h11v11h-11zM58 72h11v11h-11z"/>
+<rect class="a af mp" x="114" y="44" width="11" height="11"/>
+<path class="a" d="M129 49.5h21m-6-5 6 5-6 5"/>
+<rect class="n" x="156" y="30" width="64" height="53" rx="2"/>
+<path d="M156 41h64"/><path class="s" d="M156 52h64M156 63h64M156 74h64M176 41v42"/>
+<rect class="af mx" x="158" y="44" width="60" height="6"/>
+<text class="t" x="70" y="100">pages</text><text class="t" x="188" y="100">rows</text>
 {{end}}</svg>{{end}}
 {{define "dmask"}}<span class="dm dm-{{.}}"><i class="pa"></i><i class="pb"></i></span>{{end}}

@@ -23,7 +23,7 @@ html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
 .og-fig .dm { width: 448px; height: 216px; --m: var(--ml); }
 .og .og-mark { margin: 0 0 0 -8px; font: 800 240px/0.8 var(--display); letter-spacing: -0.055em; }
 .og.home .og-tag { max-width: 34em; margin-top: 28px; font-size: 26px; }
-.og-strip { align-self: end; display: grid; grid-template-columns: repeat(8, 1fr); border: 2px solid var(--rule); }
+.og-strip { align-self: end; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); border: 2px solid var(--rule); }
 .og-strip div { display: grid; place-items: center; height: 84px; }
 .og-strip div + div { border-left: 1px solid var(--line-strong); }
 </style>
@@ -40,8 +40,8 @@ html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
 </div>{{end}}{{else}}<div class="og home">
   <p class="og-bar"><span>{{slice .Owner.URL 8}}</span>{{if .LiveCount}}<span class="led">{{.LiveCount}} live demo{{if gt .LiveCount 1}}s{{end}} in your browser</span>{{end}}</p>
   <h1 class="og-mark">{{.Owner.Name}}</h1>
-  <p class="og-tag">builds databases, consensus, caches, queues and rate limiters, and proves them with deterministic simulation, fault injection and measured benchmarks.</p>
-  <div class="og-strip">{{range .Projects}}<div>{{template "dmask" .Slug}}</div>{{end}}</div>
+  <p class="og-tag">builds databases, caches, queues, code search and game netcode in Go, Rust and C++, and tests them with simulation, fault injection and benchmarks.</p>
+  <div class="og-strip">{{range $i, $p := .Projects}}{{if lt $i 8}}<div>{{template "dmask" $p.Slug}}</div>{{end}}{{end}}</div>
 </div>{{end}}
 </body>
 </html>
