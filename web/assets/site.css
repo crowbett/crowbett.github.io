@@ -307,6 +307,10 @@ body:has(.notfound) main { flex: 1 0 auto; }
 }
 @media (hover: none) { .pal-foot, .pal kbd { display: none; } }
 /* The terminal (shell.js): a dark screen in both schemes that drops from the top. */
+/* The edge of the panel under a mouse lights where the pointer is (feel.js). */
+:is(.result, .demo, .project-info) { position: relative; }
+[data-rim]::after { content: ""; position: absolute; inset: 0; z-index: 3; padding: 1.5px; border-radius: inherit; background: radial-gradient(16rem circle at var(--hx) var(--hy), color-mix(in oklab, var(--accent) 55%, white), color-mix(in oklab, var(--accent) 40%, transparent) 35%, transparent 75%); mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); pointer-events: none; transition: opacity var(--d-spring) var(--ease-in); }
+@starting-style { [data-rim]::after { opacity: 0; } }
 .mode-key svg { width: 1.125rem; height: 1.125rem; overflow: visible; }
 .mode-key :is(.mode-cut, .mode-core, .mode-rays) { transform-box: fill-box; transform-origin: center; transition: transform 500ms var(--spring-soft), opacity var(--d-base) var(--ease-in); }
 .mode-cut { transform: translate(9px, -9px); }
