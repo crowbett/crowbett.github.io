@@ -57,17 +57,17 @@ var Showcases = map[string]Showcase{
 		Setup: `(async () => {
 			const w = (ms) => new Promise((r) => setTimeout(r, ms));
 			const btn = (t) => [...document.querySelectorAll(".af-acts button")].find((b) => b.textContent === t);
+			const on = () => document.querySelector(".af-stages [data-on]")?.textContent || "";
 			for (let i = 0; i < 200 && !document.querySelector(".af-ladder li"); i++) await w(50);
-			if (btn("Pause")) btn("Pause").click();
-			btn("Reset").click();
-			for (let i = 0; i < 200 && !/^[A-Z]{3}-\d+ went in /.test(document.querySelector(".af-status").textContent); i++) await w(50);
 			const sp = document.querySelector("select[name=speed]");
-			sp.value = "2"; sp.dispatchEvent(new Event("change"));
+			sp.value = "4"; sp.dispatchEvent(new Event("change"));
+			btn("Reset").click();
+			if (btn("Play")) btn("Play").click();
+			for (let i = 0; i < 600 && !on().startsWith("label"); i++) await w(50);
+			for (let i = 0; i < 600 && !on().startsWith("pick"); i++) await w(50);
 		})()`,
-		Play: `(async () => {
-			document.querySelector(".af-acts button").click();
-		})()`,
-		Focus: ".af-map", Pad: 4, WideFocus: ".af-bench", WidePad: 8, Seconds: 8,
+		Play:  `(async () => {})()`,
+		Focus: ".af-map", Pad: 4, WideFocus: ".af-map", WidePad: 8, Seconds: 8,
 	},
 	// The tour steps from run to a callee and ripples out from it; then a
 	// search for "bump" ripples its callers out three hops, to main.

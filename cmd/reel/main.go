@@ -206,7 +206,8 @@ func record(browser context.Context, base, slug string, show site.Showcase, v va
 		document.querySelector("[data-acts]")?.style.setProperty("display", "none", "important");
 		for (const e of document.querySelectorAll("body *")) {
 			const p = getComputedStyle(e).position;
-			if ((p === "fixed" || p === "sticky") && !e.closest("[data-demo]")) e.style.setProperty("visibility", "hidden", "important");
+			if (p === "sticky" && e.closest("[data-demo]")) e.style.setProperty("position", "static", "important");
+			else if ((p === "fixed" || p === "sticky") && !e.closest("[data-demo]")) e.style.setProperty("visibility", "hidden", "important");
 		}
 		for (const a of document.getAnimations()) if (!(a.timeline instanceof DocumentTimeline)) a.cancel();
 		scrollTo(0, m.getBoundingClientRect().top + scrollY - pad);

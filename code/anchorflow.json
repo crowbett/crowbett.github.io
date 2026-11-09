@@ -1,7 +1,7 @@
 {
   "slug": "anchorflow",
   "repo": "anchorflow",
-  "ref": "2a797623e5a4585f645ec581393e723749adbc82",
+  "ref": "8ff4c10d36766464b503eb11e1b051ea15946adf",
   "excerpts": [
     {
       "path": "internal/packsuggest/suggest.go",
@@ -172,5 +172,5 @@
       ]
     }
   ],
-  "sum": "d5bd3706b126e3052d7c069482f4f35dd0d34972bd8d85c018779353e4076ab9"
+  "sum": "7371c404b2e7ad4f22adca2f6a17579b1c3a321a20b053d1ad9f00e3033f11ea"
 }
