@@ -218,3 +218,36 @@ html:active-view-transition-type(filter)::view-transition-old(root), html:active
   .it-view[data-peek] .it-screen { display: none; }
   .pk-c { max-height: min(48svh, 30rem); }
 }
+
+/* Live panels (panel.js): "Run it live" runs the demo in the panel. The clip holds the screen while the binary loads (progress on a plate at its foot); then the demo covers the screen's column, or the whole panel below 64rem, in the project frame's colours. Every label of the key fits the width of "Run it live", so nothing beside it moves. While it loads the layer waits off screen: a demo starts its frame loop only once its visibility observer sees it, after its first state has arrived. */
+.js .it-open, html:not(.js) .it-run { display: none; }
+.it-run, .dock-go[data-run] { flex-direction: column; gap: 0; }
+.it-run::before, .it-run::after, .dock-go[data-run]::before, .dock-go[data-run]::after { content: "Run it live"; height: 0; overflow: hidden; visibility: hidden; }
+.it-run::before, .dock-go[data-run]::before { content: "Loading…"; }
+.it .key:disabled { opacity: 0.7; cursor: progress; }
+.it-in { position: relative; }
+.it-live { position: absolute; z-index: 3; inset: var(--sp-6) 0 calc(var(--sp-6) + 3.5rem); display: flex; flex-direction: column; overflow: clip; border-radius: var(--r-2); background: var(--surface); color: var(--text); box-shadow: var(--lift), 0 0 0 1px var(--line-strong); visibility: hidden; opacity: 0; }
+.it-live:not([data-on]) { translate: -200vw 0; }
+.it-live[data-on] { visibility: visible; opacity: 1; }
+@media (prefers-reduced-motion: no-preference) { .it-live[data-on] { transition: opacity var(--d-media) var(--ease-in); } }
+.it-live-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1) var(--sp-4); margin: 0; padding: var(--sp-2) var(--sp-4); border-bottom: 1px solid var(--line-strong); font: 400 var(--t-label)/1.5 var(--mono); color: var(--text-3); font-variant-numeric: tabular-nums; }
+.it-live-bar b { margin-right: auto; font-weight: 400; color: var(--text); }
+.it-live-bar a { color: var(--text); }
+.it-live-bar button { min-height: 28px; padding: 0 var(--sp-3); border: 1px solid var(--line-strong); background: none; color: var(--text); font: inherit; cursor: pointer; }
+.it-live-bar button:hover { background: var(--sunken); }
+.it-live-m { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: var(--sp-4); }
+.it-load { position: absolute; z-index: 3; left: var(--sp-3); right: var(--sp-3); bottom: var(--sp-3); display: grid; gap: var(--sp-1); padding: var(--sp-2) var(--sp-3); border-radius: 10px; background: color-mix(in oklab, var(--screen) 88%, transparent); color: var(--screen-ink); font: 400 var(--t-label)/1.5 var(--mono); }
+.it-load p { margin: 0; overflow-wrap: anywhere; }
+.it-load p:empty { display: none; }
+.it-load strong { font-weight: 400; color: var(--screen-signal); }
+.it-load .demo-load { display: flex; align-items: center; gap: var(--sp-3); }
+.it-load progress { flex: 1; height: 6px; border: 0; background: color-mix(in oklab, var(--screen-ink) 18%, transparent); appearance: none; overflow: hidden; }
+.it-load progress::-webkit-progress-bar { background: color-mix(in oklab, var(--screen-ink) 18%, transparent); }
+.it-load progress::-webkit-progress-value { background: var(--screen-ink); }
+.it-load progress::-moz-progress-bar { background: var(--screen-ink); }
+.it-load .demo-pct { min-width: 9ch; padding: 0; border: 0; background: none; color: inherit; text-align: right; font-variant-numeric: tabular-nums; }
+@media (min-width: 64rem) {
+  .it-live { grid-column: 2; inset-block: var(--sp-7) calc(var(--sp-6) + 3.5rem); }
+  .it-live-bar button { display: none; }
+}
+@media (pointer: coarse) { .it-live-bar :is(a, button) { display: inline-flex; align-items: center; min-height: 44px; } }

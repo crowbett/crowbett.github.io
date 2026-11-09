@@ -161,7 +161,7 @@ func TestSite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pages := []string{"/", "/404.html", "/numbers/", "/demos/smoke/"}
+	pages := []string{"/", "/404.html", "/numbers/", "/live/", "/demos/smoke/"}
 	projects, err := site.LoadProjects(os.DirFS(root))
 	if err != nil {
 		t.Fatal(err)
@@ -587,7 +587,8 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 	// the checks.
 	auto := w >= 1000 && !layoutOnly && scheme == "light"
 	n := int64(2)
-	if auto || !strings.Contains(url, "/projects/") {
+	// The live wall's tiles stay posters here; TestLiveWall runs them.
+	if (auto || !strings.Contains(url, "/projects/")) && !strings.HasSuffix(url, "/live/") {
 		n = 8
 	}
 	// Home walks its reel by focus. A tab Chrome runs in the background gets
