@@ -4,20 +4,19 @@ How the site looks and behaves. Design-track tasks in `docs/tasks.md` cite secti
 
 ## Feel
 
-- **An instrument panel**: cold paper, black rules, one signal blue, a dark screen that shows real output, lamps that light only when something is live. Labelled, ruled, exact.
+- **An instrument panel**: cold paper, black rules, one signal blue, dark screens only where real output runs. Labelled, ruled, exact.
 - Made by someone who measures before claiming: data set like data, nothing decorative that is not also information, fast on a cheap phone.
-- **Depth comes from layers that mean something**: paper, a sheet sliding over a live screen, glass only where a bar floats over content, glow only sampled from real pixels on a screen.
+- **Depth comes from layers that mean something**: a band, a sheet sliding over it, the screens that run real code, glass only where a bar floats over content.
 - Never the default AI-built look (`~/research/reports/Striking engineer portfolio design.md`).
 - References (principles, not pixels): teenage.engineering, oxide.computer, tigerbeetle.com, ciechanow.ski, samwho.dev, jepsen.io, danluu.com.
 
 ## Type
 
-Four self-hosted OFL faces, 26,908 bytes of woff2 in total (measured 2026-10-26), built by `make fonts` (`scripts/fonts.sh`) from google/fonts at a pinned commit, sha256-checked:
+Three self-hosted OFL faces, 24,532 bytes of woff2 in total (measured 2026-11-09), built by `make fonts` (`scripts/fonts.sh`) from google/fonts at a pinned commit, sha256-checked:
 
 - `--display`: Archivo Expanded (`wdth 125, wght 800`, 7,752 B). Headings, the name, row names. Tracking −0.03em, −0.05em at h1.
-- `--sans`: Archivo (`wdth 100, wght 400`, 7,704 B). Prose. No bold cut; emphasis is colour or the display face.
-- `--mono`: Martian Mono (`wdth 100`, `wght 400-700`, 9,076 B), so 600 in demos and mask labels is real bold. Labels, metrics, tags, keys, demo chrome; lowercase, no tracking, no uppercase.
-- `--dots`: Doto (`ROND 0, wght 700`, 2,376 B). Instrument numerals only: stage dials, the 404 code.
+- `--sans`: Archivo (`wdth 100, wght 400`, 7,704 B). The one voice: prose, nav, keys, labels, metrics, sources, the work index, links, and big numerals (stage dials, the 404 code) with `tabular-nums`. No bold cut; emphasis is colour or the display face.
+- `--mono`: Martian Mono (`wdth 100`, `wght 400-700`, 9,076 B), so 600 in demos and mask labels is real bold. Only code, file paths and live instrument readouts (demo cells and controls, timelines, the terminal); lowercase, no tracking, no uppercase.
 - Subset, features and axes are in `scripts/fonts.sh` (no hinting, name records kept); licences in `web/assets/fonts/OFL-*.txt`.
 - All preloaded with `font-display: optional`, so nothing swaps in late.
 - `tabular-nums` wherever numbers sit in columns or update live. Prose stops at `--measure: 42rem`.
@@ -26,7 +25,8 @@ Fluid `clamp()` scale from a 360 to a 1280 px viewport (Utopia), so no breakpoin
 
 | Token | Size (360 → 1280 px) | Use |
 |---|---|---|
-| `--t-label` | 0.6875rem mono, fixed | labels, keys, demo chrome, footer |
+| `--t-label` | 0.6875rem mono, fixed | demo chrome (a demo token) |
+| `--t-meta` | 0.8125rem sans, fixed | labels, nav, keys, footer, sources |
 | `--t-small` | 0.875rem → 0.9rem | captions, sources, facts |
 | `--t-body` | 1.0625rem → 1.125rem, line height 1.6 | prose |
 | `--t-lede` | 1.1875rem → 1.5rem | ledes |
@@ -67,11 +67,13 @@ Named by role; light and dark both first-class; screen tokens are the same in bo
 | `--screen-signal` | `#fb6b44` (6.8 / 6.0) | `#fb6b44` (7.0 / 6.0) | limit line, attack label (on screen / attack) |
 | `--deny` | `#66717d` (3.9 / 3.5) | `#66717d` (4.1 / 3.5) | denied bars (on screen / attack) |
 | `--attack` | `#2a1410` | `#2a1410` | attack band on the screen |
-| `--grat` | `#1a1f26` | `#14181e` | screen graticule |
+| `--band` | `--surface` | `--screen` | home stage, reel panels, numbers head, 404 |
+| `--band-ink` / `--band-dim` / `--band-signal` | `--text` / `--text-2` / `--signal` | `--screen-ink` / `--screen-dim` / `--screen-signal` | text on the band |
 
 - Signal blue is the one interface colour (ink `--accent`, fill `--block`). Vermilion marks the mechanism, green means live, crimson means error; nothing else.
 - `--line` is decorative; a control boundary needs ≥ 3:1 against its ground (WCAG 1.4.11).
-- Theme follows `prefers-color-scheme`; no toggle.
+- Theme follows `prefers-color-scheme`, or the header switch (V26).
+- The band follows the theme; the screens on it (the stage picture, reel clips, code, the terminal) stay dark in both, framed by `--lift`. The project head stays a dark screen.
 
 ## Space, layout, radius
 
@@ -90,7 +92,7 @@ Named by role; light and dark both first-class; screen tokens are the same in bo
 - Animate `opacity` and `transform` only; never `mask-position` or layout.
 - Never scale to exactly 0 (start from `scale(0.001)`); `site.Check` rejects a zero scale in built CSS, HTML or JS (F6).
 - `prefers-reduced-motion: reduce` turns every transition and animation off; demos do not auto-play.
-- No scroll-triggered reveals of content that should already be readable; no page-load stagger. Scroll-driven effects, where `animation-timeline` is supported and motion is allowed: the stage and project head sink (scale 0.93, opacity 0.25) as the sheet covers them; on home each project panel sinks the same way as the next slides over it, while the arriving panel's screen rises into place (from scale 0.86, 12vh down) and its text lifts in behind it, both finished by the time the panel covers the screen; and a 2px accent-to-signal hairline under the header fills with reading progress. The pager cards' hover light follows the pointer.
+- No scroll-triggered reveals of content that should already be readable; no page-load stagger. Scroll-driven effects, where `animation-timeline` is supported and motion is allowed: the stage and project head sink (scale 0.93, opacity 0.25) as the sheet covers them; on home each project panel sinks the same way as the next slides over it, while the arriving panel's screen rises into place (from scale 0.86, 12vh down) and its text lifts in behind it, both finished by the time the panel covers the screen; The pager cards' hover light follows the pointer.
 - **Numbers move only when they count real data**: the stage dials count passes the tracer finished in this tab; the demo percentage follows bytes received. No scrambles or decorative counters.
 - **Diagram motion**: each mask holds a rest and a mid-motion pose; motion is a `step-end` `opacity` flip between them, once when 60% on screen (web/assets/motion.js; A-B-A-B-A over 1.6 s) and looping while a row is hovered or focused. It ends on the rest pose.
 - **Page to page**: cross-document view transitions; the header holds still and the page slides. Opening or leaving a project names only its title and diagram (web/assets/vt.js, a classic head script because `pagereveal` fires before modules run), so they fly between the home row and the project page, and between projects, in `--d-spring`.
@@ -100,15 +102,15 @@ Named by role; light and dark both first-class; screen tokens are the same in bo
 
 For: who this is, what they build, and that the proof runs (`templates/home.html`).
 
-- **Layers**, back to front: the paper (`--paper`, a dot grid over `--bg`), the stage pinned under the header, the work sheet (rounded top, `--lift` shadow) that slides up over it, then the project panels, each sliding up over the last, the index of all projects (a paper sheet) sliding over the last panel, and glass bars (`--glass`, backdrop blur) that float over content: the header, and on home the dock while a panel is current.
-- **Stage**: a dark graticule screen in both schemes. Left (or above, under 64rem) the `h1`: the name in the display face at up to 8rem with an accent halo, then the role line in `--screen-dim`, the hook (live count, "the real code, compiled to WebAssembly", the tracer and its size), a "See the work" key and a link to the full demo.
-- The picture is the raytracer demo itself (`site.HomeStage`: Cornell box, 480 px, seed 1). `web/assets/stage.js` loads the 110 KB build in a worker and renders it in row bands, material-only sampling on the left canvas and NEE + MIS on the right, split by a draggable divider (pointer or arrow keys). A scan line marks the band; a 12×12 canvas copies the picture, blurred and saturated behind the screen as its glow. Under it three Doto dials measured in this tab: samples per pixel, samples/s over the last 2 s, and the noise ratio left ÷ right from the binary's own RMSE estimates. It stops at 512 spp.
+- **Layers**, back to front: the page (`--bg`), the stage pinned under the header, the work sheet (rounded top, `--band-edge` shadow) that slides up over it, then the project panels, each sliding up over the last, the index of all projects (a sheet) sliding over the last panel, and bars that float over content: the header (`--glass`) and on home the dock while a panel is current.
+- **Stage**: a plain `--band` in the page's theme. Left (or above, under 64rem) the `h1`: the name in the display face at up to 4.5rem, so it never outshouts the render, then the role line in `--band-dim`, the hook (the tracer and its size, then the live count), a "See the work" key and a link to the full demo.
+- The picture is the raytracer demo itself (`site.HomeStage`: Cornell box, 480 px, seed 1). `web/assets/stage.js` loads the 110 KB build in a worker and renders it in row bands, material-only sampling on the left canvas and NEE + MIS on the right, split by a draggable divider (pointer or arrow keys). The slug and state sit above the picture and the two sampling labels below it, in plain text on the band, not over the render. Under them three dials in the sans with `tabular-nums`, measured in this tab: samples per pixel, samples/s over the last 2 s, and the noise ratio left ÷ right from the binary's own RMSE estimates. It stops at 512 spp.
 - It starts by itself after `load` while the stage is on screen and not covered by the sheet, and pauses when either changes or the tab hides. With reduced motion, Save-Data, a 2g/3g connection or fewer than 4 cores it does not start; "Render it here" does. Until then it shows `web/reel/stage.webp`, the same render recorded at 64 spp by `go run ./cmd/stage`, labelled "recorded".
 - **Scenes**: a pill under the picture switches between the square, light-sampled scenes (`site.StageScenes`: Cornell box, glass sphere, smoke, under the raytracer demo's own labels). Picking one is consent to render: the tracer loads it, the dials reset to measured values from pass one, and the new picture wipes in band by band over the last. Only the Cornell box has a poster.
-- **Work**: the paper sheet holds "Work", "N projects, M with a live demo" and a pill per group (`site.Groups`, with its count) that jumps to the group's first panel (`#g-<key>`, also the project crumb's target). Then one full-screen dark panel per project (`.reel`, `web/assets/work.js`), grouped and ordered as before (live first within each group, numbered `01`… at build time).
-- **Panel**: the stage's dark band at full height under the header, rounded on top with a shadow cast up over the panel it covers. Left from 64rem (5fr / 7fr), above on narrower screens: the group name in mono (an `h3` on a group's first panel), number and name in the display face with the accent halo (the page link), one size for every name: up to 6.5rem, capped so the widest (edgecache) fits its column on one line, the tagline in `--screen-dim`, the metric in mono behind a `--screen-signal` rule, then a filled "Run it live" key (to the project's `#demo`, which starts on its own there) or an unlit "Source on request" / "Source on GitHub" lamp, and the language. Right, or below: a 16:10 screen with the project's poster (lazy) or quorum's diagram, its bottom fading into the screen so a clip's cut-off row reads as deliberate, an "NN / 15" chip in the bottom-left corner (over the fade, not the content), and a glow sampled from the picture.
+- **Work**: the sheet holds "Work", "N projects, M with a live demo" and an underlined link per group (`site.Groups`, its count beside it as plain text) that jumps to the group's first panel (`#g-<key>`, also the project crumb's target). Then one full-screen dark panel per project (`.reel`, `web/assets/work.js`), grouped and ordered as before (live first within each group, numbered `01`… at build time).
+- **Panel**: the stage's band at full height under the header, rounded on top with a shadow cast up over the panel it covers. Left from 64rem (5fr / 7fr), above on narrower screens: the group name (an `h3` on a group's first panel), number and name in the display face (the page link), one size for every name: up to 6.5rem, capped so the widest (edgecache) fits its column on one line, the tagline in `--band-dim`, the metric behind a `--band-signal` rule, then a filled "Run it live" key (to the project's `#demo`, which starts on its own there) or a plain "Source on request" / "Source on GitHub" label, and the language. Right, or below: a 16:10 screen with the project's poster (lazy) or quorum's diagram, its bottom fading into the screen so a clip's cut-off row reads as deliberate, an "NN / 15" chip in the bottom-left corner (over the fade, not the content).
 - **Stack**: each panel pins under the header and the next slides up over it. The covered panel sinks (the scroll-driven `sink`, on a view timeline of the panel above it that `work.js` names) and panels buried two or more deep get `opacity: 0` (`data-gone`): never seen, not drawn, links still focusable. A panel taller than the screen pins once its bottom edge is in view.
-- **Current**: the panel covering the middle of the screen, by the panels' flow positions. Only it plays its clip (`web/reel/<slug>.mp4`, recorded by `cmd/reel` from `internal/site/showcase.go`), lighting its glow; reduced motion or Save-Data shows posters only. Focus landing in a panel (Tab, j/k, a link) brings that panel up first, so nothing focused sits under another panel. Without JS the panels stack in plain flow and the stage does not pin.
+- **Current**: the panel covering the middle of the screen, by the panels' flow positions. Only it plays its clip (`web/reel/<slug>.mp4`, recorded by `cmd/reel` from `internal/site/showcase.go`); reduced motion or Save-Data shows posters only. Focus landing in a panel (Tab, j/k, a link) brings that panel up first, so nothing focused sits under another panel. Without JS the panels stack in plain flow and the stage does not pin.
 - The panel's screen opens its project (pointer only: `tabindex=-1`, `aria-hidden`; the name is the keyboard path), and the current panel's screen flies into the project head (`screen` view transition). On hover an "Open →" chip rises in at the bottom right and the picture leans in 3%.
 - Project pages link their group in the crumb and end with previous / next in the same order.
 - **Diagrams** (`templates/diagrams.html`, `cmd/dither`): one line drawing per slug, one accent element naming the idea, showing a behaviour its project page states. `go run ./cmd/dither` renders each at 112×54 (index, home share card) and 224×108 with labels (facts, project share cards), both poses, dithered to one bit (Bayer 8×8): `web/assets/dg/<slug>-<size>.png`, 30 files, 27,025 B (measured 2026-11-09). The labelled size is stored at 2x: the drawing is dithered at one pixel per CSS pixel and doubled, and its 7 px labels are drawn at 2x and thresholded, because at 1x Martian Mono turned "redis" into "eedis". CSS masks (`.dm`) take `currentColor` for ink and `--signal` for accent, so one PNG serves both themes and hover. The build fails on a mask older than its drawing (`web/assets/dg/.sums`) or a missing `.dm-<slug>` rule or `url()`.
@@ -116,7 +118,7 @@ For: who this is, what they build, and that the proof runs (`templates/home.html
 ## Navigation
 
 - **Search key** in the top bar opens the command palette (web/assets/palette.js, loaded on first use; `/search.json` from the build). ⌘K, Ctrl+K or `/` anywhere. Without JS it is a link to the home index. The key label has a fixed box, so filling it in moves nothing.
-- **Palette**: a modal `<dialog>` with a combobox over a listbox. "This page" actions first (run the demo, full screen, previous / next, work index), then projects with their diagram, language, group and a live lamp, then Contact (copy or write an email), so ⌘K then Enter never copies the email. A `--block` "Go to" plate heads it like a demo frame; the backdrop is flat `--bg` at 88%, no blur or shadow. Title hits rank first; a subsequence matches too ("rlim" finds ratelimitd).
+- **Palette**: a modal `<dialog>` with a combobox over a listbox. "This page" actions first (run the demo, full screen, previous / next, work index), then projects with their diagram, language, group and a live or source label, then Contact (copy or write an email), so ⌘K then Enter never copies the email. A `--block` "Go to" plate heads it like a demo frame; the backdrop is flat `--bg` at 88%, no blur or shadow. Title hits rank first; a subsequence matches too ("rlim" finds ratelimitd).
 - **Keys**: `j` / `k` walk the work index (focus the name, centre the item), `[` / `]` step projects. None fire while typing or inside a demo.
 - **Prefetch**: an internal link the pointer, a touch or focus rests on is prefetched once.
 
@@ -149,7 +151,8 @@ One frame for every demo, built by the site (`templates/project.html`, `web/asse
 
 - No photo, illustration, mascot, emoji section markers or stock icons.
 - No cream paper, warm-clay accents, uppercase tracked eyebrows, identical card grids or "→" appended to links.
-- No decorative gradients, glow, blur or noise textures: glow is sampled from a live screen, glass only on bars over content.
+- No decorative gradients, glow, scanlines, graticule or dot-grid backgrounds, cursor spotlights, sheens or noise textures; glass only on bars over content.
+- No pills or chips for navigation, no LED dots for decoration, no lift on hover, no vanity tallies.
 - No scroll-jacking, custom cursors, typing or scramble effects, or carousels: the reel scrolls natively; panels pin and slide, and nothing moves on its own.
 - No skill bars, logo walls, social links or follower counts.
 - No third-party anything (fonts, analytics, embeds).
@@ -203,3 +206,4 @@ One line each; full reasoning and review rounds are in git (`git log -p docs/des
 - 2026-11-09 V35: code peek. A home panel flips to its real source in place, so a visitor sees the code before choosing a project. The excerpt JSON is fetched on first press, so the code stays off the home page until asked for. Owner picked it from the feature list.
 - 2026-11-09 V36: autopilot tours and shareable runs. A tour drives the real controls and quotes the binary's own output, so a visitor who never touches a control still sees what the code does. A link stores control values plus the binary sha, so it never replays settings against a different build. Owner picked both from the feature list.
 - 2026-11-09 V37: project page layout. The demo is the page, so it gets the full width under a compact head instead of sharing a row with a few lines of text; the code section is gone at the owner's call, and the GitHub link on the home peek is the way to the source for public repositories.
+- 2026-11-09 V38: de-slop. Glow, scanlines, graticule, dot paper, spotlight, sheen, rim light, progress bar, magnetic keys, Doto, decorative LED dots, nav pills and the numbers tally go; one sans voice with mono only for code, paths and live readouts; home bands follow the theme on `--band` tokens around dark screens. The owner keeps the reel, dock, tilt and panel motion. Owner: "de-slop" after a review found the site reading as AI-built.
