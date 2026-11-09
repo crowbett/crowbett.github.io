@@ -58,23 +58,40 @@ jobs:
 
   e2e:
     name: e2e ${{ matrix.shard }}
-    # Three runners split the page tabs; a fourth runs every other test, so the
-    # slow-link and motion checks never share a runner with demo tabs.
+    # Three runners split the page tabs, four split the demo tours, and an
+    # eighth runs every other test, so the slow-link and motion checks never
+    # share a runner with demo tabs. One runner with every tour took 89 s, two 61 s, three 62 s.
     strategy:
       matrix:
         include:
           - shard: 0
             flags: -run ^TestSite$$  # make reads $$ as $
+            split: 0/3
           - shard: 1
             flags: -run ^TestSite$$
+            split: 1/3
           - shard: 2
             flags: -run ^TestSite$$
+            split: 2/3
           - shard: 3
-            flags: -skip ^TestSite$$
+            flags: -skip "^(TestSite|TestTours)$$"  # quoted: make hands it to sh
+            split: ""
+          - shard: 4
+            flags: -run ^TestTours$$
+            split: 0/4
+          - shard: 5
+            flags: -run ^TestTours$$
+            split: 1/4
+          - shard: 6
+            flags: -run ^TestTours$$
+            split: 2/4
+          - shard: 7
+            flags: -run ^TestTours$$
+            split: 3/4
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      E2E_SHARD: ${{ matrix.shard < 3 && format('{0}/3', matrix.shard) || '' }}
+      E2E_SHARD: ${{ matrix.split }}
     steps:
       - name: Warm Chrome
         # Chrome's first start on a fresh runner took up to ~13 s inside e2e (F2);

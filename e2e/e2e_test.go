@@ -40,9 +40,9 @@ import (
 // throw counts as not yet (the element may not be mounted), and every check
 // without side effects polls through until, so none races a slow mount.
 func untilJS(check string) string {
-	return "((until) => (" + check + `))(async (f) => {
+	return "((until) => (" + check + `))(async (f, ms = 20000) => {
 		const ok = () => { try { return f(); } catch { return false; } };
-		for (const end = Date.now() + 20000; !ok(); await new Promise((r) => setTimeout(r, 50)))
+		for (const end = Date.now() + ms; !ok(); await new Promise((r) => setTimeout(r, 50)))
 			if (Date.now() > end) { f(); throw new Error("timed out: " + f); }
 		return true;
 	})`
@@ -206,13 +206,7 @@ func TestSite(t *testing.T) {
 		return n
 	}
 	slices.SortStableFunc(tabs, func(a, b tab) int { return cost(b) - cost(a) })
-	// CI splits the tabs across runners: E2E_SHARD=i/n keeps every nth tab.
-	shard, shards := 0, 1
-	if s := os.Getenv("E2E_SHARD"); s != "" {
-		if _, err := fmt.Sscanf(s, "%d/%d", &shard, &shards); err != nil || shard < 0 || shard >= shards {
-			t.Fatalf("E2E_SHARD=%q, want i/n with 0 <= i < n", s)
-		}
-	}
+	shard, shards := split(t)
 	// Twelve workers take tabs in that order; t.Parallel starts them in no
 	// particular order.
 	queue := make(chan tab, len(tabs))
@@ -682,6 +676,11 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 		if err != nil {
 			t.Fatal(err)
 		}
+		// Demos pause off screen, and on a phone the swap from recording to
+		// live build can leave the demo just below the fold.
+		if _, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`(document.querySelector("[data-demo-mount]").scrollIntoView({ block: "start" }), true)`)); err != nil {
+			t.Fatal(err)
+		}
 		checks := demoChecks[slug]
 		if scheme == "dark" || layoutOnly {
 			checks = checks[:min(1, len(checks))]
@@ -815,4 +814,16 @@ func name(page string) string {
 		return "home"
 	}
 	return n
+}
+
+// split reads E2E_SHARD=i/n: CI splits a test's tabs across runners, and each
+// keeps every nth one.
+func split(t *testing.T) (shard, shards int) {
+	shard, shards = 0, 1
+	if s := os.Getenv("E2E_SHARD"); s != "" {
+		if _, err := fmt.Sscanf(s, "%d/%d", &shard, &shards); err != nil || shard < 0 || shard >= shards {
+			t.Fatalf("E2E_SHARD=%q, want i/n with 0 <= i < n", s)
+		}
+	}
+	return shard, shards
 }
