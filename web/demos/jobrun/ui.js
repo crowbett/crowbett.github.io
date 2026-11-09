@@ -72,9 +72,9 @@ function cronPanel(demo) {
   box.setAttribute("aria-labelledby", "jr-cron-h");
   const h = el("h3", "jr-h", "Cron schedule");
   h.id = "jr-cron-h";
-  const expr = input("expr", CRON_PRESETS[0][0]);
+  const expr = input("expr", "");
   const zone = select("tz", ZONES.map((z) => [z, z]));
-  const start = input("start", CRON_PRESETS[0][2]);
+  const start = input("start", "");
   const preset = select("cronPreset", CRON_PRESETS.map((p, i) => [String(i), p[3]]));
   const form = el("form", "jr-controls");
   form.addEventListener("submit", (e) => e.preventDefault());
@@ -91,7 +91,9 @@ function cronPanel(demo) {
     zone.value = z;
     start.value = s;
   };
-  load(0);
+  // Opens on the DST jump: a skipped run says more than a plain list.
+  preset.value = "1";
+  load(1);
 
   let seq = 0;
   async function run(first = false) {

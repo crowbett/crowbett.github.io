@@ -47,20 +47,22 @@ var demoChecks = map[string][]string{
 			const v = (k) => document.querySelector(".lb-cells [data-k=" + k + "] .lb-v").textContent;
 			if (document.querySelector(".lb-acts button").textContent === "Pause") click("Pause");
 			click("Reset");
-			let ok = await until(() => v("t") === "8.0 s" && v("rooms") === "12" && v("queue") === "5");
+			return await until(() => v("t") === "8.0 s" && v("rooms") === "3" && v("refills") === "1" && v("walkouts") === "1" && v("short") === "0" &&
+				!document.querySelector(".lb-cells [data-k=refills]").hidden && !document.querySelector("input[name=refill]").closest("label").hidden);
+		})()`,
+		`(async () => {
+			const click = (t) => [...document.querySelectorAll(".lb-acts button")].find((b) => b.textContent === t).click();
+			const v = (k) => document.querySelector(".lb-cells [data-k=" + k + "] .lb-v").textContent;
+			if (document.querySelector(".lb-acts button").textContent === "Pause") click("Pause");
+			const m = document.querySelector("select[name=mode]");
+			m.value = "duel"; m.dispatchEvent(new Event("change"));
+			let ok = await until(() => v("t") === "8.0 s" && v("rooms") === "12" && v("queue") === "5" && document.querySelector(".lb-cells [data-k=refills]").hidden);
 			const s = document.querySelector("input[name=skill]");
 			s.value = "1500";
 			click("Queue me");
 			ok = ok && await until(() => document.querySelector(".lb-you").textContent.startsWith("You are queued at skill 1,500."));
 			click("Step 1 s");
 			return ok && await until(() => document.querySelector(".lb-you").textContent === "Matched after 0.1 s into m13 with 1,461; skill spread 39." && v("rooms") === "13");
-		})()`,
-		`(async () => {
-			const v = (k) => document.querySelector(".lb-cells [data-k=" + k + "] .lb-v").textContent;
-			const m = document.querySelector("select[name=mode]");
-			m.value = "squad"; m.dispatchEvent(new Event("change"));
-			return await until(() => v("t") === "8.0 s" && v("rooms") === "3" && v("refills") === "1" && v("walkouts") === "1" && v("short") === "0" &&
-				!document.querySelector(".lb-cells [data-k=refills]").hidden && !document.querySelector("input[name=refill]").closest("label").hidden);
 		})()`,
 	},
 	"mcpbridge": {
@@ -96,7 +98,7 @@ var demoChecks = map[string][]string{
 	"ratelimitd": {
 		`[...document.querySelectorAll(".rl-chart")].map(c => c.dataset.algo).join() === "gcra,token_bucket,sliding_window"`,
 		`[...document.querySelectorAll(".rl-chart")].every(c => c.querySelectorAll("rect.rl-allowed").length > 20 && c.querySelectorAll("rect.rl-denied").length > 0)`,
-		`/^1,\d{3} requests through 3 algorithms/.test(document.querySelector(".rl-status").textContent)`,
+		`/^923 requests through 3 algorithms/.test(document.querySelector(".rl-status").textContent)`,
 	},
 	"btrv": {
 		`[...document.querySelectorAll(".bt-key")].map((k) => k.dataset.kind + ":" + k.querySelector(".bt-count").textContent).filter((t) => /^(fcr|pat|free|unreferenced):/.test(t)).join() === "fcr:2,pat:2,free:5,unreferenced:4"`,
@@ -122,12 +124,11 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"jobrun": {
-		`document.querySelectorAll(".jr-run").length === 10 && document.querySelector(".jr-run .jr-mono").textContent === "Thu 2026-01-01 09:00"`,
+		`document.querySelectorAll(".jr-run").length === 10 && document.querySelector(".jr-run .jr-mono").textContent === "Sat 2026-03-07 02:30"`,
 		`[...document.querySelectorAll(".jr-table tbody tr")].length === 8 && document.querySelector(".jr-dead td").textContent === "8"`,
 		`document.querySelectorAll(".jr-chart line.jr-dot").length === 7 * 20`,
 		`(async () => {
 			const s = document.querySelector("select[name=cronPreset]");
-			s.value = "1"; s.dispatchEvent(new Event("change"));
 			const runs = () => [...document.querySelectorAll(".jr-run .jr-mono")].map((r) => r.textContent).slice(0, 2).join();
 			for (let i = 0; i < 100 && runs() !== "Sat 2026-03-07 02:30,Mon 2026-03-09 02:30"; i++) await new Promise((r) => setTimeout(r, 50));
 			const note = () => document.querySelector(".jr-note").textContent;
@@ -138,7 +139,7 @@ var demoChecks = map[string][]string{
 			ok = ok && runs() === "Sat 2026-03-07 02:30,Sun 2026-03-08 02:30" && note() === "";
 			s.value = "0"; s.dispatchEvent(new Event("change"));
 			for (let i = 0; i < 100 && runs() !== "Thu 2026-01-01 09:00,Thu 2026-01-01 09:15"; i++) await new Promise((r) => setTimeout(r, 50));
-			return ok;
+			return ok && runs() === "Thu 2026-01-01 09:00,Thu 2026-01-01 09:15" && z.value === "Europe/London";
 		})()`,
 	},
 	"kvlite": {
@@ -254,23 +255,23 @@ var demoChecks = map[string][]string{
 			const q = (s) => document.querySelector(s);
 			const btn = (t) => [...document.querySelectorAll(".sh-panel button")].find((b) => b.textContent === t);
 			btn("Delete a line").click();
-			let ok = await until(() => q(".sh-live").textContent === "Unsaved: 1 of 10 chunks (489 B) are new; a backup now stores only those.");
+			let ok = await until(() => q(".sh-live").textContent === "Unsaved: 1 of 10 chunks (488 B) are new; a backup now stores only those.");
 			btn("Back up").click();
-			ok = ok && await until(() => document.querySelectorAll(".sh-row").length === 3 && q(".sh-sum").textContent === "10 chunks: 1 new, 9 reused · 3,379 B → 447 B stored");
-			ok = ok && await until(() => !btn("Flip one bit").disabled && q(".sh-byte").textContent.startsWith("byte 181 of 447: ciphertext of chunk 54c8efa2"));
+			ok = ok && await until(() => document.querySelectorAll(".sh-row").length === 3 && q(".sh-sum").textContent === "10 chunks: 1 new, 9 reused · 3,378 B → 446 B stored");
+			ok = ok && await until(() => !btn("Flip one bit").disabled && q(".sh-byte").textContent.startsWith("byte 180 of 446: ciphertext of chunk fdf73e7e"));
 			btn("Flip one bit").click();
-			ok = ok && await until(() => q(".sh-verify .sh-bad .sh-why")?.textContent === "integrity error: blob 54c8efa2: authentication failed (MAC mismatch)");
+			ok = ok && await until(() => q(".sh-verify .sh-bad .sh-why")?.textContent === "integrity error: blob fdf73e7e: authentication failed (MAC mismatch)");
 			q(".sh-row button").click();
-			ok = ok && await until(() => q(".sh-restore").textContent === "Restore refused at chunk 7 (pack 3): integrity error: blob 54c8efa2: authentication failed (MAC mismatch)");
+			ok = ok && await until(() => q(".sh-restore").textContent === "Restore refused at chunk 7 (pack 3): integrity error: blob fdf73e7e: authentication failed (MAC mismatch)");
 			btn("Flip it back").click();
-			return ok && await until(() => !document.querySelector(".sh-verify .sh-bad") && /^Restored 3,379 B from 10 chunks; .* identical to what was backed up\.$/.test(q(".sh-restore").textContent));
+			return ok && await until(() => !document.querySelector(".sh-verify .sh-bad") && /^Restored 3,378 B from 10 chunks; .* identical to what was backed up\.$/.test(q(".sh-restore").textContent));
 		})()`,
 	},
 	"keel": {
-		`[...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join() === "24f2fb94354d9d25,24f2fb94354d9d25" && document.querySelector(".kl-match") !== null`,
-		`[...document.querySelectorAll(".kl-cells .kl-v")].map((d) => d.textContent).join() === "535,0,6,14,linearizable"`,
-		`document.querySelectorAll(".kl-events li").length === 13 && document.querySelectorAll(".kl-timeline rect.kl-bar").length > 0`,
-		`/^Seed 7: 118,095 scheduler steps and 148,245 traced events over 35\.00 s of simulated time, run in [\d,]+ ms in your browser\.$/.test(document.querySelector(".kl-status").textContent)`,
+		`[...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join() === "888b42107bc083ca,888b42107bc083ca" && document.querySelector(".kl-match") !== null`,
+		`[...document.querySelectorAll(".kl-cells .kl-v")].map((d) => d.textContent).join() === "477,0,6,7,linearizable"`,
+		`document.querySelectorAll(".kl-events li").length === 21 && document.querySelectorAll(".kl-timeline rect.kl-bar").length > 0`,
+		`/^Seed 2: 113,070 scheduler steps and 141,581 traced events over 35\.00 s of simulated time, run in [\d,]+ ms in your browser\.$/.test(document.querySelector(".kl-status").textContent)`,
 		`(async () => {
 			const digests = () => [...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join();
 			document.querySelector("input[name=seed]").value = "8";

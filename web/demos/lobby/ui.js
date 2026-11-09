@@ -60,7 +60,7 @@ export async function mount(root, demo) {
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   // Controls.
-  const p = { mode: "duel", rate: 3, sigma: 600, drop: 0.2, refill: true, seed: 1 };
+  const p = { mode: "squad", rate: 3, sigma: 600, drop: 0.2, refill: true, seed: 1 };
   const mode = select("mode", [["duel", "duel, 2 players"], ["squad", "squad, 4 players"]], p.mode);
   const rate = el("input");
   Object.assign(rate, { type: "range", name: "rate", min: 0, max: RATES.length - 1, step: 1, value: RATES.indexOf(p.rate) });
