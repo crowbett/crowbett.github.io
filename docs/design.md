@@ -131,7 +131,7 @@ For: a visitor checks the claim, then runs it. Order: header, demo frame (live o
 
 One frame for every demo, built by the site (`templates/project.html`, `web/assets/demo.js`); `ui.js` only fills the mount.
 
-- **Plate**: `--block` hairline cells: lamp and "Live demo" left, `WebAssembly, ~N KB` (gzip bytes from the lock), then "Full screen" where the browser can put an element full screen (not iPhone Safari): the frame fills the display, centred up to 90rem, and demos that track their width use it. The name is already the h1.
+- **Plate**: `--block` hairline cells: lamp and "Live demo" left, `WebAssembly, ~N KB` (gzip bytes from the lock), then "Full screen" from 40rem where the browser can put an element full screen (its slot is reserved, so it appears without a shift; phones reach it from the palette): the frame fills the display, centred up to 90rem, and demos that track their width use it. The name is already the h1.
 - **Instruction**: the project's `demo_try` line, before the button.
 - **Before start**: the filled start key and "Runs in your browser. Nothing downloads until you start."
 - **Loading**: Pages gzips .wasm, so progress compares decompressed bytes with the lock's raw size (`data-bytes`): bar and percentage, then "Starting…"; the button reads "Loading…". Without `data-bytes` (smoke) the bar is indeterminate. Screen readers get one status.
