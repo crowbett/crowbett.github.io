@@ -123,6 +123,29 @@ var demoChecks = map[string][]string{
 		`[...document.querySelectorAll(".rl-chart")].every(c => c.querySelectorAll("rect.rl-allowed").length > 20 && c.querySelectorAll("rect.rl-denied").length > 0)`,
 		`/^1,\d{3} requests through 3 algorithms/.test(document.querySelector(".rl-status").textContent)`,
 	},
+	"btrv": {
+		`[...document.querySelectorAll(".bt-key")].map((k) => k.dataset.kind + ":" + k.querySelector(".bt-count").textContent).filter((t) => /^(fcr|pat|free|unreferenced):/.test(t)).join() === "fcr:2,pat:2,free:5,unreferenced:4"`,
+		`(async () => {
+			const fact = (k) => [...document.querySelectorAll(".bt-facts > div")].find((d) => d.querySelector("dt").textContent === k)?.querySelector("dd").textContent;
+			const cells = () => [...(document.querySelector(".bt-rows tbody tr:not(.bt-spacer)")?.querySelectorAll("td") || [])].map((td) => td.textContent).slice(0, 3).join();
+			let ok = await until(() => fact("rows read") === "2,919" && fact("column errors") === "0" && cells() === "1,1,Ann");
+			const seg = (t) => [...document.querySelectorAll(".bt-seg button")].find((b) => b.textContent === t);
+			seg("Inferred").click();
+			ok = ok && await until(() => document.querySelector(".bt-pair .bt-sub").textContent === "inferred by btrv from the first 1,000 records" && fact("rows read") === "2,919" && !seg("Dictionary").disabled);
+			seg("Dictionary").click();
+			ok = ok && await until(() => document.querySelector(".bt-pair .bt-sub").textContent.startsWith("from the DDF dictionary") && fact("rows read") === "2,919" && !seg("Inferred").disabled);
+			const map = document.querySelector(".bt-map");
+			for (let i = 0; i <= 40; i++) map.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+			const dmg = document.querySelector(".bt-damage");
+			ok = ok && !dmg.hidden && dmg.textContent === "Damage page 40";
+			dmg.click();
+			ok = ok && await until(() => document.querySelector(".bt-key-bad .bt-count")?.textContent === "1" && /^Stopped: /m.test(document.querySelector(".bt-lines").innerText) && !dmg.disabled);
+			dmg.click();
+			ok = ok && await until(() => fact("rows read") === "2,919" && !document.querySelector(".bt-key-bad") && !dmg.disabled);
+			document.querySelector(".bt-export button").click();
+			return ok && await until(() => document.querySelector(".bt-expstatus").textContent.startsWith("PERSON.csv: 2,919 rows written, 0 with column errors"));
+		})()`,
+	},
 	"jobrun": {
 		`document.querySelectorAll(".jr-run").length === 10 && document.querySelector(".jr-run .jr-mono").textContent === "Thu 2026-01-01 09:00"`,
 		`[...document.querySelectorAll(".jr-table tbody tr")].length === 8 && document.querySelector(".jr-dead td").textContent === "8"`,
