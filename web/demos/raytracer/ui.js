@@ -236,7 +236,7 @@ export async function mount(root, demo) {
     play.textContent = running ? "Pause" : passes >= MAX_SPP ? "Done" : passes > 0 && !reduced ? "Resume" : "Render";
     play.disabled = passes >= MAX_SPP;
     step.disabled = running || passes >= MAX_SPP;
-    step.style.display = running ? "none" : "";
+    step.style.visibility = running ? "hidden" : "";
     status.setAttribute("aria-live", running ? "off" : "polite");
   }
 

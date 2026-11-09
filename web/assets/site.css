@@ -193,6 +193,8 @@ main:has(> :is(.stage, .project)) { width: auto; }
 .work-in, .sheet-in { width: min(80rem, 100% - 2 * var(--edge)); margin-inline: auto; }
 .it-glass, .ph-screen { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: var(--r-2); background: var(--screen); box-shadow: var(--lift), 0 0 0 1px color-mix(in oklab, var(--screen-ink) 12%, transparent); }
 :is(.it-glass, .ph-screen) > :is(img, video) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+/* The picture fades into the screen at the bottom, over poster and clip alike. */
+:is(.it-glass, .ph-screen):has(> img)::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 80%, var(--screen)); pointer-events: none; }
 :is(.it-glass, .ph-screen) video { opacity: 0; transition: opacity var(--d-base) var(--ease-in); }
 :is(.it-glass, .ph-screen) video[data-on] { opacity: 1; }
 :is(.it-dm, .ph-dm) .dm { width: 224px; height: 108px; --m: var(--ml); color: var(--screen-dim); --dm-acc: var(--screen-signal); scale: 1.4; image-rendering: pixelated; }
