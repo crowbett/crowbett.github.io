@@ -1,60 +1,63 @@
 .af-controls { display: grid; gap: 12px; margin-bottom: 12px; }
-.af-acts, .af-you { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; }
-.af-acts button, .af-acts select, .af-you button, .af-you select { height: 2.25rem; box-sizing: border-box; max-width: 100%; }
-.af-you { padding-top: 12px; border-top: 1px solid var(--line); }
-.af-yours { display: flex; flex-direction: column; gap: 4px; flex: 1 1 100%; }
-.af-item { flex: 1 1 12rem; max-width: 18rem; }
-.af-item select { width: 100%; font-family: var(--mono); }
-.af-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; min-height: 2rem; align-items: center; }
-.demo-mount .af-you button.af-chip { background: var(--surface); height: 2rem; padding: 0 10px; font-family: var(--mono); font-size: 0.8125rem; border-color: var(--accent); color: var(--accent); }
+.af-acts, .af-slot { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; }
+.af-acts button, .af-acts select, .af-slot button, .af-slot select, .af-slot input { height: 2.25rem; box-sizing: border-box; max-width: 100%; }
+.af-slot { padding-top: 12px; border-top: 1px solid var(--line); }
+.af-acts .demo-field, .af-slot .demo-field { min-width: 0; max-width: 100%; }
+.af-pack { flex: 1 1 12rem; }
+.af-pack select { width: 100%; }
+.af-sku { flex: 1 1 14rem; max-width: 20rem; }
+.af-sku select { width: 100%; }
+.af-bin input { width: 8.5rem; font-family: var(--mono); text-transform: uppercase; }
 
-.af-canvas { display: block; width: 100%; height: 420px; background: var(--sunken); border-radius: var(--r-1); }
+.af-stages { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 8px; padding: 0; list-style: none; font: var(--t-label)/1.4 var(--mono); }
+.af-stages li { padding: 3px 8px; border: 1px solid var(--line); color: var(--text-2); }
+.af-stages li[data-on] { background: var(--block); color: var(--on-block); border-color: var(--block); }
+.af-stages li[data-server] { border-style: dashed; color: var(--text-3); }
+
+.af-map, .af-box { display: block; width: 100%; height: 260px; background: var(--sunken); border-radius: var(--r-1); }
+.af-box { height: 170px; }
 .af-legend { margin: 8px 0 0; }
 .af-key { display: inline-flex; align-items: center; gap: 0.5em; }
-.af-key::before { content: ""; flex: none; width: 0.75em; height: 0.75em; background: var(--text-2); }
-.af-key[data-kind="rule"]::before { background: var(--signal); }
-.af-key[data-kind="soft"]::before, .af-key[data-kind="mailer"]::before { background: var(--live); }
-.af-key[data-kind="you"]::before { background: var(--accent); }
-
-.af-now, .af-youline { margin: 8px 0 0; font-size: 0.875rem; color: var(--text); }
-.af-youline:empty { display: none; }
-.af-youline strong { color: var(--accent); font-family: var(--mono); }
-.af-rule { color: var(--signal); font-weight: 600; }
+.af-key::before { content: ""; flex: none; width: 0.75em; height: 0.75em; background: var(--text-3); }
+.af-key[data-kind="cart"]::before { background: var(--accent); }
+.af-key[data-kind="picked"]::before { background: var(--live); }
+.af-key[data-kind="picker"]::before { background: var(--signal); border-radius: 50%; }
+.af-key[data-kind="zone"]::before { background: var(--accent-tint); outline: 1px solid var(--accent); }
+.af-now { margin: 8px 0 0; min-height: 1.4em; font-size: 0.875rem; color: var(--text); }
 .af-dim { color: var(--text-3); }
 
-.af-cells { margin-top: 12px; }
+.af-bench { display: grid; gap: 16px; margin-top: 16px; }
+.af-pair { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+.af-wide .af-pair { grid-template-columns: minmax(0, 1fr) 14rem; }
+.af-h { margin: 0 0 6px; font: 600 var(--t-label)/1.5 var(--mono); color: var(--text-2); }
+.af-order { margin: 0 0 8px; font-size: 0.875rem; color: var(--text); }
+.af-lines { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0 0 10px; padding: 0; list-style: none; font: 0.75rem/1.5 var(--mono); color: var(--text-2); }
+.af-lines li { display: inline-flex; align-items: center; gap: 0.5em; }
+.af-lines li::before { content: ""; width: 0.75em; height: 0.75em; background: var(--text-2); }
+.af-lines li[data-i="0"]::before { background: var(--accent); }
+.af-lines li[data-i="1"]::before { background: var(--live); }
+.af-lines li[data-i="2"]::before { background: var(--signal); }
+
+.af-ladder { margin: 0 0 8px; padding: 0; list-style: none; display: grid; gap: 2px; font: 0.75rem/1.45 var(--mono); }
+.af-ladder li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 10px; padding: 3px 8px; background: var(--surface); color: var(--text-2); }
+.af-ladder li[data-on] { background: var(--accent-tint); color: var(--text); box-shadow: inset 3px 0 0 var(--accent); }
+.af-ln { color: var(--text); }
+.af-ls { text-align: right; color: var(--text-3); }
+.af-ladder li[data-on] .af-ls { color: var(--accent); font-weight: 600; }
+.af-lh { grid-column: 1 / 3; color: var(--text-3); overflow-wrap: anywhere; }
+.af-lh:empty { display: none; }
+.af-why { margin: 0 0 8px; font-size: 0.8125rem; color: var(--text); }
+.af-why strong { font-family: var(--mono); color: var(--accent); }
+.af-acc { margin: 8px 0 0; font-size: 0.75rem; color: var(--text-3); }
+
+.af-tabs { display: flex; gap: 4px; margin-bottom: 6px; }
+.af-tabs button { flex: 1 1 auto; height: 2rem; padding: 0 6px; font-size: 0.75rem; white-space: nowrap; }
+.af-label { display: block; width: 100%; max-width: 17rem; height: 312px; border: 1px solid var(--line); }
+.af-cap { margin: 6px 0 0; font: var(--t-label)/1.5 var(--mono); color: var(--text-3); overflow-wrap: anywhere; }
+
+.af-cells { margin-top: 16px; }
 .af-cells li { min-width: 5rem; }
 .af-v { font-size: 0.8125rem; color: var(--text); }
-
-.af-panels { display: grid; gap: 16px; margin-top: 16px; }
-.af-tally { display: grid; gap: 12px 24px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); }
-.af-h { margin: 0 0 6px; font: 600 var(--t-label)/1.5 var(--mono); color: var(--text-2); }
-.af-split { display: flex; height: 12px; background: var(--sunken); margin-bottom: 6px; overflow: hidden; }
-.af-seg { display: block; height: 100%; transition: width 250ms ease-out; }
-.af-seg-mailer { background: var(--live); }
-.af-seg-box { background: var(--text-2); }
-.af-seg-rule { background: var(--signal); }
-.af-splitkey { margin-bottom: 12px; }
-.af-top { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-family: var(--mono); font-size: 0.75rem; }
-.af-top li { display: grid; grid-template-columns: minmax(0, 9rem) 1fr 2.5rem; gap: 8px; align-items: center; }
-.af-tn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
-.af-track { height: 8px; background: var(--sunken); }
-.af-bar { display: block; height: 100%; background: var(--text-2); transition: width 250ms ease-out; }
-.af-bar-mailer { background: var(--live); }
-.af-tc { text-align: right; color: var(--text-2); font-variant-numeric: tabular-nums; }
-.af-top .af-gone .af-tn { text-decoration: line-through; color: var(--text-3); }
-
-.af-shelfhead { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
-.af-shelfhead .af-h { margin: 0 auto 0 0; }
-.af-shelfhead button { height: 2rem; padding: 0 10px; font-size: 0.8125rem; }
-.af-group { margin-bottom: 8px; }
-.af-pkgs { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; padding: 0; list-style: none; }
-.demo-mount .af-pkgs button.af-pkg { min-height: 1.75rem; padding: 2px 8px; font-family: var(--mono); font-size: 0.6875rem; background: var(--surface); color: var(--text); border: 1px solid var(--control-line); border-radius: var(--r-1); cursor: pointer; }
-.demo-mount .af-pkgs button.af-pkg:hover { background: var(--surface); color: var(--text); border-color: var(--accent); }
-.demo-mount .af-pkgs button.af-pkg[aria-pressed="false"] { background: transparent; color: var(--text-3); border-style: dashed; text-decoration: line-through; }
-.af-pn { color: var(--accent); font-weight: 600; }
-
 .af-status { margin: 12px 0 0; font-size: 0.8125rem; color: var(--text-2); }
 .af-out { margin-top: 12px; }
-@media (pointer: coarse) { .demo-mount .af-pkgs button.af-pkg { min-height: 2.25rem; } }
-@media (prefers-reduced-motion: reduce) { .af-seg, .af-bar { transition: none; } }
+.af-controls [hidden] { display: none; }
