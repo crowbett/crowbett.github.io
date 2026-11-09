@@ -455,12 +455,29 @@ var demoChecks = map[string][]string{
 	"raytracer": {
 		`document.querySelector(".rt-info").textContent === "Cornell box: 300 × 300 px, 8 top-level objects, 1 sampled light, SAH BVH of 9 nodes (depth 5), up to 50 bounces, seed 1."`,
 		`(() => { const lit = (sel) => { const c = document.querySelector(sel); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i + 3] === 255 && d[i] + d[i + 1] + d[i + 2] > 0) n++; return c.width === 300 && c.height === 300 ? n / (c.width * c.height) : 0; }; const m = lit(".rt-canvas-l"), n = lit(".rt-canvas:not(.rt-canvas-l)"); return m > 0.02 && n > 0.6 && n > 2 * m; })()`,
-		`(() => { const v = [...document.querySelectorAll(".rt-cells .rt-v")].map((n) => n.textContent); return Number(v[0]) >= 1 && Number(v[2]) > Number(v[3]) && /^\d+\.\d\d×$/.test(v[4]) && /^[\d,]+k$/.test(v[1]); })()`,
+		`(() => { const v = [...document.querySelectorAll(".rt-cells .rt-v")].map((n) => n.textContent); return Number(v[0]) >= 2 && Number(v[1]) >= 2 && Number(v[2]) > Number(v[3]) && /^\d+\.\d\d×$/.test(v[4]) && /^\d+\.\d \/ \d+\.\d$/.test(v[5]) && /^[\d,]+k$/.test(v[6]) && /^\d+\.\d s$/.test(v[7]); })()`,
+		`(() => { const c = document.querySelector(".rt-chart"); if (!/^Estimated RMSE falling with samples per pixel: material only 0\.\d+, NEE \+ MIS 0\.\d+ at [\d,]+ spp\.$/.test(c.getAttribute("aria-label"))) return false; const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 16) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
 		`(async () => {
+			const play = document.querySelector(".rt-play");
+			if (play.textContent === "Pause") play.click();
+			await until(() => play.textContent === "Resume" && /^Paused at \d+ spp: est\. RMSE /.test(document.querySelector(".rt-status").textContent));
+			const strip = document.querySelector(".rt-rows");
+			strip.dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true }));
+			const ok = strip.getAttribute("aria-valuenow") === "0" && /^rows 0 to 35 of 300, \d+ spp$/.test(strip.getAttribute("aria-valuetext"));
+			document.querySelector(".rt-you-btn").click();
+			const you = () => /^you \+32 spp on rows 0–35, now (\d+) spp there and (\d+) elsewhere\. NEE \+ MIS est\. RMSE over the whole image: 0\.\d+ → 0\.\d+\.$/.exec(document.querySelector(".rt-you").textContent);
+			await until(() => you());
+			const [, there, rest] = you().map(Number);
+			return ok && there >= rest + 32 && play.textContent === "Resume" && !document.querySelector(".rt-focus").classList.contains("is-on");
+		})()`,
+		`(async () => {
+			const time = [...document.querySelectorAll(".rt-seg button")].find((b) => b.textContent === "per second");
+			time.click();
+			let ok = time.getAttribute("aria-pressed") === "true" && document.querySelector(".rt-plot-title").textContent === "est. RMSE against each half's render time, log-log";
 			const grip = document.querySelector(".rt-grip");
 			const left = document.querySelector(".rt-canvas-l");
 			grip.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
-			let ok = grip.getAttribute("aria-valuenow") === "48" && left.style.clipPath === "inset(0px 52% 0px 0px)";
+			ok = ok && grip.getAttribute("aria-valuenow") === "48" && left.style.clipPath === "inset(0px 52% 0px 0px)";
 			grip.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true }));
 			ok = ok && grip.getAttribute("aria-valuenow") === "100";
 			for (const key of ["Home", "PageUp", "PageUp", "PageUp", "PageUp", "PageUp"]) grip.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
@@ -470,7 +487,7 @@ var demoChecks = map[string][]string{
 			const info = () => document.querySelector(".rt-info").textContent;
 			ok = ok && await until(() => info().startsWith("Book 1 cover (sky-lit): 300 × 168 px, 484 top-level objects, 0 sampled lights, SAH BVH of 581 nodes (depth 12)") && document.querySelector(".rt").dataset.split === "off");
 			s.value = "cornell"; s.dispatchEvent(new Event("change"));
-			return ok && await until(() => info().startsWith("Cornell box: ") && document.querySelector(".rt").dataset.split === "on" && /^Cornell box: [1-9]/.test(document.querySelector(".rt-status").textContent));
+			return ok && await until(() => info().startsWith("Cornell box: ") && document.querySelector(".rt").dataset.split === "on" && /^Cornell box: (sampling, )?[1-9]/.test(document.querySelector(".rt-status").textContent));
 		})()`,
 	},
 	"netcode": {

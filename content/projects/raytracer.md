@@ -5,7 +5,7 @@ lang: C++
 tags: path tracing, Monte Carlo, importance sampling, BVH
 repo:
 demo: live
-demo_try: Drag the divider to compare material-only and light sampling at equal samples per pixel.
+demo_try: Tap the noisy ceiling to pour 32 more samples into those rows, then drag the divider to compare material-only and light sampling.
 group: graphics
 order: 10
 metric: 187.5 ms for the book 1 cover (400x225, 50 spp), from 8.865 s single-threaded with no BVH
@@ -18,4 +18,6 @@ metric_source: BENCH.md, hyperfine, Apple M3 Pro; 12 threads, SAH BVH
 
 ## How the demo works
 
-The renderer's own scenes, BVH and integrators, compiled from C++ to WebAssembly and running on one thread. Each call traces one more sample per pixel for a band of rows, with both strategies on the same rows, so the two halves always have equal spp. The est. RMSE comes from each pixel's sample variance, not from a reference image.
+The renderer's own scenes, BVH and integrators, compiled from C++ to WebAssembly and running on one thread. It starts rendering as soon as it loads. Each call traces one more sample per pixel for a band of rows, with both strategies on the same rows, so the two halves always have equal spp.
+
+Every call also returns the renderer's noise estimate (est. RMSE, from each pixel's sample variance, not from a reference image). The chart plots it on log-log axes against samples per pixel, or against each half's measured render time, beside the 1/√n line. Tapping the image adds 32 samples to every pixel in a band of rows, in both halves. The bar beside the image shows samples per row, and your extra samples are drawn in blue.

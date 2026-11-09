@@ -200,38 +200,36 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".rl-chart[data-algo=token_bucket]", Pad: 8, Seconds: 8,
 	},
-	// raytracer: the marble scene, held at its third pass, renders on, then the split sweeps.
+	// raytracer: the Cornell box, held at its sixth pass, renders on; you tap
+	// the noisy ceiling and those rows clear, then the split sweeps.
 	"raytracer": {
 		Setup: `(async () => {
-			const s = document.querySelector("select[name=scene]");
-			s.value = "light"; s.dispatchEvent(new Event("change"));
-			for (let i = 0; i < 400 && !document.querySelector(".rt-info").textContent.startsWith("Marble"); i++) await new Promise((r) => setTimeout(r, 10));
-			// Held at its third pass, so the clip opens noisy and clears.
-			s.dispatchEvent(new Event("change"));
+			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 			const pass = () => Number(/pass (\d+)/.exec(document.querySelector(".rt-screen").textContent)?.[1] ?? 0);
-			for (let i = 0; i < 400 && pass() >= 3; i++) await new Promise((r) => setTimeout(r, 5));
-			for (let i = 0; i < 400 && pass() < 3; i++) await new Promise((r) => setTimeout(r, 5));
 			const play = document.querySelector(".rt-play");
+			for (let i = 0; i < 2000 && pass() < 6; i++) await wait(5);
 			if (play.textContent === "Pause") play.click();
-			for (let i = 0; i < 400 && play.textContent !== "Resume"; i++) await new Promise((r) => setTimeout(r, 5));
+			for (let i = 0; i < 400 && play.textContent !== "Resume"; i++) await wait(5);
 			if (play.textContent !== "Resume") throw new Error("raytracer not held: " + play.textContent + " at pass " + pass());
 		})()`,
 		Play: `(async () => {
-			const g = document.querySelector(".rt-grip");
 			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+			const g = document.querySelector(".rt-grip");
 			const sweep = async (key, n) => { for (let i = 0; i < n; i++) { g.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true })); await wait(40); } };
 			await wait(300);
 			document.querySelector(".rt-play").click();
-			await wait(1000);
-			document.querySelector(".rt-play").click();
+			await wait(700);
+			const v = document.querySelector(".rt-view");
+			const r = v.getBoundingClientRect();
+			v.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: r.left + r.width * 0.3, clientY: r.top + r.height * 0.2 }));
+			await wait(1500);
+			await sweep("ArrowRight", 12);
 			await wait(400);
-			await sweep("ArrowRight", 20);
-			await wait(500);
-			await sweep("ArrowLeft", 40);
-			await wait(500);
-			await sweep("ArrowRight", 20);
+			await sweep("ArrowLeft", 24);
+			await wait(400);
+			await sweep("ArrowRight", 12);
 		})()`,
-		Focus: ".rt-screen", WideFocus: ".rt-screen", WidePad: 8, Seconds: 6.3,
+		Focus: ".rt-screen", WideFocus: ".rt-screen", WidePad: 8, Seconds: 5.5,
 	},
 	// stash: edit, back up, repeat; new chunks show vermilion in the text and the strips.
 	"stash": {
