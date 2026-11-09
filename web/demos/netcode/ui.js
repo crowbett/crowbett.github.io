@@ -812,7 +812,7 @@ export async function mount(root, demo) {
   play.addEventListener("click", () => setPlaying(!playing));
   step.addEventListener("click", async () => {
     setPlaying(false);
-    if (busy) return;
+    while (busy) await new Promise((r) => setTimeout(r, 16));
     busy = true;
     const g = run;
     try {
