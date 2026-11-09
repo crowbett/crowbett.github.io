@@ -167,6 +167,15 @@
       "sha256": "92436ce080d5a05d55f6af46fe4a41970021192c8b8e4c00f16f1b57f2963332",
       "bytes": 5519388,
       "gzip_bytes": 1503234
+    },
+    {
+      "slug": "livejob",
+      "repo": "LiveJob",
+      "ref": "f2a8063d24c2fe7504dd4ad334b5a90280c53e6a",
+      "pkg": "./cmd/webdemo",
+      "sha256": "96dfb384651ca826efcb624d07344fffd69dd100eb847475c08f847523775b1b",
+      "bytes": 6205062,
+      "gzip_bytes": 1760843
     }
   ]
 }

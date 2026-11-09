@@ -243,6 +243,7 @@ main:has(> :is(.stage, .project)) { width: auto; }
 .dm-jobrun { --m: url(/assets/dg/jobrun-s.png); --ml: url(/assets/dg/jobrun-l.png); }
 .dm-keel { --m: url(/assets/dg/keel-s.png); --ml: url(/assets/dg/keel-l.png); }
 .dm-kvlite { --m: url(/assets/dg/kvlite-s.png); --ml: url(/assets/dg/kvlite-l.png); }
+.dm-livejob { --m: url(/assets/dg/livejob-s.png); --ml: url(/assets/dg/livejob-l.png); }
 .dm-lobby { --m: url(/assets/dg/lobby-s.png); --ml: url(/assets/dg/lobby-l.png); }
 .dm-mcpbridge { --m: url(/assets/dg/mcpbridge-s.png); --ml: url(/assets/dg/mcpbridge-l.png); }
 .dm-netcode { --m: url(/assets/dg/netcode-s.png); --ml: url(/assets/dg/netcode-l.png); }
