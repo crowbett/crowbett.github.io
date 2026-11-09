@@ -553,8 +553,8 @@ export async function mount(root, demo) {
       cell.unresolved.textContent = way !== "callers" ? String(ext) : "–";
       cell.depth.textContent = String(reached);
       cell.query.textContent = ms(q);
-      receipt.textContent = `${plural(calls, "call-tree query", "call-tree queries")} walked from ${nodes.get(focus[0]).qname} in ${ms(q)}; ` +
-        `drawing the graph took ${list.length} more in ${ms(mapMs)}, after indexing ${plural(info.files.length, "file", "files")} in ${ms(indexMs)}, in your browser.`;
+      receipt.textContent = `${plural(calls, "call-tree query", "call-tree queries")} out from ${nodes.get(focus[0]).qname} in ${ms(q)}. ` +
+        `Indexing ${plural(info.files.length, "file", "files")} took ${ms(indexMs)}, and drawing the graph ${plural(list.length, "query", "queries")} in ${ms(mapMs)}.`;
     };
     for (let hop = 1; hop <= max; hop++) {
       const nexts = { up: [], down: [] };

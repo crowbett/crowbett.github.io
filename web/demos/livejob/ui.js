@@ -17,6 +17,7 @@ const el = (tag, cls, text) => {
   return n;
 };
 const fmt = (n) => n.toLocaleString("en-US");
+const plural = (n, one, many = `${one}s`) => `${fmt(n)} ${n === 1 ? one : many}`;
 const secs = (ms, d = 1) => `${(ms / 1000).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d })} s`;
 const bytes = (n) => `${fmt(n)} B`;
 
@@ -365,7 +366,7 @@ export async function mount(root, demo) {
     gateText.textContent = v.quietMs >= v.idleMs ? `screen settled, lj reads it` : `screen quiet ${secs(q)} of ${secs(v.idleMs)}`;
     macTerm.setAttribute("aria-label", `Mac terminal at ${secs(v.t)}: ${v.mac.filter(Boolean).slice(-3).join(" / ")}`);
     phoneTerm.setAttribute("aria-label", `Phone's copy of the terminal, decrypted: ${v.phone.filter(Boolean).slice(-3).join(" / ")}`);
-    receipt.textContent = `${fmt(s.m2d + s.d2m)} frames sealed and opened, ${fmt(s.prompts)} ${s.prompts === 1 ? "prompt" : "prompts"} read off the screen and ${fmt(s.blocked)} refused by lj's own code, in ${fmt(Math.round(callMs))} ms of ${fmt(calls)} calls, in your browser.`;
+    receipt.textContent = `${plural(s.m2d + s.d2m, "frame")} sealed and opened, ${plural(s.prompts, "prompt")} read off the screen and ${fmt(s.blocked)} refused by lj's own code, over ${plural(calls, "call")} and ${fmt(Math.round(callMs))} ms.`;
     const mode = v.mode;
     line.placeholder = mode === "ask" ? "type your answer" : mode === "yesno" ? "y or n" : "type a line";
     attackBtn.replay.disabled = s.d2m === 0;

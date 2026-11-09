@@ -5,7 +5,7 @@ lang: Go
 tags: matchmaking, WebSocket, Redis, HMAC
 repo:
 demo: live
-demo_try: Tap the skill axis to queue your own player, then watch its window widen until someone fits.
+demo_try: Tap the far end of the skill axis to queue yourself away from the crowd. Your band widens until someone falls inside it, or you time out.
 group: services
 order: 14
 metric: 433.5 short-handed handoffs per 1000-bot squad run before refill, 0 after (medians of 6)

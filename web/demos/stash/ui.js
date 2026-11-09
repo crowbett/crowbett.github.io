@@ -235,6 +235,7 @@ const el = (tag, cls, text) => {
 };
 const fmt = (n) => n.toLocaleString("en-US");
 const B = (n) => `${fmt(n)} B`;
+const plural = (n, one, many = `${one}s`) => `${fmt(n)} ${n === 1 ? one : many}`;
 const kib = (n) => (n >= 1024 ? `${(n / 1024).toLocaleString("en-US", { maximumFractionDigits: 1 })} KiB` : `${n} B`);
 const ease = (t) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
 
@@ -570,8 +571,8 @@ export async function mount(root, demo) {
     cell.chunks.textContent = fmt(repo.blobs);
     cell.fresh.textContent = fmt(s.nc);
     cell.ms.textContent = `${s.ms.toFixed(1)} ms`;
-    receipt.textContent = `${fmt(snaps.length)} snapshots, ${fmt(repo.backups)} file versions: stash cut ${fmt(cut)} chunks and sealed ${fmt(sealed)} new ones with XChaCha20-Poly1305` +
-      `${restores ? `, ${fmt(restores)} files restored` : ""}, in ${fmt(Math.round(callMs))} ms of calls, in your browser.`;
+    receipt.textContent = `stash cut ${plural(cut, "chunk")} from ${plural(repo.backups, "file version")} in ${plural(snaps.length, "snapshot")} and sealed the ${fmt(sealed)} new ${sealed === 1 ? "one" : "ones"} with XChaCha20-Poly1305` +
+      `${restores ? `, then restored ${plural(restores, "file")}` : ""}, in ${fmt(Math.round(callMs))} ms.`;
     day.textContent = `Snapshot ${s.n}${s.day ? `, day ${s.day}` : ""}: ${s.label}.`;
     canvas.setAttribute("aria-label", `Snapshot ${s.n} of ${s.files.length} files: ${s.nc} of ${s.chunks} chunks new (${B(s.nb)}), the rest reused. ` +
       `Repository: ${repo.blobs} unique chunks in ${repo.packs} packs, ${B(repo.stored)} stored for ${B(repo.logical)} backed up.`);
@@ -743,7 +744,7 @@ export async function mount(root, demo) {
       rline.className = `sh-rline sh-res ${bad ? "sh-bad" : "sh-ok"}`;
       rline.textContent = bad
         ? `Snapshot ${n} refused at ${bad.path}, chunk ${fmt(bad.chunk + 1)} in pack ${fmt(bad.pack + 1)}: ${bad.problem}.`
-        : `Snapshot ${n} restored: ${fmt(s.files.length)} files, ${B(bytes)} from ${fmt(chunks)} chunks in ${fmt(packs.size)} packs. ` +
+        : `Snapshot ${n} restored: ${plural(s.files.length, "file")}, ${B(bytes)} from ${plural(chunks, "chunk")} in ${plural(packs.size, "pack")}. ` +
           `Every chunk's tag verified and ${same ? "every file's BLAKE3 hash matches its backup" : "a file differs from its backup"}, in ${fmt(Math.max(1, Math.round(ms)))} ms.`;
       setCells();
     });

@@ -5,7 +5,7 @@ lang: C++
 tags: path tracing, Monte Carlo, importance sampling, BVH
 repo:
 demo: live
-demo_try: Tap the noisy ceiling to pour 32 more samples into those rows, then drag the divider to compare material-only and light sampling.
+demo_try: Drag the divider over the ceiling. The left half finds the lamp only by chance, so at the same samples per pixel it stays grainy.
 group: graphics
 order: 10
 metric: 187.5 ms for the book 1 cover (400x225, 50 spp), from 8.865 s single-threaded with no BVH

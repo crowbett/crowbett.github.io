@@ -33,6 +33,7 @@ const el = (tag, cls, text) => {
   return n;
 };
 const fmt = (n) => n.toLocaleString("en-US");
+const plural = (n, one, many = `${one}s`) => `${fmt(n)} ${n === 1 ? one : many}`;
 const secs = (s, d = 1) => `${s.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d })} s`;
 const ease = (t) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
 const hash = (i) => {
@@ -491,7 +492,7 @@ export async function mount(root, demo) {
     cell.emit.textContent = `${fmt(run.r.emissionUs / 1000)} ms`;
     canvas.setAttribute("aria-label", `Traffic floor at ${secs(local(run))} of run ${run.no}: ${fmt(off)} requests offered; ${parts.join("; ")}.`);
     syncYou(run, nb);
-    receipt.textContent = `${fmt(decisions)} decisions by ratelimitd's Step functions over ${fmt(calls)} ${calls === 1 ? "race" : "races"}, in ${fmt(Math.round(callMs))} ms of calls, in your browser.`;
+    receipt.textContent = `ratelimitd's Step functions made ${plural(decisions, "decision")} across ${plural(calls, "race")}, in ${fmt(Math.round(callMs))} ms.`;
   }
 
   let youKey = "";

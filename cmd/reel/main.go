@@ -321,7 +321,8 @@ func encode(tmp, slug string, frames []frame, x, y, w, seconds float64) error {
 	crop := fmt.Sprintf("crop=%d:%d:%d:%d", even(w), even(w*aspect), even(x), even(y))
 	mp4 := filepath.Join(out, slug+".mp4")
 	// Quality steps down only for a clip that would pass 90% of its budget
-	// (noisy frames, like the path tracer's early passes, cost the most).
+	// (noisy frames, like the path tracer's early passes, cost the most), and
+	// past CRF 36 only while the clip is still over the budget itself.
 	for crf := 26; ; crf += 2 {
 		enc := exec.Command("ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", lp,
 			"-vf", crop+fmt.Sprintf(",fps=%d,format=yuv420p", fps), "-t", fmt.Sprint(seconds),
@@ -335,7 +336,7 @@ func encode(tmp, slug string, frames []frame, x, y, w, seconds float64) error {
 		if err != nil {
 			return err
 		}
-		if fi.Size() <= int64(site.Budgets.ReelClip)*9/10 || crf >= 36 {
+		if n := fi.Size(); n <= int64(site.Budgets.ReelClip)*9/10 || crf >= 36 && n <= int64(site.Budgets.ReelClip) || crf >= 42 {
 			break
 		}
 	}

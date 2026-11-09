@@ -5,7 +5,7 @@ lang: Go
 tags: code search, trigram index, regexp, MCP
 repo:
 demo: live
-demo_try: Watch the tour type a query, then type your own and see its trigrams' posting lists narrow 283 files to candidates on every keystroke.
+demo_try: Type a word slowly. From the third letter each key adds a trigram, and fewer of the 283 files are left to search.
 group: tools
 order: 11
 metric: Query latency p50 12.8 ms · p90 80 ms · p99 254 ms

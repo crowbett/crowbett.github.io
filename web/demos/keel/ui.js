@@ -663,8 +663,8 @@ export async function mount(root, demo) {
     put("lin", strip.length ? `${fmt(lin)} / ${fmt(strip.length)}` : "–");
     cell.lin.li.classList.toggle("kl-pass", strip.length > 0 && lin === strip.length);
     cell.lin.li.classList.toggle("kl-fail", lin < strip.length);
-    receipt.textContent = `${fmt(work.runs)} ${work.runs === 1 ? "run" : "runs"} of keel's simulator: ${fmt(work.steps)} scheduler steps and ` +
-      `${fmt(work.trace)} traced events over ${secs(work.sim, 1)} of simulated time, in ${fmt(Math.round(work.ms))} ms of calls, in your browser.`;
+    receipt.textContent = `${fmt(work.runs)} ${work.runs === 1 ? "run" : "runs"} of keel's simulator covered ${secs(work.sim, 1)} of simulated time in ${fmt(Math.round(work.ms))} ms: ` +
+      `${fmt(work.steps)} scheduler ${work.steps === 1 ? "step" : "steps"}, ${fmt(work.trace)} traced ${work.trace === 1 ? "event" : "events"}.`;
     canvas.setAttribute("aria-label", `${cur.you ? "Your seed" : "Seed"} ${r.seed} at ${secs(t)} of ${secs(r.sim_ns)} simulated: ` +
       `${faulty.length ? faulty.map((n) => `node ${n} ${S.n[n].st === "down" ? "crashed" : "paused"}`).join(", ") : "all five servers up"}, ` +
       `${S.part ? `partition ${set(S.part[0])} | ${set(S.part[1])}` : "network whole"}; ${S.passed} of ${r.fault_events} fault events so far. ` +

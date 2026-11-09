@@ -5,7 +5,7 @@ lang: Go
 tags: MCP, protocol translation, JSON-RPC, conformance testing
 repo:
 demo: live
-demo_try: Watch the conversation cross the bridge, then press Send mine and see your request rewritten on its way to the server and back.
+demo_try: Press Send mine and follow your request across the bridge; the inspector shows what changed, key by key.
 group: tools
 order: 13
 metric: 289/291 official MCP conformance checks through the bridge, 101 scenario runs
