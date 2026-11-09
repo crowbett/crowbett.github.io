@@ -2,7 +2,8 @@
 // of the screen, or of the part below the pinned monitor on narrow screens),
 // or under the pointer, is current: the monitor shows its recorded clip with a
 // glow taken from the picture. With reduced motion or Save-Data it shows the
-// poster only.
+// poster only. The screen opens the project it shows (pointer only: the
+// index links are the keyboard and screen reader path).
 const work = document.querySelector(".work");
 if (work) {
   const items = [...work.querySelectorAll(".it")];
@@ -65,6 +66,7 @@ if (work) {
     if (now) delete now.dataset.now;
     now = it;
     it.dataset.now = "";
+    screen.href = it.querySelector("h4 a").href;
     hud.querySelector("b").textContent = it.querySelector(".it-name").textContent;
     hud.querySelector("span").textContent = `${it.querySelector(".it-n").textContent} / ${items.length}`;
     show(it);
