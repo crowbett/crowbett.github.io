@@ -1,35 +1,40 @@
-.ec-controls { display: grid; gap: 12px; margin-bottom: 16px; }
-.ec-field select, .ec-field input { height: 2.25rem; box-sizing: border-box; width: 100%; }
-.ec-field select { max-width: 24rem; }
-.ec-field textarea { box-sizing: border-box; width: 100%; max-width: 32rem; font-size: 0.875rem; }
-.ec-about { margin: 0; color: var(--text-2); font-size: 0.875rem; max-width: 40rem; }
-.ec-origin-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: 12px; margin: 0; padding: 12px; border: 1px solid var(--line); border-radius: var(--r-1); min-width: 0; }
-.ec-origin-fields legend { padding: 0 4px; }
-.ec-origin-fields .ec-field { justify-content: flex-end; }
-.ec-origin-fields .ec-wide { grid-column: 1 / -1; }
-.ec-origin-fields .ec-wide input { max-width: 32rem; }
-.ec-legend { margin: 0 0 8px; }
+.ec-controls { display: grid; gap: 12px; margin-bottom: 12px; }
+.ec-knobs, .ec-heads, .ec-acts { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; }
+.ec-controls select, .ec-controls button, .ec-heads input { height: 2.25rem; box-sizing: border-box; max-width: 100%; }
+.ec-mine { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.ec-cc { flex: 1 1 16rem; }
+.ec-cc input { width: 100%; }
+.ec-etag input { width: 6.5rem; }
+.ec-vary input { width: 10rem; }
+.ec-extra { flex: 1 0 100%; margin: 0; font-size: 0.8125rem; color: var(--text-2); }
+.ec-extra:empty { display: none; }
+.ec-canvas { display: block; width: 100%; height: 420px; background: var(--sunken); border-radius: var(--r-1); touch-action: manipulation; }
+.ec-legend { margin: 8px 0 0; }
 .ec-key { display: inline-flex; align-items: center; gap: 0.5em; }
-.ec-key::before { content: ""; flex: none; width: 0.75em; height: 0.75em; background: var(--ec-c); }
-.ec-timeline { margin: 0 0 12px; }
-.ec-timeline svg { display: block; width: 100%; height: 2.5rem; background: var(--sunken); border-radius: var(--r-1); }
-.ec-track { stroke: var(--line-strong); stroke-width: 1; }
-.ec-mark { fill: var(--ec-c); }
-.ec-axis { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.75rem; color: var(--text-3); margin: 4px 0 0; }
-.ec-scroll { overflow-x: auto; }
-.ec-table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
+.ec-key::before { content: ""; flex: none; box-sizing: border-box; width: 0.75em; height: 0.75em; background: var(--ec-c); }
+.ec-key[data-k="STALE"]::before, .ec-key[data-k="BYPASS"]::before { background: none; border: 2px solid var(--ec-c); }
+.ec-key[data-k="you"]::before { background: none; border: 2px solid var(--accent); border-radius: 50%; }
+.ec-key[data-k="cli"]::before { background: none; border: 1px solid var(--line-strong); }
+.ec-key[data-k="o304"]::before { background: var(--text-2); }
+.ec-key[data-k="o200"]::before { background: var(--signal); }
+[data-k] { --ec-c: var(--danger); }
+[data-k="HIT"], [data-k="STALE"] { --ec-c: var(--live); }
+[data-k="REVALIDATED"] { --ec-c: var(--text); }
+[data-k="MISS"], [data-k="BYPASS"] { --ec-c: var(--signal); }
+.ec-you { margin: 8px 0 0; font-size: 0.875rem; color: var(--text); }
+.ec-you:empty { display: none; }
+.ec-cells { margin-top: 12px; }
+.ec-cells li { min-width: 5.5rem; }
+.ec-v { font-size: 0.8125rem; color: var(--text); }
+.ec-sends, .ec-status { margin: 8px 0 0; font-size: 0.8125rem; color: var(--text-2); }
+.ec-scroll { overflow-x: auto; margin-top: 12px; }
+.ec-table { border-collapse: collapse; width: 100%; font-size: 0.8125rem; }
 .ec-table th { text-align: left; font-family: var(--mono); font-size: var(--t-label); color: var(--text-3); font-weight: normal; padding: 4px 8px; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
 .ec-table td { padding: 4px 8px; border-bottom: 1px solid var(--line); vertical-align: baseline; }
+.ec-yours td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
 .ec-num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ec-origin { font-family: var(--mono); font-size: 0.75rem; color: var(--text-2); white-space: nowrap; }
 .ec-body { white-space: nowrap; }
-.ec-badge { display: inline-block; font-family: var(--mono); font-size: 0.75rem; padding: 0 0.4rem; border-radius: var(--r-1); color: var(--bg); background: var(--ec-c); }
-.ec-reason { display: block; font-family: var(--mono); font-size: 0.75rem; color: var(--text-3); }
-[data-outcome] { --ec-c: var(--text-3); }
-[data-outcome="HIT"] { --ec-c: var(--live); }
-[data-outcome="MISS"] { --ec-c: var(--signal); }
-[data-outcome="STALE"] { --ec-c: var(--text-3); }
-[data-outcome="REVALIDATED"] { --ec-c: var(--accent); }
-[data-outcome="BYPASS"] { --ec-c: var(--text); }
-
-.ec-status { margin-top: 12px; }
+.ec-badge { display: inline-block; font-family: var(--mono); font-size: 0.75rem; padding: 0 0.4rem; color: var(--bg); background: var(--ec-c); }
+.ec-reason { display: block; white-space: nowrap; font-family: var(--mono); font-size: 0.75rem; color: var(--text-3); }
+.ec-out { margin-top: 12px; }
