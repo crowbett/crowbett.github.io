@@ -280,8 +280,9 @@ func tabOrder(t *testing.T, ctx context.Context) {
 // mobile link (150 ms before the first byte, then 200 KB/s per response;
 // Chrome's network emulation leaves the navigation itself unthrottled): the
 // largest paint lands within 2.5 s and nothing shifts as fonts and styles arrive.
+// It runs alone, not in parallel: a visitor loads one page, and on a 4-vCPU
+// runner the page tabs' demos and clips pushed quorum's LCP past 2.5 s.
 func TestSlowConnection(t *testing.T) {
-	t.Parallel()
 	slow := httptest.NewServer(slowLink(srv.Config.Handler))
 	defer slow.Close()
 	for _, page := range []string{"/", "/projects/quorum/"} {
