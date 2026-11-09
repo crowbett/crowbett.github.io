@@ -27,6 +27,25 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".bt-map", Pad: 8, WideFocus: ".bt-map", WidePad: 8, Seconds: 7,
 	},
+	// The presenter walks and every crop window follows; you drag the
+	// presenter left and the anchors are proposed again, then the source
+	// drops to 720p and the 9:16 deliverables turn advisory as upscales.
+	"adfactory": {
+		Setup: `(async () => {
+			for (let i = 0; i < 200 && !document.querySelector(".adf-tile"); i++) await new Promise((r) => setTimeout(r, 50));
+		})()`,
+		Play: `(async () => {
+			const w = (ms) => new Promise((r) => setTimeout(r, ms));
+			const c = document.querySelector(".adf-canvas");
+			await w(1800);
+			for (let i = 0; i < 6; i++) { c.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true })); await w(140); }
+			await w(1600);
+			const s = document.querySelector("select[name=source]");
+			s.value = "1280x720"; s.dispatchEvent(new Event("change"));
+			await w(2400);
+		})()`,
+		Focus: ".adf-canvas", Pad: 4, WideFocus: ".adf-canvas", WidePad: 8, Seconds: 7,
+	},
 	// The floor packs orders on its own; you drop your cap order on the line,
 	// then take the top pick off the shelf and the shift is re-judged.
 	"anchorflow": {
