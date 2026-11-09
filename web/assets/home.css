@@ -77,8 +77,7 @@
 .it-glass { display: block; }
 .it-glass img { transition: scale var(--d-spring) var(--spring-soft); }
 .it-dm { position: absolute; inset: 0; display: grid; place-items: center; }
-.it-go, .it-of { position: absolute; z-index: 1; bottom: var(--sp-3); padding: var(--sp-1) var(--sp-3); border-radius: 999px; font: 400 var(--t-label)/1.5 var(--mono); }
-.it-of { left: var(--sp-3); background: oklch(0.1 0.01 262 / 0.55); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: var(--screen-ink); font-variant-numeric: tabular-nums; }
+.it-go { position: absolute; z-index: 1; bottom: var(--sp-3); padding: var(--sp-1) var(--sp-3); border-radius: 999px; font: 400 var(--t-label)/1.5 var(--mono); }
 .it-go { right: var(--sp-3); background: var(--block); color: var(--on-block); opacity: 0; translate: 0 4px; transition: opacity var(--d-base) var(--ease-in), translate var(--d-spring) var(--spring-soft); }
 .it-go::after { content: " →"; }
 @media (hover: hover) and (pointer: fine) {
@@ -99,3 +98,74 @@
   .it-dm .dm { scale: 2.6; }
 }
 @media (pointer: coarse) { .stage-scenes button { min-height: 44px; } .work-toc a { display: inline-flex; align-items: center; min-height: 44px; } }
+
+/* Home: the dock, a glass bar over the reel (work.js): one tick per project by area, the current one named, with steps, its demo and the index */
+.dock { position: fixed; z-index: 20; left: 50%; bottom: max(var(--sp-4), env(safe-area-inset-bottom)); display: flex; align-items: center; gap: var(--sp-3); padding: 6px 6px 6px var(--sp-4); border-radius: 999px; background: oklch(0.14 0.012 262 / 0.72); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); box-shadow: 0 16px 44px -8px oklch(0 0 0 / 0.6), inset 0 0 0 1px oklch(1 0 0 / 0.12); color: var(--screen-ink); font: 400 var(--t-label)/1 var(--mono); opacity: 0; visibility: hidden; translate: -50% 18px; transition: opacity var(--d-base) var(--ease-in), translate var(--d-spring) var(--spring-soft), visibility 0s var(--d-spring); }
+.dock[data-on] { opacity: 1; visibility: visible; translate: -50% 0; transition: opacity var(--d-base) var(--ease-in), translate var(--d-spring) var(--spring-soft); }
+html:not(.js) .dock { display: none; }
+.dock-ticks { display: flex; gap: 10px; }
+.dock-g { display: flex; }
+.dock-ticks a { display: grid; place-items: center; width: 13px; height: 32px; }
+.dock-ticks i { width: 3px; height: 12px; border-radius: 2px; background: oklch(1 0 0 / 0.26); transition: height var(--d-spring) var(--spring-soft), width var(--d-spring) var(--spring-soft), background var(--d-base); }
+.dock-ticks a[data-past] i { background: oklch(1 0 0 / 0.55); }
+.dock-ticks a:hover i { height: 20px; background: var(--screen-ink); }
+.dock-ticks a[data-now] i { width: 5px; height: 22px; background: var(--screen-signal); box-shadow: 0 0 12px var(--screen-signal); }
+.dock-now { display: flex; gap: var(--sp-2); width: 13.5ch; overflow: hidden; white-space: nowrap; }
+.dock-now b { font-weight: 400; color: var(--screen-dim); font-variant-numeric: tabular-nums; }
+.dock-now span { overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+.dock-step, .dock-go, .dock-all { display: inline-flex; align-items: center; justify-content: center; height: 32px; border: 0; border-radius: 999px; font: inherit; text-decoration: none; cursor: pointer; transition: background var(--d-base), color var(--d-base), opacity var(--d-base); }
+.dock-step { width: 32px; margin-right: -8px; background: oklch(1 0 0 / 0.07); color: var(--screen-ink); font-size: 0; }
+.dock-step::before { content: "↑"; font-size: 15px; }
+.dock-step[data-step="1"]::before { content: "↓"; }
+.dock-step:hover { background: oklch(1 0 0 / 0.16); }
+.dock-step:disabled { opacity: 0.35; cursor: default; }
+.dock-go { padding: 0 var(--sp-3); margin-left: 8px; background: var(--block); color: var(--on-block); }
+.dock-go:hover { background: var(--block-hover); }
+.dock-all { padding: 0 var(--sp-3); box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.2); color: var(--screen-ink); }
+.dock-all:hover { background: var(--screen-ink); color: var(--screen); }
+.dock-peek { position: absolute; bottom: calc(100% + 12px); left: var(--x, 50%); width: 15rem; display: grid; gap: 6px; padding: 8px 8px 10px; border-radius: 16px; background: oklch(0.14 0.012 262 / 0.86); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 16px 44px -8px oklch(0 0 0 / 0.6), inset 0 0 0 1px oklch(1 0 0 / 0.12); pointer-events: none; opacity: 0; translate: -50% 6px; transition: opacity var(--d-base) var(--ease-in), translate var(--d-spring) var(--spring-soft), left var(--d-spring) var(--spring-soft); }
+.dock-peek[data-on] { opacity: 1; translate: -50% 0; }
+.dock-peek img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; object-position: top; border-radius: 9px; background: var(--screen); }
+.dock-peek img[hidden] { display: none; }
+.dock-peek b { font: 800 1.05rem/1 var(--display); letter-spacing: -0.02em; padding-inline: 4px; }
+.dock-peek span { padding-inline: 4px; color: var(--screen-dim); font: 400 0.8rem/1.35 var(--sans); }
+.js .it-in { padding-bottom: calc(var(--sp-6) + 3.5rem); }
+@media (max-width: 39.99rem) {
+  .dock { left: var(--edge); right: var(--edge); translate: 0 18px; justify-content: space-between; }
+  .dock[data-on] { translate: 0; }
+  .dock-ticks, .dock-go { display: none; }
+  .dock-now { flex: 1; width: auto; min-width: 0; }
+}
+@media (pointer: coarse) { .dock-step, .dock-go, .dock-all { height: 40px; } .dock-step { width: 40px; } }
+
+/* Home: the end of the reel, a paper sheet over the last panel with every project, filtered by area and language */
+.fin { position: relative; z-index: 1; padding-block: var(--sp-8); border-radius: 28px 28px 0 0; background: var(--paper), var(--bg); color: var(--text); box-shadow: 0 -24px 48px -16px oklch(0 0 0 / 0.6); }
+.all-head { display: grid; gap: var(--sp-4); margin-bottom: var(--sp-6); }
+.all-head h3 { font-size: var(--t-h2); }
+.all-f { display: grid; gap: var(--sp-2); }
+html:not(.js) .all-f { display: none; }
+.all-f p { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0; }
+.all-f button { min-height: 32px; padding: 0 var(--sp-3); border: 0; border-radius: 999px; background: none; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--text); font: 400 var(--t-label)/1 var(--mono); cursor: pointer; transition: background var(--d-base), color var(--d-base); }
+.all-f button:hover { background: var(--block); box-shadow: none; color: var(--on-block); }
+.all-f [aria-pressed=true] { background: var(--text); box-shadow: none; color: var(--bg); }
+.all-n { margin: 0; font: 400 var(--t-label)/1.5 var(--mono); color: var(--text-3); }
+.all-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); gap: var(--sp-6) var(--sp-5); margin: 0; padding: 0; list-style: none; }
+.card { display: grid; gap: var(--sp-2); align-content: start; }
+.card[hidden] { display: none; }
+.card-shot { position: relative; display: block; aspect-ratio: 16 / 10; overflow: hidden; margin-bottom: var(--sp-2); border-radius: var(--r-2); background: var(--screen); box-shadow: var(--lift), 0 0 0 1px color-mix(in oklab, var(--text) 10%, transparent); }
+.card-shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; transition: scale var(--d-spring) var(--spring-soft); }
+.card-dm { position: absolute; inset: 0; display: grid; place-items: center; }
+.card-dm .dm { width: 224px; height: 108px; --m: var(--ml); color: var(--screen-dim); --dm-acc: var(--screen-signal); image-rendering: pixelated; }
+.card:hover .card-shot img { scale: 1.04; }
+.card h4 { margin: 0; font: 800 clamp(1.5rem, 1.25rem + 0.9vw, 2rem)/1 var(--display); letter-spacing: -0.04em; }
+.card h4 a { display: flex; align-items: baseline; gap: var(--sp-2); color: var(--text); text-decoration: none; }
+.card h4 a:hover .card-name { text-decoration: underline; text-decoration-thickness: 0.06em; text-underline-offset: 0.1em; }
+.card-n { font: 400 var(--t-label)/1 var(--mono); letter-spacing: 0; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.card-tag { margin: 0; color: var(--text-2); font-size: var(--t-small); line-height: 1.45; }
+.card-act { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); margin: var(--sp-1) 0 0; font: 400 var(--t-label)/1.5 var(--mono); color: var(--text-3); }
+.card-act .key { padding: var(--sp-1) var(--sp-3); font-size: var(--t-label); }
+@media (min-width: 64rem) { .fin { border-radius: 36px 36px 0 0; } }
+@media (pointer: coarse) { .all-f button { min-height: 44px; } }
+::view-transition-group(.card) { animation-duration: var(--d-spring); animation-timing-function: var(--ease-in); }
+html:active-view-transition-type(filter)::view-transition-old(root), html:active-view-transition-type(filter)::view-transition-new(root) { animation: none; }
+

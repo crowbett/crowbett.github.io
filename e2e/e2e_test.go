@@ -711,6 +711,9 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(refusedCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
 			t.Errorf("home refused-autoplay check failed (err %v)", err)
 		}
+		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(indexCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
+			t.Errorf("home dock and index check failed (err %v)", err)
+		}
 	}
 	overflow, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.documentElement.scrollWidth > document.documentElement.clientWidth`))
 	if err != nil {

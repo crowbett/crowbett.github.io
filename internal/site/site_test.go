@@ -5,6 +5,7 @@ import (
 	"math/rand/v2"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -312,5 +313,12 @@ func TestStageScenes(t *testing.T) {
 		if want := fmt.Sprintf("[%q, %q]", s.ID, s.Name); !strings.Contains(string(ui), want) {
 			t.Errorf("raytracer ui.js has no %s", want)
 		}
+	}
+}
+
+func TestLanguages(t *testing.T) {
+	got := languages([]Project{{Lang: "Rust"}, {Lang: "Go"}, {Lang: "Rust, Swift"}, {Lang: "Go"}, {Lang: "C++"}, {Lang: "Go"}})
+	if want := []string{"Go", "Rust", "Swift", "C++"}; !slices.Equal(got, want) {
+		t.Errorf("languages = %v, want %v", got, want)
 	}
 }
