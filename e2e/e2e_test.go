@@ -698,6 +698,9 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 			if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(traceCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
 				t.Errorf("demo %q: its calls lit no code in the code panel (err %v)", slug, err)
 			}
+			if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(timelineCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
+				t.Errorf("demo %q: call timeline check failed (err %v)", slug, err)
+			}
 		}
 		// The demo's receipt, read mid-screen, is still at full strength:
 		// a head with a demo is not pinned, so nothing sinks it while in use.

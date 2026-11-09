@@ -62,7 +62,7 @@ if (root) {
       const badge = tabs[i]?.querySelector("[data-ran]");
       if (badge && counts[i]) badge.textContent = fmt(counts[i]);
     });
-    if (total) total.textContent = fmt(sum);
+    if (total) total.textContent = `${fmt(sum)} call${sum === 1 ? "" : "s"}`;
     if (text && lastHit >= 0) {
       text.textContent = `${lastMethod} → ${titles[lastHit]}`;
       led.textContent = "live";
@@ -72,8 +72,10 @@ if (root) {
   document.addEventListener("demo:call", (e) => {
     if (e.detail.slug !== slug) return;
     let hit = -1;
+    e.detail.ran = [];
     calls.forEach((c, i) => {
       if (!runs(c, e.detail.method, e.detail.params)) return;
+      e.detail.ran.push(i);
       counts[i]++;
       sum++;
       if (hit < 0 || !panels[i].hidden) hit = i;

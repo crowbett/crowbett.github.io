@@ -371,3 +371,26 @@ func (s *slowWriter) Write(b []byte) (int, error) {
 	}
 	return n, nil
 }
+
+// xray opens X-ray on a page pageQuality already checked, checks its numbers
+// and runs axe on its panel in the page's scheme, then closes it.
+func xray(t *testing.T, ctx context.Context) {
+	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(xrayCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
+		t.Errorf("X-ray check failed (err %v)", err)
+		return
+	}
+	found, err := chromedp.Run(ctx, chromedp.Evaluate[[]string](`(async () => {
+		document.getAnimations().forEach((a) => { try { a.finish(); } catch {} });
+		const r = await axe.run(".xr", { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"] }, resultTypes: ["violations"] });
+		return r.violations.map((v) => v.id + ": " + v.help);
+	})()`, chromedp.EvalAwaitPromise))
+	if err != nil {
+		t.Errorf("axe on X-ray: %v", err)
+	}
+	for _, f := range found {
+		t.Errorf("X-ray panel: axe %s", f)
+	}
+	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(xrayClose), chromedp.EvalAwaitPromise)); err != nil || !ok {
+		t.Errorf("X-ray did not close (err %v)", err)
+	}
+}

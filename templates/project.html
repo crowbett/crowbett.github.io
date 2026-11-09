@@ -16,7 +16,7 @@
       </div>
       {{if .Live}}<div class="ph-fig">
         <canvas class="glow" width="16" height="10" aria-hidden="true"></canvas>
-        <section class="demo" id="demo" data-demo="{{.Slug}}" data-ui="{{demoAsset .Slug}}" data-bytes="{{demoBytes .Slug}}" data-autostart aria-labelledby="demo-title">
+        <section class="demo" id="demo" data-demo="{{.Slug}}" data-ui="{{demoAsset .Slug}}" data-bytes="{{demoBytes .Slug}}"{{with demo .Slug}} data-gz="{{.Gzip}}" data-built="{{.Built}}" data-sha="{{.SHA}}" data-ref="{{.Ref}}"{{end}} data-autostart aria-labelledby="demo-title">
           <div class="demo-head">
             <h2 id="demo-title">Live demo</h2>
             <span class="demo-spec"><span class="demo-kind">WebAssembly, </span>~{{demoKB .Slug}} KB</span>
@@ -30,10 +30,15 @@
           </div>
           <div class="demo-mount" data-demo-mount></div>
           <p class="demo-status" data-demo-status role="status" aria-live="polite"></p>
-          <a class="demo-code" href="#code" data-code-link hidden><span class="led">The code it runs</span><span class="dc-n"><span data-code-total></span> calls ↓</span></a>
+          <a class="demo-code" href="#code" data-code-link hidden><span class="led">The code it runs</span><span class="dc-n"><span data-code-total></span> ↓</span></a>
+          <div class="tl" data-timeline="{{.Slug}}" hidden>
+            <p class="tl-head"><span class="tl-t">Calls to the binary</span><span class="tl-sum" data-tl-sum></span><button type="button" class="tl-xr" data-xray aria-pressed="false" title="X-ray (X)">X-ray</button></p>
+            <canvas class="tl-c" height="72" tabindex="0" role="slider" aria-label="Call timeline: arrow keys step through the calls" aria-valuemin="1" aria-valuemax="1" aria-valuenow="1"></canvas>
+            <div class="tl-d" data-tl-detail></div>
+          </div>
         </section>
       </div>
-      <script type="module" src="/assets/demo.js"></script>{{else}}<figure class="ph-fig">
+      <script type="module" src="/assets/demo.js"></script><script type="module" src="/assets/timeline.js"></script>{{else}}<figure class="ph-fig">
         <canvas class="glow" width="16" height="10" aria-hidden="true"></canvas>
         <div class="ph-screen"><span class="ph-dm" aria-hidden="true">{{template "dmask" .Slug}}</span></div>
         <p class="ph-hud" aria-hidden="true"><span class="led off">{{.Slug}}</span><span>diagram</span></p>
@@ -74,6 +79,6 @@
   </div>
 </article>
 {{end}}
-<script type="module" src="/assets/project.js"></script>
+<script type="module" src="/assets/project.js"></script><script type="module" src="/assets/xray.js"></script>
 {{template "foot" .}}{{end}}
 {{define "pg"}}<a href="/projects/{{.P.Slug}}/" rel="{{.Rel}}"><span class="pg-shot" aria-hidden="true">{{if .P.Live}}<img src="/reel/{{.P.Slug}}-n.webp" width="1324" height="828" alt="" loading="lazy" decoding="async">{{else}}<span class="ph-dm">{{template "dmask" .P.Slug}}</span>{{end}}</span><span class="pg-k">{{.Label}}</span> <span class="pg-t">{{.P.Title}}</span></a>{{end}}

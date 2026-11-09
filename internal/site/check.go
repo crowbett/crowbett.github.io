@@ -27,7 +27,7 @@ var Budgets = struct {
 	ReelClip    int // bytes, one home reel clip (.mp4) or its poster
 }{
 	PageHTML:    60 << 10,
-	CSS:         56 << 10,
+	CSS:         72 << 10,
 	JSPerDemo:   60 << 10,
 	WASMGzipped: 2304 << 10,
 	Fonts:       32 << 10,
