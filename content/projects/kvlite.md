@@ -6,6 +6,7 @@ tags: storage engine, log-structured, crash safety
 repo: https://github.com/crowbett/kvlite
 demo: live
 demo_try: Put, delete and compact, then crash with the last write torn and watch kvlite recover from its own files.
+group: storage
 order: 5
 metric: Get in 3.50 µs sequential / 6.04 µs random (100 B values)
 metric_source: README benchmark table, against bbolt and pebble on the same workload

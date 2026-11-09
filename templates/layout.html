@@ -30,12 +30,13 @@
 <link rel="preload" href="/assets/fonts/martian-mono.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/doto-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css">
+<script src="/assets/vt.js"></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <header class="top">
   <a class="brand" href="/">{{.Owner.Name}}</a>
-  <nav><a href="/#work">Work</a><a href="mailto:{{.Owner.Email}}">Email</a></nav>
+  <nav><a class="find" href="/#work" data-palette aria-haspopup="dialog">Search <kbd></kbd></a><a href="/#work">Work</a><a href="mailto:{{.Owner.Email}}">Email</a></nav>
 </header>
 <main id="main">
 {{end}}
@@ -47,15 +48,16 @@
   <p>© {{.Year}} {{.Owner.Name}} · <a href="mailto:{{.Owner.Email}}">{{.Owner.Email}}</a></p>
 </footer>
 <script type="module" src="/assets/motion.js"></script>
+<script type="module" src="/assets/nav.js"></script>
 </body>
 </html>
 {{end}}
 
 {{define "row"}}
   <a href="/projects/{{.Slug}}/{{if .Live}}#demo{{end}}">
-    <span class="row-n" aria-hidden="true"></span>
+    <span class="row-n" aria-hidden="true">{{rank .Slug}}</span>
     <div class="row-fig" aria-hidden="true">{{template "dmask" .Slug}}</div>
-    <h3 class="row-name">{{.Title}}</h3>
+    <h4 class="row-name"><span>{{.Title}}</span></h4>
     <span class="row-lang">{{.Lang}}</span>
     <p class="row-tag">{{.Tagline}}</p>
     <p class="metric">{{if .Metric}}{{bind .Metric}}{{end}}</p>

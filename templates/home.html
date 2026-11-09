@@ -24,14 +24,19 @@
     <script type="module" src="/assets/hero.js"></script>{{end}}
 </section>
 <section id="work" class="index" aria-labelledby="work-h">
-  <div class="index-head"><h2 id="work-h">Work</h2><p class="count">{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} live{{end}}</p>
-    <div class="filter" role="group" aria-label="Filter projects" hidden><button type="button" data-f="" aria-pressed="true">All</button>{{if .LiveCount}}<button type="button" data-f="live" aria-pressed="false">Live demos</button>{{end}}{{range .Langs}}<button type="button" data-f="{{langs .}}" aria-pressed="false">{{.}}</button>{{end}}</div></div>
+  <div class="index-head"><h2 id="work-h">Work</h2><p class="count" aria-live="polite">{{len .Projects}} projects{{if .LiveCount}}, {{.LiveCount}} live{{end}}</p>
+    <div class="finder" hidden>
+      <label class="search"><span class="vh">Search projects</span><input type="search" name="q" placeholder="Search name, language, topic" autocomplete="off" spellcheck="false" enterkeyhint="search"><kbd aria-hidden="true">/</kbd></label>
+      <div class="filter" role="group" aria-label="Show one group"><button type="button" data-g="" aria-pressed="true">All <span>{{len .Projects}}</span></button>{{range .Groups}}<button type="button" data-g="{{.Key}}" aria-pressed="false">{{.Short}} <span>{{len .Projects}}</span></button>{{end}}</div>
+    </div></div>
   <div class="index-cols" aria-hidden="true"><span>#</span><span>mechanism</span><span>project</span><span>lang</span><span>what it is</span><span>evidence</span><span>demo</span></div>
-  <ol class="rows">
-  {{range .Projects}}{{if .Live}}<li class="row" data-tags="live {{langs .Lang}}">{{template "row" .}}</li>
-  {{end}}{{end}}{{range .Projects}}{{if not .Live}}<li class="row" data-tags="{{langs .Lang}}">{{template "row" .}}</li>
-  {{end}}{{end}}
-  </ol>
+  {{range .Groups}}<section class="group" id="g-{{.Key}}" data-g="{{.Key}}" aria-labelledby="g-{{.Key}}-h">
+    <h3 class="group-h" id="g-{{.Key}}-h">{{.Name}} <span class="group-n">{{len .Projects}}</span></h3>
+    <ol class="rows">
+    {{range .Projects}}<li class="row" data-q="{{search .}}">{{template "row" .}}</li>
+    {{end}}</ol>
+  </section>
+  {{end}}<p class="nomatch" role="status" hidden>No project matches that. <button type="button">Show all</button></p>
 </section>
 <script type="module" src="/assets/filter.js"></script>
 {{template "foot" .}}{{end}}

@@ -6,6 +6,7 @@ tags: distributed SQL, MVCC, multi-Raft, deterministic simulation
 repo:
 demo: live
 demo_try: Run a seed twice for the same digest, bit for bit, then try another seed's fault schedule.
+group: storage
 order: 2
 metric: 10,000 randomized fault seeds gate each storage, Raft and multi-Raft milestone
 metric_source: README milestone table

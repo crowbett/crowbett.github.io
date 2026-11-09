@@ -6,6 +6,7 @@ tags: MCP, protocol translation, JSON-RPC, conformance testing
 repo:
 demo: live
 demo_try: Play a 2024 client's conversation through the bridge, edit any frame, then flip the direction.
+group: tools
 order: 13
 metric: 289/291 official MCP conformance checks through the bridge, 101 scenario runs
 metric_source: docs/conformance.md, suite 0.2.0-alpha.10, re-checked by CI on every push

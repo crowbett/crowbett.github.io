@@ -18,6 +18,7 @@ lang: Go
 tags: a, b
 repo: https://github.com/crowbett/demo
 demo: planned
+group: tools
 order: 2
 metric: 5 ops/s
 metric_source: bench.md
@@ -49,6 +50,8 @@ func TestParseProjectRejects(t *testing.T) {
 		"non-github repo":       strings.Replace(goodProject, "https://github.com/crowbett/demo", "https://example.com/x", 1),
 		"no front matter":       "just text",
 		"unterminated":          "---\ntitle: x\n",
+		"unknown group":         strings.Replace(goodProject, "group: tools", "group: misc", 1),
+		"missing group":         strings.Replace(goodProject, "group: tools\n", "", 1),
 		"missing tagline":       strings.Replace(goodProject, "tagline: A test project.\n", "", 1),
 	}
 	for name, src := range cases {

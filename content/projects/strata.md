@@ -6,6 +6,7 @@ tags: geometry, slicing, G-code, UniFFI, SwiftUI
 repo:
 demo: live
 demo_try: Slice a calibration model or your own STL, OBJ or 3MF, then scrub through its layers.
+group: graphics
 order: 8
 metric: 0 open edges after repairing a 3DBenchy with 5,868 facets removed and 239 flipped, volume within 0.5%
 metric_source: docs/features.md, mesh repair (measured)

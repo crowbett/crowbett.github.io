@@ -221,16 +221,19 @@ export async function mount(root, demo) {
     status.textContent = msg;
   }
 
+  let sceneLabel = "";
   function milestone() {
-    if (!lit || passes < 4 || (passes & (passes - 1)) !== 0) return;
+    if (!lit || passes < 2) return;
     const [a, b] = strategies().map((s) => last[s].rmse_estimate);
-    say(`${fmt(passes)} spp: est. RMSE ${sig(a)} with ${STRATEGY.material}, ${sig(b)} with ${rightName()} (${(a / b).toFixed(2)}× the noise).`);
+    say(`${sceneLabel}: ${fmt(passes)} spp, est. RMSE ${sig(a)} with ${STRATEGY.material}, ${sig(b)} with ${rightName()} (${(a / b).toFixed(2)}× the noise).`);
   }
 
   function setPlay() {
     play.textContent = running ? "Pause" : passes >= MAX_SPP ? "Done" : passes > 0 && !reduced ? "Resume" : "Render";
     play.disabled = passes >= MAX_SPP;
     step.disabled = running || passes >= MAX_SPP;
+    step.style.display = running ? "none" : "";
+    status.setAttribute("aria-live", running ? "off" : "polite");
   }
 
   // One band of rows, every strategy in turn, so the halves never differ in spp.
@@ -326,7 +329,7 @@ export async function mount(root, demo) {
         ? "Each bounce also casts a shadow ray at a point on a light; MIS (power heuristic) weighs it against the bounce, and Russian roulette ends dim paths. The renderer's default."
         : "Half of all bounces aim at the lights, half follow the material, each weighted by the two densities combined (book 3).";
     hint.textContent = lit ? "drag to compare" : "no lights to sample";
-    const label = SCENES.find(([id]) => id === info.scene)[1];
+    const label = (sceneLabel = SCENES.find(([id]) => id === info.scene)[1]);
     sceneInfo.textContent = `${label}: ${info.width} × ${info.height} px, ${fmt(info.objects)} top-level objects, ` +
       `${fmt(info.lights)} sampled light${info.lights === 1 ? "" : "s"}, SAH BVH of ${fmt(info.bvh_nodes)} nodes (depth ${info.bvh_depth}), ` +
       `up to ${info.max_depth} bounces, seed 1.`;

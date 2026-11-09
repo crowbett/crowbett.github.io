@@ -6,6 +6,7 @@ tags: matchmaking, WebSocket, Redis, HMAC
 repo:
 demo: live
 demo_try: Tap the skill axis to queue your own player, then watch its window widen until someone fits.
+group: services
 order: 14
 metric: 433.5 short-handed handoffs per 1000-bot squad run before refill, 0 after (medians of 6)
 metric_source: results/swarm/20260924-113450.md, Ryzen 7 3700X, loaded box
