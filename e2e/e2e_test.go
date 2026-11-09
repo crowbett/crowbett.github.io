@@ -19,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -467,22 +468,59 @@ func TestSite(t *testing.T) {
 		pages = append(pages, "/projects/"+p.Slug+"/")
 	}
 
-	// One tab per page, viewport and scheme, all in parallel.
-	t.Run("pages", func(t *testing.T) {
-		for _, page := range pages {
-			for _, vp := range viewports {
-				for _, scheme := range schemes {
-					if !keepShots && scheme == "dark" && vp.name != "phone" {
-						continue
-					}
-					shot := name(page) + "-" + vp.name + "-" + scheme
-					t.Run(name(page)+"/"+vp.name+"/"+scheme, func(t *testing.T) {
-						t.Parallel()
-						visit(t, srv.URL+page, vp.width, vp.height, vp.layoutOnly, scheme, filepath.Join(shots, shot))
-					})
+	// One tab per page, viewport and scheme, all in parallel. The slowest tabs
+	// start first so they do not run on alone at the end: desktop light, which
+	// runs every demo check, then the pages with the most checks (home replays
+	// the hero).
+	type tab struct {
+		page, scheme string
+		vp           int
+	}
+	var tabs []tab
+	for _, page := range pages {
+		for vi, vp := range viewports {
+			for _, scheme := range schemes {
+				if keepShots || scheme == "light" || vp.name == "phone" {
+					tabs = append(tabs, tab{page, scheme, vi})
 				}
 			}
 		}
+	}
+	cost := func(x tab) int {
+		n := len(demoChecks[strings.TrimSuffix(strings.TrimPrefix(x.page, "/projects/"), "/")])
+		if x.page == "/" {
+			n = 99
+		}
+		if viewports[x.vp].name == "desktop" && x.scheme == "light" {
+			n += 1000
+		}
+		if viewports[x.vp].layoutOnly || x.scheme == "dark" && viewports[x.vp].name != "phone" {
+			n -= 1000
+		}
+		return n
+	}
+	slices.SortStableFunc(tabs, func(a, b tab) int { return cost(b) - cost(a) })
+	// Twelve workers take tabs in that order; t.Parallel starts them in no
+	// particular order.
+	queue := make(chan tab, len(tabs))
+	for _, x := range tabs {
+		queue <- x
+	}
+	close(queue)
+	t.Run("pages", func(t *testing.T) {
+		var wg sync.WaitGroup
+		for range 12 {
+			wg.Go(func() {
+				for x := range queue {
+					vp := viewports[x.vp]
+					shot := name(x.page) + "-" + vp.name + "-" + x.scheme
+					t.Run(name(x.page)+"/"+vp.name+"/"+x.scheme, func(t *testing.T) {
+						visit(t, srv.URL+x.page, vp.width, vp.height, vp.layoutOnly, x.scheme, filepath.Join(shots, shot))
+					})
+				}
+			})
+		}
+		wg.Wait()
 	})
 }
 
