@@ -569,17 +569,27 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 	}
 	// Layout shift is measured before any demo starts: a demo grows its frame
 	// when the visitor runs it, which is content they asked for.
-	cls, err := chromedp.Run(ctx, chromedp.Evaluate[float64](`new Promise((resolve) => {
-		let sum = 0;
-		new PerformanceObserver((l) => { for (const e of l.getEntries()) if (!e.hadRecentInput) sum += e.value; })
-			.observe({ type: "layout-shift", buffered: true });
-		setTimeout(() => resolve(sum), 50);
+	type shift struct {
+		Sum   float64
+		Moved []string
+	}
+	cls, err := chromedp.Run(ctx, chromedp.Evaluate[shift](`new Promise((resolve) => {
+		const out = { Sum: 0, Moved: [] };
+		const box = (r) => [r.x, r.y, r.width, r.height].map(Math.round).join(",");
+		new PerformanceObserver((l) => {
+			for (const e of l.getEntries()) {
+				if (e.hadRecentInput) continue;
+				out.Sum += e.value;
+				for (const s of e.sources) out.Moved.push((s.node?.outerHTML ?? "#text").slice(0, 80) + " " + box(s.previousRect) + " -> " + box(s.currentRect) + " at " + Math.round(e.startTime) + " ms");
+			}
+		}).observe({ type: "layout-shift", buffered: true });
+		setTimeout(() => resolve(out), 50);
 	})`, chromedp.EvalAwaitPromise))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cls != 0 {
-		t.Errorf("cumulative layout shift %.4f, want 0", cls)
+	if cls.Sum != 0 {
+		t.Errorf("cumulative layout shift %.4f, want 0; moved: %s", cls.Sum, strings.Join(cls.Moved, "; "))
 	}
 	hasDemo, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector("[data-demo]") !== null`))
 	if err != nil {

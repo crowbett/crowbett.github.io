@@ -27,7 +27,7 @@ function actions() {
   if (start && !start.disabled && !document.querySelector("[data-demo-ready]")) {
     out.push({ tag: "run", title: "Run the live demo", run: () => { start.closest("[data-demo]").scrollIntoView({ block: "start" }); start.click(); } });
   }
-  const full = document.querySelector("[data-demo-full]:not([hidden])");
+  const full = document.querySelector("[data-demo-full][data-on]");
   if (full) out.push({ tag: "view", title: full.textContent.trim(), run: () => full.click() });
   for (const [rel, word, key] of [["prev", "Previous", "["], ["next", "Next", "]"]]) {
     const a = document.querySelector(`.pager [rel=${rel}]`);
