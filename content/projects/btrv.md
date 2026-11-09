@@ -5,7 +5,7 @@ lang: Go
 tags: file formats, Btrieve, data recovery, CSV and SQLite export
 repo:
 demo: live
-demo_try: Select a page of the map for its header, switch to the inferred schema, then damage a page.
+demo_try: Watch btrv map and read the sample, then press Corrupt page and see where the reader stops.
 group: storage
 order: 15
 metric: 2,483,585 rows/s read and decoded, 15 columns per record, slowest of 6 runs
@@ -19,6 +19,8 @@ metric_source: Apple M3 Pro under load, docs/BENCHMARKS.md
 
 ## How the demo works
 
-btrv's page reader, dictionary loader, layout inference and export loop, compiled from Go to WebAssembly. Files you open are read inside this tab and are never uploaded; the demo takes up to 32 MiB at a time. The sample is a synthetic 6.x table with its FILE, FIELD and INDEX dictionaries, written by btrv's own test generator. It has deleted records, free pages and stale page copies left behind.
+btrv's page reader, page map, dictionary loader, layout inference and export loop, compiled from Go to WebAssembly. The sample is a synthetic 6.x table with its FILE, FIELD and INDEX dictionaries, written by btrv's own test generator, with deleted records, free pages and stale page copies left in it.
 
-The page map draws every physical page in file order. A data page fills as the scan reaches its records. **Damage page** flips one header byte in this tab's copy so you can watch the reader stop with an error rather than skip the page. CSV and JSON Lines downloads come from the same export code as the command line. SQLite export is in the command only, because its SQLite driver does not build for WebAssembly.
+On arrival the binary describes the file one page header at a time, and each square of the map takes its page's kind: header, allocation table, data, variable, index, free or unreferenced. Then the reader walks the data pages in its own order. Each page fills as its records are decoded, and the decoded rows appear beside the map. Pause, Step, Reset and a speed control drive the walk.
+
+Pick any page for what the binary says about it. On a data page, pick a row to see each field's byte range and decoded value. **Corrupt page** flips one header byte in this tab's copy, and btrv maps and reads the file again. A bad data or variable page stops the read with an error rather than skip it. A bad index page is flagged, and every row is still read. Your own files are read inside this tab and are never uploaded; the demo takes up to 32 MiB at a time. CSV and JSON Lines downloads come from the same export code as the command line. SQLite export is in the command only, because its SQLite driver does not build for WebAssembly.
