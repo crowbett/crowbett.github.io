@@ -45,6 +45,29 @@ func untilJS(check string) string {
 	})`
 }
 
+// finderCheck drives the home search and group chips: matches keep their
+// fixed numbers, the URL carries the filter, "/" focuses the box and the
+// no-match button resets everything.
+const finderCheck = `(async () => {
+	const q = document.querySelector(".finder input"), count = document.querySelector(".count");
+	const shown = () => [...document.querySelectorAll(".row:not([hidden])")].map((r) => r.querySelector(".row-name").textContent + r.querySelector(".row-n").textContent).join();
+	const groups = () => [...document.querySelectorAll(".group:not([hidden])")].map((g) => g.dataset.g).join();
+	const type = (v) => { q.value = v; q.dispatchEvent(new Event("input")); };
+	type("rust");
+	let ok = await until(() => shown() === "keel01,stash03,codegraph10,strata13,netcode14" && groups() === "storage,tools,graphics" && count.textContent === "5 of 15 shown" && location.search === "?q=rust");
+	document.querySelector('.filter [data-g="tools"]').click();
+	ok = ok && await until(() => shown() === "codegraph10" && location.search === "?q=rust&g=tools");
+	type("zzz");
+	ok = ok && await until(() => !document.querySelector(".nomatch").hidden && groups() === "");
+	document.querySelector(".nomatch button").click();
+	ok = ok && await until(() => document.querySelectorAll(".row:not([hidden])").length === 15 && !/shown/.test(count.textContent) && location.search === "" && document.querySelector('.filter [data-g=""]').getAttribute("aria-pressed") === "true");
+	q.blur();
+	document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "/", bubbles: true, cancelable: true }));
+	ok = ok && await until(() => document.activeElement === q);
+	q.blur();
+	return ok;
+})()`
+
 // demoChecks holds, per demo slug, JavaScript expressions that must all be
 // true (or resolve true) once the demo reports ready. Every live demo adds
 // at least one check that proves it rendered real output from its binary.
@@ -925,6 +948,11 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 		pageQuality(t, ctx)
 	} else if scheme == "light" {
 		tabOrder(t, ctx)
+	}
+	if isHome, _ := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector(".finder") !== null`)); isHome && !layoutOnly && scheme == "light" {
+		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(finderCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
+			t.Errorf("home finder check failed (err %v)", err)
+		}
 	}
 	overflow, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.documentElement.scrollWidth > document.documentElement.clientWidth`))
 	if err != nil {

@@ -5,6 +5,7 @@ lang: Go
 tags: Raft, consensus, deterministic simulation, linearizability
 repo:
 demo: planned
+group: storage
 order: 1
 metric: 10,000 simulated seeds in about 30 s, each one replayable bit for bit
 metric_source: README, go test ./internal/sim -seeds 10000

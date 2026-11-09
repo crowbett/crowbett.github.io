@@ -6,6 +6,7 @@ tags: path tracing, Monte Carlo, importance sampling, BVH
 repo:
 demo: live
 demo_try: Drag the divider to compare material-only and light sampling at equal samples per pixel.
+group: graphics
 order: 10
 metric: 187.5 ms for the book 1 cover (400x225, 50 spp), from 8.865 s single-threaded with no BVH
 metric_source: BENCH.md, hyperfine, Apple M3 Pro; 12 threads, SAH BVH

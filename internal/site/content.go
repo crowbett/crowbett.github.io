@@ -23,7 +23,8 @@ import (
 // demo (live | planned | none), order (int; lower first), metric (one measured
 // headline number, quoted from the repo, with its source in metric_source;
 // it leads with the number or a capital so the cards read as one set),
-// demo_try (one line on what a visitor can do in the live demo; live only).
+// demo_try (one line on what a visitor can do in the live demo; live only),
+// group (a Groups key: which section of the home index it sits in).
 type Project struct {
 	Slug         string
 	Title        string
@@ -36,7 +37,27 @@ type Project struct {
 	Order        int
 	Metric       string
 	MetricSource string
+	Group        string
 	Body         template.HTML
+}
+
+// Group is one section of the home index, in display order.
+type Group struct {
+	Key, Name, Short string
+}
+
+// Groups lists every section; a project's group must be one of these keys.
+var Groups = []Group{
+	{"storage", "Databases and storage", "Storage"},
+	{"services", "Backend services", "Services"},
+	{"tools", "Developer tools", "Tools"},
+	{"graphics", "Graphics, games and geometry", "Graphics"},
+}
+
+// Kind returns the project's group.
+func (p Project) Kind() Group {
+	i := slices.IndexFunc(Groups, func(g Group) bool { return g.Key == p.Group })
+	return Groups[i]
 }
 
 // Private reports whether the source is not public.
@@ -109,6 +130,8 @@ func parseProject(slug string, src []byte) (Project, error) {
 			p.Metric = v
 		case "metric_source":
 			p.MetricSource = v
+		case "group":
+			p.Group = v
 		default:
 			return p, fmt.Errorf("unknown front matter key %q", k)
 		}
@@ -116,6 +139,8 @@ func parseProject(slug string, src []byte) (Project, error) {
 	switch {
 	case p.Title == "" || p.Tagline == "":
 		return p, fmt.Errorf("title and tagline are required")
+	case !slices.ContainsFunc(Groups, func(g Group) bool { return g.Key == p.Group }):
+		return p, fmt.Errorf("group must be one of storage, services, tools, graphics, got %q", p.Group)
 	case !slices.Contains(demoStates, p.Demo):
 		return p, fmt.Errorf("demo must be one of %v, got %q", demoStates, p.Demo)
 	case p.Repo != "" && !strings.HasPrefix(p.Repo, "https://github.com/"):

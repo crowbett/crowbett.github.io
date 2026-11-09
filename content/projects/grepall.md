@@ -6,6 +6,7 @@ tags: code search, trigram index, regexp, MCP
 repo:
 demo: live
 demo_try: Type a regexp and watch it become a trigram query, a candidate set and verified matches.
+group: tools
 order: 11
 metric: Query latency p50 12.8 ms · p90 80 ms · p99 254 ms
 metric_source: 82 repos / 62,339 files, Windows 11, 16 cores, README.md Numbers

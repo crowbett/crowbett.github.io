@@ -6,6 +6,7 @@ tags: rollback, client-side prediction, snapshot interpolation, UDP, determinism
 repo:
 demo: live
 demo_try: Steer with WASD, the arrow keys or a drag, then raise latency and loss and watch the rollbacks.
+group: graphics
 order: 9
 metric: 0 desyncs and 0 hash mismatches in a 30 s soak of 4 bots over UDP at 100 ms latency, 20 ms jitter and 2% loss
 metric_source: README.md, Soak (measured 2026-10-07)
