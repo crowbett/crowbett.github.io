@@ -270,6 +270,8 @@ export async function mount(root, demo) {
   let lastTick = 0;
   let raf = 0;
   let hover = -1;
+  let hoverPkg = null;
+  let mine = false;
   let sel = -1;
   let G = null;
 
@@ -325,6 +327,10 @@ export async function mount(root, demo) {
     };
 
     // Hover column behind everything.
+    if (hoverPkg) {
+      g.fillStyle = C.tint;
+      g.fillRect(fx(hoverPkg.from), G.stripTop, hoverPkg.n * G.fw, G.stripH + 14);
+    }
     if (hover >= 0 || sel >= 0) {
       for (const [i, c] of [[sel, C.tint], [hover, C.tint]]) {
         if (i < 0) continue;
@@ -367,7 +373,8 @@ export async function mount(root, demo) {
     }
 
     // The query, with each required trigram bracketed where it occurs in the text.
-    label("query", 4, G.qTop + 4, C.text3);
+    if (mine) label("your query", 4, G.qTop + 4, C.accent, 10, 600);
+    else label("query", 4, G.qTop + 4, C.text3);
     g.font = font(G.narrow ? 12 : 14, 600);
     const cw = g.measureText("M").width;
     const maxChars = Math.floor(G.P / cw);
@@ -594,13 +601,15 @@ export async function mount(root, demo) {
   canvas.addEventListener("pointermove", (e) => {
     if (!G) return;
     const h = at(e);
-    if (h.i !== hover) {
-      hover = h.i;
-      readout.textContent = describe(hover >= 0 ? hover : sel, h.strip);
+    const pk = h.strip && h.i >= 0 ? pkgs.find((x) => h.i >= x.from && h.i < x.from + x.n) : null;
+    if (h.i !== hover || pk !== hoverPkg) {
+      hover = pk ? -1 : h.i;
+      hoverPkg = pk;
+      readout.textContent = describe(h.i >= 0 ? h.i : sel, h.strip);
       kick();
     }
   });
-  canvas.addEventListener("pointerleave", () => { hover = -1; readout.textContent = describe(sel); kick(); });
+  canvas.addEventListener("pointerleave", () => { hover = -1; hoverPkg = null; readout.textContent = describe(sel); kick(); });
   canvas.addEventListener("pointerdown", (e) => {
     if (!G) return;
     const h = at(e);
@@ -689,6 +698,7 @@ export async function mount(root, demo) {
     } catch (err) {
       if (source === "tour") return;
       typed = p.q;
+      mine = true;
       mode = "error";
       status.textContent = err.message;
       status.classList.add("ga-err");
@@ -720,6 +730,7 @@ export async function mount(root, demo) {
     const m = await demo.call("match", p);
     const t4 = performance.now();
     calls += 2;
+    mine = source === "you";
     render(p, plan, f, m, { plan: t1 - t0, lists: t2 - t1, index: t3 - t2, verify: t4 - t3, total: t4 - t0, read });
   }
 

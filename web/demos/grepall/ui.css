@@ -8,6 +8,7 @@
 .ga-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 .ga-presets button { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 4px 8px; text-align: left; }
 .ga-presets button[aria-pressed="true"] { background: var(--block); border-color: var(--block); color: var(--on-block); }
+.ga-presets button[aria-pressed="true"] code { background: none; color: inherit; }
 .ga-pl { font-family: var(--mono); font-size: 0.625rem; opacity: 0.8; }
 .ga-presets code { font-family: var(--mono); font-size: 0.75rem; }
 .ga-cap { min-height: 2.5em; margin: 0 0 8px; font-size: 0.8125rem; color: var(--text-2); }
@@ -20,7 +21,7 @@
 .ga-key[data-k="cand"] { --ga-k: var(--signal); }
 .ga-key[data-k="early"] { --ga-k: color-mix(in oklab, var(--signal) 40%, var(--sunken)); }
 .ga-key[data-k="hit"] { --ga-k: var(--accent); }
-.ga-readout { margin: 6px 0 0; min-height: 1.25rem; font-family: var(--mono); font-size: 0.75rem; color: var(--text); overflow-wrap: anywhere; }
+.ga-readout { margin: 6px 0 0; min-height: 2.6em; font-family: var(--mono); font-size: 0.75rem; color: var(--text); overflow-wrap: anywhere; }
 .ga-status { min-height: 3em; margin: 8px 0 12px; font-size: 0.875rem; color: var(--text); overflow-wrap: anywhere; }
 .ga-status.ga-err { color: var(--danger); font-family: var(--mono); font-size: 0.8125rem; }
 .ga-cells { margin-bottom: 16px; }

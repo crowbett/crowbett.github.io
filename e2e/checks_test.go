@@ -392,7 +392,7 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"grepall": {
-		`[...document.querySelectorAll(".ga-cells .ga-v")].slice(0, 3).map((v) => v.textContent).join("|") === "283|1.84 MiB|143,027" && /^283 files indexed into 34 shards/.test(document.querySelector(".ga-out").textContent) && document.querySelector(".ga-canvas").getAttribute("aria-label").startsWith("Index board for ")`,
+		`until(() => [...document.querySelectorAll(".ga-cells .ga-v")].slice(0, 3).map((v) => v.textContent).join("|") === "283|1.84 MiB|143,027" && /^283 files indexed into 34 shards/.test(document.querySelector(".ga-out").textContent) && document.querySelector(".ga-canvas").getAttribute("aria-label").startsWith("Index board for "))`,
 		`(() => { const c = document.querySelector(".ga-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
 		`(async () => {
 			const label = () => document.querySelector(".ga-canvas").getAttribute("aria-label");
