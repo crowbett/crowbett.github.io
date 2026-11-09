@@ -704,7 +704,6 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 				t.Errorf("home %s check failed (err %v)", c.name, err)
 			}
 		}
-		feelCheck(t, ctx)
 	}
 	overflow, err := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.documentElement.scrollWidth > document.documentElement.clientWidth`))
 	if err != nil {

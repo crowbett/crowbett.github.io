@@ -85,3 +85,15 @@ func TestIndexKeys(t *testing.T) {
 		t.Fatalf("j/k or search.json: %v", err)
 	}
 }
+
+// TestPointerFeel runs feelCheck on a desktop home tab of its own, so the
+// long chain of home checks in TestSite does not grow.
+func TestPointerFeel(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := newTab(t, 60*time.Second)
+	defer cancel()
+	if err := chromedp.Do(ctx, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(srv.URL+"/"), chromedp.WaitReady(chromedp.CSS("body"))); err != nil {
+		t.Fatal(err)
+	}
+	feelCheck(t, ctx)
+}
