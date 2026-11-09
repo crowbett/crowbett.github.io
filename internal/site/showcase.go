@@ -118,19 +118,20 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".kv-stats", Pad: 8, WideFocus: ".kv-stats", WidePad: 10, Seconds: 7,
 	},
-	// Play sends each client frame through the bridge; packets cross the lanes
-	// and the bridge's translations light up as the conversation builds.
+	// The tour plays on its own: frames cross the lanes and change shape at the
+	// bridge; you send your own tools/call and it crosses in the accent colour.
 	"mcpbridge": {
 		Setup: `(async () => {
-			const d = document.querySelector("select[name=direction]");
-			d.value = "reverse"; d.dispatchEvent(new Event("change"));
-			for (let i = 0; i < 100 && !/^4 client frames, 17 frames/.test(document.querySelector(".mb-status").textContent); i++) await new Promise((r) => setTimeout(r, 50));
+			const v = () => Number(document.querySelector(".mb-cells [data-k=messages] .mb-v").textContent);
+			const s = document.querySelector("select[name=speed]");
+			s.value = "2"; s.dispatchEvent(new Event("change"));
+			for (let i = 0; i < 200 && !(v() >= 1); i++) await new Promise((r) => setTimeout(r, 50));
 		})()`,
 		Play: `(async () => {
-			await new Promise((r) => setTimeout(r, 600));
-			[...document.querySelectorAll(".mb-bar button")].find((b) => b.textContent === "Play").click();
+			await new Promise((r) => setTimeout(r, 2600));
+			[...document.querySelectorAll(".mb-controls button")].find((b) => b.textContent === "Send mine").click();
 		})()`,
-		Focus: ".mb-head", Pad: 8, Seconds: 7.5,
+		Focus: ".mb-canvas", Pad: 4, WideFocus: ".mb-canvas", WidePad: 8, Seconds: 7,
 	},
 	// keel: a new seed every 1.2 s; the digest, fault timeline and totals change.
 	// keel: seed 2's whole fault schedule plays at 10×, from the first partition
