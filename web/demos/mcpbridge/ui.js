@@ -856,7 +856,6 @@ export async function mount(root, demo) {
       receipt.textContent = `${fmt(st.frames)} frames through mcpbridge's engines in ${fmt(st.sessions)} session${st.sessions === 1 ? "" : "s"}, ${fmt(st.translated)} translated, ${fmt(st.made)} made by the bridge, in ${ms(st.callMs)} of calls, in your browser.`;
     }
     canvas.setAttribute("aria-label", sess ? `Sequence diagram of session ${sess.n}, ${sess.scn.title}: ${fmt(st.frames)} frames so far, ${fmt(st.translated)} translated by mcpbridge, ${fmt(st.refused)} refused.` : "Sequence diagram");
-    older.disabled = !selected;
   }
   // ---- loop ----
   function frame(ts) {
