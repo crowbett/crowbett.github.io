@@ -41,6 +41,7 @@ const fmt = (n) => n.toLocaleString("en-US");
 const ms = (v) => (v < 10 ? v.toFixed(1) : fmt(Math.round(v))) + " ms";
 const bytesOf = (s) => new TextEncoder().encode(s).length;
 const B = (n) => fmt(n) + " B";
+const plural = (n, one, many = `${one}s`) => `${fmt(n)} ${n === 1 ? one : many}`;
 const parse = (s) => { try { return [JSON.parse(s), null]; } catch (e) { return [undefined, e]; } };
 const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -853,7 +854,7 @@ export async function mount(root, demo) {
     const c = [...st.calls].sort((a, b) => a - b);
     set("p50", c.length ? ms(c[Math.floor((c.length - 1) / 2)]) : "–");
     if (st.sessions) {
-      receipt.textContent = `${fmt(st.frames)} frames through mcpbridge's engines in ${fmt(st.sessions)} session${st.sessions === 1 ? "" : "s"}, ${fmt(st.translated)} translated, ${fmt(st.made)} made by the bridge, in ${ms(st.callMs)} of calls, in your browser.`;
+      receipt.textContent = `${plural(st.frames, "frame")} across mcpbridge in ${plural(st.sessions, "session")}; it translated ${fmt(st.translated)} and made ${fmt(st.made)} itself, in ${ms(st.callMs)}.`;
     }
     canvas.setAttribute("aria-label", sess ? `Sequence diagram of session ${sess.n}, ${sess.scn.title}: ${fmt(st.frames)} frames so far, ${fmt(st.translated)} translated by mcpbridge, ${fmt(st.refused)} refused.` : "Sequence diagram");
   }

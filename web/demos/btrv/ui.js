@@ -22,6 +22,7 @@ const el = (tag, cls, text) => {
   return n;
 };
 const fmt = (n) => Number(n).toLocaleString("en-US");
+const plural = (n, one, many = `${one}s`) => `${fmt(n)} ${n === 1 ? one : many}`;
 const mib = (b) => `${(b / 1048576).toFixed(1)} MiB`;
 const hex = (n) => `0x${n.toString(16)}`;
 const ease = (t) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
@@ -327,14 +328,14 @@ export async function mount(root, demo) {
     } else if (r && r.stopped) {
       const p = w.stopPage;
       const where = p >= 0 ? `at physical page ${fmt(p)}${w.lp[p] >= 0 ? ` (logical ${fmt(w.lp[p])})` : ""} ` : "";
-      status.textContent = `The read stopped ${where}after ${fmt(r.rowsRead)} of ${fmt(f.records)} rows rather than skip a page: ${r.stopped}`;
+      status.textContent = `The read stopped ${where}after ${fmt(r.rowsRead)} of ${plural(f.records, "row")} rather than skip a page: ${r.stopped}`;
     } else if (r) {
       const flagged = probs.length ? `${probs.map(([p, t]) => `Page ${fmt(p)} is flagged: ${t}.`).join(" ")} The record walk did not need it: ` : "Every record the header counts was read and decoded: ";
-      status.textContent = `${flagged}${fmt(r.rowsRead)} of ${fmt(f.records)} rows, ${fmt(r.columnErrors)} column errors.${w.note ? ` ${w.note}.` : ""}`;
+      status.textContent = `${flagged}${fmt(r.rowsRead)} of ${plural(f.records, "row")}, ${plural(r.columnErrors, "column error")}.${w.note ? ` ${w.note}.` : ""}`;
     }
-    const rows = r ? ` and ${fmt(r.rowsRead)} rows decoded` : "";
+    const rows = r ? ` and decoded ${plural(r.rowsRead, "row")}` : "";
     receipt.setAttribute("aria-live", "polite");
-    receipt.textContent = `${fmt(w.n)} pages mapped${rows} by btrv in ${Math.round(w.ms)} ms of calls, in your browser.`;
+    receipt.textContent = `btrv mapped ${plural(w.n, "page")}${rows} in ${fmt(Math.round(w.ms))} ms.`;
     renderTiles();
     renderInspector();
     caption();
@@ -660,7 +661,7 @@ export async function mount(root, demo) {
     queued = [];
     for (const res of qs) addRows(res, animate);
     if (w && w.phase !== "done") receipt.setAttribute("aria-live", "off");
-    if (w && w.phase !== "done") receipt.textContent = `${fmt(w.desc)} pages mapped and ${fmt(w.read)} rows decoded by btrv so far, in ${Math.round(w.ms)} ms of calls, in your browser.`;
+    if (w && w.phase !== "done") receipt.textContent = `btrv has mapped ${plural(w.desc, "page")} and decoded ${plural(w.read, "row")} so far, in ${fmt(Math.round(w.ms))} ms.`;
   }
   function addRows(res, animate) {
     const out = [];

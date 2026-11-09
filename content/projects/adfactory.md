@@ -5,7 +5,7 @@ lang: Go
 tags: video pipeline, ffmpeg, reframing, captions, loudness, QC
 repo:
 demo: live
-demo_try: Drag the presenter across the source frame and watch nine deliverables re-plan their crops, captions and verdicts.
+demo_try: Grab the presenter and drag them across the frame; all nine deliverables re-plan on every move.
 group: tools
 order: 18
 metric: 37/37 QC ok on NVENC

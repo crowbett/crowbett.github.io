@@ -668,7 +668,7 @@ export async function mount(root, demo) {
     canvas.setAttribute("aria-label", `kvlite store: ${plural(s.keys, "key", "keys")} in ${plural(v.segments.length, "segment", "segments")}, ` +
       `${B(F.disk)} on disk; drawn ${plural(ln, "live record", "live records")} (${B(lb)}) and ${plural(dn, "dead record", "dead records")} (${B(db)}).`);
     receipt.textContent = `${plural(tally.writes, "write", "writes")}, ${plural(tally.compactions, "compaction", "compactions")} and ${plural(tally.crashes, "crash", "crashes")} through kvlite's engine; ` +
-      `${plural(F.records, "record", "records")} decoded back by its segment reader, in ${fmt(Math.round(tally.ms))} ms of calls, in your browser.`;
+      `its segment reader decoded ${plural(F.records, "record", "records")} back from the files, in ${fmt(Math.round(tally.ms))} ms.`;
     yourLine();
   }
 

@@ -22,7 +22,7 @@ export const steps = [
       await t.set(1, "swr");
       await t.click("Reset");
       if (t.text(".ec-acts button") === "Pause") await t.click("Pause");
-      await t.until(() => /; [\d,]+ calls? replayed/.test(t.text(".ec-out")) && Number(v(t, "requests")) >= 1 && t.q(".ec-table tbody .ec-badge"));
+      await t.until(() => / took [\d,]+ calls?, /.test(t.text(".ec-out")) && Number(v(t, "requests")) >= 1 && t.q(".ec-table tbody .ec-badge"));
       await settled(t);
     },
     then: (t) => `The newest request, at ${row(t, 1)}: ${t.text(".ec-table tbody .ec-badge")}. The origin saw ${row(t, 5)}.`,

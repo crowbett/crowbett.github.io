@@ -5,7 +5,7 @@ lang: Rust
 tags: distributed SQL, MVCC, multi-Raft, deterministic simulation
 repo:
 demo: live
-demo_try: Watch the nemesis crash, pause and partition five Raft servers, then type your own seed and run it.
+demo_try: Give it a seed of your own. Run my seed plays it twice, and the two trace digests come back identical.
 group: storage
 order: 2
 metric: 10,000 randomized fault seeds gate each storage, Raft and multi-Raft milestone

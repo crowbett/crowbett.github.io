@@ -39,6 +39,7 @@ const el = (tag, cls, text) => {
   return n;
 };
 const fmt = (n) => n.toLocaleString("en-US");
+const plural = (n, one, many = `${one}s`) => `${fmt(n)} ${n === 1 ? one : many}`;
 const ease = (t) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
 const iso = (ms) => new Date(Math.floor(ms / 1000) * 1000).toISOString().replace(".000Z", "Z");
 
@@ -649,7 +650,7 @@ export async function mount(root, demo) {
     set("next", nf ? `in ${fmtMs(nf.t - now)}` : "–");
     set("maxwait", st.retries ? fmtMs(st.maxWait) : "–");
     const sim = now - START;
-    receipt.textContent = `${fmt(calls)} calls to jobrun's engine returned ${fmt(firesGot)} cron fire times and ${fmt(drawsGot)} backoff draws, driving ${fmtMs(sim)} of scheduling in ${fmt(Math.round(callMs))} ms of calls, in your browser.`;
+    receipt.textContent = `${fmtMs(sim)} of scheduling in ${fmt(Math.round(callMs))} ms: cronx returned ${plural(firesGot, "fire time")} and job.Policy ${plural(drawsGot, "backoff draw")}, over ${plural(calls, "call")} to jobrun's engine.`;
     canvas.setAttribute("aria-label", `Scheduler timeline at ${fmtHMS.format(now)} ${zoneName(now)}: ${fmt(st.fires)} fires, ${fmt(st.runs)} runs, ` +
       `${fmt(st.retries)} retries, ${fmt(st.ok)} succeeded, ${fmt(st.dead)} dead.`);
     nextRuns(you);

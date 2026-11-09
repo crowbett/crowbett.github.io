@@ -4,6 +4,6 @@ export async function mount(el, demo) {
   out.className = "demo-out";
   const t0 = performance.now();
   const r = await demo.call("ping", { echo: "hello from the page" });
-  out.textContent = `Go ${r.go} answered: ${r.echo}, in ${Math.round(performance.now() - t0)} ms, in your browser.`;
+  out.textContent = `Go ${r.go} answered "${r.echo}" in ${Math.round(performance.now() - t0)} ms.`;
   el.replaceChildren(out);
 }

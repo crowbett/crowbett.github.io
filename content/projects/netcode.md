@@ -5,7 +5,7 @@ lang: Rust
 tags: rollback, client-side prediction, snapshot interpolation, UDP, determinism
 repo:
 demo: live
-demo_try: Take over player 0 with the arrow keys or the buttons, then switch the network to mobile and watch the rollbacks grow.
+demo_try: Steer player 0 with the arrow keys. Your client moves at once; the server and bot 1 see it late, and later still on the mobile link.
 group: graphics
 order: 9
 metric: 0 desyncs and 0 hash mismatches in a 30 s soak of 4 bots over UDP at 100 ms latency, 20 ms jitter and 2% loss
