@@ -232,27 +232,30 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"kvlite": {
-		`[...document.querySelectorAll(".kv-table tbody tr")].map((r) => r.cells[2].textContent + ":" + r.cells[3].textContent).join() === "put:user:1,put:user:2,put:user:1,delete:user:2"`,
+		`(() => { const m = /drawn (\d+) live records? \(([\d,]+ B)\)/.exec(document.querySelector(".kv-canvas").getAttribute("aria-label")); return !!m && Number(m[1]) > 0 && m[2] === document.querySelector(".kv-cells [data-k=live] .kv-v").textContent; })()`,
+		`(() => { const c = document.querySelector(".kv-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()`,
 		`(async () => {
 			const click = (t) => [...document.querySelectorAll(".kv-controls button")].find((b) => b.textContent === t).click();
-			const segs = () => [...document.querySelectorAll(".kv-seg")].map((s) => s.querySelector(".kv-seg-meta").textContent + "|" +
-				[...s.querySelectorAll("tbody tr")].map((r) => r.cells[2].textContent + ":" + r.cells[3].textContent).join());
-			const keys = () => [...document.querySelectorAll(".kv-keys li span:first-child")].map((s) => s.textContent).join();
-			const log = () => document.querySelector(".kv-log").textContent;
-			click("Compact");
-			let ok = await until(() => /^sealed · \d+ B · hint file\|put:user:1;active · 16 B\|$/.test(segs().join(";")));
-			const k = document.querySelector("input[name=key]");
-			k.value = "late";
-			click("Put");
-			ok = ok && await until(() => keys() === "late,user:1");
-			const tear = document.querySelector("select[name=tear]");
-			tear.value = "5";
-			click("Crash and reopen");
+			const v = (k) => document.querySelector(".kv-cells [data-k=" + k + "] .kv-v").textContent;
 			const status = () => document.querySelector(".kv-status").textContent;
-			ok = ok && await until(() => log().includes("truncated torn tail") && keys() === "user:1" && status().includes(", 5 bytes torn off"));
+			const label = () => document.querySelector(".kv-canvas").getAttribute("aria-label");
+			if (document.querySelector(".kv-acts button").textContent === "Pause") click("Pause");
 			click("Reset");
+			let ok = await until(() => status().startsWith("Warmed up with 30 seeded writes") && v("keys") === "9" && v("disk") === "550 B" && v("live") === "248 B" &&
+				v("compactions") === "2" && label().includes("drawn 9 live records (248 B) and 3 dead records (76 B)"));
+			document.querySelector("input[name=key]").value = "my:key";
+			document.querySelector("input[name=value]").value = "hello";
+			click("Put");
+			ok = ok && await until(() => document.querySelector(".kv-you").textContent === "my:key = hello: its newest record is 28 B at byte 92 of 00000006.log (the active segment).");
+			const cut = document.querySelector("select[name=cut]");
+			cut.value = "mid";
+			click("Pull the plug");
+			ok = ok && await until(() => status() === "Plug pulled: 15 B cut off the end of 00000006.log at byte 135. kvlite reopened from its own files, truncated the torn record at byte 120 (its own log line is below) and rebuilt the keydir from 13 records. 1 write lost; rolled back: stock:sku-7 v1 → gone." &&
+				v("lost") === "1 record" && v("recovered") === "13 records" && document.querySelector(".kv-log").textContent.includes("truncated torn tail of active segment seg=6 off=120 dropped=15"));
+			click("Get");
+			ok = ok && await until(() => status() === "Get my:key = hello, the value of its newest record at byte 92 of 00000006.log.");
 			click("Compact");
-			return ok && await until(() => status().startsWith("Nothing to compact") && keys() === "");
+			return ok && await until(() => status().startsWith("kvlite rewrote 10 live records into ") && v("compactions") === "1");
 		})()`,
 	},
 	"edgecache": {
