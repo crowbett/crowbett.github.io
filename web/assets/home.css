@@ -179,3 +179,12 @@ html:not(.js) .all-f { display: none; }
 ::view-transition-group(.card) { animation-duration: var(--d-spring); animation-timing-function: var(--ease-in); }
 html:active-view-transition-type(filter)::view-transition-old(root), html:active-view-transition-type(filter)::view-transition-new(root) { animation: none; }
 
+/* Depth (feel.js): a tilted screen's layers move by depth, with the glow behind drifting with the pointer, the picture sliding against it and the Open chip floating in front; the other cards in the index step back from the one under the pointer. */
+@media (prefers-reduced-motion: no-preference) {
+  .it-screen .glow, .it-glass :is(img, video), .card-shot img[data-in], .card-shot video { transition: translate 600ms var(--spring-soft), scale var(--d-spring) var(--spring-soft), opacity var(--d-base) var(--ease-in); }
+  [data-feel].it-screen .glow { translate: calc(var(--dx) * 2.4rem) calc(var(--dy) * 1.6rem); transition: translate 120ms linear; }
+  [data-feel]:is(.it-screen, .card) :is(.it-glass, .card-shot) :is(img, img[data-in], video) { translate: calc(var(--dx) * -2.8%) calc(var(--dy) * -2.8%); transition: translate 120ms linear, scale var(--d-spring) var(--spring-soft), opacity var(--d-base) var(--ease-in); }
+  [data-feel].it-screen .it-go { translate: calc(var(--dx) * 1.1rem) calc(var(--dy) * 0.8rem); transition: opacity var(--d-base) var(--ease-in), translate 120ms linear; }
+  .card { transition: opacity var(--d-base) var(--ease-in); }
+  .all-grid:has(.card[data-feel]) .card:not([data-feel]) { opacity: 0.5; }
+}
