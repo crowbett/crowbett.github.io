@@ -161,7 +161,7 @@ pre code { background: none; padding: 0; }
 :is(.keys a, .replay-run button, .demo button, .demo-mount button):active:not(:disabled) { transform: translateY(2px); transition-duration: 40ms; }
 .replay-run button, .demo button, .demo-mount button { border-color: var(--block); background: var(--block); color: var(--on-block); font-size: var(--t-small); }
 .replay-run button:hover, .demo button:hover, .demo-mount button:hover { background: var(--block-hover); border-color: var(--block-hover); color: var(--on-block); }
-.keys { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: var(--sp-2); }
 /* Phones: the Work list right below has a Run it button per demo. */
 @media (width < 40rem) { .hero .keys { display: none; } }
 
@@ -183,7 +183,7 @@ pre code { background: none; padding: 0; }
 .hook { margin: 0; font-size: var(--t-small); line-height: 1.5; color: var(--text-2); }
 @media (min-width: 64rem) {
   .hero-text { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); grid-template-areas: "h hook" "h keys"; align-items: end; column-gap: var(--sp-7); padding: var(--sp-6) var(--sp-4); }
-  .hero h1 { grid-area: h; align-self: start; }
+  .hero h1 { grid-area: h; }
   .hook { grid-area: hook; }
   .hero .keys { grid-area: keys; }
 }
@@ -402,11 +402,12 @@ pre code { background: none; padding: 0; }
 .facts dl { margin: 0; }
 .facts dl > div { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); }
 .facts dt { font-family: var(--mono); font-size: var(--t-label); color: var(--text-3); line-height: 2; }
-.facts dd { margin: 0; color: var(--text-2); line-height: 1.6; min-width: 0; }
+.facts dd { margin: 0; color: var(--text-2); line-height: 1.6; min-width: 0; overflow-wrap: anywhere; }
 .facts .lang { color: var(--text); line-height: 2; }
 .facts .tags { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+.facts .tags > * { flex: none; max-width: 100%; }
 @media (min-width: 48rem) {
-  .body { padding: var(--sp-6) var(--sp-5); }
+  .body { padding: var(--sp-6) var(--sp-4); }
   .facts-fig { padding: var(--sp-5) var(--sp-3); }
 }
 
@@ -415,13 +416,14 @@ pre code { background: none; padding: 0; }
 
 /* Demo frame (class names shared with demos: docs/demo-contract.md) */
 .demo { display: flex; flex-direction: column; margin: 0; }
-.demo > * { padding: var(--sp-4) var(--sp-5); }
+.demo > * { padding: var(--sp-4); }
 .demo > :empty { display: none; }
-.demo-head { order: -2; grid-template-columns: minmax(0, 1fr) auto auto; padding: 0; }
+.demo-head { order: -2; grid-template-columns: auto minmax(0, 1fr) auto; padding: 0; }
 .demo-head > * { display: flex; align-items: center; padding: var(--sp-2) var(--sp-4); }
 .demo-head h2 { gap: var(--sp-2); font-weight: 400; letter-spacing: 0; }
 .demo-head h2::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--screen-ok); box-shadow: 0 0 0 2px var(--on-block); }
-.demo-spec { font-variant-numeric: tabular-nums; }
+.demo .demo-spec { display: block; align-content: center; overflow: hidden; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; text-overflow: ellipsis; }
+@media (width < 40rem) { .demo[data-demo-ready] .demo-kind { display: none; } }
 .demo .demo-full { border: 0; font-size: var(--t-label); }
 .demo .demo-full:not([data-on]) { visibility: hidden; }
 @media (width < 40rem) { .demo .demo-full { display: none; } }
@@ -444,7 +446,7 @@ pre code { background: none; padding: 0; }
 .demo-mount button.secondary { background: var(--bg); color: var(--text); border-color: var(--rule); }
 .demo-mount button.secondary:hover { background: var(--block); border-color: var(--block); color: var(--on-block); }
 .demo-mount input, .demo-mount select, .demo-mount textarea {
-  font: inherit; font-size: var(--t-small); color: var(--text); background: var(--bg);
+  min-width: 0; font: inherit; font-family: var(--mono); font-size: var(--t-small); color: var(--text); background: var(--bg);
   border: 1px solid var(--control-line); border-radius: 0; padding: var(--sp-1) var(--sp-2);
 }
 .demo-mount input[type="range"], .demo-mount input[type="checkbox"], .demo-mount input[type="radio"] { accent-color: var(--block); padding: 0; border: 0; }
@@ -457,10 +459,10 @@ pre code { background: none; padding: 0; }
 .demo-out { margin: 0; padding: var(--sp-2) var(--sp-3); border: 1px solid var(--line-strong); background: var(--sunken); font-family: var(--mono); font-size: var(--t-small); font-variant-numeric: tabular-nums; white-space: pre-wrap; overflow-x: auto; }
 
 /* 404 */
-.notfound { margin-top: var(--sp-5); }
-.notfound h1 { display: grid; gap: var(--sp-3); margin-bottom: var(--sp-5); font-size: var(--t-h2); }
+.notfound { display: grid; gap: var(--sp-5); margin-top: var(--sp-5); padding: var(--sp-6) var(--sp-4); border: 1px solid var(--line-strong); }
+.notfound h1 { display: grid; gap: var(--sp-3); margin: 0; font-size: var(--t-h2); }
 .notfound .code { font: 700 min(30vw, 14rem)/0.8 var(--dots); letter-spacing: -0.02em; color: var(--accent); }
-.notfound .lede { max-width: var(--measure); margin: 0 0 var(--sp-5); font-size: var(--t-lede); color: var(--text-2); }
+.notfound .lede { max-width: var(--measure); margin: 0; font-size: var(--t-lede); color: var(--text-2); }
 body:has(.notfound) { display: flex; flex-direction: column; min-height: 100vh; }
 body:has(.notfound) main { flex: 1 0 auto; }
 
@@ -477,10 +479,12 @@ body:has(.notfound) main { flex: 1 0 auto; }
 @media (min-width: 40rem) { .foot p + p { text-align: end; } }
 
 /* Command palette (palette.js): a modal sheet over the page */
-.pal { width: min(42rem, 100% - 2 * var(--edge)); max-height: min(38rem, 100dvh - 6rem); margin: 10dvh auto auto; padding: 0; border: 1px solid var(--line-strong); background: var(--line-strong); color: var(--text); box-shadow: 0 2rem 4rem -1rem oklch(0.1 0.02 260 / 0.45); opacity: 0; translate: 0 -0.5rem; transition: opacity var(--d-base) var(--ease-in), translate var(--d-base) var(--ease-in), display var(--d-base) allow-discrete, overlay var(--d-base) allow-discrete; }
-.pal[open] { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 1px; opacity: 1; translate: 0; }
+.pal { width: min(42rem, 100% - 2 * var(--edge)); max-height: min(38rem, 100dvh - 6rem); margin: 10dvh auto auto; padding: 0; border: 1px solid var(--line-strong); background: var(--line-strong); color: var(--text); opacity: 0; translate: 0 -0.5rem; transition: opacity var(--d-base) var(--ease-in), translate var(--d-base) var(--ease-in), display var(--d-base) allow-discrete, overlay var(--d-base) allow-discrete; }
+.pal[open] { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 1px; opacity: 1; translate: 0; }
 @starting-style { .pal[open] { opacity: 0; translate: 0 -0.5rem; } }
-.pal::backdrop { background: oklch(0.12 0.01 260 / 0.45); backdrop-filter: blur(2px); }
+.pal::backdrop { background: color-mix(in oklch, var(--bg) 88%, transparent); }
+.pal .pal-p { display: flex; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-2) var(--sp-4); font: 400 var(--t-label)/1.4 var(--mono); background: var(--block); color: var(--on-block); }
+.pal .pal-p kbd { border-color: currentColor; color: inherit; }
 .pal > * { margin: 0; background: var(--bg); }
 .pal-in { display: flex; align-items: center; gap: var(--sp-3); padding-right: var(--sp-4); }
 .pal-in input { flex: 1; min-width: 0; padding: var(--sp-4); border: 0; background: none; color: var(--text); font: 400 max(16px, 1rem)/1.4 var(--mono); outline: 0; }
@@ -497,7 +501,7 @@ body:has(.notfound) main { flex: 1 0 auto; }
 .pal-i { justify-self: end; font: 400 var(--t-label)/1.4 var(--mono); color: var(--text-3); }
 .pal-foot { padding: var(--sp-2) var(--sp-4); font: 400 var(--t-label)/1.4 var(--mono); color: var(--text-3); }
 @media (width < 40rem) { .pal-o { grid-template-columns: 56px minmax(0, 1fr); } .pal-o .dm { width: 56px; height: 27px; } .pal-o > .led { display: none; } .pal-o small { display: block; margin: 0; } }
-@media (hover: none) { .pal-foot, .pal-in kbd { display: none; } }
+@media (hover: none) { .pal-foot, .pal kbd { display: none; } }
 .toast { position: fixed; z-index: 10; inset: auto var(--edge) var(--sp-5) auto; margin: 0; padding: var(--sp-2) var(--sp-4); background: var(--block); color: var(--on-block); font: 400 var(--t-label)/1.4 var(--mono); transition: opacity var(--d-fast), translate var(--d-base) var(--ease-in); }
 @starting-style { .toast { opacity: 0; translate: 0 0.5rem; } }
 
