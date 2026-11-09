@@ -237,6 +237,25 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".nc-canvas", Pad: 8, WideFocus: ".nc-canvas", WidePad: 8, Seconds: 8,
 	},
+	// quorum: heartbeats flow from the leader; you crash it, the followers'
+	// election timers fill, one campaigns and wins the next term.
+	"quorum": {
+		Setup: `(async () => {
+			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+			for (let i = 0; i < 200 && !/^Warmed up/.test(document.querySelector(".qr-status").textContent); i++) await wait(50);
+			// The ring is taller than the head leaves room for: keep the sticky head out of the crop.
+			document.querySelector(".demo-head").style.setProperty("position", "static");
+			const sp = document.querySelector("select[name=speed]");
+			sp.value = "10"; sp.dispatchEvent(new Event("change"));
+			await wait(600);
+		})()`,
+		Play: `(async () => {
+			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+			await wait(1500);
+			[...document.querySelectorAll(".qr-acts button")].find((b) => b.textContent === "Crash leader").click();
+		})()`,
+		Focus: ".qr-ring", Pad: 4, WideFocus: ".qr-stage", WidePad: 8, Seconds: 8,
+	},
 	// ratelimitd: calm traffic flows through all three gates; you launch the
 	// attack and the flood piles up red at each gate while the limit holds.
 	"ratelimitd": {

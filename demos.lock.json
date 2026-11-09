@@ -196,6 +196,21 @@
       "sha256": "5506d8a19a3e2c781fd3096cf7f53e64df9c0d093e2605b90c6c9f61bb0ace55",
       "bytes": 6164870,
       "gzip_bytes": 1753020
+    },
+    {
+      "slug": "quorum",
+      "repo": "quorum",
+      "ref": "018f99dd3e3239fb5a442485f2bd5b14b24ec423",
+      "pkg": "./cmd/webdemo",
+      "siblings": [
+        {
+          "repo": "kvlite",
+          "ref": "7a97ccf51bd0e81f5f60bbbd54f8afa93c2f97b2"
+        }
+      ],
+      "sha256": "8cae43e5ed700149c19a67143726ab6438a137be58072ac5c2b4b4c32100b77b",
+      "bytes": 5164022,
+      "gzip_bytes": 1423832
     }
   ]
 }
