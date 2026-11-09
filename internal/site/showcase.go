@@ -154,6 +154,24 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".kl-canvas", Pad: 4, Seconds: 8,
 	},
+	// The agent works, its menu settles and lj puts the question on the Lock
+	// Screen; you tap Yes and the answer crosses the relay sealed.
+	"livejob": {
+		Setup: `(async () => {
+			const w = (ms) => new Promise((r) => setTimeout(r, ms));
+			for (let i = 0; i < 200 && !document.querySelector(".lj-mac .lj-row"); i++) await w(50);
+			const sp = document.querySelector("select[name=speed]");
+			sp.value = "2"; sp.dispatchEvent(new Event("change"));
+			await w(1200);
+		})()`,
+		Play: `(async () => {
+			const w = (ms) => new Promise((r) => setTimeout(r, ms));
+			for (let i = 0; i < 200 && !document.querySelector(".lj-card[data-state=waiting] .lj-tap"); i++) await w(50);
+			await w(900);
+			document.querySelector(".lj-card .lj-tap").click();
+		})()`,
+		Focus: ".lj-phone", Pad: 4, WideFocus: ".lj-stage", WidePad: 4, Seconds: 8,
+	},
 	// lobby: you queue twice; players fill rooms on their own meanwhile.
 	"lobby": {
 		Setup: `(async () => {

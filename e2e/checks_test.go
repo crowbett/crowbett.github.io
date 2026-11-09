@@ -164,6 +164,23 @@ var demoChecks = map[string][]string{
 			return ok && await until(() => v("callers") === "0" && v("callees") === "15" && v("depth") === "3");
 		})()`,
 	},
+	"livejob": {
+		`until(() => [...document.querySelectorAll(".lj-card[data-state=waiting] .lj-tap")].map((b) => b.textContent).join("/") === "Yes/Always/No" &&
+			/proof32 B, checked.*swapped keyrefused.*session keywrapped in 60 B, opened/.test(document.querySelector(".lj-pair").textContent) &&
+			/^\d[\d,]* frames sealed and opened, \d+ prompts? read off the screen/.test(document.querySelector(".lj-out").textContent))`,
+		`(async () => {
+			const v = (k) => document.querySelector(".lj-cells [data-k=" + k + "] .lj-v").textContent;
+			const tap = (t) => [...document.querySelectorAll(".lj-card[data-state=waiting] .lj-tap")].find((b) => b.textContent === t);
+			const auto = document.querySelector("input[name=auto]");
+			if (auto.checked) auto.click();
+			[...document.querySelectorAll(".lj-acts button")].find((b) => b.textContent === "Reset").click();
+			await until(() => v("d2m") === "0" && v("answered") === "0" && tap("Yes"));
+			tap("Yes").click();
+			await until(() => document.querySelector(".lj-mac .lj-term").textContent.includes("✓ Edited internal/queue/drain.go") && v("answered") === "1" && v("d2m") === "1" && / ms$/.test(v("rtt")));
+			document.querySelector(".lj-attacks [data-k=inject]").click();
+			return await until(() => v("blocked") === "1" && [...document.querySelectorAll(".lj-ev[data-kind=bad] .lj-ev-note")].some((n) => n.textContent.includes("failed authentication")));
+		})()`,
+	},
 	"lobby": {
 		`until(() => (Number(document.querySelector(".lb-cells [data-k=rooms] .lb-v").textContent) > 0 && /^Matchmaking floor at [\d.]+ s of simulated time: \d+ waiting, \d+ rooms started/.test(document.querySelector(".lb-canvas").getAttribute("aria-label"))))`,
 		`until(() => ((() => { const c = document.querySelector(".lb-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,
