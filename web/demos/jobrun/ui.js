@@ -854,8 +854,8 @@ export async function mount(root, demo) {
   window.addEventListener("themechange", recolor);
   reduce.addEventListener("change", () => setPlaying(playing && !reduce.matches));
 
-  await cssReady;
   setZoneFormat();
+  await cssReady;
   readColors();
   await restart();
   setPlaying(playing);

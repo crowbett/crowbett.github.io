@@ -694,6 +694,16 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 				t.Errorf("demo check failed: %s (err %v)", js, err)
 			}
 		}
+		// The demo's receipt, read mid-screen, is still at full strength:
+		// a head with a demo is not pinned, so nothing sinks it while in use.
+		if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(`(async () => {
+			(document.querySelector("[data-demo] .demo-out") ?? document.querySelector("[data-demo]")).scrollIntoView({ block: "center" });
+			await new Promise((r) => setTimeout(r, 400));
+			const h = document.querySelector(".ph-in");
+			return !h || getComputedStyle(h).opacity === "1";
+		})()`), chromedp.EvalAwaitPromise)); err != nil || !ok {
+			t.Errorf("the project head dims while its demo is in use (err %v)", err)
+		}
 	}
 	// axe at phone width in both schemes (contrast follows the scheme, reflow
 	// problems show at 390 px); the Tab walk at desktop. Splitting them keeps
