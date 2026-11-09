@@ -36,11 +36,14 @@ import (
 
 // untilJS binds until(f) for a demo check: it resolves true once f() holds
 // and otherwise throws naming f after 20 s. A strata re-slice on a busy CI
-// runner outlasted the old 5 s, and a bare false hid which step it was.
+// runner outlasted the old 5 s, and a bare false hid which step it was. A
+// throw counts as not yet (the element may not be mounted), and every check
+// without side effects polls through until, so none races a slow mount.
 func untilJS(check string) string {
 	return "((until) => (" + check + `))(async (f) => {
-		for (const end = Date.now() + 20000; !f(); await new Promise((r) => setTimeout(r, 50)))
-			if (Date.now() > end) throw new Error("timed out: " + f);
+		const ok = () => { try { return f(); } catch { return false; } };
+		for (const end = Date.now() + 20000; !ok(); await new Promise((r) => setTimeout(r, 50)))
+			if (Date.now() > end) { f(); throw new Error("timed out: " + f); }
 		return true;
 	})`
 }
@@ -703,7 +706,7 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 		tabOrder(t, ctx)
 	}
 	if isHome, _ := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector(".work") !== null`)); isHome && !layoutOnly && scheme == "light" {
-		for _, c := range []struct{ name, js string }{{"stage", stageCheck}, {"scene", sceneCheck}, {"work", workCheck}, {"refused", refusedCheck}, {"index", indexCheck}} {
+		for _, c := range []struct{ name, js string }{{"stage", stageCheck}, {"scene", sceneCheck}, {"depth", depthCheck}, {"work", workCheck}, {"refused", refusedCheck}, {"index", indexCheck}} {
 			if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(c.js), chromedp.EvalAwaitPromise)); err != nil || !ok {
 				t.Errorf("home %s check failed (err %v)", c.name, err)
 			}

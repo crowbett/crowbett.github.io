@@ -5,7 +5,7 @@ lang: Go
 tags: MCP, protocol translation, JSON-RPC, conformance testing
 repo:
 demo: live
-demo_try: Play a 2024 client's conversation through the bridge, edit any frame, then flip the direction.
+demo_try: Watch the conversation cross the bridge, then press Send mine and see your request rewritten on its way to the server and back.
 group: tools
 order: 13
 metric: 289/291 official MCP conformance checks through the bridge, 101 scenario runs
@@ -18,4 +18,4 @@ metric_source: docs/conformance.md, suite 0.2.0-alpha.10, re-checked by CI on ev
 
 ## How the demo works
 
-mcpbridge's translation engines, compiled to WebAssembly, sit between a client you script and the repo's own conformance fixture server, all in your browser. The engine is picked from your first frame as the binary picks it, every frame on all four legs is captured, and each frame the bridge emits is diffed against the one it translates. Bridge-minted ids use a fixed nonce so a replay is identical.
+mcpbridge's translation engines, compiled to WebAssembly, sit between a scripted client and the repo's own conformance fixture servers, all in your browser. Each client frame is one call into the bridge; every frame it reports on all four legs then crosses the sequence diagram on a simulated clock, and a frame the bridge rewrote changes size and colour where it passes through. The scenarios play one after another; you can send your own request into the live session, run a scenario against the other server era, and compare any frame with the one it came from, key by key. Bridge-minted ids use a fixed nonce so a replay is identical.

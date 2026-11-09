@@ -7,7 +7,7 @@ repo:
 demo: live
 demo_try: Watch the corpus stream into the index and the tour's queries rank, then type your own query, filter by source or index a note of yours.
 group: tools
-order: 18
+order: 19
 metric: BM25 query latency p50 1.2–2.2 ms
 metric_source: 37 812 documents, README Numbers (real machine, 2026-09-25)
 ---
