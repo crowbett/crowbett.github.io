@@ -511,7 +511,7 @@ export async function mount(root, demo) {
       const d = (v) => Number(v.toFixed(2));
       ctx.fillText(`${axis === "y" ? "top" : "front"} · ${d(L)} × ${d(axis === "y" ? Wd : Hh)} in`, pad + i * (slotW + gap) + slotW / 2, B.H - 8);
     }
-    box.setAttribute("aria-label", `${plan.name}, ${KIND[plan.kind] || plan.kind}: ${plan.placements.length} of ${cur.r.units.length} units placed, seen from the top and the front.`);
+    box.setAttribute("aria-label", `${plan.name}, ${KIND[plan.kind] || plan.kind}: ${plan.placements.length} of ${plural(cur.r.units.length, "unit", "units")} placed, seen from the top and the front.`);
   }
 
   function drawLabel() {
@@ -546,7 +546,7 @@ export async function mount(root, demo) {
       why.append("Suggested ", el("strong", null, s.name), ` by ${SOURCE[s.source] || s.source}: ${s.reason}.`);
       if (r.packed !== s.name) why.append(` The packer took ${r.packed} instead; that is what the model learns from.`);
     } else why.append("No suggestion: a person decides.");
-    if (r.plan && !r.plan.packed) why.append(` The drawing seats ${r.plan.placements.length} of ${r.units.length} units.`);
+    if (r.plan && !r.plan.packed) why.append(` The drawing seats ${r.plan.placements.length} of ${plural(r.units.length, "unit", "units")}.`);
     cap.textContent = sheet === "label" ? `^XA … ^XZ, ${fmt(r.label.length)} bytes of ZPL · tracking ${r.tracking}` : `^XA … ^XZ, ${fmt(r.slip.length)} bytes of ZPL · picks listed with their bins`;
   }
 
