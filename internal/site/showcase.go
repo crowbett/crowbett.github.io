@@ -27,21 +27,16 @@ var Showcases = map[string]Showcase{
 		})()`,
 		Focus: ".bt-map", Pad: 8, WideFocus: ".bt-map", WidePad: 8, Seconds: 7,
 	},
-	// The basket changes in place, never adding a line, so the crop holds still:
-	// more supplement bottles beside the shaker, then the shaker counted as a
-	// plain rigid item. Each change asks the fit engine again.
+	// The floor packs orders on its own; you drop your cap order on the line,
+	// then take the top pick off the shelf and the shift is re-judged.
 	"anchorflow": {
 		Play: `(async () => {
 			const w = (ms) => new Promise((r) => setTimeout(r, ms));
-			const lines = () => document.querySelectorAll(".af-basket > li");
-			const qty = (li, v) => { const i = li.querySelector("input[name=qty]"); i.value = v; i.dispatchEvent(new Event("input")); };
-			const cls = (li, v) => { const s = li.querySelector("select[name=class]"); s.value = v; s.dispatchEvent(new Event("change")); };
-			await w(900); qty(lines()[1], "4");
-			await w(1700); qty(lines()[1], "8");
-			await w(1700); cls(lines()[0], "");
-			await w(1700); cls(lines()[0], "SHAKER"); qty(lines()[1], "2");
+			const click = (t) => [...document.querySelectorAll(".af-controls button, .af-shelfhead button")].find((b) => b.textContent === t).click();
+			await w(2600); click("Drop on the line");
+			await w(2600); click("Take top pick off");
 		})()`,
-		Focus: ".af-answer-box", Pad: 8, WideFocus: ".af-answer-box", WidePad: 130, Seconds: 8,
+		Focus: ".af-canvas", Pad: 4, WideFocus: ".af-canvas", WidePad: 8, Seconds: 8,
 	},
 	// Walk the call graph from run to a callee, its callee, and back to run.
 	"codegraph": {

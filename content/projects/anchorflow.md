@@ -5,7 +5,7 @@ lang: Go
 tags: warehouse, 3D bin packing, Postgres, WebAssembly
 repo:
 demo: live
-demo_try: Build a basket, take packaging off the shelf, and see which box or mailer the engine picks and how the items sit in it.
+demo_try: Watch orders get packed, then drop your own order on the line or take the top pick off the shelf.
 group: services
 order: 16
 metric: 1.56 to 10.79 ms to judge a 10-unit basket against 31 packages
@@ -17,6 +17,6 @@ metric_source: Apple M3 Pro, cmd/webdemo/BENCH.md (median of 3, native)
 
 ## How the demo works
 
-AnchorFlow's own `internal/packfit` package, compiled to WebAssembly, runs against its reference catalog of 31 boxes, mailers and inserts (dimensions in inches). Each change to the basket or the shelf asks the engine again.
+AnchorFlow's own `internal/packfit` package, compiled to WebAssembly, runs a packing floor against its reference catalog of 31 boxes, mailers and inserts (dimensions in inches). Orders arrive at random on simulated floor time, built from item shapes the engine's own tests use. The engine picks each order's package, and the items drop into it where the engine placed them, seen from above and from the front.
 
-The engine takes the cheapest mailer the basket fits, and a box only when no mailer will do. Its rules decide which packages it may use at all: liquids, hats and shakers must go in a box, plain poly carries only soft goods, and specialty boxes are kept for their own items. The table gives the engine's own reason for every package it passed over. The drawings show the answer's arrangement from above and from the front.
+The engine takes the cheapest mailer an order fits, and a box only when no mailer will do. Its rules come first: liquids, hats and shakers must go in a box, plain poly carries only soft goods, and specialty boxes are kept for their own items. The tally counts boxes and mailers, cost, fill and the packages picked most. Drop your own order on the line, or take packaging off the shelf: the engine re-judges every order packed so far and says how many picks changed and what it did to the cost.
