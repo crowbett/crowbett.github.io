@@ -210,6 +210,13 @@ func pageQuality(t *testing.T, ctx context.Context) {
 // tabOrder presses Tab through the page: focus must visit every visible
 // focusable element once, in document order, each with a visible ring.
 func tabOrder(t *testing.T, ctx context.Context) {
+	start := time.Now()
+	defer func() {
+		if f, err := os.OpenFile(os.Getenv("F7_LOG"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644); err == nil {
+			fmt.Fprintf(f, "F7 %s %.2fs\n", t.Name(), time.Since(start).Seconds())
+			f.Close()
+		}
+	}()
 	n, err := chromedp.Run(ctx, chromedp.Evaluate[int](`(() => {
 		// Restart sequential focus at the top: a demo leaves focus in its mount.
 		document.body.tabIndex = -1;

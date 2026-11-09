@@ -100,3 +100,7 @@ jobs:
             go-1.27.0-${{ github.job }}-
             go-1.27.0-
       - run: make e2e E2E_FLAGS='-run ${{ matrix.run }}'
+        env:
+          F7_LOG: ${{ runner.temp }}/f7.txt
+      - if: always()
+        run: cat "$RUNNER_TEMP/f7.txt" || true
