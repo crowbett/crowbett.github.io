@@ -8,6 +8,7 @@ Goal: a fast, robust personal site that shows what each project does by running 
 - **What downloads unasked.** The home stage's raytracer (one copy per spare core, up to 8) starts after `load` while the stage is on screen; the home arena's netcode build once the arena is on screen; a project head's demo once a quarter of its frame is on screen. None of them start under reduced motion, Save-Data, a 2g/3g connection or fewer than 4 cores. Everything else downloads only when the visitor asks.
 - **Bridges live in the project repos** (`cmd/webdemo`), so each project's own gate tests them and the demo can never drift from the code it claims to show.
 - **Binaries are built locally and committed.** `cmd/wasm build` exports each pinned commit with `git archive` (committed files only, plus pinned sibling repos for `go.mod` replaces) and builds it with `-trimpath -buildvcs=false -ldflags=-s -w`. `demos.lock.json` records commit, sha256, sizes and the Go version; `wasm_exec.js` is copied from that same toolchain. CI runs `wasm check` and never needs access to private repos.
+- **Every byte.** `cmd/wasm tree` writes `web/bytes/<slug>.json` for each live demo: every byte of its pinned binary by origin (own code, dependencies, standard library, Go runtime, data, module structure), then package and function, each level summing exactly to the one above. Go names come from the binary's own pclntab; Rust and C++ names from a twin build with names kept, used only when its code section equals the published one byte for byte. The build fails unless a tree's sha256 matches the lock and every level adds up. The numbers page renders the levels down to each binary; `levels.js` fetches a tree when its row opens, and `disasm.js` decodes a function's instructions from `/wasm/<slug>.wasm` in the tab.
 - **Deploy.** `.github/workflows/pages.yml` (push to main): `gate` (then `upload-pages-artifact`) and nine `e2e` runners run at once: three split the page tabs (`E2E_SHARD=i/3`), four split the demo tours, one runs the live panels and the wall, and one runs every other test, so the slow-link and motion checks never share a runner with demo tabs. `deploy` waits for all of them. `ci.yml` runs the same jobs on pull requests, and every 3 days on main so main's Go caches never age out (a cold run took 105 s, measured). Actions SHAs are pinned.
 
 ## Decisions
@@ -17,6 +18,7 @@ Goal: a fast, robust personal site that shows what each project does by running 
 - Strict CSP via meta tag (`script-src 'self' 'wasm-unsafe-eval'`): Pages cannot set response headers, so the meta tag is the only CSP available.
 - No animation library: CSS `linear()` springs; libraries that inject `<style>` break the CSP.
 - Private projects (quorum, keel, strata) ship compiled binaries only. A Go binary keeps function and package names in its symbol table even with `-s -w`; that is accepted. Each project page may publish curated excerpts of its real source: at most 70 lines per project, read by `go run ./cmd/code` at the demo's pinned commit into `code/<slug>.json`, never from a working tree. The build fails when an excerpt is stale, not at the lock's commit, carries markup other than token spans, or matches the identity and secret guard (`site.Unpublishable`).
+- A private project's tree publishes no name its shipped binary lacks: when the binary has no name section (stripped Rust and C++ builds), its own functions are listed by index under "names withheld: source is private", and its crate and namespace paths are cut from the names of library code instantiated over its types. Go binaries and strata (which ships a name section) carry their names already.
 - Binaries are committed to git (~1-2 MB gzipped per rebuild). Revisit (e.g. release assets) if the repo passes ~300 MB.
 - The demo bundle (`web/demos/<slug>/` + binary + lock entry) stays self-contained.
 
@@ -30,6 +32,7 @@ Goal: a fast, robust personal site that shows what each project does by running 
 | All `.woff2` fonts | 32 KiB |
 | One share image, `og/*.png` | 100 KiB |
 | One reel clip or its poster, `reel/*.mp4` / `*.webp` | 300 KiB |
+| One byte tree, `bytes/*.json`, gzip -9 | 64 KiB |
 
 A raise is recorded here with the measurement that forced it and what was rejected; the next raise is another recorded decision.
 
@@ -46,3 +49,5 @@ A raise is recorded here with the measurement that forced it and what was reject
 **Reel clips 300 KiB**: `go run ./cmd/reel [slug…]` (needs Chrome and ffmpeg) records a 16:10 H.264 clip of each live demo at 30 fps from a dist built with `Config.Recording`, in two crops: `<slug>.mp4` (752 px page at 2x, 1408 × 880) and `<slug>-n.mp4` (480 px page at 3x, 1324 × 828). A screen about 560 CSS px wide or wider (`site.ReelWide`) gets the desktop crop, a narrower one the phone crop. CRF starts at 26 and steps up by 2 only for a clip that would pass 90% of the budget. Measured 2026-11-09: desktop clips 44,407–259,379 bytes, phone clips 35,191–242,058, posters 7,656–72,268. The build fails when a live demo has no clip or its lock entry, `ui.js`, `ui.css` or showcase changed since recording (`web/reel/.sums`): re-record that slug and commit `web/reel`. The home stage poster `reel/stage.webp` (`go run ./cmd/stage`, tied to the lock entry and `site.HomeStage` by `web/reel/.stage`) is under the same limit.
 
 **Live wall cap** (`site.WallCap`): 4 demos at once on a laptop, 2 under 48rem or with a coarse pointer. With the main thread throttled 4×, 4 tiles held 60.0 fps and 5 dropped to 58.2 (measured 2026-11-09, headless Chrome); on a 390 px phone proxy 2 held 59.8–60.0 fps.
+
+**Byte trees 64 KiB**: a tree lists at most 40 children per level and sums the rest into one row. Measured 2026-11-10: 2,365–49,819 bytes gzipped (codegraph the largest, 7,109 functions).

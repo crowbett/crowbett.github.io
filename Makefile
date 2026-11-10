@@ -25,6 +25,7 @@ site:
 
 wasm:
 	go run ./cmd/wasm build
+	go run ./cmd/wasm tree
 
 # The C++ toolchain `wasm build` needs for cpp demos; CI only checks hashes.
 wasi-sdk:

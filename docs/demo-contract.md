@@ -49,7 +49,7 @@ A C++ demo is a directory of sources (e.g. `webdemo/`) built for `wasm32-wasip1`
 
 ## Lock and page
 1. Commit and push the bridge in the project repo; its gate must be green.
-2. Add `{"slug", "kind"?, "repo", "pkg": "./cmd/webdemo", "siblings"?}` to `demos.lock.json`, then `go run ./cmd/wasm pin <slug> <sha>` and `make wasm`.
+2. Add `{"slug", "kind"?, "repo", "pkg": "./cmd/webdemo", "siblings"?}` to `demos.lock.json`, then `go run ./cmd/wasm pin <slug> <sha>` and `make wasm`, which also rewrites the binary's byte tree (`web/bytes/<slug>.json`, `go run ./cmd/wasm tree <slug>` alone). Commit `web/wasm` and `web/bytes` together: the build fails on a tree for another build of the binary.
 3. Set `demo: live` in `content/projects/<slug>.md`; replace its `## Planned demo` section with `## How the demo works`, saying what the demo shows.
 4. Add tries to `ShellTries` in `internal/site/shell.go`: calls `try <slug>` runs in the terminal, each a method and optional JSON params. When a demo's RPC changes, its tries must keep working.
 5. Add the slug to `demoChecks` in `e2e/e2e_test.go` with at least one expression that proves real output from the binary rendered.

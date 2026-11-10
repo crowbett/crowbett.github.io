@@ -56,22 +56,15 @@ type pageData struct {
 	Next      *Project
 	Canonical string
 	Stage     *Stage
-	Arena     bool     // home: the netcode demo is live, so the arena can run it
-	Bins      []binRow // the numbers page: every live demo's binary, largest first
-	LiveCap   int      // the live wall: most demos running at once
+	Arena     bool    // home: the netcode demo is live, so the arena can run it
+	Levels    *levels // the numbers page: every live demo's binary, by language
+	LiveCap   int     // the live wall: most demos running at once
 }
 
 // WallCap is the most demos the live wall runs at once on a laptop; wall.js
 // halves it on phones and tablets. With the main thread throttled 4×, 4 tiles
 // held 60 fps and 5 did not (measured 2026-11-09, headless Chrome).
 const WallCap = 4
-
-// binRow is one demo binary on the numbers page.
-type binRow struct {
-	Slug, Title, Built, Kind string // Kind: go, rust or cpp
-	Raw, Gzip                int
-	Pct                      string // bar length, % of the largest
-}
 
 // pagerLink is one previous / next card at the foot of a project page.
 type pagerLink struct {
@@ -183,20 +176,23 @@ func prepare(cfg Config) (*prepared, error) {
 		}
 	}
 	base.Projects = listed
-	most := 0
+	var bins []binLevel
+	var kinds []string
 	for _, p := range listed {
 		if !p.Live() {
 			continue
 		}
 		base.LiveCount++
 		d := sizes[p.Slug]
-		kind := map[byte]string{'G': "go", 'R': "rust", 'C': "cpp"}[d.Built[0]]
-		base.Bins = append(base.Bins, binRow{Slug: p.Slug, Title: p.Title, Built: d.Built, Kind: kind, Raw: d.Raw, Gzip: d.Gzip})
-		most = max(most, d.Gzip)
+		t, err := loadTree(cfg.Src, p.Slug, d)
+		if err != nil {
+			return nil, err
+		}
+		bins = append(bins, binLevel{Slug: p.Slug, Title: p.Title, Built: d.Built, Bytes: d.Raw, Funcs: t.Root.F, Gzip: d.Gzip})
+		kinds = append(kinds, t.Kind)
 	}
-	slices.SortStableFunc(base.Bins, func(a, b binRow) int { return b.Gzip - a.Gzip })
-	for i := range base.Bins {
-		base.Bins[i].Pct = fmt.Sprintf("%.2f", 100*float64(base.Bins[i].Gzip)/float64(most))
+	if len(bins) > 0 {
+		base.Levels = buildLevels(bins, kinds)
 	}
 	return &prepared{tmpl: tmpl, base: base, projects: projects}, nil
 }
@@ -318,6 +314,7 @@ type demoSize struct {
 	Raw, Gzip int
 	Built     string // toolchain, e.g. "Go 1.27.3"
 	SHA       string // first 8 hex of the binary's sha256
+	Full      string // the whole sha256
 	Ref       string // the pinned commit, short
 }
 
@@ -428,7 +425,7 @@ func demoSizes(src fs.FS) (map[string]demoSize, error) {
 		case "cpp":
 			built = "C++, clang " + version.FindString(d.Clang)
 		}
-		ds := demoSize{Raw: d.Raw, Gzip: d.Gzip, Built: built, SHA: d.SHA[:min(8, len(d.SHA))]}
+		ds := demoSize{Raw: d.Raw, Gzip: d.Gzip, Built: built, SHA: d.SHA[:min(8, len(d.SHA))], Full: d.SHA}
 		if len(d.Ref) >= 7 {
 			ds.Ref = d.Ref[:7]
 		}

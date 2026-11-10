@@ -16,7 +16,7 @@ const rustTarget = "wasm32-unknown-unknown"
 // buildRust builds the cdylib crate at d.Pkg under root with the toolchain
 // rustup selects there (the repo's rust-toolchain.toml), into a scratch target
 // directory, and copies the one .wasm it produced to out.
-func buildRust(d *Demo, root, out string) error {
+func buildRust(d *Demo, root, out string, named bool) error {
 	root, err := filepath.Abs(root)
 	if err == nil {
 		root, err = filepath.EvalSymlinks(root)
@@ -80,6 +80,9 @@ func buildRust(d *Demo, root, out string) error {
 		"--remap-path-prefix=" + home + "=/cargo",
 		"--remap-path-prefix=" + sysroot + "=/rustc",
 		"--remap-path-prefix=" + filepath.Join(sysroot, "lib", "rustlib", "src", "rust") + "=/rustc/" + commit,
+	}
+	if named {
+		flags = append(flags, "-Cstrip=none")
 	}
 	cmd := exec.Command(cargo, "build", "--release", "--locked", "--target", rustTarget, "--message-format=json-render-diagnostics")
 	cmd.Dir = crate

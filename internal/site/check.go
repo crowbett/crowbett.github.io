@@ -26,6 +26,7 @@ var Budgets = struct {
 	Fonts       int // bytes, all .woff2 together
 	ShareImage  int // bytes, one og:image PNG
 	ReelClip    int // bytes, one home reel clip (.mp4) or its poster
+	ByteTree    int // bytes, one bytes/<slug>.json after gzip -9
 }{
 	PageHTML:    60 << 10,
 	CSS:         84 << 10,
@@ -34,6 +35,7 @@ var Budgets = struct {
 	Fonts:       32 << 10,
 	ShareImage:  100 << 10,
 	ReelClip:    300 << 10,
+	ByteTree:    64 << 10,
 }
 
 // DemoTokens are the site.css properties a demo's ui.css may read
@@ -92,8 +94,8 @@ func Check(out string) error {
 		sheet []string
 	}
 	lazy := map[string]lazySheets{}
-	var wasmRel []string
-	var wasm [][]byte
+	var wasmRel, treeRel []string
+	var wasm, trees [][]byte
 	err := filepath.WalkDir(out, func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
@@ -188,6 +190,10 @@ func Check(out string) error {
 			}
 		case ".wasm":
 			wasmRel, wasm = append(wasmRel, rel), append(wasm, b)
+		case ".json":
+			if strings.HasPrefix(rel, "/bytes/") {
+				treeRel, trees = append(treeRel, rel), append(trees, b)
+			}
 		}
 		return nil
 	})
@@ -198,6 +204,11 @@ func Check(out string) error {
 	for i, n := range gzipSizes(wasm) {
 		if n > Budgets.WASMGzipped {
 			add("%s: %d bytes gzipped, budget %d", wasmRel[i], n, Budgets.WASMGzipped)
+		}
+	}
+	for i, n := range gzipSizes(trees) {
+		if n > Budgets.ByteTree {
+			add("%s: %d bytes gzipped, budget %d", treeRel[i], n, Budgets.ByteTree)
 		}
 	}
 	for page, l := range lazy {

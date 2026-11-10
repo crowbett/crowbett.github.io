@@ -124,6 +124,14 @@ For: who this is, what they build, and that the proof runs (`templates/home.html
 - Project pages link their group in the crumb and end with previous / next in the same order.
 - **Diagrams** (`templates/diagrams.html`, `cmd/dither`): one line drawing per slug, one accent element naming the idea, showing a behaviour its project page states. `go run ./cmd/dither` renders each at 112×54 (index, home share card) and 224×108 with labels (facts, project share cards), both poses, dithered to one bit (Bayer 8×8): `web/assets/dg/<slug>-<size>.png`, 30 files, 27,025 B (measured 2026-11-09). The labelled size is stored at 2x: the drawing is dithered at one pixel per CSS pixel and doubled, and its 7 px labels are drawn at 2x and thresholded, because at 1x Martian Mono turned "redis" into "eedis". CSS masks (`.dm`) take `currentColor` for ink and `--signal` for accent, so one PNG serves both themes and hover. The build fails on a mask older than its drawing (`web/assets/dg/.sums`) or a missing `.dm-<slug>` rule or `url()`.
 
+## Every byte
+
+For: showing there are levels under each demo, on the numbers page (`templates/numbers.html`, `web/assets/levels.js`, `web/assets/numbers.css`).
+
+- **Rows**: one grid, Level / Bytes / Functions / Share, every row a disclosure with a chevron that turns open. Each level indents one step and draws a hairline guide per ancestor; a row's share is of its parent, with a bar in its language's colour. Function rows carry a dash, data and "N more" rows a dot. Under 40rem the Functions column and row notes go and the step halves.
+- **Bottom level**: a function opens onto a dark screen panel (as the demo screens) with its instructions in mono: offset, bytes and nested text, the signature in signal colour, the first 400 lines and a "Show all" key. Narrow screens drop the bytes column.
+- Each level is drawn the first time it opens; nothing past the binaries downloads until a binary row opens.
+
 ## Live wall
 
 For: every demo running at once, to browse by eye (`templates/live.html`, `web/assets/wall.js`, `web/assets/live.css`).
