@@ -62,7 +62,8 @@ type pageData struct {
 }
 
 // WallCap is the most demos the live wall runs at once on a laptop; wall.js
-// halves it on phones and tablets. Measured in docs/tasks.md (V41).
+// halves it on phones and tablets. With the main thread throttled 4×, 4 tiles
+// held 60 fps and 5 did not (measured 2026-11-09, headless Chrome).
 const WallCap = 4
 
 // binRow is one demo binary on the numbers page.

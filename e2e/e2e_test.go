@@ -73,7 +73,7 @@ var schemes = []string{"light", "dark"}
 var keepShots = os.Getenv("CI") == "" && os.Getenv("E2E_NOSHOTS") == ""
 
 // The package builds the site once and starts one Chrome for every test:
-// each extra Chrome cost a cold start on CI (F2 in docs/tasks.md).
+// each extra Chrome cost a cold start on CI.
 var (
 	root    string
 	siteOut string
@@ -106,7 +106,7 @@ func run(m *testing.M) (code int) {
 		built <- err
 	}()
 	// Chrome's own output goes to stderr on CI and to a file locally, kept
-	// for a failed run (F3 in docs/tasks.md).
+	// for a failed run.
 	var chromeLog io.Writer = os.Stderr
 	if os.Getenv("CI") == "" {
 		f, err := os.Create(filepath.Join(os.TempDir(), "crowbett-e2e-chrome.log"))
@@ -143,7 +143,7 @@ func run(m *testing.M) (code int) {
 }
 
 // TestSiteCheck runs the build checks on the site under test, beside the
-// page visits rather than ahead of them (F5 in docs/tasks.md).
+// page visits rather than ahead of them.
 func TestSiteCheck(t *testing.T) {
 	t.Parallel()
 	if err := site.Check(siteOut); err != nil {
@@ -457,8 +457,8 @@ func lockBytes(t *testing.T, slug string) int {
 // cold-start against 1.3 s for Chrome (measured on ubuntu-24.04, 2026-10-24).
 func allocOpts(chromeLog io.Writer) []chromedp.ExecAllocatorOption {
 	// Software rendering: on macOS the GPU process hung for ~2 min under load
-	// and stalled every tab until Chrome restarted it (F3 in docs/tasks.md).
-	// E2E_GPU=1 keeps the GPU on locally, to check a GPU-only fault (F6).
+	// and stalled every tab until Chrome restarted it.
+	// E2E_GPU=1 keeps the GPU on locally, to check a GPU-only fault.
 	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.Flag("mute-audio", true), chromedp.CombinedOutput(chromeLog))
 	if os.Getenv("E2E_GPU") == "" {
 		opts = append(opts, chromedp.DisableGPU)
@@ -496,8 +496,7 @@ func newTab(t *testing.T, d time.Duration) (context.Context, context.CancelFunc)
 }
 
 // idle holds tabs that page visits reuse: opening a tab took 0.1-0.9 s on
-// CI, one at a time behind tabMu, and gated the whole run (F5 in
-// docs/tasks.md). Each visit still loads its page fresh.
+// CI, one at a time behind tabMu, and gated the whole run. Each visit still loads its page fresh.
 var idle = make(chan idleTab, 64)
 
 type idleTab struct {
