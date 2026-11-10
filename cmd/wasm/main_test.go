@@ -120,7 +120,7 @@ func TestCppArgs(t *testing.T) {
 	for _, f := range []string{"wasm.cpp", "extra.cpp", "bridge_test.cpp", "bridge.h", "sub/deep.cpp"} {
 		os.WriteFile(filepath.Join(root, "webdemo", f), nil, 0o644)
 	}
-	args, err := cppArgs("/sdk", root, "./webdemo", "/out.wasm")
+	args, err := cppArgs("/sdk", root, "./webdemo", "/out.wasm", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,11 +134,11 @@ func TestCppArgs(t *testing.T) {
 			t.Errorf("missing %s in %v", want, args)
 		}
 	}
-	if _, err := cppArgs("/sdk", root, "./webdemo/sub/none", "/out.wasm"); err == nil {
+	if _, err := cppArgs("/sdk", root, "./webdemo/sub/none", "/out.wasm", false); err == nil {
 		t.Error("missing directory accepted")
 	}
 	os.MkdirAll(filepath.Join(root, "empty"), 0o755)
-	if _, err := cppArgs("/sdk", root, "./empty", "/out.wasm"); err == nil || !strings.Contains(err.Error(), "no .cpp files") {
+	if _, err := cppArgs("/sdk", root, "./empty", "/out.wasm", false); err == nil || !strings.Contains(err.Error(), "no .cpp files") {
 		t.Errorf("want no-sources error, got %v", err)
 	}
 }

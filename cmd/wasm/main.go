@@ -4,6 +4,7 @@
 //	wasm build [slug...]     rebuild (all, or the named demos) and update the lock
 //	wasm check               verify web/wasm/* against the lock (CI runs this)
 //	wasm pin <slug> <ref>    pin a demo to a commit (must be pushed; -allow-unpushed to override)
+//	wasm tree [slug...]      write web/bytes/<slug>.json: where every byte of each binary goes
 //
 // Project repos are read from $DEV_ROOT (default ~/dev) with `git archive`, so
 // uncommitted work never leaks into a published binary. The demo with repo "."
@@ -70,7 +71,7 @@ type Dep struct {
 func main() {
 	log.SetFlags(0)
 	if len(os.Args) < 2 {
-		log.Fatal("usage: wasm build [slug...] | check | pin <slug> <ref>")
+		log.Fatal("usage: wasm build [slug...] | check | pin <slug> <ref> | tree [slug...]")
 	}
 	fl := flag.NewFlagSet(os.Args[1], flag.ExitOnError)
 	allowUnpushed := fl.Bool("allow-unpushed", false, "pin: accept a commit no remote branch contains")
@@ -84,6 +85,8 @@ func main() {
 		err = build(lock, fl.Args())
 	case "check":
 		err = check(lock)
+	case "tree":
+		err = trees(lock, fl.Args())
 	case "pin":
 		if fl.NArg() != 2 {
 			log.Fatal("usage: wasm pin <slug> <ref>")
@@ -131,6 +134,25 @@ func build(lock *Lock, only []string) error {
 }
 
 func buildOne(d *Demo) error {
+	out, err := filepath.Abs(filepath.Join("web", "wasm", d.Slug+".wasm"))
+	if err != nil {
+		return err
+	}
+	if err := buildTo(d, out, false); err != nil {
+		return err
+	}
+	b, err := os.ReadFile(out)
+	if err != nil {
+		return err
+	}
+	d.SHA256, d.Bytes, d.Gzip = sum(b), len(b), gzipLen(b)
+	return nil
+}
+
+// buildTo builds d's pinned source into out. named keeps the function names
+// the published build strips; it changes no code (trees checks that). With
+// named and no out it only reads which modules or crates are the project's.
+func buildTo(d *Demo, out string, named bool) error {
 	if d.Kind != "" && d.Kind != "go" && d.Kind != "rust" && d.Kind != "cpp" {
 		return fmt.Errorf("unknown kind %q (want go, rust or cpp)", d.Kind)
 	}
@@ -152,33 +174,31 @@ func buildOne(d *Demo) error {
 		}
 		dir = filepath.Join(tmp, filepath.Base(d.Repo))
 	}
-	out, err := filepath.Abs(filepath.Join("web", "wasm", d.Slug+".wasm"))
-	if err != nil {
-		return err
+	if named {
+		if err := ownNames(d, dir); err != nil {
+			return err
+		}
+		if out == "" {
+			return nil
+		}
 	}
 	switch d.Kind {
 	case "rust":
-		if err := buildRust(d, dir, out); err != nil {
-			return err
-		}
+		return buildRust(d, dir, out, named)
 	case "cpp":
-		if err := buildCpp(d, dir, out); err != nil {
-			return err
-		}
-	default:
-		cmd := exec.Command("go", "build", "-trimpath", "-buildvcs=false", "-ldflags=-s -w", "-o", out, d.Pkg)
-		cmd.Dir = dir
-		cmd.Env = append(os.Environ(), "GOOS=js", "GOARCH=wasm", "CGO_ENABLED=0")
-		cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("go build: %w", err)
-		}
+		return buildCpp(d, dir, out, named)
 	}
-	b, err := os.ReadFile(out)
-	if err != nil {
-		return err
+	ldflags := "-ldflags=-s -w"
+	if named {
+		ldflags = "-ldflags=-w"
 	}
-	d.SHA256, d.Bytes, d.Gzip = sum(b), len(b), gzipLen(b)
+	cmd := exec.Command("go", "build", "-trimpath", "-buildvcs=false", ldflags, "-o", out, d.Pkg)
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "GOOS=js", "GOARCH=wasm", "CGO_ENABLED=0")
+	cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("go build: %w", err)
+	}
 	return nil
 }
 

@@ -18,16 +18,25 @@
           <li><a class="nb-card" href="/projects/{{.Slug}}/"><span class="nb-p">{{.Title}}{{if not .Live}} <span class="nb-x">no demo</span>{{end}}</span><span class="nb-m">{{figures .Metric}}</span><span class="nb-s">{{.MetricSource}}</span></a></li>{{end}}{{end}}
         </ul>{{end}}{{end}}
       </section>
-      <section class="nb" aria-labelledby="nb-bin">
+      {{with .Levels}}<section class="nb" aria-labelledby="nb-bin">
         <div class="nb-head">
-          <h2 id="nb-bin">The binaries</h2>
-          <p>Each live demo is one WebAssembly binary, built from a pinned commit of its project. Sizes are from the build's lock file: each binary after gzip -9, and before.</p>
+          <h2 id="nb-bin">Every byte</h2>
+          <p>Each live demo is one WebAssembly binary, built from a pinned commit of its project. Open a row to go a level down: language, project, whose code it is, package, function, and at the bottom a function's own instructions, decoded in this tab from the binary the demo runs. Every level adds up to the one above it.</p>
         </div>
-        <p class="bin-key" aria-hidden="true"><span class="k-go">Go</span><span class="k-rust">Rust</span><span class="k-cpp">C++</span></p>
-        <ol class="bins">{{range .Bins}}
-          <li><a class="bin {{.Kind}}" href="/projects/{{.Slug}}/#demo"><span class="bin-n">{{.Title}}</span><svg class="bin-b" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><rect width="{{.Pct}}" height="10"/></svg><span class="bin-v">{{num .Gzip}} B <span class="bin-k">{{.Built}}</span></span><span class="bin-r">{{num .Raw}} B before gzip</span></a></li>{{end}}
-        </ol>
-      </section>
+        <div class="lv" data-levels>
+          <p class="lv-h" aria-hidden="true"><span>Level</span><span>Bytes</span><span>Functions</span><span>Share</span></p>
+          <details class="lv-d" open>
+            <summary class="lv-r d0"><span class="lv-n">All {{.Count}} binaries</span><span class="lv-b">{{num .Bytes}}</span><span class="lv-f">{{num .Funcs}}</span><span class="lv-s">100%</span></summary>
+            {{range .Langs}}<details class="lv-d {{.Kind}}">
+              <summary class="lv-r d1"><span class="lv-n">{{.Name}} <span class="lv-x">{{.Note}}</span></span><span class="lv-b">{{num .Bytes}}</span><span class="lv-f">{{num .Funcs}}</span><span class="lv-s">{{.Share}}<svg viewBox="0 0 100 4" preserveAspectRatio="none" aria-hidden="true"><rect width="{{.Pct}}" height="4"/></svg></span></summary>
+              {{range .Bins}}<details class="lv-d" data-tree="{{.Slug}}" data-gz="{{.Gzip}}">
+                <summary class="lv-r d2"><span class="lv-n">{{.Title}} <span class="lv-x">{{num .Gzip}} gzipped · {{.Built}}</span></span><span class="lv-b">{{num .Bytes}}</span><span class="lv-f">{{num .Funcs}}</span><span class="lv-s">{{.Share}}<svg viewBox="0 0 100 4" preserveAspectRatio="none" aria-hidden="true"><rect width="{{.Pct}}" height="4"/></svg></span></summary>
+                <p class="lv-note"><a href="/projects/{{.Slug}}/">{{.Title}}</a>'s levels below this one load with scripts on.</p>
+              </details>{{end}}
+            </details>{{end}}
+          </details>
+        </div>
+      </section>{{end}}
     </div>
   </div>
 </article>

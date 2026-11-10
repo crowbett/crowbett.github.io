@@ -72,6 +72,9 @@ var schemes = []string{"light", "dark"}
 // whose demo and axe checks run elsewhere (phone dark, desktop light).
 var keepShots = os.Getenv("CI") == "" && os.Getenv("E2E_NOSHOTS") == ""
 
+// shots is e2e/out, emptied once per run.
+var shots string
+
 // The package builds the site once and starts one Chrome for every test:
 // each extra Chrome cost a cold start on CI.
 var (
@@ -96,6 +99,15 @@ func run(m *testing.M) (code int) {
 		return 1
 	}
 	defer os.RemoveAll(siteOut)
+	shots = filepath.Join(root, "e2e", "out")
+	if err := os.RemoveAll(shots); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	if err := os.MkdirAll(shots, 0o755); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
 	// Chrome starts while the site builds: a cold start took up to ~13 s on CI.
 	start := time.Now()
 	built := make(chan error, 1)
@@ -153,13 +165,6 @@ func TestSiteCheck(t *testing.T) {
 
 func TestSite(t *testing.T) {
 	t.Parallel()
-	shots := filepath.Join(root, "e2e", "out")
-	if err := os.RemoveAll(shots); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.MkdirAll(shots, 0o755); err != nil {
-		t.Fatal(err)
-	}
 
 	pages := []string{"/", "/404.html", "/numbers/", "/live/", "/demos/smoke/"}
 	projects, err := site.LoadProjects(os.DirFS(root))

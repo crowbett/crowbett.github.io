@@ -57,7 +57,7 @@ func wasiSDK() (dir, version string, err error) {
 // directory except *_test.cpp, built single-threaded for wasm32-wasip1 without
 // crt1, exceptions or RTTI (each would pull in WASI imports), with the source
 // and SDK paths remapped so the binary does not depend on where it was built.
-func cppArgs(sdk, root, pkg, out string) ([]string, error) {
+func cppArgs(sdk, root, pkg, out string, named bool) ([]string, error) {
 	dir := filepath.Join(root, filepath.FromSlash(pkg))
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -74,18 +74,22 @@ func cppArgs(sdk, root, pkg, out string) ([]string, error) {
 		return nil, fmt.Errorf("no .cpp files in %s", pkg)
 	}
 	slices.Sort(srcs)
+	strip := "-Wl,--strip-all"
+	if named {
+		strip = "-Wl,--strip-debug"
+	}
 	args := []string{
 		"--no-default-config", "--target=wasm32-wasip1", "--sysroot=" + filepath.Join(sdk, "share", "wasi-sysroot"),
 		"-std=c++20", "-O3", "-DNDEBUG", "-fno-exceptions", "-fno-rtti",
 		"-ffile-prefix-map=" + root + "=/src", "-ffile-prefix-map=" + sdk + "=/wasi-sdk",
-		"-nostartfiles", "-Wl,--no-entry", "-Wl,--strip-all", "-o", out,
+		"-nostartfiles", "-Wl,--no-entry", strip, "-o", out,
 	}
 	return append(args, srcs...), nil
 }
 
 // buildCpp compiles the C++ bridge at d.Pkg under root with the pinned wasi-sdk
 // and checks the module imports nothing and exports the bridge ABI.
-func buildCpp(d *Demo, root, out string) error {
+func buildCpp(d *Demo, root, out string, named bool) error {
 	root, err := filepath.Abs(root)
 	if err == nil {
 		root, err = filepath.EvalSymlinks(root)
@@ -105,7 +109,7 @@ func buildCpp(d *Demo, root, out string) error {
 	}
 	d.Clang, _, _ = strings.Cut(ver, "\n")
 	d.WasiSDK = version
-	args, err := cppArgs(sdk, root, d.Pkg, out)
+	args, err := cppArgs(sdk, root, d.Pkg, out, named)
 	if err != nil {
 		return err
 	}

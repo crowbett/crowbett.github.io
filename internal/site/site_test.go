@@ -71,7 +71,7 @@ func testFS(project string) fstest.MapFS {
 {{define "home"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{range .Projects}}<a href="/projects/{{.Slug}}/">x</a>{{end}}{{end}}
 {{define "project"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{if .Project.Live}}{{demoKB .Project.Slug}}KB {{demoBytes .Project.Slug}}B{{end}}<a href="/">home</a>{{end}}
 {{define "notfound"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{end}}
-{{define "numbers"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{range .Bins}}{{.Slug}} {{.Gzip}} {{.Pct}}{{end}}{{end}}
+{{define "numbers"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{with .Levels}}{{.Bytes}}{{range .Langs}}{{range .Bins}}{{.Slug}} {{.Gzip}} {{.Pct}}{{end}}{{end}}{{end}}{{end}}
 {{define "live"}}<html lang="en"><title>t</title><meta name="description"><meta name="viewport">{{range .Projects}}{{if .Live}}<a href="/projects/{{.Slug}}/">{{.Slug}}</a>{{end}}{{end}}{{end}}`)},
 		"web/assets/site.css":  {Data: []byte("body{}")},
 		"web/demos/demo/ui.js": {Data: []byte("export function mount(){}")},
@@ -110,6 +110,7 @@ func withClip(t *testing.T, src fstest.MapFS) {
 		t.Fatal(err)
 	}
 	src[ReelSums] = &fstest.MapFile{Data: []byte("demo " + sum + "\n")}
+	src[TreeDir+"/demo.json"] = &fstest.MapFile{Data: []byte(`{"slug":"demo","kind":"go","sha256":"","bytes":4194304,"tree":{"n":"demo","b":4194304,"f":1,"k":[{"n":"Own code","b":4194300,"f":1,"k":[{"n":"main","b":4194300,"f":1,"i":0}]},{"n":"Module structure","b":4,"f":0}]}}`)}
 	saved := HomeStage
 	HomeStage.Slug = "demo"
 	t.Cleanup(func() { HomeStage = saved })
@@ -309,13 +310,18 @@ func TestBuildRejectsStaleShareCards(t *testing.T) {
 }
 
 func TestCheckGzipsEachBinary(t *testing.T) {
-	defer func(b int) { Budgets.WASMGzipped = b }(Budgets.WASMGzipped)
-	Budgets.WASMGzipped = 1000
+	defer func(b, tr int) { Budgets.WASMGzipped, Budgets.ByteTree = b, tr }(Budgets.WASMGzipped, Budgets.ByteTree)
+	Budgets.WASMGzipped, Budgets.ByteTree = 1000, 1000
 	out := t.TempDir()
 	noise := make([]byte, 4000)
 	rand.NewChaCha8([32]byte{}).Read(noise)
 	for i, b := range [][]byte{noise, make([]byte, 4000), noise[:500], noise[:3000], make([]byte, 9000)} {
 		if err := writeFile(filepath.Join(out, "wasm", fmt.Sprintf("d%d.wasm", i)), b); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for name, b := range map[string][]byte{"heavy": noise, "light": make([]byte, 4000)} {
+		if err := writeFile(filepath.Join(out, "bytes", name+".json"), b); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -327,6 +333,9 @@ func TestCheckGzipsEachBinary(t *testing.T) {
 		if got := strings.Contains(err.Error(), fmt.Sprintf("/wasm/d%d.wasm: ", i)); got != over {
 			t.Errorf("d%d.wasm reported %v, want %v:\n%v", i, got, over, err)
 		}
+	}
+	if !strings.Contains(err.Error(), "/bytes/heavy.json: ") || strings.Contains(err.Error(), "/bytes/light.json") {
+		t.Errorf("byte trees: want only heavy.json over budget:\n%v", err)
 	}
 }
 
