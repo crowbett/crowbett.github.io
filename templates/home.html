@@ -7,12 +7,13 @@
       <p class="stage-go"><a class="key" href="#work">See the work</a>{{with .Stage}}<a class="stage-link" href="/projects/{{.Slug}}/#demo">Open the full {{.Slug}} demo</a>{{end}}</p>
     </div>
     {{with .Stage}}<figure class="stage-fig" data-stage="{{.Slug}}" data-scene="{{.Scene}}" data-width="{{.Width}}" data-seed="{{.Seed}}" data-max="{{.MaxSpp}}" data-poster-spp="{{.PosterSpp}}">
-      <p class="stage-hud"><span>{{.Slug}}</span><span data-state>recorded, {{.PosterSpp}} spp</span></p>
+      <p class="stage-hud"><span>{{.Slug}}</span><span data-state>recorded, {{.PosterSpp}} spp</span><span class="stage-cores" data-cores hidden></span><button type="button" class="stage-reset" data-reset hidden>Reset view</button></p>
       <div class="stage-view">
         <img src="/reel/stage.webp" width="{{.Width}}" height="{{.Width}}" alt="The {{.SceneLabel}} traced by the path tracer at {{.PosterSpp}} samples per pixel: grainy with {{.LeftLabel}} sampling on the left, cleaner with {{.RightLabel}} on the right." fetchpriority="high">
         <canvas class="stage-r" width="{{.Width}}" height="{{.Width}}" aria-hidden="true"></canvas>
         <canvas class="stage-l" width="{{.Width}}" height="{{.Width}}" aria-hidden="true"></canvas>
         <div class="stage-split" aria-hidden="true"><b></b></div>
+        <span class="stage-tip" data-orbit hidden>Drag to orbit</span>
         <p class="stage-say" role="status"></p>
       </div>
       <p class="stage-tag" aria-hidden="true"><span>{{.LeftLabel}}</span><span>{{.RightLabel}}</span></p>
