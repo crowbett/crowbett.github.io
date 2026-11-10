@@ -271,6 +271,10 @@ body:has(.notfound) main { flex: 1 0 auto; }
 .foot-k, .foot-s { margin: 0; font: 400 var(--t-meta)/1.5 var(--sans); color: var(--text-3); }
 .foot-mail { justify-self: start; font: 800 clamp(1.1rem, 0.2rem + 3.6vw, 3.25rem)/1.05 var(--display); letter-spacing: -0.04em; color: var(--text); text-decoration: none; overflow-wrap: anywhere; }
 .foot-mail:hover { color: var(--accent); }
+.foot-mail { font-kerning: none; }
+.fl { display: inline-block; transition: translate 420ms var(--spring-snappy); }
+.fl:hover { translate: 0 -0.18em; transition-duration: 90ms; }
+.fl:hover + .fl, .fl:has(+ .fl:hover) { translate: 0 -0.09em; transition-duration: 140ms; }
 .foot-keys { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; text-decoration: underline 1px; text-underline-offset: 0.22em; cursor: pointer; }
 .foot-keys:hover { color: var(--accent-hover); text-decoration-thickness: 2px; }
 @media (hover: none) { .foot-keys { display: none; } }
