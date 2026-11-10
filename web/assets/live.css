@@ -48,3 +48,9 @@ main:has(> .wall) { width: auto; }
 html:not(.js) .wt-bar { display: none; }
 @media (pointer: coarse) { .wt-go { min-height: 44px; } }
 @media (max-width: 30rem) { .wt-meta { grid-template-columns: minmax(0, 1fr); } .wt-bar { grid-column: 1; grid-row: 3; flex-direction: row; justify-content: space-between; } .wt-st { width: auto; } }
+
+/* Motion: each tile rises as it scrolls in */
+@supports (animation-timeline: view()) { @media (prefers-reduced-motion: no-preference) {
+  .wt { animation: tile-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 220px; }
+} }
+@keyframes tile-rise { from { translate: 0 2.25rem; } }
