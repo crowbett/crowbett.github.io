@@ -157,7 +157,7 @@ func TestPointerFeel(t *testing.T) {
 		t.Fatal(err)
 	}
 	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(kineticCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
-		t.Fatalf("home motion (letters, ticker, index peek): %v", err)
+		t.Fatalf("home motion (letters, index peek): %v", err)
 	}
 	feelCheck(t, ctx)
 }
