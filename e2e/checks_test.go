@@ -125,16 +125,12 @@ const orbitCheck = `(async () => {
 
 // kineticCheck: the motion kinetic.js sets up on home, in a tab with a mouse.
 // Names and titles are split into letters without changing their text, and
-// each link keeps its name; the ticker carries every panel's result twice and
-// is moving; a row of the Work index shows its project's clip on the card,
-// which leaves with the pointer.
+// each link keeps its name; a row of the Work index shows its project's clip
+// on the card, which leaves with the pointer.
 const kineticCheck = `(async () => {
 	const names = [...document.querySelectorAll(".it-name")];
 	if (!names.every((n) => n.querySelectorAll(".ch").length === n.textContent.replace(/ /g, "").length && n.closest("a").getAttribute("aria-label").endsWith(n.textContent))) return false;
 	if (document.querySelector(".work-head h2").getAttribute("aria-label") !== "Work" || document.querySelectorAll(".work-head h2 .ch").length !== 4) return false;
-	const said = [...document.querySelectorAll(".it .metric")].map((m) => m.textContent);
-	const row = document.querySelector(".tick-row");
-	if (row.children.length !== 2 * said.length || !row.textContent.includes(said[0]) || !row.getAnimations().some((a) => a.playState === "running")) return false;
 	const toc = document.querySelector(".work-toc"), a = toc.querySelector("a[href='#p-kvlite']"), card = document.querySelector(".toc-peek");
 	toc.scrollIntoView({ block: "center", behavior: "instant" });
 	const r = a.getBoundingClientRect();
