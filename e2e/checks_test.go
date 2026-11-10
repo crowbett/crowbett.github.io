@@ -704,8 +704,10 @@ var demoChecks = map[string][]string{
 			const digests = () => [...document.querySelectorAll(".kl-digest")].map((d) => d.textContent).join();
 			if (document.querySelector(".kl-acts button").textContent === "Pause") click("Pause");
 			click("Reset");
+			// 45 s, not until's 20: the 24 seeds run in the tab's worker, and on a
+			// loaded 4-vCPU runner they outlasted 20 s twice on 2026-11-09.
 			if (!await until(() => digests() === "888b42107bc083ca,888b42107bc083ca" && document.querySelector(".kl-match") !== null && v("seeds") === "24" && v("lin") === "24 / 24" &&
-				v("t") === "0.00 s" && v("faults") === "0 / 25" && v("ok") === "477" && v("fail") === "0" && v("info") === "6" && v("conf") === "7" && v("hist") === "linearizable")) return false;
+				v("t") === "0.00 s" && v("faults") === "0 / 25" && v("ok") === "477" && v("fail") === "0" && v("info") === "6" && v("conf") === "7" && v("hist") === "linearizable", 45000)) return false;
 			click("Next fault");
 			if (!await until(() => v("t") === "0.25 s" && v("faults") === "1 / 25" && v("part") === "{5} | {1,2,3,4}" && v("faulty") === "none")) return false;
 			click("Next fault");
