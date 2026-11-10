@@ -44,3 +44,10 @@
   .bin { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n v" "b b" "r r"; gap: 2px var(--sp-3); }
   .bin-r { text-align: left; }
 }
+/* Motion: each binary's bar grows to its length, and each result card rises, as it scrolls in */
+@supports (animation-timeline: view()) { @media (prefers-reduced-motion: no-preference) {
+  .bin-b rect { transform-box: fill-box; transform-origin: 0 50%; animation: bin-grow linear both; animation-timeline: view(); animation-range: entry 0% entry 280px; }
+  .nb-card { animation: nb-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 200px; }
+} }
+@keyframes bin-grow { from { transform: scaleX(0.001); } }
+@keyframes nb-rise { from { translate: 0 1.75rem; } }

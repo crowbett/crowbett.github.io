@@ -24,7 +24,7 @@ Status (2026-10-25): live at https://crowbett.github.io. Scaffold done. 8 projec
 | What | Limit |
 |---|---|
 | One HTML page | 60 KiB |
-| CSS one page loads (the stylesheets it links + its demo's `ui.css`) | 72 KiB |
+| CSS one page loads (the stylesheets it links + its demo's `ui.css`) | 84 KiB |
 | One demo's `ui.js` | 60 KiB |
 | One `.wasm`, gzip -9 | 2.25 MiB |
 | All `.woff2` fonts | 32 KiB |
@@ -54,3 +54,5 @@ V12 decisions (2026-10-26, owner-approved): no animation library (CSS `linear()`
 CSS budget raised from 56 KiB to 72 KiB (decision, 2026-11-09, V31): the owner picked eleven new features at once (call timeline, X-ray, autopilot tours, shareable runs, a numbers page, search over everything, terminal upgrades, a live wall, live home panels, code peek, an intro). The first two alone took project.css from 18,565 to 21,377 bytes, and the heaviest page, recall's, became 60,064 bytes (13,508 gzipped; all measured), over 56 KiB. 72 KiB leaves ~13.6 KB on the heaviest page for the rest of that queue; the gzipped weight, what crosses the wire, stays under 14 KB. The next raise is another recorded decision. Rejected: a lazily linked stylesheet for the panels, which the build would count the same and which would flash unstyled on first open.
 
 CSS budget counts stylesheets a page loads later (decision, 2026-11-09, V40/V41): home panels and the live wall start demos on the page, which links each demo's `ui.css` and the demo controls' rules. Those rules moved from project.css into demo.css (3,210 bytes; project.css 18,746 → 15,674, measured), which project pages link and the others load on first start. A page that starts demos says so in its HTML (`data-live-css`, the most it runs at once in `data-live-cap`, the slugs in `data-run`), and the check adds that stylesheet and the cap largest `ui.css` among those slugs. Home (cap 1) counts 64,854 bytes, the wall (cap 4) 65,966 (measured). The budget stays 72 KiB. Rejected: loading all of project.css on home (~76.7 KB, over budget) and leaving lazily loaded CSS uncounted.
+
+CSS budget raised from 72 KiB to 84 KiB (decision, 2026-11-09, V46): the owner asked for the arena and then for motion "going all out". The arena's rules had left home 249 bytes under 72 KiB (73,479 counted); the motion pass (split letters, the ticker, the index's clip card, card and live-panel entrances) took home.css from 33,029 to 36,049 bytes, and home now counts 76,770 (site.css 29,638 + home.css 36,049 + demo.css 3,210 + recall's 7,873-byte `ui.css`; all measured). home.css is 8,124 bytes gzipped (measured), which is what crosses the wire. 84 KiB leaves ~9.2 KB on home; the next raise is another recorded decision. Rejected: a separate motion stylesheet, which the build would count the same.

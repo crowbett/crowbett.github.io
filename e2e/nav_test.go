@@ -156,6 +156,9 @@ func TestPointerFeel(t *testing.T) {
 	if err := chromedp.Do(ctx, cores(2), mouse, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(srv.URL+"/"), chromedp.WaitReady(chromedp.CSS("body"))); err != nil {
 		t.Fatal(err)
 	}
+	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(kineticCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
+		t.Fatalf("home motion (letters, ticker, index peek): %v", err)
+	}
 	feelCheck(t, ctx)
 }
 

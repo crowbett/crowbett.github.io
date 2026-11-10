@@ -331,3 +331,35 @@ html:active-view-transition-type(filter)::view-transition-old(root), html:active
   .it-live-bar button { display: none; }
 }
 @media (pointer: coarse) { .it-live-bar :is(a, button) { display: inline-flex; align-items: center; min-height: 44px; } }
+
+/* Motion pass (kinetic.js, arena.js, stage.js). Letters drop into place on scroll; the ticker drifts; the index's clip card trails the pointer; the hero's words shift against the camera. */
+/* Kerning is off for the names and titles the script splits, split or not, so splitting moves nothing. */
+.it-name, .work-head h2, .play h2, .all-head h3 { font-kerning: none; }
+.wd { display: inline-block; white-space: nowrap; }
+.ch { display: inline-block; }
+@supports (animation-timeline: view()) { @media (prefers-reduced-motion: no-preference) {
+  .ch { animation: ch-in linear both; animation-timeline: --panel; animation-range: entry calc(15% + var(--i) * 4%) entry calc(55% + var(--i) * 4%); }
+  :is(h2, h3).split { view-timeline: --head block; }
+  :is(h2, h3) .ch { animation-timeline: --head; animation-range: entry calc(var(--i) * 9%) cover calc(20% + var(--i) * 2%); }
+} }
+@keyframes ch-in { from { translate: 0 0.6em; rotate: 12deg; } }
+.tick { overflow: clip; margin-bottom: var(--sp-6); border-block: 1px solid var(--line-strong); font: 400 var(--t-small)/1 var(--sans); color: var(--text-2); }
+.tick-row { display: flex; width: max-content; animation: tick var(--secs, 150s) linear infinite; }
+.tick:hover .tick-row { animation-play-state: paused; }
+.tick span { display: flex; align-items: baseline; gap: var(--sp-3); padding: var(--sp-3) var(--sp-5); white-space: nowrap; }
+.tick span::before { content: ""; align-self: center; width: 6px; height: 6px; background: var(--signal); }
+.tick b { font: 800 1rem/1 var(--display); letter-spacing: -0.02em; color: var(--text); }
+@keyframes tick { to { translate: -50% 0; } }
+.toc-peek { position: fixed; z-index: 25; top: 0; left: 0; width: 18rem; aspect-ratio: 16 / 10; overflow: hidden; border-radius: var(--r-2); background: var(--screen); box-shadow: var(--lift), 0 0 0 1px color-mix(in oklab, var(--text) 14%, transparent); pointer-events: none; opacity: 0; scale: 0.9; transition: opacity var(--d-base) var(--ease-in), scale var(--d-spring) var(--spring-soft); }
+.toc-peek[data-on] { opacity: 1; scale: 1; }
+.toc-peek video { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+@media (prefers-reduced-motion: no-preference) { .stage-text { translate: calc(var(--lx, 0) * 16px) calc(var(--ly, 0) * -10px); } }
+.play-dials dd { transform-origin: 0 100%; }
+[data-late] [data-k=time] { color: var(--band-signal); }
+/* Index cards rise as they scroll in; a panel's live demo wipes down over its clip. */
+@supports (animation-timeline: view()) { @media (prefers-reduced-motion: no-preference) {
+  .card { animation: card-in linear both; animation-timeline: view(); animation-range: entry 0% entry 220px; }
+} }
+@keyframes card-in { from { translate: 0 2.5rem; rotate: 1.5deg; } }
+@media (prefers-reduced-motion: no-preference) { .it-live[data-on] { animation: live-in var(--d-media) var(--ease-in) both; } }
+@keyframes live-in { from { clip-path: inset(0 0 100% 0 round var(--r-2)); } to { clip-path: inset(0 round var(--r-2)); } }

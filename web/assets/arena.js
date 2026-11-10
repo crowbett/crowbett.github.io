@@ -7,7 +7,8 @@
 // autopilot are this page's; every position, rollback and hash check comes
 // from the binary. Until Play is pressed an autopilot steers player 0 (it
 // starts on its own only where the stage would); Play hands player 0 over
-// for 45 seconds of ticks.
+// for 45 seconds of ticks, after a count of three. Trails, bursts and the
+// end card are drawing only; they stand down under reduced motion.
 import { connect } from "/assets/demo.js";
 
 const root = document.querySelector("[data-arena]");
@@ -56,6 +57,13 @@ if (root) {
   let byKeys = false;
   let col = null;
   let rnd = SEED;
+  let starting = 0;
+  let over = null;
+  let bits = [];
+  const trails = new Map();
+  const COUNT_MS = 700;
+  const TRAIL = 18;
+  const CARD_MS = 4200;
 
   // The page's own draw for where flags go (mulberry32), so a run is repeatable.
   const rand = () => {
@@ -70,13 +78,19 @@ if (root) {
   };
   const wire = ({ latency_ms, jitter_ms, loss_pct }) => ({ latency_ms, jitter_ms, loss_pct });
   const me = () => view?.clients[0].me;
-  const set = (k, v) => { const d = dial(k); if (d.textContent !== v) d.textContent = v; };
+  const set = (k, v) => {
+    const d = dial(k);
+    if (d.textContent === v) return;
+    d.textContent = v;
+    // A tally pops when it counts.
+    if (!reduced && (k === "you" || k === "bots") && v !== "0") d.animate([{ scale: 1.4 }, { scale: 1 }], { duration: 280, easing: "cubic-bezier(0.2, 0, 0, 1)" });
+  };
   const say = (text) => { out.textContent = text; };
 
   function colors() {
     const s = getComputedStyle(root);
     const v = (n) => s.getPropertyValue(n).trim();
-    col = { floor: v("--screen"), ink: v("--screen-ink"), dim: v("--screen-dim"), ok: v("--screen-ok"), signal: v("--screen-signal"), you: v("--block"), sans: v("--sans") || "sans-serif" };
+    col = { floor: v("--screen"), ink: v("--screen-ink"), dim: v("--screen-dim"), ok: v("--screen-ok"), signal: v("--screen-signal"), you: v("--block"), sans: v("--sans") || "sans-serif", display: v("--display") || "sans-serif" };
   }
   colors();
   addEventListener("themechange", colors);
@@ -103,7 +117,9 @@ if (root) {
       const by = view.players.find(([, x, y]) => Math.hypot(x - f.x, y - f.y) <= REACH);
       if (!by) continue;
       if (by[0] === 0) score.you++; else score.bots++;
-      fx.push({ x: f.x, y: f.y, t0: performance.now(), you: by[0] === 0 });
+      const t0 = performance.now(), you = by[0] === 0;
+      fx.push({ x: f.x, y: f.y, t0, you });
+      if (!reduced) for (let b = 0; b < 12; b++) bits.push({ x: f.x, y: f.y, a: (b / 12) * Math.PI * 2 + rand(), v: 0.6 + rand() * 1.1, t0, you });
       flags[i] = plant();
     }
     root.dataset.taken = String(score.you + score.bots);
@@ -122,11 +138,17 @@ if (root) {
     // Hooks for tests: the server's tick and where this client has player 0.
     root.dataset.tick = String(view.tick);
     if (c.me) root.dataset.x = String(Math.round(c.me[0]));
+    root.toggleAttribute("data-late", playing && left <= 300);
+    // Where each player has been, for the trails.
+    const mark = (id, x, y) => { const t = trails.get(id) ?? []; t.push([x, y]); if (t.length > TRAIL) t.shift(); trails.set(id, t); };
+    if (c.me) mark(0, c.me[0], c.me[1]);
+    for (const [i, x, y] of c.others) mark(i, x, y);
   }
 
   // Which buttons to hold this step: the visitor's keys or pointer while
   // playing, otherwise the autopilot heading for the nearest flag.
   function buttons() {
+    if (starting) return 0;
     const at = me();
     let to = aim;
     if (playing && byKeys) {
@@ -169,6 +191,22 @@ if (root) {
       ctx.fillRect(f.x * k - s, f.y * k - s, 2 * s, 2 * s);
       ctx.globalAlpha = 1;
     }
+    // Trails: where each player has been, fading; yours in your colour.
+    if (!reduced) {
+      ctx.lineCap = "round";
+      for (const [id, t] of trails) {
+        for (let i = 1; i < t.length; i++) {
+          ctx.globalAlpha = (i / t.length) * (id === 0 ? 0.5 : 0.16);
+          ctx.beginPath();
+          ctx.moveTo(t[i - 1][0] * k, t[i - 1][1] * k);
+          ctx.lineTo(t[i][0] * k, t[i][1] * k);
+          ctx.lineWidth = r * 1.6 * (i / t.length);
+          ctx.strokeStyle = id === 0 ? col.you : col.dim;
+          ctx.stroke();
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
     // The other players as this client draws them (interpolated in the past).
     ctx.font = `400 ${11 * dpr}px ${col.sans}`;
     ctx.textAlign = "center";
@@ -208,6 +246,48 @@ if (root) {
       const a = (now - f.t0) / FX_MS;
       ctx.globalAlpha = 1 - a;
       ring(f.x, f.y, (10 + 26 * a) * dpr, f.you ? col.ok : col.dim, null, 2);
+      if (f.you) {
+        ctx.fillStyle = col.ok;
+        ctx.font = `800 ${18 * dpr}px ${col.display}`;
+        ctx.fillText("+1", f.x * k, f.y * k - (18 + 30 * a) * dpr);
+      }
+      ctx.globalAlpha = 1;
+    }
+    // The burst of a taken flag: squares thrown outward, slowing.
+    bits = bits.filter((b) => now - b.t0 < FX_MS * 1.4);
+    for (const b of bits) {
+      const a = (now - b.t0) / (FX_MS * 1.4), d = 46 * b.v * (1 - (1 - a) ** 2) * dpr, s = 3.5 * dpr * (1 - a);
+      ctx.globalAlpha = 1 - a;
+      ctx.fillStyle = b.you ? col.ok : col.signal;
+      ctx.fillRect(b.x * k + Math.cos(b.a) * d - s, b.y * k + Math.sin(b.a) * d - s, 2 * s, 2 * s);
+    }
+    ctx.globalAlpha = 1;
+    const mid = canvas.width / 2;
+    const veil = (alpha) => { ctx.globalAlpha = alpha; ctx.fillStyle = col.floor; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.globalAlpha = 1; };
+    // The count before a game: three, two, one.
+    if (starting) {
+      const t = now - starting, n = 3 - Math.floor(t / COUNT_MS), a = (t % COUNT_MS) / COUNT_MS;
+      if (n < 1) { begin(); return; }
+      veil(0.45);
+      ctx.globalAlpha = reduced ? 1 : 1 - a * a;
+      ctx.fillStyle = col.ink;
+      ctx.font = `800 ${(reduced ? 150 : 150 + 90 * (1 - a)) * dpr}px ${col.display}`;
+      ctx.fillText(String(n), mid, mid);
+      ctx.globalAlpha = 1;
+    }
+    // The end card: the count, large, over the match as it carries on.
+    if (over) {
+      const t = now - over.t0;
+      if (t > CARD_MS) { over = null; return; }
+      const a = Math.min(1, t / 240) * Math.min(1, (CARD_MS - t) / 400);
+      veil(0.62 * a);
+      ctx.globalAlpha = a;
+      ctx.fillStyle = col.ink;
+      ctx.font = `800 ${170 * dpr}px ${col.display}`;
+      ctx.fillText(fmt(over.you), mid, mid - 24 * dpr);
+      ctx.font = `400 ${17 * dpr}px ${col.sans}`;
+      ctx.fillStyle = col.dim;
+      ctx.fillText(`${over.you === 1 ? "flag" : "flags"} in 45 seconds · the bots took ${fmt(over.bots)}`, mid, mid + 84 * dpr);
       ctx.globalAlpha = 1;
     }
   }
@@ -265,8 +345,10 @@ if (root) {
   function finish(full) {
     const c = view.clients[0], l = link();
     playing = false;
+    starting = 0;
     held = 0;
     delete root.dataset.playing;
+    delete root.dataset.late;
     key.textContent = "Play again";
     for (const b of links) b.disabled = false;
     if (!full) { say("Stopped. The autopilot has player 0 again."); from = null; readouts(); return; }
@@ -275,28 +357,35 @@ if (root) {
     const record = score.you > best;
     if (record) try { localStorage.setItem("arena-best", String(score.you)); } catch { /* storage is optional */ }
     const mark = record && best ? `, past your best of ${fmt(best)}` : !record && best ? ` (your best is ${fmt(best)})` : "";
+    over = { t0: performance.now(), you: score.you, bots: score.bots };
     say(`You took ${plural(score.you, "flag")}${mark}; the bots took ${fmt(score.bots)}. Link: ${l.name}. In those 45 seconds your client rolled back ${plural(c.rollbacks - from.rollbacks, "time")}, and the server compared ${hashes(view.check.matches - from.matches)} and found ${plural(view.check.desyncs, "desync")}.`);
     root.dataset.over = "";
   }
 
-  key.addEventListener("click", async () => {
-    if (playing) { finish(false); return; }
-    key.disabled = true;
-    await boot();
-    key.disabled = false;
-    if (!demo) return;
+  // The game proper: the tally and the clock start when the count ends.
+  function begin() {
+    starting = 0;
     score = { you: 0, bots: 0 };
     from = { tick: view.tick, rollbacks: view.clients[0].rollbacks, matches: view.check.matches };
     playing = true;
     byKeys = false;
     aim = null;
     root.dataset.playing = "";
+    readouts();
+  }
+  key.addEventListener("click", async () => {
+    if (playing || starting) { finish(false); return; }
+    key.disabled = true;
+    await boot();
+    key.disabled = false;
+    if (!demo) return;
+    over = null;
     delete root.dataset.over;
     key.textContent = "Stop";
     for (const b of links) b.disabled = true;
     say("");
-    readouts();
     canvas.focus({ preventScroll: true });
+    starting = performance.now();
     wake();
   });
 
@@ -310,8 +399,9 @@ if (root) {
 
   // Keys steer while the arena has focus; the pointer steers toward itself.
   canvas.addEventListener("keydown", (e) => {
-    if (!playing || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (!(playing || starting) || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.code === "Escape") { finish(false); return; }
+    if (!playing) return;
     const bit = KEYS[e.code];
     if (!bit) return;
     e.preventDefault();
