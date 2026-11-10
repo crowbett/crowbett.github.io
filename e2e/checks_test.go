@@ -98,6 +98,31 @@ const stageCheck = `(async () => {
 		&& /^live, pass \d+$/.test(f.querySelector("[data-state]").textContent));
 })()`
 
+// orbitCheck drags the stage's picture away from its split line: the camera
+// orbits (the binary's camera call, on every copy), the picture changes and
+// converges again from pass one, and "Reset view" brings the first view back.
+// The stage runs one copy of the tracer per spare core and says how many.
+const orbitCheck = `(async () => {
+	const f = document.querySelector("[data-stage]"), v = f.querySelector(".stage-view"), r = v.getBoundingClientRect();
+	const live = () => /^live, pass \d+$/.test(f.querySelector("[data-state]").textContent);
+	const want = Math.max(1, Math.min(8, navigator.hardwareConcurrency - 1));
+	if (f.querySelector("[data-cores]").textContent !== want + (want === 1 ? " core" : " cores") || f.querySelector("[data-orbit]").hidden) return false;
+	const copy = new OffscreenCanvas(480, 480).getContext("2d", { willReadFrequently: true });
+	const px = () => { copy.drawImage(f.querySelector(".stage-r"), 0, 0); return copy.getImageData(0, 0, 480, 480).data; };
+	const diff = (a, b) => { let n = 0; for (let i = 0; i < a.length; i += 4) if (Math.abs(a[i] - b[i]) > 48) n++; return n; };
+	const before = px();
+	const ev = (t, x, y) => v.dispatchEvent(new PointerEvent(t, { pointerId: 9, bubbles: true, clientX: x, clientY: y, button: 0 }));
+	const x = r.left + r.width * 0.85, y = r.top + r.height * 0.5;
+	ev("pointerdown", x, y);
+	for (let i = 1; i <= 6; i++) { ev("pointermove", x - i * r.width * 0.05, y + i * r.height * 0.02); await new Promise(requestAnimationFrame); }
+	ev("pointerup", x, y);
+	const reset = f.querySelector("[data-reset]");
+	if (!await until(() => Number(f.dataset.yaw) > 5 && Number(f.dataset.pitch) > 1 && !reset.hidden && f.querySelector("[data-orbit]").hidden
+		&& live() && Number(f.querySelector("[data-k=spp]").textContent) >= 2 && diff(before, px()) > 4000)) return false;
+	reset.click();
+	return until(() => f.dataset.yaw === "0" && reset.hidden && live() && Number(f.querySelector("[data-k=spp]").textContent) >= 2 && diff(before, px()) < 4000);
+})()`
+
 // sceneCheck picks the glass sphere on the stage: the tracer loads that
 // scene, restarts from pass one and its readouts fill again.
 const sceneCheck = `(async () => {
