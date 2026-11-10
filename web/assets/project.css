@@ -194,3 +194,9 @@
 .tour-cursor { position: fixed; z-index: 9; top: 0; left: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; border: 2px solid var(--signal); border-radius: 50%; background: color-mix(in oklab, var(--signal) 25%, transparent); box-shadow: 0 0 0 6px color-mix(in oklab, var(--signal) 15%, transparent); pointer-events: none; transition: translate 480ms var(--spring-snappy); }
 .tour-on { outline: 2px solid var(--signal); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .tour-cursor { transition: none; } }
+
+/* Motion: the write-up panel and the pager cards rise as they scroll in */
+@supports (animation-timeline: view()) { @media (prefers-reduced-motion: no-preference) {
+  .project-info, .pager a { animation: sheet-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 220px; }
+} }
+@keyframes sheet-rise { from { translate: 0 2.25rem; } }

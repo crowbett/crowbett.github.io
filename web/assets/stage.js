@@ -271,6 +271,9 @@ if (fig) {
     if (home) home.hidden = lean || k === "0,0";
     fig.dataset.yaw = to.yaw;
     fig.dataset.pitch = to.pitch;
+    // The words beside the picture shift against the camera, a layer nearer the eye.
+    fig.parentElement.style.setProperty("--lx", (to.yaw / YAW).toFixed(3));
+    fig.parentElement.style.setProperty("--ly", (to.pitch / PITCH).toFixed(3));
     wanted = true;
     if (visible) start();
   };

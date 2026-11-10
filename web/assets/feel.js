@@ -34,3 +34,18 @@ document.documentElement.addEventListener("pointerleave", () => {
   clear(tilted, "--rx", "--ry"); clear(tilted?.parentElement, "--dx", "--dy");
   tilted = null;
 });
+
+// The footer's address: each letter lifts under the pointer and its
+// neighbours follow (site.css). The link keeps its text as its name.
+const mail = document.querySelector(".foot-mail");
+if (mail && fine.matches && !calm.matches) {
+  const text = mail.textContent;
+  mail.setAttribute("aria-label", text);
+  mail.textContent = "";
+  for (const c of text) {
+    const s = document.createElement("span");
+    s.className = "fl";
+    s.textContent = c;
+    mail.append(s);
+  }
+}
