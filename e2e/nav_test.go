@@ -122,6 +122,22 @@ func TestIndexKeys(t *testing.T) {
 	}
 }
 
+// TestArena plays the home arena (arenaCheck) in a desktop tab of its own, as
+// TestPointerFeel does, so the chain of home checks in TestSite does not grow:
+// in that chain it took the shard from about 39 s to 54 s on CI and a
+// neighbouring demo check timed out. Four cores, so the arena starts by itself.
+func TestArena(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := newTab(t, 90*time.Second)
+	defer cancel()
+	if err := chromedp.Do(ctx, cores(4), chromedp.EmulateViewport(1280, 800), chromedp.Navigate(srv.URL+"/"), chromedp.WaitReady(chromedp.CSS("body"))); err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(arenaCheck), chromedp.EvalAwaitPromise)); err != nil || !ok {
+		t.Fatalf("the home arena did not play: %v", err)
+	}
+}
+
 // TestPointerFeel runs feelCheck on a desktop home tab of its own, so the
 // long chain of home checks in TestSite does not grow. Headless Chrome on a
 // CI runner has no pointing device, so the tab answers feel.js's media query
