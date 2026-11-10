@@ -1,11 +1,8 @@
 // Home motion that needs a script to set up; all of it stands down under
-// reduced motion. Runs before work.js, which measures the reel after the
-// ticker is in the page.
+// reduced motion.
 //   Letters: project names and section titles are split into letters that
 //   drop into place as their panel or title scrolls in (home.css times them
 //   on scroll, so they move only as the page moves).
-//   Ticker: the measured result of every project, as the panels state them,
-//   drifting across the Work sheet; it pauses under the pointer.
 //   Peek: under a mouse, a row of the Work index shows its project's recorded
 //   clip on a card that trails the pointer.
 import { play, pause } from "/assets/play.js";
@@ -18,8 +15,6 @@ const el = (tag, cls, text) => {
   if (text != null) e.textContent = text;
   return e;
 };
-
-const rows = [...document.querySelectorAll(".it")].map((it) => [it.querySelector(".it-name").textContent, it.querySelector(".metric")?.textContent]);
 
 if (!calm && CSS.supports("animation-timeline: view()")) {
   for (const host of document.querySelectorAll(".it-name, .work-head h2, .play h2, .all-head h3")) {
@@ -41,25 +36,6 @@ if (!calm && CSS.supports("animation-timeline: view()")) {
       host.append(w);
     }
   }
-}
-
-const head = document.querySelector(".work-head");
-if (head && !calm) {
-  const tick = el("div", "tick");
-  tick.setAttribute("aria-hidden", "true");
-  const row = el("div", "tick-row");
-  const said = rows.filter(([, m]) => m);
-  // Twice over, so the row can wrap around without a gap.
-  for (let k = 0; k < 2; k++) {
-    for (const [name, metric] of said) {
-      const s = el("span");
-      s.append(el("b", null, name), metric);
-      row.append(s);
-    }
-  }
-  row.style.setProperty("--secs", `${said.length * 8}s`);
-  tick.append(row);
-  head.after(tick);
 }
 
 const toc = document.querySelector(".work-toc");
