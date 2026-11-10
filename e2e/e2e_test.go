@@ -594,10 +594,15 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 	// Home walks its reel by focus. A tab Chrome runs in the background gets
 	// no focus events, so the home tabs act as the focused tab a visitor has.
 	home := url == srv.URL+"/"
-	// The stage runs a copy of the tracer per spare core: 3 here, not 7, since
-	// CI's runners have 4 vCPUs for every tab.
+	// The stage runs a copy of the tracer per spare core, and CI's runners
+	// have 4 vCPUs for every tab: the two home tabs that check the stage run 3
+	// copies, and the other home tabs report 2 cores, so their stage stays a
+	// poster as a project head's demo does there.
 	if home {
-		n = 4
+		n = 2
+		if !layoutOnly && scheme == "light" {
+			n = 4
+		}
 	}
 	err := chromedp.Do(ctx,
 		cores(n),
