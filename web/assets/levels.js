@@ -3,7 +3,6 @@
 // (/bytes/<slug>.json, written by cmd/wasm tree) and each deeper level is
 // drawn the first time it opens. A function opens onto its own instructions,
 // decoded by disasm.js from the binary the demo runs.
-const root = document.querySelector("[data-levels]");
 const fmt = (n) => n.toLocaleString("en-US");
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -158,27 +157,45 @@ const line = (l) => narrow.matches
   ? `${l.at.toString(16).padStart(7, "0")}  ${" ".repeat(Math.min(l.depth, 8))}${l.text}`
   : `${l.at.toString(16).padStart(7, "0")}  ${l.hex.padEnd(20)}${"  ".repeat(Math.min(l.depth, 12))}${l.text}`;
 
-if (root) {
-  for (const det of root.querySelectorAll("details[data-tree]")) {
-    det.querySelector(".lv-note")?.remove();
-    det.addEventListener("toggle", async () => {
-      if (!det.open || det.dataset.drawn != null) return;
-      det.dataset.drawn = "";
-      const slug = det.dataset.tree;
-      const status = el("p", "lv-st d3", `Opening ${slug}…`);
-      status.setAttribute("role", "status");
-      det.append(status);
-      try {
-        const r = await fetch(`/bytes/${slug}.json`);
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const tree = await r.json();
-        status.remove();
-        det.append(...rowsOf(tree.tree, 3, ctxOf(det, tree)));
-        det.dataset.loaded = "";
-      } catch (e) {
-        status.textContent = `Could not open this level: ${e.message}`;
-        delete det.dataset.drawn;
-      }
-    });
+const trees = new Map();
+function treeOf(host) {
+  const slug = host.dataset.tree;
+  if (!trees.has(slug)) {
+    trees.set(slug, fetch(`/bytes/${slug}.json`).then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    }).then((tree) => ({ tree, ctx: ctxOf(host, tree) })));
   }
+  return trees.get(slug);
+}
+
+// lazy draws det's level the first time it opens, from host's tree.
+function lazy(det, host, d, find) {
+  det.addEventListener("toggle", async () => {
+    if (!det.open || det.dataset.drawn != null) return;
+    det.dataset.drawn = "";
+    det.querySelector(":scope > .lv-st")?.remove();
+    const status = el("p", `lv-st ${depth(d)}`, `Opening ${host.dataset.tree}…`);
+    status.setAttribute("role", "status");
+    det.append(status);
+    try {
+      const { tree, ctx } = await treeOf(host);
+      status.remove();
+      det.append(...rowsOf(find(tree.tree), d, ctx));
+      det.dataset.loaded = "";
+    } catch (e) {
+      trees.delete(host.dataset.tree);
+      status.textContent = `Could not open this level: ${e.message}`;
+      delete det.dataset.drawn;
+    }
+  });
+}
+
+// A binary row opens onto its whole tree; a project page renders the
+// binary's origins and each opens onto its own part.
+for (const host of document.querySelectorAll("[data-levels] details[data-tree]")) {
+  for (const note of host.querySelectorAll(".lv-note")) note.remove();
+  const origins = host.querySelectorAll(":scope > details[data-origin]");
+  if (origins.length === 0) lazy(host, host, 3, (t) => t);
+  for (const o of origins) lazy(o, host, 2, (t) => t.k.find((k) => k.n === o.dataset.origin));
 }

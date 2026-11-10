@@ -102,6 +102,29 @@ func (n ByteNode) check() error {
 	return nil
 }
 
+// binTree is a project page's levels: its binary and the origins under it.
+type binTree struct {
+	binLevel
+	Kind    string
+	Origins []originLevel
+}
+
+type originLevel struct {
+	Name         string
+	Bytes, Funcs int
+	Share, Pct   string
+	Opens        bool // has a level below
+}
+
+func treeTop(t *ByteTree, b binLevel) *binTree {
+	bt := &binTree{binLevel: b, Kind: t.Kind}
+	for _, o := range t.Root.K {
+		s, p := share(o.B, t.Root.B)
+		bt.Origins = append(bt.Origins, originLevel{Name: o.N, Bytes: o.B, Funcs: o.F, Share: s, Pct: p, Opens: len(o.K) > 0 || o.O != nil})
+	}
+	return bt
+}
+
 var langName = map[string]string{"go": "Go", "rust": "Rust", "cpp": "C++"}
 
 // buildLevels groups the live demos' trees by language, largest first.

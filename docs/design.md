@@ -126,11 +126,11 @@ For: who this is, what they build, and that the proof runs (`templates/home.html
 
 ## Every byte
 
-For: showing there are levels under each demo, on the numbers page (`templates/numbers.html`, `web/assets/levels.js`, `web/assets/numbers.css`).
+For: showing there are levels under each demo: first on the numbers page, and on each live project page right under its demo (`templates/numbers.html`, `templates/project.html`, `web/assets/levels.js`, `web/assets/levels.css`).
 
 - **Rows**: one grid, Level / Bytes / Functions / Share, every row a disclosure with a chevron that turns open. Each level indents one step and draws a hairline guide per ancestor; a row's share is of its parent, with a bar in its language's colour. Function rows carry a dash, data and "N more" rows a dot. Under 40rem the Functions column and row notes go and the step halves.
 - **Bottom level**: a function opens onto a dark screen panel (as the demo screens) with its instructions in mono: offset, bytes and nested text, the signature in signal colour, the first 400 lines and a "Show all" key. Narrow screens drop the bytes column.
-- Each level is drawn the first time it opens; nothing past the binaries downloads until a binary row opens.
+- Each level is drawn the first time it opens. The numbers page renders every language and binary open; a project page renders its binary's origins. Nothing deeper downloads until a row opens.
 
 ## Live wall
 

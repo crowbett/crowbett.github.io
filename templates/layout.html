@@ -32,7 +32,9 @@
 {{if eq .Path "/"}}<link rel="stylesheet" href="/assets/home.css">
 {{else if .Project}}<link rel="stylesheet" href="/assets/project.css">
 {{if .Project.Live}}<link rel="stylesheet" href="/assets/demo.css">
+<link rel="stylesheet" href="/assets/levels.css">
 {{end}}{{else if eq .Path "/numbers/"}}<link rel="stylesheet" href="/assets/numbers.css">
+<link rel="stylesheet" href="/assets/levels.css">
 {{else if eq .Path "/live/"}}<link rel="stylesheet" href="/assets/live.css">
 {{end}}
 <script src="/assets/vt.js"></script>
@@ -56,7 +58,7 @@
 <script type="module" src="/assets/motion.js"></script>
 <script type="module" src="/assets/feel.js"></script>
 <script type="module" src="/assets/nav.js"></script>
-{{if eq .Path "/numbers/"}}<script type="module" src="/assets/levels.js"></script>
+{{if or (eq .Path "/numbers/") (and .Project .Project.Live)}}<script type="module" src="/assets/levels.js"></script>
 {{end}}</body>
 </html>
 {{end}}
