@@ -252,7 +252,9 @@ func tabOrder(t *testing.T, ctx context.Context) {
 		Ring  bool
 	}
 	var got []stop
-	for range n {
+	// Focusing a rail section opens its projects beside it: Tab walks them
+	// before the next section, so stops inside an open flyout are extra.
+	for tries := 0; len(got) < int(n) && tries < int(n)+60; tries++ {
 		err := chromedp.Do(ctx, chromedp.Func(func(ctx context.Context, tg *chromedp.Target) error {
 			for _, typ := range []input.DispatchKeyEventType{input.DispatchKeyEventTypeRawKeyDown, input.DispatchKeyEventTypeKeyUp} {
 				if _, err := cdp.Call(ctx, tg, input.DispatchKeyEvent, input.DispatchKeyEventParams{
@@ -269,13 +271,20 @@ func tabOrder(t *testing.T, ctx context.Context) {
 		s, err := chromedp.Run(ctx, chromedp.Evaluate[stop](`(() => {
 			const el = document.activeElement, cs = getComputedStyle(el);
 			return {
-				Index: window.__tab.indexOf(el),
+				Index: el.closest(".rail-fly") && !window.__tab.includes(el) ? -2 : window.__tab.indexOf(el),
 				Tag: el.outerHTML.slice(0, 60),
 				Ring: el.matches(":focus-visible") && cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) >= 2,
 			};
 		})()`))
 		if err != nil {
 			t.Fatal(err)
+		}
+		if s.Index == -2 {
+			if !s.Ring {
+				t.Errorf("rail stop %s has no visible focus ring", s.Tag)
+				return
+			}
+			continue
 		}
 		got = append(got, s)
 	}
