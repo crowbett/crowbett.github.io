@@ -4,7 +4,7 @@
     <div class="stage-text">
       <h1 id="stage-h"><b>{{.Owner.Name}}</b> <span>builds databases, queues and game netcode, and tests them by breaking them on purpose.</span></h1>
       <p class="stage-hook">{{with .Stage}}The picture is a C++ path tracer, {{demoKB .Slug}} KB of WebAssembly.{{end}}{{if .LiveCount}}{{if .Stage}} {{end}}{{.LiveCount}} of the {{len .Projects}} projects below run here the same way.{{end}}</p>
-      <p class="stage-go"><a class="key" href="#work">See the work</a>{{with .Stage}}<a class="stage-link" href="/projects/{{.Slug}}/#demo">Open the full {{.Slug}} demo</a>{{end}}</p>
+      <p class="stage-go">{{if .Arena}}<a class="key stage-play" href="#play">Play the arena</a>{{end}}<a class="key" href="#work">See the work</a>{{with .Stage}}<a class="stage-link" href="/projects/{{.Slug}}/#demo">Open the full {{.Slug}} demo</a>{{end}}</p>
     </div>
     {{with .Stage}}<figure class="stage-fig" data-stage="{{.Slug}}" data-scene="{{.Scene}}" data-width="{{.Width}}" data-seed="{{.Seed}}" data-max="{{.MaxSpp}}" data-poster-spp="{{.PosterSpp}}">
       <p class="stage-hud"><span>{{.Slug}}</span><span data-state>recorded, {{.PosterSpp}} spp</span><span class="stage-cores" data-cores hidden></span><button type="button" class="stage-reset" data-reset hidden>Reset view</button></p>
@@ -30,6 +30,30 @@
     <script type="module" src="/assets/stage.js"></script>{{end}}
   </div>
 </section>
+{{if .Arena}}<section class="play" id="play" aria-labelledby="play-h" data-arena="netcode">
+  <div class="play-in">
+    <div class="play-text">
+      <h2 id="play-h">Play it</h2>
+      <p class="play-lede">Six players in an arena, on netcode's real server and rollback clients: {{demoKB "netcode"}} KB of WebAssembly. Race the bots to the flags. Your screen moves you at once; the server decides who got there.</p>
+      <p class="play-how"><span>Steer with the pointer, the arrow keys or WASD. A click or Space dashes.</span><span>Drag to steer. Lift your finger to dash.</span></p>
+      <p class="stage-scenes" role="group" aria-label="Link"><button type="button" data-link data-lat="0" data-jit="0" data-loss="0" aria-pressed="false">LAN, 0 ms</button><button type="button" data-link data-lat="100" data-jit="20" data-loss="2" aria-pressed="true">the soak's link, 100 ms</button><button type="button" data-link data-lat="180" data-jit="60" data-loss="4" aria-pressed="false">mobile, 180 ms</button></p>
+      <p class="play-go"><button type="button" class="key" data-play>Play, 45 seconds</button><a href="/projects/netcode/">How netcode works</a></p>
+      <dl class="stage-dials play-dials">
+        <div><dt>you</dt><dd data-k="you">0</dd></div>
+        <div><dt>bots</dt><dd data-k="bots">0</dd></div>
+        <div><dt>time</dt><dd data-k="time">0:45</dd></div>
+        <div><dt>rollbacks</dt><dd data-k="rollbacks">0</dd></div>
+        <div><dt>desyncs</dt><dd data-k="desyncs">0</dd></div>
+      </dl>
+      <p class="play-out" role="status">Nothing has loaded yet. Play fetches netcode and hands you player 0.</p>
+    </div>
+    <div class="play-view">
+      <canvas width="560" height="560" tabindex="-1" role="application" aria-label="The arena. With Play pressed, the arrow keys or W A S D steer player 0, Space dashes and Escape stops."></canvas>
+      <p class="play-key" aria-hidden="true"><span>your screen</span><span class="k-srv">the server</span><span class="k-flag">flag</span></p>
+    </div>
+  </div>
+</section>
+<script type="module" src="/assets/arena.js"></script>{{end}}
 <section id="work" class="work" aria-labelledby="work-h">
   <header class="work-head work-in">
     <h2 id="work-h">Work</h2>
