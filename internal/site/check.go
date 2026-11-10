@@ -60,7 +60,7 @@ var (
 
 // zeroScales lists transform scales with a zero factor. On a
 // non-scaling-stroke shape a singular transform runs Chrome's GPU away and
-// freezes the visitor's machine (F6 in docs/tasks.md).
+// freezes the visitor's machine.
 func zeroScales(b []byte) []string {
 	var hits []string
 	for _, m := range scaleFn.FindAllSubmatch(b, -1) {
@@ -106,7 +106,7 @@ func Check(out string) error {
 		switch path.Ext(p) {
 		case ".html", ".css", ".js":
 			for _, z := range zeroScales(b) {
-				add("%s: %s scales to zero; use a tiny scale and opacity (F6)", rel, z)
+				add("%s: %s scales to zero; use a tiny scale and opacity", rel, z)
 			}
 		}
 		switch path.Ext(p) {
@@ -194,7 +194,7 @@ func Check(out string) error {
 	if err != nil {
 		return err
 	}
-	// gzip -9 of every binary took ~2.5 s in a row on CI (F5 in docs/tasks.md).
+	// gzip -9 of every binary took ~2.5 s in a row on CI.
 	for i, n := range gzipSizes(wasm) {
 		if n > Budgets.WASMGzipped {
 			add("%s: %d bytes gzipped, budget %d", wasmRel[i], n, Budgets.WASMGzipped)
