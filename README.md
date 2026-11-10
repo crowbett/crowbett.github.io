@@ -10,4 +10,4 @@ make wasm               # rebuild demo binaries from the commits pinned in demos
 
 Needs Go 1.27. Project repos are read from `$DEV_ROOT` (default `~/dev`). Pushing to `main` deploys to GitHub Pages.
 
-Rules: `CLAUDE.md`. Architecture and budgets: `PLAN.md`. Work queue: `docs/tasks.md`. Design: `docs/design.md`. Demo rules: `docs/demo-contract.md`.
+Rules: `CLAUDE.md`. Architecture and budgets: `PLAN.md`. Design: `docs/design.md`. Demo rules: `docs/demo-contract.md`.

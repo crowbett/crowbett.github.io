@@ -1,6 +1,6 @@
 # crowbett.github.io
 
-Personal site at https://crowbett.github.io: project pages plus live demos that run each project's real code as WebAssembly in the browser. Architecture and decisions: `PLAN.md`. Work queue: `docs/tasks.md`. Demo rules: `docs/demo-contract.md`.
+Personal site at https://crowbett.github.io: project pages plus live demos that run each project's real code as WebAssembly in the browser. Architecture and decisions: `PLAN.md`. Demo rules: `docs/demo-contract.md`.
 
 ## Rules
 - Gate before every commit: `make gate && make e2e`. Never pipe or `;` the gate.
