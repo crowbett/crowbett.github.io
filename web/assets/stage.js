@@ -246,7 +246,7 @@ if (fig) {
     else loaded.then(() => { if (wanted && visible && !document.hidden) start(); });
   };
   new IntersectionObserver(([e]) => { shown = e.isIntersecting; update(); }, { threshold: 0.25 }).observe(view);
-  const work0 = document.querySelector("#work");
+  const work0 = document.querySelector(".play, #work");
   if (work0) new IntersectionObserver(([e]) => { covered = e.isIntersecting; update(); }, { rootMargin: "0px 0px -60% 0px" }).observe(work0);
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) stop();

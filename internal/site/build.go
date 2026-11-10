@@ -56,6 +56,7 @@ type pageData struct {
 	Next      *Project
 	Canonical string
 	Stage     *Stage
+	Arena     bool     // home: the netcode demo is live, so the arena can run it
 	Bins      []binRow // the numbers page: every live demo's binary, largest first
 	LiveCap   int      // the live wall: most demos running at once
 }
@@ -165,6 +166,7 @@ func prepare(cfg Config) (*prepared, error) {
 	// Home lists projects by group, live demos first within each, then by
 	// order; every page that numbers or walks the projects uses this order.
 	base := pageData{Owner: cfg.Owner, Year: cfg.Now.Year(), Stage: stage, LiveCap: WallCap}
+	base.Arena = slices.ContainsFunc(projects, func(p Project) bool { return p.Slug == "netcode" && p.Live() })
 	for _, g := range Groups {
 		gv := groupView{Group: g}
 		for _, live := range []bool{true, false} {
