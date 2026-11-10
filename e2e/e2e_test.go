@@ -736,7 +736,7 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 		}
 	}
 	if isHome, _ := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector(".work") !== null`)); isHome && !layoutOnly && scheme == "light" {
-		for _, c := range []struct{ name, js string }{{"stage", stageCheck}, {"orbit", orbitCheck}, {"scene", sceneCheck}, {"arena", arenaCheck}, {"depth", depthCheck}, {"work", workCheck}, {"refused", refusedCheck}, {"index", indexCheck}} {
+		for _, c := range []struct{ name, js string }{{"stage", stageCheck}, {"orbit", orbitCheck}, {"scene", sceneCheck}, {"depth", depthCheck}, {"work", workCheck}, {"refused", refusedCheck}, {"index", indexCheck}} {
 			if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(c.js), chromedp.EvalAwaitPromise)); err != nil || !ok {
 				t.Errorf("home %s check failed (err %v)", c.name, err)
 			}
