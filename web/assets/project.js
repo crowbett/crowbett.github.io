@@ -18,9 +18,17 @@ if (head) {
   fit();
   addEventListener("resize", fit);
   new ResizeObserver(fit).observe(head);
-  // The header names the project once its title has scrolled under it.
+  // The header names the project once its title has scrolled under it: a
+  // scroll position against the title's foot, measured when the layout changes.
   const bar = document.querySelector(".top");
-  new IntersectionObserver(([e]) => bar.toggleAttribute("data-past", !e.isIntersecting && e.boundingClientRect.top < bar.offsetHeight), { rootMargin: `-${bar.offsetHeight}px 0px 0px` }).observe(head.querySelector("h1"));
+  const title = head.querySelector("h1");
+  let foot = Infinity;
+  const past = () => bar.toggleAttribute("data-past", scrollY > foot);
+  const edge = () => { foot = title.getBoundingClientRect().bottom + scrollY - bar.offsetHeight; past(); };
+  edge();
+  addEventListener("scroll", past, { passive: true });
+  addEventListener("resize", edge);
+  addEventListener("load", edge, { once: true });
   let seen = false;
   let covered = false;
   const shown = () => seen && !covered && !document.hidden;

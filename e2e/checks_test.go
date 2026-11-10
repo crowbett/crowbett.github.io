@@ -863,9 +863,12 @@ const stageCheckProject = `(async () => {
 	const demo = document.querySelector("[data-demo]");
 	if (demo && !document.querySelector(".facts").textContent.includes(Number(demo.dataset.gz).toLocaleString("en-US") + " B gzipped")) return false;
 	const bar = document.querySelector(".top"), h1 = document.querySelector(".project-head h1"), y = scrollY;
+	// The scroll event is sent by hand: a tab headless Chrome is not drawing
+	// delivers neither scroll events nor observer callbacks on its own.
+	const to = (top) => { scrollTo({ top, behavior: "instant" }); dispatchEvent(new Event("scroll")); };
 	const below = h1.getBoundingClientRect().bottom + scrollY;
-	if (!await until(() => { scrollTo({ top: below, behavior: "instant" }); return bar.hasAttribute("data-past"); })) return false;
-	if (!await until(() => { scrollTo({ top: 0, behavior: "instant" }); return !bar.hasAttribute("data-past"); })) return false;
+	if (!await until(() => { to(below); return bar.hasAttribute("data-past"); })) return false;
+	if (!await until(() => { to(0); return !bar.hasAttribute("data-past"); })) return false;
 	scrollTo({ top: y, behavior: "instant" });
 	const f = document.querySelector(".ph-fig");
 	if (!f || innerWidth < 1024) return true;
