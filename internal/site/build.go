@@ -116,7 +116,9 @@ func prepare(cfg Config) (*prepared, error) {
 		stage = &HomeStage
 	}
 	var listed []Project
+	trees := map[string]*binTree{}
 	tmpl, err := template.New("").Funcs(template.FuncMap{
+		"bytesOf": func(slug string) *binTree { return trees[slug] },
 		"rank": func(slug string) string {
 			return fmt.Sprintf("%02d", slices.IndexFunc(listed, func(p Project) bool { return p.Slug == slug })+1)
 		},
@@ -190,6 +192,7 @@ func prepare(cfg Config) (*prepared, error) {
 		}
 		bins = append(bins, binLevel{Slug: p.Slug, Title: p.Title, Built: d.Built, Bytes: d.Raw, Funcs: t.Root.F, Gzip: d.Gzip})
 		kinds = append(kinds, t.Kind)
+		trees[p.Slug] = treeTop(t, bins[len(bins)-1])
 	}
 	if len(bins) > 0 {
 		base.Levels = buildLevels(bins, kinds)

@@ -1,0 +1,48 @@
+/* Levels: every byte of a demo binary, one level per open (numbers page and project pages). */
+:root { --k-go: oklch(0.459 0.232 269); --k-rust: oklch(0.467 0.105 157); --k-cpp: oklch(0.530 0.180 35); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme=light]) { --k-go: oklch(0.66 0.16 276); --k-rust: oklch(0.66 0.15 156); --k-cpp: oklch(0.64 0.18 37); } }
+:root[data-theme=dark] { --k-go: oklch(0.66 0.16 276); --k-rust: oklch(0.66 0.15 156); --k-cpp: oklch(0.64 0.18 37); }
+.lv-sec, .lv-sec-head { display: grid; gap: var(--sp-3); }
+.lv-sec-head > * { margin: 0; }
+.lv-sec-head p { max-width: var(--measure); color: var(--text-2); }
+.go { --k: var(--k-go); } .rust { --k: var(--k-rust); } .cpp { --k: var(--k-cpp); }
+/* Levels: rows that open a level down, the anchorflow COGS pivot's shape. The name cell is indented and ruled per level; every row keeps the same columns. */
+.lv { --cols: minmax(0, 1fr) 7.5rem 6rem 6.5rem; --step: 1.15rem; display: grid; border-radius: var(--r-2); background: var(--surface); box-shadow: 0 0 0 1px var(--line-strong); overflow: clip; font: 400 var(--t-meta)/1.4 var(--sans); }
+.lv-h, .lv-r { display: grid; grid-template-columns: var(--cols); gap: var(--sp-3); align-items: center; margin: 0; padding: var(--sp-2) var(--sp-4); }
+.lv-h { color: var(--text-2); border-bottom: 1px solid var(--line-strong); }
+.lv-h span + span, .lv-b, .lv-f, .lv-s { text-align: right; font-variant-numeric: tabular-nums; }
+.lv-r { width: 100%; border: 0; border-top: 1px solid var(--line); background: none; color: var(--text); font: inherit; text-align: left; transition: var(--tr); }
+.lv > .lv-d > .lv-r { border-top: 0; }
+summary.lv-r, button.lv-r { cursor: pointer; list-style: none; }
+summary.lv-r::-webkit-details-marker { display: none; }
+summary.lv-r:hover, button.lv-r:hover { background: color-mix(in oklab, var(--accent) 6%, transparent); }
+:is(summary, button).lv-r:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.lv-n { position: relative; min-width: 0; padding-left: calc(var(--dp, 0) * var(--step) + 1.25rem); overflow-wrap: break-word; background: repeating-linear-gradient(90deg, var(--line-strong) 0 1px, transparent 1px var(--step)) 0.4rem 0 / calc(var(--dp, 0) * var(--step)) 100% no-repeat; }
+.lv-n::before { content: ""; position: absolute; top: 0.45em; left: calc(var(--dp, 0) * var(--step) + 0.2rem); width: 0.4em; height: 0.4em; border: solid var(--text-2); border-width: 0 1.5px 1.5px 0; rotate: -45deg; transition: rotate var(--d-base) var(--ease-in); }
+details[open] > summary > .lv-n::before { rotate: 45deg; border-color: var(--text); }
+:is(.lv-leaf, .lv-o) .lv-n::before { border: 0; width: 5px; height: 5px; top: 0.5em; border-radius: 50%; background: var(--line-strong); rotate: 0deg; }
+.lv-fn .lv-n::before { border: 0; width: 0.5em; height: 1px; top: 0.7em; background: var(--k, var(--accent)); rotate: 0deg; }
+.lv-fn[aria-expanded=true] .lv-n::before { width: 0.6em; height: 0.6em; top: 0.4em; border-radius: 1px; }
+.d0 { --dp: 0; } .d1 { --dp: 1; } .d2 { --dp: 2; } .d3 { --dp: 3; } .d4 { --dp: 4; } .d5 { --dp: 5; } .d6 { --dp: 6; } .d7 { --dp: 7; } .d8 { --dp: 8; } .d9 { --dp: 9; }
+.lv-x, .lv-f, .lv-o { color: var(--text-2); }
+.lv-x { font-size: 0.75rem; }
+.lv-s { display: grid; justify-items: end; gap: 3px; }
+.lv-s svg { width: 100%; max-width: 5rem; height: 3px; background: var(--line); }
+.lv-s rect { fill: var(--k, var(--accent)); }
+.lv-st, .lv-note { margin: 0; padding: var(--sp-2) var(--sp-4) var(--sp-2) calc(var(--dp, 3) * var(--step) + var(--sp-4) + 1.25rem); border-top: 1px solid var(--line); color: var(--text-2); }
+.lv-asm { display: grid; gap: var(--sp-2); margin: 0 var(--sp-3) var(--sp-3) calc(var(--dp, 4) * var(--step) + var(--sp-4)); padding: var(--sp-3); border-radius: 10px; background: var(--screen); color: var(--screen-ink); }
+.lv-asm .lv-st { padding: 0; border: 0; color: var(--screen-dim); }
+.lv-pre { max-height: 32rem; margin: 0; padding: var(--sp-2) var(--sp-3); border-radius: 8px; background: oklch(1 0 0 / 0.035); color: var(--screen-ink); overflow: auto; font: 400 0.75rem/1.55 var(--mono); white-space: pre; }
+.lv-pre:focus-visible { outline: 2px solid var(--screen-ink); outline-offset: 2px; }
+.lv-sig { color: var(--screen-signal); }
+.lv-more { justify-self: start; padding: var(--sp-1) var(--sp-3); border: 1px solid var(--screen-dim); border-radius: 6px; background: none; color: var(--screen-ink); font: inherit; cursor: pointer; }
+@media (prefers-reduced-motion: no-preference) {
+  .lv-d[open] > :not(summary), .lv-asm { animation: lv-in var(--d-base) var(--ease-in) both; }
+}
+@keyframes lv-in { from { opacity: 0; translate: 0 -4px; } }
+@media (width < 40rem) {
+  .lv { --cols: minmax(0, 1fr) 5.25rem 3.25rem; --step: 0.5rem; }
+  .lv-h, .lv-r { gap: var(--sp-2); padding-inline: var(--sp-3); }
+  .lv-h span:nth-child(3), .lv-f, .lv-r:not(.d1) .lv-x { display: none; }
+  .lv-asm { margin-left: var(--sp-3); }
+}

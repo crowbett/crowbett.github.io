@@ -46,6 +46,23 @@
 
   <div class="sheet">
   <div class="sheet-in">
+  {{if .Live}}{{with bytesOf .Slug}}<section class="lv-sec" id="bytes" aria-labelledby="bytes-h">
+    <div class="lv-sec-head">
+      <h2 id="bytes-h">Every byte of this demo</h2>
+      <p>The demo above is one WebAssembly binary. Open a row to go a level down: whose code it is, package, function, and at the bottom a function's own instructions, decoded in this tab from that binary. Every level adds up to the one above it. <a href="/numbers/#nb-bin">Every demo's binary, side by side</a></p>
+    </div>
+    <div class="lv" data-levels>
+      <p class="lv-h" aria-hidden="true"><span>Level</span><span>Bytes</span><span>Functions</span><span>Share</span></p>
+      <details class="lv-d {{.Kind}}" data-tree="{{.Slug}}" data-gz="{{.Gzip}}" open>
+        <summary class="lv-r d0"><span class="lv-n">{{.Slug}}.wasm <span class="lv-x">{{num .Gzip}} gzipped · {{.Built}}</span></span><span class="lv-b">{{num .Bytes}}</span><span class="lv-f">{{num .Funcs}}</span><span class="lv-s">100%</span></summary>
+        {{range .Origins}}{{if .Opens}}<details class="lv-d" data-origin="{{.Name}}">
+          <summary class="lv-r d1"><span class="lv-n">{{.Name}}</span><span class="lv-b">{{num .Bytes}}</span><span class="lv-f">{{if .Funcs}}{{num .Funcs}}{{else}}–{{end}}</span><span class="lv-s">{{.Share}}<svg viewBox="0 0 100 4" preserveAspectRatio="none" aria-hidden="true"><rect width="{{.Pct}}" height="4"/></svg></span></summary>
+          <p class="lv-note d2">The levels below this one load with scripts on.</p>
+        </details>{{else}}<p class="lv-r lv-leaf d1"><span class="lv-n">{{.Name}}{{if eq .Name "Data"}} <span class="lv-x">strings, tables and type information the code reads</span>{{end}}</span><span class="lv-b">{{num .Bytes}}</span><span class="lv-f">{{if .Funcs}}{{num .Funcs}}{{else}}–{{end}}</span><span class="lv-s">{{.Share}}<svg viewBox="0 0 100 4" preserveAspectRatio="none" aria-hidden="true"><rect width="{{.Pct}}" height="4"/></svg></span></p>{{end}}
+        {{end}}
+      </details>
+    </div>
+  </section>{{end}}{{end}}
 
   <div class="project-info">
     <div class="body">{{.Body}}</div>

@@ -9,15 +9,6 @@
   </header>
   <div class="sheet">
     <div class="sheet-in">
-      <section class="nb" aria-labelledby="nb-ev">
-        <div class="nb-head">
-          <h2 id="nb-ev">Results</h2>
-        </div>
-        {{range .Groups}}{{if .Projects}}<h3 class="nb-g" id="n-{{.Key}}">{{.Name}}</h3>
-        <ul class="nb-grid">{{range .Projects}}{{if .Metric}}
-          <li><a class="nb-card" href="/projects/{{.Slug}}/"><span class="nb-p">{{.Title}}{{if not .Live}} <span class="nb-x">no demo</span>{{end}}</span><span class="nb-m">{{figures .Metric}}</span><span class="nb-s">{{.MetricSource}}</span></a></li>{{end}}{{end}}
-        </ul>{{end}}{{end}}
-      </section>
       {{with .Levels}}<section class="nb" aria-labelledby="nb-bin">
         <div class="nb-head">
           <h2 id="nb-bin">Every byte</h2>
@@ -27,16 +18,25 @@
           <p class="lv-h" aria-hidden="true"><span>Level</span><span>Bytes</span><span>Functions</span><span>Share</span></p>
           <details class="lv-d" open>
             <summary class="lv-r d0"><span class="lv-n">All {{.Count}} binaries</span><span class="lv-b">{{num .Bytes}}</span><span class="lv-f">{{num .Funcs}}</span><span class="lv-s">100%</span></summary>
-            {{range .Langs}}<details class="lv-d {{.Kind}}">
+            {{range .Langs}}<details class="lv-d {{.Kind}}" open>
               <summary class="lv-r d1"><span class="lv-n">{{.Name}} <span class="lv-x">{{.Note}}</span></span><span class="lv-b">{{num .Bytes}}</span><span class="lv-f">{{num .Funcs}}</span><span class="lv-s">{{.Share}}<svg viewBox="0 0 100 4" preserveAspectRatio="none" aria-hidden="true"><rect width="{{.Pct}}" height="4"/></svg></span></summary>
               {{range .Bins}}<details class="lv-d" data-tree="{{.Slug}}" data-gz="{{.Gzip}}">
                 <summary class="lv-r d2"><span class="lv-n">{{.Title}} <span class="lv-x">{{num .Gzip}} gzipped · {{.Built}}</span></span><span class="lv-b">{{num .Bytes}}</span><span class="lv-f">{{num .Funcs}}</span><span class="lv-s">{{.Share}}<svg viewBox="0 0 100 4" preserveAspectRatio="none" aria-hidden="true"><rect width="{{.Pct}}" height="4"/></svg></span></summary>
-                <p class="lv-note"><a href="/projects/{{.Slug}}/">{{.Title}}</a>'s levels below this one load with scripts on.</p>
+                <p class="lv-note d3"><a href="/projects/{{.Slug}}/">{{.Title}}</a>'s levels below this one load with scripts on.</p>
               </details>{{end}}
             </details>{{end}}
           </details>
         </div>
       </section>{{end}}
+      <section class="nb" aria-labelledby="nb-ev">
+        <div class="nb-head">
+          <h2 id="nb-ev">Results</h2>
+        </div>
+        {{range .Groups}}{{if .Projects}}<h3 class="nb-g" id="n-{{.Key}}">{{.Name}}</h3>
+        <ul class="nb-grid">{{range .Projects}}{{if .Metric}}
+          <li><a class="nb-card" href="/projects/{{.Slug}}/"><span class="nb-p">{{.Title}}{{if not .Live}} <span class="nb-x">no demo</span>{{end}}</span><span class="nb-m">{{figures .Metric}}</span><span class="nb-s">{{.MetricSource}}</span></a></li>{{end}}{{end}}
+        </ul>{{end}}{{end}}
+      </section>
     </div>
   </div>
 </article>
