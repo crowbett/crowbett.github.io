@@ -33,6 +33,15 @@
 .stage-hud, .stage-tag { display: flex; justify-content: space-between; gap: var(--sp-3); margin: 0; font: 400 var(--t-meta)/1.5 var(--sans); color: var(--band-dim); font-variant-numeric: tabular-nums; }
 .stage-hud { justify-content: start; }
 .stage-hud span:first-child { color: var(--band-ink); }
+.stage-cores { margin-left: auto; white-space: nowrap; }
+.stage-reset { white-space: nowrap; }
+.stage-hud:not(:has(.stage-cores:not([hidden]))) .stage-reset { margin-left: auto; }
+.stage-tip { position: absolute; z-index: 1; top: var(--sp-3); left: var(--sp-3); padding: var(--sp-1) var(--sp-3); border-radius: 999px; background: var(--block); color: var(--on-block); font: 400 var(--t-meta)/1.5 var(--sans); pointer-events: none; }
+@media (prefers-reduced-motion: no-preference) { .stage-tip { animation: in-rise 400ms var(--ease-in) backwards; } }
+.stage-reset { padding: 0; border: 0; background: none; color: var(--band-ink); font: inherit; text-decoration: underline 1px; text-underline-offset: 0.22em; cursor: pointer; }
+.js [data-live] .stage-view { cursor: grab; }
+.js [data-live] .stage-view[data-grab] { cursor: grabbing; }
+.stage-split::before { content: ""; position: absolute; inset: 0 -18px; cursor: ew-resize; }
 .stage-tag { margin-bottom: var(--sp-2); }
 .stage-dials { --dial: clamp(1.5rem, 1.1rem + 1.6vw, 2.5rem); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: var(--sp-3); margin: 0; }
 .stage-dials dt { font: 400 var(--t-meta)/1.4 var(--sans); color: var(--band-dim); }

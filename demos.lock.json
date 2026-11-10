@@ -102,13 +102,13 @@
       "slug": "raytracer",
       "kind": "cpp",
       "repo": "raytracer",
-      "ref": "e79a1884fad3901e10fe6d39eca583ff775ba5c5",
+      "ref": "64fe9bede04905f37e19591586771a3e110b361f",
       "pkg": "./webdemo",
       "clang": "clang version 23.1.0-wasi-sdk (https://github.com/llvm/llvm-project 895aa2c896ada719451be2e3673c83da8ddf1141)",
       "wasi_sdk": "wasi-sdk 34.0, wasi-libc 2e6fb9d8ee0c",
-      "sha256": "abdd6768535684e33bfb8f1c7440a0c97d1eb018bc6f06f9d4c47cc51b792c7a",
-      "bytes": 280179,
-      "gzip_bytes": 112204
+      "sha256": "bf7c2a8dde29dd543031a9dbca9a767fd8c1feb1131ad76adc3b2df7ce6d064f",
+      "bytes": 283509,
+      "gzip_bytes": 113544
     },
     {
       "slug": "grepall",
