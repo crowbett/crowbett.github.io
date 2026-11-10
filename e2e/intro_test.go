@@ -23,7 +23,10 @@ func TestIntro(t *testing.T) {
 		t.Cleanup(cancel)
 		ctx, cancelT := context.WithTimeout(ctx, 30*time.Second)
 		t.Cleanup(cancelT)
+		// Two cores: the stage stays a poster, as in every home tab that does
+		// not check it, so its tracer workers leave CI's vCPUs to the checks.
 		err := chromedp.Do(ctx,
+			cores(2),
 			chromedp.EmulateViewport(1440, 900),
 			chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
 				_, err := cdp.Call(ctx, t, emulation.SetEmulatedMedia, emulation.SetEmulatedMediaParams{

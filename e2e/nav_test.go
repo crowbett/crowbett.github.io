@@ -74,10 +74,12 @@ func TestIndexKeys(t *testing.T) {
 	t.Parallel()
 	ctx, cancel := newTab(t, 60*time.Second)
 	defer cancel()
-	if err := chromedp.Do(ctx, chromedp.EmulateViewport(1280, 720), chromedp.Navigate(srv.URL+"/"), chromedp.WaitReady(chromedp.CSS("body"))); err != nil {
+	if err := chromedp.Do(ctx, cores(2), chromedp.EmulateViewport(1280, 720), chromedp.Navigate(srv.URL+"/"), chromedp.WaitReady(chromedp.CSS("body"))); err != nil {
 		t.Fatal(err)
 	}
 	// The stage fits one screen: the dials under the picture end above the fold.
+	// (Two cores here and in the other home tabs that do not check the tracer:
+	// the stage stays a poster and its workers leave CI's vCPUs to the checks.)
 	fits := `until(() => { const r = document.querySelector(".stage-fig").getBoundingClientRect(); return scrollY === 0 && r.height > 0 && r.bottom <= innerHeight; })`
 	if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(fits), chromedp.EvalAwaitPromise)); err != nil || !ok {
 		t.Fatalf("the stage figure runs past a 1280x720 screen: %v", err)
@@ -135,7 +137,7 @@ func TestPointerFeel(t *testing.T) {
 		}`})
 		return err
 	})
-	if err := chromedp.Do(ctx, mouse, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(srv.URL+"/"), chromedp.WaitReady(chromedp.CSS("body"))); err != nil {
+	if err := chromedp.Do(ctx, cores(2), mouse, chromedp.EmulateViewport(1280, 900), chromedp.Navigate(srv.URL+"/"), chromedp.WaitReady(chromedp.CSS("body"))); err != nil {
 		t.Fatal(err)
 	}
 	feelCheck(t, ctx)
@@ -278,7 +280,7 @@ func TestPeek(t *testing.T) {
 	t.Parallel()
 	ctx, cancel := newTab(t, 60*time.Second)
 	defer cancel()
-	if err := chromedp.Do(ctx, chromedp.EmulateViewport(390, 844, chromedp.EmulateTouch), chromedp.Navigate(srv.URL+"/"), chromedp.WaitReady(chromedp.CSS("body"))); err != nil {
+	if err := chromedp.Do(ctx, cores(2), chromedp.EmulateViewport(390, 844, chromedp.EmulateTouch), chromedp.Navigate(srv.URL+"/"), chromedp.WaitReady(chromedp.CSS("body"))); err != nil {
 		t.Fatal(err)
 	}
 	open := `(async () => {
