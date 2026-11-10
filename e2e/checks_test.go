@@ -123,6 +123,29 @@ const orbitCheck = `(async () => {
 	return until(() => f.dataset.yaw === "0" && reset.hidden && live() && Number(f.querySelector("[data-k=spp]").textContent) >= 2 && diff(before, px()) < 4000);
 })()`
 
+// arenaCheck plays the home arena: in view, netcode loads and the autopilot
+// takes a flag (the tally only counts flags the server's positions reached).
+// Play hands over player 0 and focuses the arena; holding a key reaches the
+// binary, since the client's own position for player 0 crosses the arena and
+// comes back; Escape stops the game and hands player 0 back.
+const arenaCheck = `(async () => {
+	const p = document.querySelector("#play"), c = p.querySelector("canvas"), key = p.querySelector("[data-play]");
+	const out = () => p.querySelector("[role=status]").textContent;
+	const press = (type, code) => c.dispatchEvent(new KeyboardEvent(type, { code, bubbles: true, cancelable: true }));
+	p.scrollIntoView({ behavior: "instant" });
+	if (!await until(() => "live" in p.dataset && Number(p.dataset.taken) >= 1 && out().startsWith("The autopilot"), 40000)) return false;
+	key.click();
+	if (!await until(() => "playing" in p.dataset && document.activeElement === c && key.textContent === "Stop" && out() === "")) return false;
+	press("keydown", "ArrowRight");
+	if (!await until(() => Number(p.dataset.x) > 430)) return false;
+	press("keyup", "ArrowRight");
+	press("keydown", "KeyA");
+	if (!await until(() => Number(p.dataset.x) < 120 && p.querySelector("[data-k=time]").textContent !== "0:45")) return false;
+	press("keyup", "KeyA");
+	press("keydown", "Escape");
+	return until(() => !("playing" in p.dataset) && out().startsWith("Stopped") && key.textContent === "Play again");
+})()`
+
 // sceneCheck picks the glass sphere on the stage: the tracer loads that
 // scene, restarts from pass one and its readouts fill again.
 const sceneCheck = `(async () => {
