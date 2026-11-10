@@ -594,6 +594,16 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 	// Home walks its reel by focus. A tab Chrome runs in the background gets
 	// no focus events, so the home tabs act as the focused tab a visitor has.
 	home := url == srv.URL+"/"
+	// The stage runs a copy of the tracer per spare core, and CI's runners
+	// have 4 vCPUs for every tab: the two home tabs that check the stage run 3
+	// copies, and the other home tabs report 2 cores, so their stage stays a
+	// poster as a project head's demo does there.
+	if home {
+		n = 2
+		if !layoutOnly && scheme == "light" {
+			n = 4
+		}
+	}
 	err := chromedp.Do(ctx,
 		cores(n),
 		chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
@@ -726,7 +736,7 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 		}
 	}
 	if isHome, _ := chromedp.Run(ctx, chromedp.Evaluate[bool](`document.querySelector(".work") !== null`)); isHome && !layoutOnly && scheme == "light" {
-		for _, c := range []struct{ name, js string }{{"stage", stageCheck}, {"scene", sceneCheck}, {"depth", depthCheck}, {"work", workCheck}, {"refused", refusedCheck}, {"index", indexCheck}} {
+		for _, c := range []struct{ name, js string }{{"stage", stageCheck}, {"orbit", orbitCheck}, {"scene", sceneCheck}, {"depth", depthCheck}, {"work", workCheck}, {"refused", refusedCheck}, {"index", indexCheck}} {
 			if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(c.js), chromedp.EvalAwaitPromise)); err != nil || !ok {
 				t.Errorf("home %s check failed (err %v)", c.name, err)
 			}

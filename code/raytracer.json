@@ -1,7 +1,7 @@
 {
   "slug": "raytracer",
   "repo": "raytracer",
-  "ref": "e79a1884fad3901e10fe6d39eca583ff775ba5c5",
+  "ref": "64fe9bede04905f37e19591586771a3e110b361f",
   "excerpts": [
     {
       "path": "src/integrator.h",
@@ -150,5 +150,5 @@
       ]
     }
   ],
-  "sum": "751951e82eae9ae2de6958088da6be47d6ec3f6f92869ed4d36737f2fec41582"
+  "sum": "c88cb646809a0b309629eec3e7eb420c99f924a5d85e562cd60a92d445bfba65"
 }
