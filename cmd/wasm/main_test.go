@@ -179,3 +179,34 @@ func TestClangEnvDropsSteering(t *testing.T) {
 		t.Error("unrelated variable dropped")
 	}
 }
+
+func TestSourceDirReportsCleanupFailure(t *testing.T) {
+	slug := "test-cleanup-fails"
+	dir, unlock, err := sourceDir(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
+	unlock()
+	sub := filepath.Join(dir, "sub")
+	if err := os.MkdirAll(sub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(sub, "f"), nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(sub, 0o500); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		os.Chmod(sub, 0o755)
+		os.RemoveAll(dir)
+		os.Remove(filepath.Join(filepath.Dir(dir), slug+".lock"))
+	}()
+	if os.Getuid() == 0 {
+		t.Skip("root removes read-only trees")
+	}
+	if d, unlock, err := sourceDir(slug); err == nil {
+		unlock()
+		t.Fatalf("sourceDir returned %s with no error though it could not empty it", d)
+	}
+}
