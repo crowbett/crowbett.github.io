@@ -44,7 +44,7 @@ func TestTours(t *testing.T) {
 				return "toured" in s.dataset || s.querySelector("[data-tour-cap]").textContent;
 			})()`
 			if res, err := chromedp.Run(ctx, chromedp.Evaluate[any](untilJS(played), chromedp.EvalAwaitPromise)); err != nil || res != true {
-				t.Fatalf("tour did not finish: %v %v", res, err)
+				t.Fatalf("tour did not finish: %v %v\nstate: %s", res, err, demoState(ctx))
 			}
 			link, err := chromedp.Run(ctx, chromedp.Evaluate[string](`(() => { const b = document.querySelector("[data-share]"); if (!b) return ""; b.click(); return location.href; })()`))
 			if err != nil {
