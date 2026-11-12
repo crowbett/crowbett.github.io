@@ -43,7 +43,7 @@ func untilJS(check string) string {
 	return "((until) => (" + check + `))(async (f, ms = 40000) => {
 		const ok = () => { try { return f(); } catch { return false; } };
 		for (const end = Date.now() + ms; !ok(); await new Promise((r) => setTimeout(r, 50)))
-			if (Date.now() > end) { f(); throw new Error("timed out: " + f); }
+			if (Date.now() > end) { f(); throw new Error("timed out: " + f + " [hidden=" + document.hidden + " vis=" + document.visibilityState + " focus=" + document.hasFocus() + "]"); }
 		return true;
 	})`
 }
