@@ -94,8 +94,11 @@ const stageCheck = `(async () => {
 	const f = document.querySelector("[data-stage]");
 	scrollTo(0, 0);
 	const v = (k) => f.querySelector("[data-k=" + k + "]").textContent;
+	const state = () => f.querySelector("[data-state]").textContent;
 	return until(() => "live" in f.dataset && Number(v("spp")) >= 2 && /^[\d,]+k$/.test(v("rate")) && parseFloat(v("ratio")) > 1
-		&& /^live, pass \d+$/.test(f.querySelector("[data-state]").textContent));
+		&& /^live, pass \d+$/.test(state())).catch((e) => {
+		throw new Error(e.message + " [live=" + ("live" in f.dataset) + " spp=" + v("spp") + " rate=" + v("rate") + " ratio=" + v("ratio") + " state=" + state() + " cores=" + navigator.hardwareConcurrency + "]");
+	});
 })()`
 
 // orbitCheck drags the stage's picture away from its split line: the camera
