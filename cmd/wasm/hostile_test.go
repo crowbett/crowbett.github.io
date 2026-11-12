@@ -44,3 +44,20 @@ func TestParseModuleReadsEveryPublishedBinary(t *testing.T) {
 		}
 	}
 }
+
+func FuzzParseModule(f *testing.F) {
+	header := []byte("\x00asm\x01\x00\x00\x00")
+	f.Add(header)
+	f.Add([]byte("\x00asm\x01\x00\x00\x00\x02\v\x04\xd5\xd5\xd5\xd5\xd5\xd5\xd5\xd5\xd51")) // a length that wraps negative as an int
+	f.Add(append(append([]byte{}, header...), wasmSection(7, []byte{1}, wasmStr("main"), []byte{0, 0})...))
+	f.Add(append(append([]byte{}, header...), wasmSection(0, wasmStr("name"), []byte{1, 5, 1, 0}, wasmStr("f"))...))
+	if b, err := os.ReadFile("../../web/wasm/kvlite.wasm"); err == nil {
+		f.Add(b[:min(len(b), 4096)])
+	}
+	f.Fuzz(func(t *testing.T, b []byte) {
+		m, err := parseModule(b)
+		if err == nil && m == nil {
+			t.Fatal("no module and no error")
+		}
+	})
+}
