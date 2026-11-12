@@ -122,7 +122,12 @@ func build(lock *Lock, only []string) error {
 		}
 		log.Printf("%-10s %s  %7d bytes  %7d gzipped", d.Slug, short(d.Ref), d.Bytes, d.Gzip)
 	}
-	execJS, err := os.ReadFile(filepath.Join(runtime.GOROOT(), "lib", "wasm", "wasm_exec.js"))
+	out, err := exec.Command("go", "env", "GOROOT").Output()
+	if err != nil {
+		return fmt.Errorf("go env GOROOT: %w", err)
+	}
+	goroot := strings.TrimSpace(string(out))
+	execJS, err := os.ReadFile(filepath.Join(goroot, "lib", "wasm", "wasm_exec.js"))
 	if err != nil {
 		return err
 	}
@@ -234,7 +239,8 @@ func sourceDir(slug string) (string, func(), error) {
 		return "", nil, err
 	}
 	dir := filepath.Join(base, slug)
-	if err := os.RemoveAll(dir); err == nil {
+	err = os.RemoveAll(dir)
+	if err == nil {
 		err = os.Mkdir(dir, 0o700)
 	}
 	if err != nil {
