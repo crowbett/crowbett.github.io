@@ -843,6 +843,6 @@ func split(t *testing.T) (shard, shards int) {
 // demoState is what the demo on this tab shows and how the tab stands, for a
 // failure message: a timeout alone cannot tell a stuck demo from a slow one.
 func demoState(ctx context.Context) string {
-	state, _ := chromedp.Run(ctx, chromedp.Evaluate[string](`"hidden=" + document.hidden + " cores=" + navigator.hardwareConcurrency + " | " + [...document.querySelectorAll("[data-demo], [data-demo-mount]")].map((e) => (e.dataset.demoReady !== undefined ? "ready " : "not ready ") + e.innerText.replace(/\s+/g, " ").slice(0, 400)).join(" || ")`))
+	state, _ := chromedp.Run(ctx, chromedp.Evaluate[string](`"hidden=" + document.hidden + " cores=" + navigator.hardwareConcurrency + " | " + [...document.querySelectorAll("[data-demo], [data-demo-mount]")].map((e) => (e.dataset.demoReady !== undefined ? "ready " : "not ready ") + ((t) => t.length > 700 ? t.slice(0, 200) + " ... " + t.slice(-500) : t)(e.innerText.replace(/\s+/g, " "))).join(" || ")`))
 	return state
 }
