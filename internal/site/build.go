@@ -343,11 +343,11 @@ func figures(s string) template.HTML {
 		i, j := m[0], m[1]
 		if i > 0 {
 			c := h[i-1]
-			if c == '#' || c == '&' || letter(c) && !(c == 'x' && i > 1 && digit(h[i-2])) {
+			if c == '#' || c == '&' || letter(c) && (c != 'x' || i <= 1 || !digit(h[i-2])) {
 				continue
 			}
 		}
-		if j < len(h) && letter(h[j]) && !(h[j] == 'x' && (j+1 == len(h) || !letter(h[j+1]))) {
+		if j < len(h) && letter(h[j]) && (h[j] != 'x' || (j+1 < len(h) && letter(h[j+1]))) {
 			continue
 		}
 		b.WriteString(h[last:i])
