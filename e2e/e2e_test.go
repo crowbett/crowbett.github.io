@@ -705,7 +705,7 @@ func visit(t *testing.T, url string, w, h int64, layoutOnly bool, scheme, shot s
 		}
 		for _, js := range checks {
 			if ok, err := chromedp.Run(ctx, chromedp.Evaluate[bool](untilJS(js), chromedp.EvalAwaitPromise)); err != nil || !ok {
-				t.Errorf("demo check failed: %s (err %v)", js, err)
+				t.Errorf("demo check failed: %s (err %v)\nstate: %s", js, err, demoState(ctx))
 			}
 		}
 		if scheme == "light" && !layoutOnly {
@@ -838,4 +838,11 @@ func split(t *testing.T) (shard, shards int) {
 		}
 	}
 	return shard, shards
+}
+
+// demoState is what the demo on this tab shows and how the tab stands, for a
+// failure message: a timeout alone cannot tell a stuck demo from a slow one.
+func demoState(ctx context.Context) string {
+	state, _ := chromedp.Run(ctx, chromedp.Evaluate[string](`"hidden=" + document.hidden + " cores=" + navigator.hardwareConcurrency + " | " + [...document.querySelectorAll("[data-demo], [data-demo-mount]")].map((e) => (e.dataset.demoReady !== undefined ? "ready " : "not ready ") + e.innerText.replace(/\s+/g, " ").slice(0, 400)).join(" || ")`))
+	return state
 }
