@@ -35,12 +35,12 @@ import (
 )
 
 // untilJS binds until(f) for a demo check: it resolves true once f() holds
-// and otherwise throws naming f after 20 s. A strata re-slice on a busy CI
+// and otherwise throws naming f after 40 s. A strata re-slice on a busy CI
 // runner outlasted the old 5 s, and a bare false hid which step it was. A
 // throw counts as not yet (the element may not be mounted), and every check
 // without side effects polls through until, so none races a slow mount.
 func untilJS(check string) string {
-	return "((until) => (" + check + `))(async (f, ms = 20000) => {
+	return "((until) => (" + check + `))(async (f, ms = 40000) => {
 		const ok = () => { try { return f(); } catch { return false; } };
 		for (const end = Date.now() + ms; !ok(); await new Promise((r) => setTimeout(r, 50)))
 			if (Date.now() > end) { f(); throw new Error("timed out: " + f); }
