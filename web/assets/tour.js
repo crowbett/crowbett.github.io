@@ -78,7 +78,7 @@ if (section && acts) {
       async click(what) { const b = find(what); await point(b); b.click(); },
       async set(i, v) { const c = controls(mount)[i]; if (!c) throw new Error(`tour: no control ${i}`); await point(c); setValue(c, v); },
       async wait(ms) { live(); await sleep(ms / speed()); live(); },
-      async until(fn, ms = 20000) {
+      async until(fn, ms = 40000) {
         for (const end = performance.now() + ms; !fn(); await sleep(50)) {
           live();
           if (performance.now() > end) throw new Error("tour: the demo did not get there in time");
