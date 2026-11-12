@@ -9,6 +9,7 @@ import (
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/emulation"
+	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 )
 
@@ -18,6 +19,15 @@ import (
 func TestIntro(t *testing.T) {
 	t.Parallel()
 	on := `"intro" in document.documentElement.dataset`
+	// The intro lasts 1.5 s, which a loaded runner can outlast between two
+	// calls from here, so the page records that it played and the trace ran.
+	record := `new MutationObserver(() => {
+			if (!("intro" in document.documentElement.dataset) || window.introSeen) return;
+			window.introSeen = true;
+			const t = setInterval(() => { if (document.getAnimations().some((a) => a.animationName === "in-trace")) { window.traceSeen = true; clearInterval(t); } }, 20);
+			setTimeout(() => clearInterval(t), 3000);
+		}).observe(document, { attributes: true, subtree: true, attributeFilter: ["data-intro"] });`
+	played := `window.introSeen === true && window.traceSeen === true`
 	open := func(t *testing.T, motion string) context.Context {
 		ctx, cancel := chromedp.NewContext(browser, chromedp.WithNewBrowserContext())
 		t.Cleanup(cancel)
@@ -28,6 +38,10 @@ func TestIntro(t *testing.T) {
 		err := chromedp.Do(ctx,
 			cores(2),
 			chromedp.EmulateViewport(1440, 900),
+			chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
+				_, err := cdp.Call(ctx, t, page.AddScriptToEvaluateOnNewDocument, page.AddScriptToEvaluateOnNewDocumentParams{Source: record})
+				return err
+			}),
 			chromedp.Func(func(ctx context.Context, t *chromedp.Target) error {
 				_, err := cdp.Call(ctx, t, emulation.SetEmulatedMedia, emulation.SetEmulatedMediaParams{
 					Features: []*emulation.MediaFeature{{Name: "prefers-reduced-motion", Value: motion}},
@@ -53,7 +67,7 @@ func TestIntro(t *testing.T) {
 	t.Run("once", func(t *testing.T) {
 		t.Parallel()
 		ctx := open(t, "no-preference")
-		if !is(t, ctx, on+` && document.getAnimations().some((a) => a.animationName === "in-trace")`) {
+		if !is(t, ctx, played) {
 			t.Fatal("no intro on a first landing")
 		}
 		if !is(t, ctx, `new Promise((r) => setTimeout(() => r(!(`+on+`)), 2000))`) {
@@ -69,7 +83,7 @@ func TestIntro(t *testing.T) {
 	t.Run("skip", func(t *testing.T) {
 		t.Parallel()
 		ctx := open(t, "no-preference")
-		if !is(t, ctx, on) {
+		if !is(t, ctx, `window.introSeen === true`) {
 			t.Fatal("no intro on a first landing")
 		}
 		if err := chromedp.Do(ctx, chromedp.KeyEvent(" ")); err != nil {
