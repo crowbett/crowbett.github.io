@@ -1,6 +1,10 @@
 package site
 
-import "testing"
+import (
+	"encoding/json"
+	"strings"
+	"testing"
+)
 
 func FuzzParseProject(f *testing.F) {
 	f.Add(goodProject)
@@ -25,5 +29,20 @@ func FuzzFigures(f *testing.F) {
 		if len(out) < len(s)/2 {
 			t.Fatalf("figures shrank %q to %q", s, out)
 		}
+	})
+}
+
+func FuzzCodeSetCheck(f *testing.F) {
+	ok := validCodeSet()
+	seed, _ := json.Marshal(ok)
+	f.Add(string(seed), strings.Repeat("a", 40))
+	f.Add(`{"slug":"demo","ref":"`+strings.Repeat("a", 40)+`","excerpts":[{"from":5,"to":1,"text":[],"lines":["<b>"]}]}`, "abc")
+	f.Add(`{}`, "")
+	f.Fuzz(func(t *testing.T, doc, lockRef string) {
+		var c CodeSet
+		if json.Unmarshal([]byte(doc), &c) != nil {
+			return
+		}
+		_ = c.check(Project{Slug: "demo", Demo: "live"}, lockRef)
 	})
 }

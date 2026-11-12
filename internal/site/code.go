@@ -47,6 +47,14 @@ func (c CodeSet) Digest() string {
 	return hex.EncodeToString(h[:])
 }
 
+// shortRef is a commit as the page names it, whatever the lock holds.
+func shortRef(ref string) string {
+	if len(ref) > 7 {
+		return ref[:7]
+	}
+	return ref
+}
+
 // Short is the commit as the page names it.
 func (c CodeSet) Short() string { return c.Ref[:7] }
 
@@ -142,7 +150,7 @@ func (c CodeSet) check(p Project, lockRef string) error {
 	case len(c.Ref) != 40:
 		return errors.New("ref is not a full commit")
 	case lockRef != "" && c.Ref != lockRef:
-		return fmt.Errorf("excerpts are from %s but the demo runs %s: %s", c.Ref[:7], lockRef[:7], stale)
+		return fmt.Errorf("excerpts are from %s but the demo runs %s: %s", c.Ref[:7], shortRef(lockRef), stale)
 	case len(c.Excerpts) == 0 || len(c.Excerpts) > 3:
 		return fmt.Errorf("%d excerpts, want 1 to 3", len(c.Excerpts))
 	case c.Sum != c.Digest():

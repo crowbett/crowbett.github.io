@@ -39,6 +39,7 @@ func TestCodeSetCheck(t *testing.T) {
 		{"wrong slug", mut(func(c *CodeSet) { c.Slug = "other"; resum(c) }), "", `slug "other"`},
 		{"short ref", mut(func(c *CodeSet) { c.Ref = "abc"; resum(c) }), "", "full commit"},
 		{"other commit", validCodeSet(), strings.Repeat("b", 40), "but the demo runs"},
+		{"malformed lock ref", validCodeSet(), "abc", "but the demo runs abc"},
 		{"no excerpts", mut(func(c *CodeSet) { c.Excerpts = nil; resum(c) }), "", "0 excerpts"},
 		{"hand edit", mut(func(c *CodeSet) { c.Excerpts[0].Why = "edited by hand" }), "", "changed since it was filled"},
 		{"not filled", mut(func(c *CodeSet) { c.Excerpts[0].To = 9; resum(c) }), "", "not filled"},
