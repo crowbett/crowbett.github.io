@@ -15,14 +15,14 @@ func TestCheckDetectsDrift(t *testing.T) {
 		t.Fatal(err)
 	}
 	bin, js := []byte("\x00asm binary"), []byte("// wasm_exec")
-	os.WriteFile(filepath.Join("web", "wasm", "a.wasm"), bin, 0o644)
-	os.WriteFile(filepath.Join("web", "wasm", "wasm_exec.js"), js, 0o644)
+	writeFile(t, filepath.Join("web", "wasm", "a.wasm"), bin)
+	writeFile(t, filepath.Join("web", "wasm", "wasm_exec.js"), js)
 	lock := &Lock{Go: "go1.27.0", WasmExecSHA256: sum(js), Demos: []Demo{{Slug: "a", Repo: ".", SHA256: sum(bin)}}}
 	if err := check(lock); err != nil {
 		t.Fatalf("matching binaries failed the check: %v", err)
 	}
-	os.WriteFile(filepath.Join("web", "wasm", "a.wasm"), []byte("changed"), 0o644)
-	os.WriteFile(filepath.Join("web", "wasm", "stray.wasm"), bin, 0o644)
+	writeFile(t, filepath.Join("web", "wasm", "a.wasm"), []byte("changed"))
+	writeFile(t, filepath.Join("web", "wasm", "stray.wasm"), bin)
 	lock.Demos = append(lock.Demos, Demo{Slug: "gone", Repo: "."})
 	err := check(lock)
 	if err == nil || !strings.Contains(err.Error(), "a: binary does not match") || !strings.Contains(err.Error(), "gone:") || !strings.Contains(err.Error(), "stray.wasm is not in the lock") {
@@ -50,13 +50,13 @@ func TestExportDirIsFixedAndEmpty(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	os.WriteFile(filepath.Join(dir, "left"), nil, 0o644)
+	writeFile(t, filepath.Join(dir, "left"), nil)
 	unlock()
 	again, unlock, err := sourceDir(slug)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(filepath.Join(filepath.Dir(again), slug+".lock"))
+	defer func() { _ = os.Remove(filepath.Join(filepath.Dir(again), slug+".lock")) }()
 	defer unlock()
 	if again != dir {
 		t.Fatalf("export dir moved: %s then %s", dir, again)
@@ -116,9 +116,9 @@ func TestCheckBareModule(t *testing.T) {
 
 func TestCppArgs(t *testing.T) {
 	root := t.TempDir()
-	os.MkdirAll(filepath.Join(root, "webdemo", "sub"), 0o755)
+	mkdirAll(t, filepath.Join(root, "webdemo", "sub"))
 	for _, f := range []string{"wasm.cpp", "extra.cpp", "bridge_test.cpp", "bridge.h", "sub/deep.cpp"} {
-		os.WriteFile(filepath.Join(root, "webdemo", f), nil, 0o644)
+		writeFile(t, filepath.Join(root, "webdemo", f), nil)
 	}
 	args, err := cppArgs("/sdk", root, "./webdemo", "/out.wasm", false)
 	if err != nil {
@@ -137,7 +137,7 @@ func TestCppArgs(t *testing.T) {
 	if _, err := cppArgs("/sdk", root, "./webdemo/sub/none", "/out.wasm", false); err == nil {
 		t.Error("missing directory accepted")
 	}
-	os.MkdirAll(filepath.Join(root, "empty"), 0o755)
+	mkdirAll(t, filepath.Join(root, "empty"))
 	if _, err := cppArgs("/sdk", root, "./empty", "/out.wasm", false); err == nil || !strings.Contains(err.Error(), "no .cpp files") {
 		t.Errorf("want no-sources error, got %v", err)
 	}
@@ -149,11 +149,11 @@ func TestWasiSDKVersion(t *testing.T) {
 	if _, _, err := wasiSDK(); err == nil || !strings.Contains(err.Error(), "make wasi-sdk") {
 		t.Fatalf("missing SDK: want install hint, got %v", err)
 	}
-	os.WriteFile(filepath.Join(dir, "VERSION"), []byte("33.0\nwasi-libc: abc\n"), 0o644)
+	writeFile(t, filepath.Join(dir, "VERSION"), []byte("33.0\nwasi-libc: abc\n"))
 	if _, _, err := wasiSDK(); err == nil || !strings.Contains(err.Error(), "want "+wasiSDKVersion) {
 		t.Fatalf("old SDK: want version error, got %v", err)
 	}
-	os.WriteFile(filepath.Join(dir, "VERSION"), []byte(wasiSDKVersion+"\nwasi-libc: 2e6fb9d8ee0c\nllvm: 895aa2c896ad\n"), 0o644)
+	writeFile(t, filepath.Join(dir, "VERSION"), []byte(wasiSDKVersion+"\nwasi-libc: 2e6fb9d8ee0c\nllvm: 895aa2c896ad\n"))
 	got, version, err := wasiSDK()
 	if err != nil || version != "wasi-sdk "+wasiSDKVersion+", wasi-libc 2e6fb9d8ee0c" || !filepath.IsAbs(got) {
 		t.Fatalf("got %q %q %v", got, version, err)
@@ -198,9 +198,9 @@ func TestSourceDirReportsCleanupFailure(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() {
-		os.Chmod(sub, 0o755)
-		os.RemoveAll(dir)
-		os.Remove(filepath.Join(filepath.Dir(dir), slug+".lock"))
+		_ = os.Chmod(sub, 0o755)
+		_ = os.RemoveAll(dir)
+		_ = os.Remove(filepath.Join(filepath.Dir(dir), slug+".lock"))
 	}()
 	if os.Getuid() == 0 {
 		t.Skip("root removes read-only trees")
@@ -208,5 +208,19 @@ func TestSourceDirReportsCleanupFailure(t *testing.T) {
 	if d, unlock, err := sourceDir(slug); err == nil {
 		unlock()
 		t.Fatalf("sourceDir returned %s with no error though it could not empty it", d)
+	}
+}
+
+func writeFile(t *testing.T, path string, b []byte) {
+	t.Helper()
+	if err := os.WriteFile(path, b, 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func mkdirAll(t *testing.T, path string) {
+	t.Helper()
+	if err := os.MkdirAll(path, 0o755); err != nil {
+		t.Fatal(err)
 	}
 }
