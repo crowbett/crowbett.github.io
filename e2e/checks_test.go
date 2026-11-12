@@ -97,7 +97,7 @@ const stageCheck = `(async () => {
 	const state = () => f.querySelector("[data-state]").textContent;
 	return until(() => "live" in f.dataset && Number(v("spp")) >= 2 && /^[\d,]+k$/.test(v("rate")) && parseFloat(v("ratio")) > 1
 		&& /^live, pass \d+$/.test(state())).catch((e) => {
-		throw new Error(e.message + " [live=" + ("live" in f.dataset) + " spp=" + v("spp") + " rate=" + v("rate") + " ratio=" + v("ratio") + " state=" + state() + " cores=" + navigator.hardwareConcurrency + "]");
+		throw new Error(e.message + " [live=" + ("live" in f.dataset) + " spp=" + v("spp") + " rate=" + v("rate") + " ratio=" + v("ratio") + " state=" + state() + " cores=" + navigator.hardwareConcurrency + " hidden=" + document.hidden + " focus=" + document.hasFocus() + " scrollY=" + scrollY + "]");
 	});
 })()`
 
