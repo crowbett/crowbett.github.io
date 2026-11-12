@@ -107,7 +107,7 @@ func parseModule(b []byte) (*module, error) {
 					}
 					r.i++
 				}
-				l := int(r.u())
+				l := r.size()
 				if r.i+l > len(r.b) {
 					r.err = true
 					break
@@ -121,7 +121,7 @@ func parseModule(b []byte) (*module, error) {
 			m.code = body
 			for range r.count() {
 				start := r.i
-				l := int(r.u())
+				l := r.size()
 				r.i += l
 				m.bodies = append(m.bodies, r.i-start)
 				m.bodyBytes += r.i - start
@@ -138,7 +138,7 @@ func parseModule(b []byte) (*module, error) {
 func (m *module) readNames(r *reader) {
 	for r.i < len(r.b) && !r.err {
 		sub := r.byte()
-		l := int(r.u())
+		l := r.size()
 		end := r.i + l
 		if sub == 1 {
 			for range r.count() {
@@ -189,6 +189,17 @@ func (r *reader) count() int {
 	return int(v)
 }
 
+// size reads a byte length that must fit in what is left: a wider value
+// would wrap negative as an int and pass a bounds check.
+func (r *reader) size() int {
+	v := r.u()
+	if r.i > len(r.b) || v > uint64(len(r.b)-r.i) {
+		r.err = true
+		return 0
+	}
+	return int(v)
+}
+
 func (r *reader) s() int64 {
 	var v int64
 	var shift uint
@@ -206,9 +217,8 @@ func (r *reader) s() int64 {
 }
 
 func (r *reader) name() string {
-	l := int(r.u())
-	if r.err || r.i+l > len(r.b) {
-		r.err = true
+	l := r.size()
+	if r.err {
 		return ""
 	}
 	r.i += l
