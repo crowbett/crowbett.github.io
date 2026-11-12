@@ -62,7 +62,7 @@ func parseModule(b []byte) (*module, error) {
 				m.readNames(r)
 			}
 		case 2:
-			for range r.u() {
+			for range r.count() {
 				r.name()
 				r.name()
 				switch r.byte() {
@@ -83,7 +83,7 @@ func parseModule(b []byte) (*module, error) {
 				}
 			}
 		case 7:
-			for range r.u() {
+			for range r.count() {
 				name := r.name()
 				kind := r.byte()
 				idx := int(r.u())
@@ -92,7 +92,7 @@ func parseModule(b []byte) (*module, error) {
 				}
 			}
 		case 11:
-			for range r.u() {
+			for range r.count() {
 				flags := r.u()
 				if flags == 2 {
 					r.u()
@@ -119,7 +119,7 @@ func parseModule(b []byte) (*module, error) {
 			}
 		case 10:
 			m.code = body
-			for range r.u() {
+			for range r.count() {
 				start := r.i
 				l := int(r.u())
 				r.i += l
@@ -141,7 +141,7 @@ func (m *module) readNames(r *reader) {
 		l := int(r.u())
 		end := r.i + l
 		if sub == 1 {
-			for range r.u() {
+			for range r.count() {
 				idx := int(r.u())
 				m.names[idx] = r.name()
 			}
@@ -176,6 +176,17 @@ func (r *reader) u() uint64 {
 	}
 	r.i += n
 	return v
+}
+
+// count reads an item count. Every item takes at least a byte, so a count past
+// the bytes left is corrupt, and looping on it would spin.
+func (r *reader) count() int {
+	v := r.u()
+	if v > uint64(len(r.b)-r.i) {
+		r.err = true
+		return 0
+	}
+	return int(v)
 }
 
 func (r *reader) s() int64 {
