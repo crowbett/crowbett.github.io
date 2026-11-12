@@ -186,7 +186,7 @@ var demoChecks = map[string][]string{
 		`until(() => document.querySelector(".rc-cells [data-k=docs] .rc-v").textContent === "42" && document.querySelector(".rc-cells [data-k=sources] .rc-v").textContent === "4 of 5" &&
 			document.querySelectorAll(".rc-index .rc-doc").length === 42 && document.querySelectorAll(".rc-index .rc-doc.is-red").length === 3 &&
 			document.querySelectorAll(".rc-row.is-sel").length > 0 && document.querySelectorAll(".rc-line").length > 0 &&
-			/^recall indexed 42 documents from 4 sources in [\d.]+ ms and ranked \d+ quer(y|ies) in [\d.]+ ms\.$/.test(document.querySelector(".rc-out").textContent))`,
+			/^recall indexed 42 documents from 4 sources in [\d.,]+ ms and ranked \d+ quer(y|ies) in [\d.,]+ ms\.$/.test(document.querySelector(".rc-out").textContent))`,
 		`(async () => {
 			const play = document.querySelector(".rc-acts button");
 			if (play.textContent === "Pause") play.click();
@@ -249,7 +249,7 @@ var demoChecks = map[string][]string{
 			document.querySelector(".cg-node[data-spec='src/store.rs:32']").dispatchEvent(new MouseEvent("click", { bubbles: true }));
 			return until(() => sum() === "store::Store::bump (src/store.rs:32): 2 callers; 0 callees, 0 resolved, 0 unresolved." &&
 				hops() === "Store::delete↑1,Store::set↑1,main↑3,run↑2" && v("callers") === "4" && v("depth") === "3" && v("callees") === "0" &&
-				/^\d+ call-tree queries out from store::Store::bump in [\d.]+ ms\. Indexing 4 files took [\d.]+ ms, and drawing the graph 17 queries in [\d.]+ ms\.$/.test(document.querySelector(".cg-out").textContent));
+				/^\d+ call-tree queries out from store::Store::bump in [\d.,]+ ms\. Indexing 4 files took [\d.,]+ ms, and drawing the graph 17 queries in [\d.,]+ ms\.$/.test(document.querySelector(".cg-out").textContent));
 		})()`,
 		`(async () => {
 			const play = document.querySelector(".cg-acts button");
@@ -360,7 +360,7 @@ var demoChecks = map[string][]string{
 		})()`,
 	},
 	"adfactory": {
-		`until(() => /^planned 9 deliverables in [\d.]+ ms: 9 anchors from 60 detector samples, 427 crop windows, 65 caption lines, 7 loudness plans\. [\d,]+ plan calls? so far, [\d,]+ ms in all\.$/.test(document.querySelector("p.demo-out").textContent)
+		`until(() => /^planned 9 deliverables in [\d.,]+ ms: 9 anchors from 60 detector samples, 427 crop windows, 65 caption lines, 7 loudness plans\. [\d,]+ plan calls? so far, [\d,]+ ms in all\.$/.test(document.querySelector("p.demo-out").textContent)
 			&& [...document.querySelectorAll(".adf-tile")].map((t) => t.dataset.key + ":" + t.dataset.state).join() === "reels:ready,tiktok:ready,shorts:advisory,feed_4x5:ready,feed_4x5_still:ready,youtube:ready,broadcast_1080i:ready,feed_1x1:ready,feed_1x1_still:ready"
 			&& document.querySelector(".adf-cells [data-k=ready] .adf-v").textContent === "8")`,
 		`until(() => ((() => { const c = document.querySelector(".adf-canvas"); const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 64) set.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return set.size > 20; })()))`,
