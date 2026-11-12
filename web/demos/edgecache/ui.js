@@ -334,6 +334,7 @@ export async function mount(root, demo) {
     }
     renderLog();
     updateDom(true);
+    kick();
   }
 
   function setYou(i) {
